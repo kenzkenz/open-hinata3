@@ -1,48 +1,32 @@
 /*
- * /src/js/utils/radius-highlight.js
- * 半径円で内部地物をハイライトするユーティリティ（MapLibre GL JS）
- * （既定は 200m。任意半径に対応）
- * - 実行のたびに円レイヤーを remove → add で再作成（中心点も）
- * - 円の内部と判定された地物の ID 属性（任意キー）を配列に収集（毎回リフレッシュ）
- * - 収集した配列を使って指定レイヤーの色を条件付きで変更
- * - 問い合わせ対象レイヤーも、色変更の対象レイヤーも引数で可変に指定可能
- * - デフォルト対象：
- *    - ソースID:   'homusyo-2025-kijyunten-source'
- *    - レイヤーID: 'oh-homusyo-2025-kijyunten'
- * - ID属性の既定: '名称'
- * - Turf.js 前提（ESM: `import * as turf from '@turf/turf'`）
+ * /src/js/utils/radius-highlight.js (PMTiles z16 lock, v3)
+ * 半径円で内部地物をハイライト & oh200mIds を正しく生成（画面外も含む / 固定ズーム16のPMTilesを直接読む）
+ * - 目的：エクスポート用に「円内部の全地物ID(oh200mIds)」を確実に取得
+ * - 仕様：queryRenderedFeatures は使わず、PMTiles の z=16 タイルを直接走査して内外判定
+ * - データが GeoJSON ソースの場合はメモリ走査（Turf）
+ * - 表示上のハイライトはおまけ（oh200mIds と画面の一致は不要、という要件）
  *
- * 使い方例：
+ * 依存：
+ *   npm i pmtiles @mapbox/vector-tile pbf
+ *   import * as turf from '@turf/turf'
+ *
+ * 使い方（同じ）：
  *   import { refreshRadiusHighlight } from '/src/js/utils/radius-highlight.js'
- *
- *   // クリック位置に円 → 内部にある layerA, layerB の地物を拾い、idProperty でハイライト
  *   map.on('click', (e) => {
  *     refreshRadiusHighlight(map, e.lngLat, {
- *       queryLayers: ['oh-bus-lines', 'oh-homusyo-2025-polygon-dissolved-all'],
- *       highlightLayers: ['oh-bus-lines', 'oh-homusyo-2025-polygon-dissolved-all'],
- *       idProperty: 'id',
- *       addAboveLayerId: 'oh-bus-lines',    // 円や中心点の追加位置
- *       radiusMeters: 200,                  // 任意半径
- *       highlight: {
- *         fillColor: 'rgba(255,160,0,0.35)',
- *         lineColor: 'rgba(255,120,0,1.0)',
- *         lineWidth: 3,
- *         circleColor: 'rgba(255,120,0,1.0)',
- *         circleRadius: 6
- *       }
+ *       queryLayers: ['oh-homusyo-2025-kijyunten'],
+ *       highlightLayers: ['oh-homusyo-2025-kijyunten'],
+ *       idProperty: '名称',
+ *       radiusMeters: 200
  *     })
- *   })
- *
- *   // ID 配列だけ欲しい場合：
- *   const { ids } = await refreshRadiusHighlight(map, [139.76,35.68], {
- *     queryLayers:['oh-homusyo-2025-kijyunten'],
- *     highlightLayers:['oh-homusyo-2025-kijyunten'],
- *     idProperty:'名称'
  *   })
  */
 
 import store from '@/store'
 import * as turf from '@turf/turf'
+import { PMTiles } from 'pmtiles'
+import { VectorTile } from '@mapbox/vector-tile'
+import Pbf from 'pbf'
 
 function resolveStore(opts) {
     if (opts && opts.store && opts.store.state) return opts.store;
@@ -55,28 +39,28 @@ function resolveStore(opts) {
 const STATE_KEY = '__oh_radius_state';
 
 /**
- * メイン：円（既定200m）の再作成 → 内部地物抽出 → ハイライト色の適用（中心点も描画）
+ * メイン：円（既定200m）の再作成 → PMTiles/GeoJSON から内外抽出（z=16固定）→ ハイライト（任意）
  * @param {import('maplibre-gl').Map} map
  * @param {[number, number] | {lng:number,lat:number}} centerLngLat
  * @param {Object} opts
  * @param {string[]} [opts.queryLayers]       - 内部判定の対象レイヤーID配列（省略時 ['oh-homusyo-2025-kijyunten']）
  * @param {string[]} [opts.highlightLayers]   - 色変更の対象レイヤーID配列（省略時は queryLayers と同一）
- * @param {string}  [opts.idProperty]         - 内部地物のIDにあたるプロパティ名（省略時 '名称'。例: 'TXTCD' など）
- * @param {string}  [opts.circleSourceId]     - 円ソースID（毎回再作成）。既定: 'oh-radius-circle-source'
- * @param {string}  [opts.circleLayerId]      - 円レイヤーID（毎回再作成）。既定: 'oh-radius-circle-layer'
+ * @param {string}  [opts.idProperty]         - 内部地物のIDにあたるプロパティ名（省略時 '名称'）
+ * @param {string}  [opts.circleSourceId]     - 円ソースID（既定: 'oh-radius-circle-source'）
+ * @param {string}  [opts.circleLayerId]      - 円レイヤーID（既定: 'oh-radius-circle-layer'）
  * @param {number}  [opts.radiusMeters]       - 半径（m）。既定 200
- * @param {string}  [opts.addAboveLayerId]    - 円レイヤーやハイライトを挿入する基準レイヤー（その直上に追加。省略時 'oh-homusyo-2025-kijyunten'）
+ * @param {string}  [opts.addAboveLayerId]    - 円/中心点の追加位置（既定 'oh-homusyo-2025-kijyunten' の直上）
  * @param {Object}  [opts.highlight]          - ハイライト見た目設定
  * @param {string}  [opts.idsStoreKey]        - 収集ID配列を書き出す store.state のキー名（既定 'oh200mIds'）
+ * @param {string}  [opts.geojsonStoreKey]    - 円内FeatureCollectionを書き出す store.state のキー名（既定 'oh200mGeoJSON'）
  * @param {Object}  [opts.store]              - Vuex ストア（省略時は import '@/store' または window.store を試行）
- * @param {string}  [opts.targetSourceId]     - 対象データのソースID（省略時 'homusyo-2025-kijyunten-source'）
- * @param {boolean} [opts.showCenter]         - 中心点を描画するか（既定 true）
- * @param {string}  [opts.centerSourceId]     - 中心点のソースID（既定 'oh-radius-center-source'）
- * @param {string}  [opts.centerLayerId]      - 中心点のレイヤーID（既定 'oh-radius-center-layer'）
- * @param {Object}  [opts.centerStyle]        - 中心点の見た目 { color, radius, strokeColor, strokeWidth }
  * @returns {Promise<{ids:string[], features:GeoJSON.Feature[]}>}
  */
 export async function refreshRadiusHighlight(map, centerLngLat, opts) {
+    const exists = !!(map && map.getLayer('oh-homusyo-2025-kijyunten'));
+    if (!exists) return
+    if (!store.state.isRadius200) return
+
     ensureTurf();
 
     const {
@@ -87,48 +71,13 @@ export async function refreshRadiusHighlight(map, centerLngLat, opts) {
         circleLayerId  = 'oh-radius-circle-layer',
         radiusMeters   = 200,
         addAboveLayerId = 'oh-homusyo-2025-kijyunten',
-        targetSourceId = 'homusyo-2025-kijyunten-source',
         highlight = {},
-        showCenter = true,
-        centerSourceId = 'oh-radius-center-source',
-        centerLayerId  = 'oh-radius-center-layer',
-        centerStyle = {}
+        idsStoreKey = 'oh200mIds',
+        geojsonStoreKey = 'oh200mGeoJSON'
     } = opts || {};
 
     if (!idProperty || typeof idProperty !== 'string') {
         throw new Error('idProperty を文字列で指定してください');
-    }
-
-    // --- store.state.isRadius200 === false なら早期リターン ---
-    try {
-        const vuexFlag = resolveStore(opts);
-        if (vuexFlag && vuexFlag.state && vuexFlag.state.isRadius200 === false) {
-            // 過去の円や中心点は消して、ID配列は空でリフレッシュ
-            clearLegacyNames(map);
-            clearPreviousMarks(map, circleLayerId, circleSourceId, centerLayerId, centerSourceId);
-            try {
-                const key = (opts && opts.idsStoreKey) ? opts.idsStoreKey : 'oh200mIds';
-                vuexFlag.state[key] = [];
-            } catch (e) { /* noop */ }
-            return { ids: [], features: [] };
-        }
-    } catch (e) { /* noop */ }
-
-    // --- 指定（または既定）のレイヤー存在チェック → 早期リターン ---
-    const qLayers = (queryLayers || []).filter(id => map.getLayer(id));
-    const hLayers = (highlightLayers || []).filter(id => map.getLayer(id));
-    if (qLayers.length === 0 && hLayers.length === 0) {
-        // 過去の円や中心点は消して、ID配列は空でリフレッシュ
-        clearLegacyNames(map);
-        clearPreviousMarks(map, circleLayerId, circleSourceId, centerLayerId, centerSourceId);
-        try {
-            const vuex = resolveStore(opts);
-            if (vuex && vuex.state) {
-                const key = (opts && opts.idsStoreKey) ? opts.idsStoreKey : 'oh200mIds';
-                vuex.state[key] = [];
-            }
-        } catch (e) { /* noop */ }
-        return { ids: [], features: [] };
     }
 
     // center の正規化
@@ -138,40 +87,34 @@ export async function refreshRadiusHighlight(map, centerLngLat, opts) {
 
     // 1) 既存の円＆ハイライトをクリア
     clearLegacyNames(map);
-    clearPreviousMarks(map, circleLayerId, circleSourceId, centerLayerId, centerSourceId);
-    restoreBasePaintsIfAny(map); // 各ターゲットレイヤーを元の色式に戻してから次を適用
+    clearPreviousMarks(map, circleLayerId, circleSourceId, 'oh-radius-center-layer', 'oh-radius-center-source');
+    restoreBasePaintsIfAny(map);
 
     // 2) 円を生成して追加（中心点も）
     const circleFeature = makeCircleFeature(center, radiusMeters);
     addCircle(map, circleFeature, { circleSourceId, circleLayerId, addAboveLayerId });
-    if (showCenter) addCenterPoint(map, center, { centerSourceId, centerLayerId, addAboveLayerId, centerStyle });
+    addCenterPoint(map, center, { centerSourceId: 'oh-radius-center-source', centerLayerId: 'oh-radius-center-layer', addAboveLayerId });
 
-    // 3) 円の内外判定 → ID 配列を作成
-    const { ids, features } = pickInsideFeatures(map, circleFeature, qLayers, idProperty);
+    // 3) 円の内外判定 → **PMTiles z=16** / GeoJSON で ID 配列を作成
+    const { ids, features } = await collectIdsAtZ16(map, circleFeature, queryLayers, idProperty);
 
     // 4) ハイライト色を適用（指定レイヤーたちに動的式をセット）
-    applyConditionalColor(map, hLayers, idProperty, ids, highlight);
+    applyConditionalColor(map, highlightLayers, idProperty, ids, highlight);
 
-    // 4.5) Vuex store.state に ID 配列を書き出し（外部利用向け）
+    // 5) Vuex store.state に ID 配列と円内GeoJSONを書き出し
     try {
         const vuex = resolveStore(opts);
         if (vuex && vuex.state) {
-            const key = (opts && opts.idsStoreKey) ? opts.idsStoreKey : 'oh200mIds';
-            vuex.state[key] = ids;
+            // oh200mIds
+            vuex.state[idsStoreKey] = ids;
+            // oh200mGeoJSON（FeatureCollection 全量）
+            vuex.state[geojsonStoreKey] = { type: 'FeatureCollection', features };
         }
     } catch (e) { /* noop */ }
 
-    // 内部状態に保存（次回実行時の復元/解除に使う）
+    // 内部状態に保存
     map[STATE_KEY] = map[STATE_KEY] || { basePaints: {}, last: {} };
-    map[STATE_KEY].last = {
-        ids,
-        circleSourceId,
-        circleLayerId,
-        queryLayers: [...qLayers],
-        highlightLayers: [...hLayers],
-        idProperty,
-        targetSourceId
-    };
+    map[STATE_KEY].last = { ids, circleSourceId, circleLayerId, queryLayers: [...queryLayers], highlightLayers: [...highlightLayers], idProperty };
 
     return { ids, features };
 }
@@ -218,11 +161,7 @@ function clearLegacyNames(map) {
 
 /** 円の描画を追加 */
 function addCircle(map, circleFeature, { circleSourceId, circleLayerId, addAboveLayerId }) {
-    map.addSource(circleSourceId, {
-        type: 'geojson',
-        data: circleFeature
-    });
-
+    map.addSource(circleSourceId, { type: 'geojson', data: circleFeature });
     const layerDef = {
         id: circleLayerId,
         type: 'fill',
@@ -232,73 +171,78 @@ function addCircle(map, circleFeature, { circleSourceId, circleLayerId, addAbove
             'fill-outline-color': 'rgba(0, 120, 255, 0.9)'
         }
     };
-
-    if (addAboveLayerId && map.getLayer(addAboveLayerId)) {
-        map.addLayer(layerDef, addAboveLayerId);
-    } else {
-        map.addLayer(layerDef);
-    }
+    if (addAboveLayerId && map.getLayer(addAboveLayerId)) map.addLayer(layerDef, addAboveLayerId);
+    else map.addLayer(layerDef);
 }
 
 /** 中心点の描画を追加 */
 function addCenterPoint(map, center, { centerSourceId, centerLayerId, addAboveLayerId, centerStyle = {} }) {
-    const srcData = {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [center.lng, center.lat] },
-        properties: {}
-    };
+    const srcData = { type: 'Feature', geometry: { type: 'Point', coordinates: [center.lng, center.lat] }, properties: {} };
     map.addSource(centerSourceId, { type: 'geojson', data: srcData });
-
-    const style = {
-        color: 'rgba(0, 120, 255, 1)',
-        radius: 5,
-        strokeColor: 'rgba(255,255,255,1)',
-        strokeWidth: 2,
-        ...centerStyle
-    };
-
-    const layerDef = {
-        id: centerLayerId,
-        type: 'circle',
-        source: centerSourceId,
-        paint: {
-            'circle-color': style.color,
-            'circle-radius': style.radius,
-            'circle-stroke-color': style.strokeColor,
-            'circle-stroke-width': style.strokeWidth
-        }
-    };
-
-    if (addAboveLayerId && map.getLayer(addAboveLayerId)) {
-        map.addLayer(layerDef, addAboveLayerId);
-    } else {
-        map.addLayer(layerDef);
-    }
+    const style = { color: 'rgba(0,120,255,1)', radius: 5, strokeColor: 'rgba(255,255,255,1)', strokeWidth: 2, ...centerStyle };
+    const layerDef = { id: centerLayerId, type: 'circle', source: centerSourceId, paint: { 'circle-color': style.color, 'circle-radius': style.radius, 'circle-stroke-color': style.strokeColor, 'circle-stroke-width': style.strokeWidth } };
+    if (addAboveLayerId && map.getLayer(addAboveLayerId)) map.addLayer(layerDef, addAboveLayerId); else map.addLayer(layerDef);
 }
 
 /**
- * 円の bbox で queryRenderedFeatures → Turf で厳密内外判定
- * 対象レイヤーごとに走査し、idProperty を配列化
+ * PMTiles z=16 で円内部のIDを収集
+ * - queryLayers で与えられた各レイヤーの source / source-layer を参照
+ * - スタイルの source.url が pmtiles:// であることが前提
  */
-function pickInsideFeatures(map, circlePolygon, queryLayers, idProperty) {
-    const [minX, minY, maxX, maxY] = turf.bbox(circlePolygon);
-    const p1 = map.project({ lng: minX, lat: minY });
-    const p2 = map.project({ lng: maxX, lat: maxY });
-    const box = [p1, p2];
+async function collectIdsAtZ16(map, circlePolygon, queryLayers, idProperty) {
+    const z = 16; // 固定
+    const bbox = turf.bbox(circlePolygon); // [minLng,minLat,maxLng,maxLat]
+    const [minX, minY] = lngLatToTile(bbox[0], bbox[3], z);
+    const [maxX, maxY] = lngLatToTile(bbox[2], bbox[1], z);
 
     const idsSet = new Set();
     const picked = [];
 
-    for (const lid of queryLayers) {
-        if (!map.getLayer(lid)) continue;
-        const feats = map.queryRenderedFeatures(box, { layers: [lid] }) || [];
-        for (const f of feats) {
-            const inside = featureIntersectsCircle(f, circlePolygon);
-            if (!inside) continue;
-            const val = safeGetIdValue(f, idProperty);
-            if (val == null) continue;
-            const key = String(val);
-            if (!idsSet.has(key)) idsSet.add(key);
+    for (const lid of (queryLayers || [])) {
+        const layer = getLayer(map, lid);
+        if (!layer) continue;
+        const sourceId = layer.source;
+        const sourceLayer = layer['source-layer'];
+        if (!sourceId || !sourceLayer) continue;
+
+        const styleSrc = map.getStyle()?.sources?.[sourceId];
+        if (!styleSrc || typeof styleSrc.url !== 'string' || !styleSrc.url.startsWith('pmtiles://')) {
+            // GeoJSON ソースならメモリ走査
+            const src = map.getSource(sourceId);
+            if (src && src.type === 'geojson' && src._data) {
+                const fc = toFeatureArray(src._data);
+                for (const f of fc) pushIfInside(f);
+            }
+            continue;
+        }
+
+        const pm = new PMTiles(styleSrc.url.replace('pmtiles://', ''));
+
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                try {
+                    const tile = await pm.getZxy(z, x, y);
+                    if (!tile?.data) continue;
+                    const vt = new VectorTile(new Pbf(new Uint8Array(tile.data)));
+                    const vtl = vt.layers?.[sourceLayer];
+                    if (!vtl) continue;
+                    for (let i = 0; i < vtl.length; i++) {
+                        const gj = vtl.feature(i).toGeoJSON(x, y, z);
+                        pushIfInside(gj);
+                    }
+                } catch (_) { /* ignore */ }
+            }
+        }
+    }
+
+    function pushIfInside(f) {
+        if (!f || !f.geometry) return;
+        if (!featureIntersectsCircle(f, circlePolygon)) return;
+        const val = safeGetIdValue(f, idProperty);
+        if (val == null) return;
+        const key = String(val);
+        if (!idsSet.has(key)) {
+            idsSet.add(key);
             picked.push(f);
         }
     }
@@ -306,13 +250,20 @@ function pickInsideFeatures(map, circlePolygon, queryLayers, idProperty) {
     return { ids: Array.from(idsSet), features: picked };
 }
 
-/**
- * ジオメトリタイプに応じて円Polygonとの交差/包含を判定
- */
+/** WebMercator ヘルパ（XYZ） */
+function lngLatToTile(lon, lat, z) {
+    const latRad = (lat * Math.PI) / 180;
+    const n = Math.pow(2, z);
+    const x = Math.floor(((lon + 180) / 360) * n);
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+    // clamp（安全側）
+    return [Math.max(0, Math.min(n - 1, x)), Math.max(0, Math.min(n - 1, y))];
+}
+
+/** ジオメトリタイプに応じて円Polygonとの交差/包含を判定 */
 function featureIntersectsCircle(feature, circlePolygon) {
     const g = feature && feature.geometry;
     if (!g) return false;
-
     try {
         switch (g.type) {
             case 'Point':
@@ -325,16 +276,12 @@ function featureIntersectsCircle(feature, circlePolygon) {
             case 'MultiPolygon':
                 return turf.booleanIntersects(g, circlePolygon);
             default: {
-                // 未対応タイプは bbox 判定だけにフォールバック（ゆるい）
                 const b1 = turf.bbox(turf.feature(g));
                 const b2 = turf.bbox(circlePolygon);
                 return bboxOverlaps(b1, b2);
             }
         }
-    } catch (e) {
-        // ジオメトリ欠損などは安全側に false
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 function bboxOverlaps(b1, b2) {
@@ -351,70 +298,45 @@ function safeGetIdValue(feature, idProperty) {
 }
 
 /**
- * 各レイヤーの色プロパティに条件式を適用
- * - 既存の色設定（式/リテラル）は map[STATE_KEY].basePaints に保存
- * - 実行のたびに basePaint を土台に上書き（多重ネストしない）
+ * 各レイヤーの色プロパティに条件式を適用（任意）
  */
 function applyConditionalColor(map, layerIds, idProperty, idArray, highlight) {
     map[STATE_KEY] = map[STATE_KEY] || { basePaints: {}, last: {} };
     const basePaints = map[STATE_KEY].basePaints;
+    const hi = { fillColor: 'rgba(255,136,0,0.35)', lineColor: 'rgba(255,136,0,1.0)', lineWidth: 2, circleColor: 'rgba(255,136,0,1.0)', circleRadius: 5, ...highlight };
 
-    const hi = {
-        fillColor: 'rgba(255,136,0,0.35)',
-        lineColor: 'rgba(255,136,0,1.0)',
-        lineWidth: 2,
-        circleColor: 'rgba(255,136,0,1.0)',
-        circleRadius: 5,
-        ...highlight
-    };
-
-    for (const lid of layerIds) {
+    for (const lid of (layerIds || [])) {
         const layer = getLayer(map, lid);
         if (!layer) continue;
-
-        // 初回のみ元の色設定を保存
-        if (!basePaints[lid]) {
-            basePaints[lid] = snapshotBasePaint(map, layer);
-        }
-
+        if (!basePaints[lid]) basePaints[lid] = snapshotBasePaint(map, layer);
         const base = basePaints[lid];
         const idIn = ['in', ['get', idProperty], ['literal', idArray]];
 
         switch (layer.type) {
             case 'fill': {
-                const targetProp = 'fill-color';
-                const baseVal = base[targetProp] ?? 'rgba(0,0,0,0)';
-                const expr = ['case', idIn, hi.fillColor, baseVal];
-                map.setPaintProperty(lid, targetProp, expr);
-                // アウトラインもあれば強調（任意）
+                const baseVal = base['fill-color'] ?? 'rgba(0,0,0,0)';
+                map.setPaintProperty(lid, 'fill-color', ['case', idIn, hi.fillColor, baseVal]);
                 if (hasPaint(map, lid, 'fill-outline-color')) {
                     const baseOutline = base['fill-outline-color'] ?? 'rgba(0,0,0,0)';
-                    const exprOutline = ['case', idIn, hi.lineColor, baseOutline];
-                    map.setPaintProperty(lid, 'fill-outline-color', exprOutline);
+                    map.setPaintProperty(lid, 'fill-outline-color', ['case', idIn, hi.lineColor, baseOutline]);
                 }
                 break;
             }
             case 'line': {
-                const colorProp = 'line-color';
-                const widthProp = 'line-width';
-                const baseColor = base[colorProp] ?? 'rgba(0,0,0,0)';
-                const baseWidth = base[widthProp] ?? 1;
-                map.setPaintProperty(lid, colorProp, ['case', idIn, hi.lineColor, baseColor]);
-                map.setPaintProperty(lid, widthProp, ['case', idIn, hi.lineWidth, baseWidth]);
+                const baseColor = base['line-color'] ?? 'rgba(0,0,0,0)';
+                const baseWidth = base['line-width'] ?? 1;
+                map.setPaintProperty(lid, 'line-color', ['case', idIn, hi.lineColor, baseColor]);
+                map.setPaintProperty(lid, 'line-width', ['case', idIn, hi.lineWidth, baseWidth]);
                 break;
             }
             case 'circle': {
-                const colorProp = 'circle-color';
-                const radiusProp = 'circle-radius';
-                const baseColor = base[colorProp] ?? 'rgba(0,0,0,0.6)';
-                const baseRadius = base[radiusProp] ?? 4;
-                map.setPaintProperty(lid, colorProp, ['case', idIn, hi.circleColor, baseColor]);
-                map.setPaintProperty(lid, radiusProp, ['case', idIn, hi.circleRadius, baseRadius]);
+                const baseColor = base['circle-color'] ?? 'rgba(0,0,0,0.6)';
+                const baseRadius = base['circle-radius'] ?? 4;
+                map.setPaintProperty(lid, 'circle-color', ['case', idIn, hi.circleColor, baseColor]);
+                map.setPaintProperty(lid, 'circle-radius', ['case', idIn, hi.circleRadius, baseRadius]);
                 break;
             }
-            default:
-                // symbol 等はここではスキップ（必要なら分岐を追加）
-                break;
+            default: break;
         }
     }
 }
@@ -440,36 +362,28 @@ function restoreBasePaintsIfAny(map) {
     if (!st || !st.basePaints) return;
     for (const [lid, base] of Object.entries(st.basePaints)) {
         if (!map.getLayer(lid)) continue;
-        for (const [k, v] of Object.entries(base)) {
-            if (v !== undefined) {
-                map.setPaintProperty(lid, k, v);
-            }
-        }
+        for (const [k, v] of Object.entries(base)) if (v !== undefined) map.setPaintProperty(lid, k, v);
     }
 }
 
 function getLayer(map, layerId) {
-    try {
-        return map.getStyle().layers.find(l => l.id === layerId);
-    } catch {
-        return null;
-    }
+    try { return map.getStyle().layers.find(l => l.id === layerId); } catch { return null; }
 }
 
 function hasPaint(map, layerId, paintProp) {
-    try {
-        const v = map.getPaintProperty(layerId, paintProp);
-        return v !== undefined;
-    } catch {
-        return false;
-    }
+    try { return map.getPaintProperty(layerId, paintProp) !== undefined; } catch { return false; }
+}
+
+function toFeatureArray(data) {
+    if (!data) return [];
+    if (data.type === 'FeatureCollection') return Array.isArray(data.features) ? data.features : [];
+    if (data.type === 'Feature') return [data];
+    return [];
 }
 
 // ========================= 補助：明示解除（任意） =========================
 
-/**
- * ハイライトを完全解除して元に戻す（円も中心点も削除）
- */
+/** ハイライトを完全解除して元に戻す（円も中心点も削除） */
 export function clearRadiusHighlight(map, opts = {}) {
     const {
         circleSourceId = 'oh-radius-circle-source',
@@ -477,17 +391,29 @@ export function clearRadiusHighlight(map, opts = {}) {
         centerSourceId = 'oh-radius-center-source',
         centerLayerId  = 'oh-radius-center-layer',
         idsStoreKey    = 'oh200mIds',
+        geojsonStoreKey= 'oh200mGeoJSON',
         store: storeArg
     } = opts;
+
+    // レイヤ/ソースを撤去
     clearPreviousMarks(map, circleLayerId, circleSourceId, centerLayerId, centerSourceId);
+
+    // 変更した paint を元に戻す
     restoreBasePaintsIfAny(map);
+
+    // store.state をクリア
     try {
         const vuex = resolveStore({ store: storeArg });
-        if (vuex && vuex.state && idsStoreKey) vuex.state[idsStoreKey] = [];
+        if (vuex && vuex.state) {
+            if (idsStoreKey)     vuex.state[idsStoreKey] = [];
+            if (geojsonStoreKey) vuex.state[geojsonStoreKey] = { type: 'FeatureCollection', features: [] };
+        }
     } catch (e) { /* noop */ }
+
+    // 内部状態クリア
     if (map[STATE_KEY]) map[STATE_KEY].last = {};
 }
 
-// 後方互換エイリアス（既存呼び出しの破壊を避ける）
+// 後方互換エイリアス
 export const refresh200mCircleAndHighlight = refreshRadiusHighlight;
 export const clear200mHighlight = clearRadiusHighlight;

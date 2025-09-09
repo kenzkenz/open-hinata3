@@ -1758,6 +1758,8 @@ import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/vi
 import MessageDialog from '@/components/Message-Dialog'
 import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
+import {queuePoint, clearTriangle50, buildTri50Submenu} from '@/js/utils/triangle50'
+
 
 import {
   addDraw,
@@ -8213,8 +8215,9 @@ export default {
                   borderRadius: '10px',
                 })); } },
               { label: '点を削除', onSelect: ({ point }) => {const ok = removePointUnderCursor(map, point, 'click-circle-source');if (!ok) alert('直下に削除できるピンが見つかりません');}},
-            ]},
-              {
+            ]
+          },
+          {
             label: 'GeoJSON出力',
             children: [
               {label: 'ベース含まず', onSelect: () => exportVisibleGeoJSON_fromMap01({ includeExcluded: false }),},
@@ -8222,9 +8225,16 @@ export default {
             ]
           },
           {
-            // 簡易でURL記憶
+            label: 'その他',
+            children: [
+              buildTri50Submenu({ map: this.$store.state.map01 }, { addAboveLayerId: 'oh-some-layer-below-tri' }),
+            ]
+          },
+
+
+          // 簡易でURL記憶
             // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
-            ...buildShortLinksMenu({
+            // ...buildShortLinksMenu({
               // metersForBBox: 200,
               // onSelectUrl: (url, ctx) => {
               //   // ← ここで好きに処理（開かない）
@@ -8232,8 +8242,8 @@ export default {
               //   console.log('shortURL', url, ctx);
               //   // window.open(url, '_blank', 'noopener') したいなら今ここで
               // }
-            })
-          },
+            // })
+          // },
         ]
       });
       /**
@@ -8275,10 +8285,14 @@ export default {
           let lngLat = null
           map.on('click', (e) => {
             lngLat = e.lngLat
-            refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+            if (this.$store.state.isRadius200) {
+              refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+            }
           })
           map.on('zoomend', (e) => {
-            if (lngLat) refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+            if (this.$store.state.isRadius200) {
+              if (lngLat) refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+            }
           })
 
           // DrawToolインスタンス化

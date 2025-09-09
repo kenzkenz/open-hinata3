@@ -2886,26 +2886,26 @@ export function saveSimaImage (chiban, data, zahyokei) {
 }
 
 export function saveSimaKijyunten (map,layerId) {
-    if (map.getZoom() <= 16) {
-        alert('ズーム16以上にしてください。')
-        return
-    }
     console.log(layerId)
-    const features = map.queryRenderedFeatures({
-        layers: [layerId] // 対象のレイヤー名を指定
-    });
-    // GeoJSON形式に変換
-    let geojson = {
-        type: 'FeatureCollection',
-        features: features.map(feature => ({
-            type: 'Feature',
-            geometry: feature.geometry,
-            properties: feature.properties
-        }))
-    };
-
+    let geojson
     if (layerId === 'oh-homusyo-2025-kijyunten' && store.state.oh200mIds.length > 0) {
-        geojson = turf.featureCollection(geojson.features.filter(f => store.state.oh200mIds.includes(f.properties.名称)))
+        geojson = store.state.oh200mGeoJSON
+    } else {
+        if (map.getZoom() <= 16) {
+            alert('ズーム16以上にしてください。')
+            return
+        }
+        const features = map.queryRenderedFeatures({
+            layers: [layerId] // 対象のレイヤー名を指定
+        });
+        geojson = {
+            type: 'FeatureCollection',
+            features: features.map(feature => ({
+                type: 'Feature',
+                geometry: feature.geometry,
+                properties: feature.properties
+            }))
+        };
     }
 
     console.log(geojson)
@@ -2938,7 +2938,7 @@ export function saveSimaKijyunten (map,layerId) {
         ) {
             const [x, y] = proj4('EPSG:4326', code, coord); // 座標系変換
             const coordinateKey = `${x},${y}`;
-            console.log(feature.properties.名称)
+            // console.log(feature.properties.名称)
             const name = feature.properties.名称
             const zahyoY = feature.properties.Y
             const zahyoX = feature.properties.X
@@ -2955,7 +2955,7 @@ export function saveSimaKijyunten (map,layerId) {
 
     simaData += A01Text + 'A99\n';
     simaData += 'A99,END,,\n';
-    console.log(simaData)
+    // console.log(simaData)
 
     // UTF-8で文字列をコードポイントに変換
     const utf8Array = window.Encoding.stringToCode(simaData);
@@ -9487,8 +9487,6 @@ export function getNextZIndex() {
             maxZ = zi;
         }
     });
-    // alert(maxZ + 1)
-    console.log(maxZ + 1)
     return maxZ + 1;
 }
 // urlの変更を監視

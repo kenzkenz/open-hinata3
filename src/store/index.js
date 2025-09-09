@@ -47,8 +47,9 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.467,
+    clientVersion: 1.470,
     isRadius200: false,
+    oh200mGeoJSON: null,
     oh200mIds: [],
     // 独自コンファーム
     showConfirm: false,
