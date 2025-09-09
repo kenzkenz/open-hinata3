@@ -8,7 +8,7 @@
  * - Turf.js（ESM）前提: import * as turf from '@turf/turf'
  *
  * 【今回の変更】
- * 1点目が確定した直後に、**自動で2点目のクリック待機に入る** ようにしました。
+ * ポリゴン/ラインの描画設定を削除。クリック時に描くポイント設定だけ残す。
  */
 
 import * as turf from '@turf/turf'
@@ -41,12 +41,7 @@ function _lngLatFromGlobalPointer (map) {
 const DEF = {
     idPrefix: 'oh-tri50',                 // 各種IDの接頭辞
     baseAngleDeg: 50,                     // 各端点の角度（頂角は80°）
-    leftFill: 'rgba(255, 99, 71, 0.30)',  // 左: トマト
-    rightFill: 'rgba(30, 144, 255, 0.30)',// 右: ドッジブルー
-    outline: 'rgba(0,0,0,0.75)',
-    baseLine: 'rgba(0,0,0,0.85)',
-    outlineWidth: 2.0,
-    baseWidth: 2.0,
+    baseLine: 'rgba(0,0,0,0.85)',         // クリックポイントの色に使用
     addAboveLayerId: null                 // 指定があればこのレイヤーの直前に addLayer
 }
 
@@ -66,11 +61,6 @@ function ensureLocalState (map) {
 function idset (prefix = DEF.idPrefix) {
     return {
         source: `${prefix}-source`,
-        fillLeft: `${prefix}-fill-left`,
-        fillRight: `${prefix}-fill-right`,
-        outlineLeft: `${prefix}-outline-left`,
-        outlineRight: `${prefix}-outline-right`,
-        baseLine: `${prefix}-base-line`,
         points: `${prefix}-points`
     }
 }
@@ -78,48 +68,22 @@ function idset (prefix = DEF.idPrefix) {
 function removeIfExists (map, ids) {
     const rmL = (id) => { if (map.getLayer(id)) map.removeLayer(id) }
     const rmS = (id) => { if (map.getSource(id)) map.removeSource(id) }
-    rmL(ids.fillLeft); rmL(ids.fillRight); rmL(ids.outlineLeft); rmL(ids.outlineRight); rmL(ids.baseLine); rmL(ids.points)
+    rmL(ids.points)
     rmS(ids.source)
 }
 
-function addLayers (map, ids, geojson, opts = {}) {
-    const o = { ...DEF, ...opts }
-    const add = (layer) => {
-        if (o.addAboveLayerId && map.getLayer(o.addAboveLayerId)) {
-            map.addLayer(layer, o.addAboveLayerId)
-        } else {
-            map.addLayer(layer)
-        }
-    }
-
-    map.addSource(ids.source, { type: 'geojson', data: geojson })
-
-    // 左右の塗り（side のみで判定）
-    add({ id: ids.fillLeft, type: 'fill', source: ids.source, filter: ['==', ['get','side'], 'left'],  paint: { 'fill-color': o.leftFill } })
-    add({ id: ids.fillRight, type: 'fill', source: ids.source, filter: ['==', ['get','side'], 'right'], paint: { 'fill-color': o.rightFill } })
-
-    // アウトライン（左右分け）
-    add({ id: ids.outlineLeft,  type: 'line', source: ids.source, filter: ['==', ['get','side'], 'left'],  paint: { 'line-color': o.outline, 'line-width': o.outlineWidth } })
-    add({ id: ids.outlineRight, type: 'line', source: ids.source, filter: ['==', ['get','side'], 'right'], paint: { 'line-color': o.outline, 'line-width': o.outlineWidth } })
-
-    // 底辺ライン
-    add({ id: ids.baseLine, type: 'line', source: ids.source, filter: ['==', ['get','kind'], 'base'],     paint: { 'line-color': o.baseLine, 'line-width': o.baseWidth } })
-
-    // 端点（任意: 小さな円で可視化）
-    add({ id: ids.points,   type: 'circle', source: ids.source, filter: ['==', ['get','kind'], 'endpoint'], paint: { 'circle-radius': 4, 'circle-color': o.baseLine } })
-}
+// ※ ポリゴン/ライン用の addLayers は削除（クリック点のみ描画）
 
 function buildGeoJSON (A, B, apexL, apexR) {
     return {
         type: 'FeatureCollection',
         features: [
-            // 左右の三角形（side のみ付与）
-            { type: 'Feature', properties: { side: 'left'  }, geometry: { type: 'Polygon', coordinates: [[ A, apexL, B, A ]] } },
-            { type: 'Feature', properties: { side: 'right' }, geometry: { type: 'Polygon', coordinates: [[ A, B, apexR, A ]] } },
-            // 底辺と端点
-            { type: 'Feature', properties: { kind: 'base'     }, geometry: { type: 'LineString', coordinates: [ A, B ] } },
-            { type: 'Feature', properties: { kind: 'endpoint' }, geometry: { type: 'Point',     coordinates: A } },
-            { type: 'Feature', properties: { kind: 'endpoint' }, geometry: { type: 'Point',     coordinates: B } }
+            // 三角形2枚 + ベースライン + 端点（GeoJSON自体は click-circle-source へ流す素材として保持）
+            { type: 'Feature', properties: { side: 'left'  }, geometry: { type: 'Polygon',   coordinates: [[ A, apexL, B, A ]] } },
+            { type: 'Feature', properties: { side: 'right' }, geometry: { type: 'Polygon',   coordinates: [[ A, B, apexR, A ]] } },
+            { type: 'Feature', properties: { kind: 'base'  }, geometry: { type: 'LineString',coordinates: [ A, B ] } },
+            { type: 'Feature', properties: { kind: 'endpoint' }, geometry: { type: 'Point', coordinates: A } },
+            { type: 'Feature', properties: { kind: 'endpoint' }, geometry: { type: 'Point', coordinates: B } }
         ]
     }
 }
@@ -203,7 +167,7 @@ export function queuePoint (map, arg, opts = {}) {
 
     const A = state.first
     if (!A) {
-        // 1点目セット
+        // 1点目セット（クリックポイントのみ描画）
         state.first = [picked.lng, picked.lat]
         // 前回の待機があれば解除
         const prevOff = state._armedOff; if (prevOff) { try { prevOff() } catch(_){} state._armedOff = null }
@@ -216,16 +180,13 @@ export function queuePoint (map, arg, opts = {}) {
         }
         add({ id: ids.points, type: 'circle', source: ids.source, filter: ['==', ['get','kind'], 'endpoint'], paint: { 'circle-radius': 4, 'circle-color': DEF.baseLine } })
         state.ids = ids
-        refreshMenu(map) // → ラベルが「2点目→作成」に変わる
-
-        // ★ 変更点：1点目確定直後に **自動で2点目クリック待機** に入る
-        // イベント中に再登録するため、次tickで once('click') を仕込む（安全）
+        refreshMenu(map)
+        // 自動で2点目待機
         setTimeout(() => { try { armQueuePoint(map, opts) } catch (_) {} }, 0)
-
         return 'FIRST_SET'
     }
 
-    // 2点目 → 作成
+    // 2点目 → 三角形GeoJSON作成（描画設定はせず、既存フローに合流）
     const B = [picked.lng, picked.lat]
     const calc = computeApexes(A, B, opts.baseAngleDeg || DEF.baseAngleDeg)
     if (!calc) return 'INVALID'
@@ -244,10 +205,9 @@ export function queuePoint (map, arg, opts = {}) {
     })
     addDraw(geojson)
 
-    // addLayers(map, ids, geojson, opts)
     state.ids = ids
     state.first = null
-    refreshMenu(map) // → 「削除」有効化
+    refreshMenu(map)
     return 'CREATED'
 }
 
@@ -276,11 +236,6 @@ export function armQueuePoint (map, opts = {}) {
 /* ============================= */
 /* 右クリックメニュー統合（context-menu方式） */
 /* ============================= */
-/*
- * context-menu.js は items に “関数” を持てる（開くたびに再構築）設計。
- * → 状態（1点目セット済みか/レイヤーが存在するか）を常に最新で反映できる。
- */
-
 // フラット2項目（インライン展開用）※ 旧互換 API 名
 export function buildTriangle50MenuInline (ctx, opts = {}) {
     return buildTri50Items(ctx, opts)
@@ -298,7 +253,6 @@ export function addTri50MenuItems (items, ctx, opts = {}) {
 // サブメニュー1項目（context-menu 向け）
 export function buildTri50Submenu (ctx, label, opts = {}) {
     return {
-        // label: '50°三角形',
         label: label,
         items: () => buildTri50Items(ctx, opts)
     }
@@ -308,13 +262,11 @@ export function buildTri50Submenu (ctx, label, opts = {}) {
 export function buildTri50Items (ctx, opts = {}) {
     const map = ctx.map
     const state = ensureLocalState(map)
-    const hasFirst = !!state.first
     const idPrefix = (opts.idPrefix || DEF.idPrefix)
     const hasLayer = !!map.getSource(`${idPrefix}-source`)
 
     return [
         {
-            // label: hasFirst ? '2点目→作成(クリック待機)' : '1点目をセット(クリック待機)',
             label: '基準点を2点クリックします',
             onSelect: () => armQueuePoint(map, opts)
         },
