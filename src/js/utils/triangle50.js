@@ -9,6 +9,7 @@
  *
  * 【今回の変更】
  * ポリゴン/ラインの描画設定を削除。クリック時に描くポイント設定だけ残す。
+ * ＋ クリック時に既存ポイントへスナップ（opts.snapLayerIds / opts.snapPx）を追加。
  */
 
 import * as turf from '@turf/turf'
@@ -128,6 +129,76 @@ export function clearTriangle50 (map, opts = {}) {
     store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
 
+// ---- クリック位置のスナップ ----------------------------------------------
+function snapIfNeeded(map, lnglat, opts = {}) {
+    // 既存ポイントへスナップ
+    // opts.snapLayerIds: 対象レイヤID配列（未指定なら全レイヤからポイントを検索）
+    // opts.snapPx: ピクセル許容半径（既定 8）
+    // opts.excludeLayerIds: 除外するレイヤID配列（既定: 自分のポイントレイヤ）
+    const tol = Math.max(1, Number(opts.snapPx) || 8)
+    const p = map.project([lnglat.lng, lnglat.lat])
+    const bbox = [[p.x - tol, p.y - tol], [p.x + tol, p.y + tol]]
+
+    const selfPointLayerId = `${opts.idPrefix || DEF.idPrefix}-points`
+    const excludeSet = new Set([selfPointLayerId, ...(opts.excludeLayerIds || [])])
+
+    const qOpts = {}
+    if (Array.isArray(opts.snapLayerIds) && opts.snapLayerIds.length) {
+        const valid = opts.snapLayerIds.filter(id => map.getLayer(id))
+        if (!valid.length) return lnglat
+        qOpts.layers = valid
+    }
+
+    let feats = []
+    try {
+        // レイヤ指定が無ければ全レイヤから検索（ポイントのみ抽出）
+        feats = map.queryRenderedFeatures(bbox, qOpts) || []
+    } catch (_) { return lnglat }
+
+    // 自分の一時ポイントレイヤやポイント以外を除外
+    const pts = []
+    for (const f of feats) {
+        if (!f || excludeSet.has(f.layer?.id)) continue
+        const g = f.geometry
+        if (!g) continue
+        if (g.type === 'Point') {
+            pts.push(g.coordinates)
+        } else if (g.type === 'MultiPoint' && Array.isArray(g.coordinates)) {
+            for (const c of g.coordinates) pts.push(c)
+        }
+    }
+    if (!pts.length) return lnglat
+
+    // 最も近いポイントを選ぶ（画面座標距離）
+
+    let best = null
+    let bestD2 = Infinity
+
+    for (const f of feats) {
+        const g = f && f.geometry
+        if (!g) continue
+        if (g.type === 'Point') {
+            const c = g.coordinates
+            const pp = map.project(c)
+            const dx = pp.x - p.x, dy = pp.y - p.y
+            const d2 = dx*dx + dy*dy
+            if (d2 < bestD2) { bestD2 = d2; best = c }
+        } else if (g.type === 'MultiPoint' && Array.isArray(g.coordinates)) {
+            for (const c of g.coordinates) {
+                const pp = map.project(c)
+                const dx = pp.x - p.x, dy = pp.y - p.y
+                const d2 = dx*dx + dy*dy
+                if (d2 < bestD2) { bestD2 = d2; best = c }
+            }
+        }
+    }
+
+    if (best && bestD2 <= tol*tol) {
+        return { lng: best[0], lat: best[1] }
+    }
+    return lnglat
+}
+
 // ---- lnglat 解決 & 記憶 ----
 function resolveLngLat (map, arg) {
     // 1) {lng,lat}
@@ -161,8 +232,12 @@ export function rememberLngLat (map, arg) {
 export function queuePoint (map, arg, opts = {}) {
     const state = ensureLocalState(map)
     // lnglat を解決（引数→lastLngLat→内部ポインタ の順で採用）
-    const picked = resolveLngLat(map, arg) || state.lastLngLat
+    let picked = resolveLngLat(map, arg) || state.lastLngLat
     if (!picked) return 'NO_LNGLAT'
+
+    // ★ スナップ適用（snapLayerIds が指定されている場合のみ）
+    picked = snapIfNeeded(map, picked, opts)
+
     state.lastLngLat = picked
 
     const A = state.first
@@ -291,11 +366,11 @@ export function getTriangle50LonLats (map, opts = {}) {
     const fc = getTriangle50FeatureCollection(map, opts)
     if (!fc) return null
     const base  = fc.features.find(f => f.properties?.kind === 'base')
-    const left  = fc.features.find(f => f.properties?.side === 'left')
-    const right = fc.features.find(f => f.properties?.side === 'right')
+    const leftF  = fc.features.find(f => f.properties?.side === 'left')
+    const rightF = fc.features.find(f => f.properties?.side === 'right')
     if (!base) return null
     const [A, B] = base.geometry.coordinates
-    const apexL = left?.geometry?.coordinates?.[0]?.[1]  || (left?.geometry?.coordinates?.[1])
-    const apexR = right?.geometry?.coordinates?.[0]?.[2] || (right?.geometry?.coordinates?.[2])
+    const apexL = leftF?.geometry?.coordinates?.[0]?.[1] ?? leftF?.geometry?.coordinates?.[1] ?? null
+    const apexR = rightF?.geometry?.coordinates?.[0]?.[2] ?? rightF?.geometry?.coordinates?.[2] ?? null
     return { A, B, apexL, apexR }
 }
