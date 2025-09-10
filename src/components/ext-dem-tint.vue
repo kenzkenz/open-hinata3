@@ -1,8 +1,6 @@
 <!-- components/ext-demtint-quick.vue -->
 <template>
   <div :style="menuContentSize">
-<!--    <div style="font-size:14px;color:#666;margin-bottom:8px;">おすすめスタイル</div>-->
-
     <!-- OH3標準 -->
     <div style="font-size: 14px; margin:6px 0 6px;">OH3標準</div>
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:10px;">
@@ -43,6 +41,43 @@
       </MiniTooltip>
     </div>
 
+    <!-- 局所（用途特化） -->
+    <div style="font-size: 14px; margin:6px 0 6px;">局所</div>
+    <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:12px;">
+      <MiniTooltip text="高地火山域（800m+：溶岩〜焼土の暖色で強調／山頂は灰雪）" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_volcano' ? 'primary' : undefined" size="large" @click="usePreset('local_volcano')">
+          火山
+        </v-chip>
+      </MiniTooltip>
+
+      <MiniTooltip text="範囲：0〜10m（低地を青系で微妙に段彩）" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_flood10' ? 'primary' : undefined" size="large" @click="usePreset('local_flood10')">
+          洪水低地
+        </v-chip>
+      </MiniTooltip>
+
+      <!-- 必要になったらすぐ復活できるようコメントで温存 -->
+      <!--
+      <MiniTooltip text="範囲：±5m（干潟・湖沼）" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_tidal5' ? 'primary' : undefined" size="large" @click="usePreset('local_tidal5')">
+          干潟・湖沼（±5m）
+        </v-chip>
+      </MiniTooltip>
+
+      <MiniTooltip text="範囲：10〜80m（扇状地・段丘面）" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_fan_terrace' ? 'primary' : undefined" size="large" @click="usePreset('local_fan_terrace')">
+          扇状地・段丘（10–80m）
+        </v-chip>
+      </MiniTooltip>
+
+      <MiniTooltip text="範囲：500〜1200m（帯域強調・周辺は抑制色）" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_inland_basin' ? 'primary' : undefined" size="large" @click="usePreset('local_inland_basin')">
+          内陸盆地（500–1200m）
+        </v-chip>
+      </MiniTooltip>
+      -->
+    </div>
+
     <hr style="margin:12px 0;">
     <div style="font-size:14px" v-html="item.attribution"></div>
   </div>
@@ -51,14 +86,11 @@
 <script>
 import MiniTooltip from '@/components/MiniTooltip'
 
-/* ======== フラグ（あとで復活可能） ======== */
+/* ======== フラグ ======== */
 const ENABLE_LABEL_HELPERS = false;   // ラベル最上＆ハロー強化は停止
 const FORCE_OPACITY = 0.9;            // すべて0.9で固定
 
-/* ======== パレット：地理院風（GSI配色） ========
-   - GSI標準の「青→シアン→緑→黄→橙→赤」系を多段化
-   - 陸（aboveRange）/海（belowRange）ともに段階数を各ドメインに合わせて用意
-*/
+/* ======== 地理院風の配色（ベース） ======== */
 const GSI_RAMP_12 = [
   '#0052ff','#146af9','#198cff','#2fb8ff','#46e0ff',
   '#7be87a','#b6f83d','#fff300','#ffc300','#ff9b00','#ff5d20','#ff3a1a'
@@ -78,23 +110,21 @@ const GSI_SEA_18 = [
   '#3686d8','#2976c3','#1f69b1','#155a9c','#0e4f8b','#09457c'
 ];
 
-/* ======== パレット定義 ======== */
+/* ======== プリセット定義 ======== */
 const PRESETS = {
-  // 地理院風：沿岸（±20m付近を細かく）
+  /* 地理院風 */
   gsi_coast: {
     aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange: GSI_RAMP_12,
     belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
     belowRange: GSI_SEA_12
   },
-  // 地理院風：低地（0〜120m）
   gsi_lowland: {
     aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
     aboveRange: GSI_RAMP_12,
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],
     belowRange: GSI_SEA_12
   },
-  // 地理院風：山地（0〜3000m）
   gsi_mountain: {
     aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
     aboveRange: GSI_RAMP_18,
@@ -102,7 +132,7 @@ const PRESETS = {
     belowRange: GSI_SEA_18
   },
 
-  // —— OH3標準（自然系） ——
+  /* OH3標準（自然系） */
   coast: {
     aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
@@ -120,6 +150,64 @@ const PRESETS = {
     aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'],
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
     belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34']
+  },
+
+  /* 局所（用途特化） */
+
+  // ★ 改良：火山（低標高は抑制の灰緑→800m+で焼土〜溶岩の暖色→山頂は灰雪）
+  local_volcano: {
+    aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600],
+    aboveRange:[
+      '#e6ece6', // <200 抑制（灰緑）
+      '#dde6dd', // 200–400
+      '#d3dfd3', // 400–600
+      '#f3d7b3', // 600–800 焼土帯入り
+      '#f0c289', // 800–1000
+      '#eeae61', // 1000–1200
+      '#eb9645', // 1200–1500
+      '#e6792e', // 1500–1800
+      '#d95e23', // 1800–2100
+      '#c2471d', // 2100–2400
+      '#a9371a', // 2400–2700 溶岩深紅
+      '#8d2c18', // 2700–3000
+      '#bdbdbd', // 3000–3300 山頂灰
+      '#d9d9d9', // 3300–3600 明るい灰
+      '#ffffff'  // >3600 雪冠
+    ],
+    belowDomain:[0,1,2,3,5,8,12,20], // 海は控えめに
+    belowRange:['#eaf6ff','#e1f1ff','#d6ecff','#c8e4ff','#b7dbff','#a5d1ff','#92c6ff','#7ebaef']
+  },
+
+  // ★ 改良：洪水低地（0–10m を青系で細かく段彩。海はやや濃い群青へ）
+  local_flood10: {
+    aboveDomain:[0,1,2,3,4,5,6,7,8,9,10,12],
+    aboveRange:[
+      '#e8fbff','#d6f5ff','#c3eeff','#b2e7ff',
+      '#a0defa','#8ed4f2','#7ccaea','#68bde0',
+      '#55afd5','#439fc8','#368fb8','#2c83ac'
+    ],
+    belowDomain:[0,0.2,0.5,1,2,3,4,5],
+    belowRange:['#eaf6ff','#dceeff','#cde6ff','#bcdcff','#a9d1ff','#95c5ff','#7fb7ff','#69a7f0']
+  },
+
+  // （温存・必要時に復活）
+  local_tidal5: {
+    aboveDomain:[0,0.5,1,1.5,2,3,4,5],
+    aboveRange:['#fffaf0','#fff3d6','#ffeab8','#ffe09a','#ffd37c','#ffc15e','#ffae45','#ff9c33'],
+    belowDomain:[0,0.5,1,1.5,2,3,4,5],
+    belowRange:['#eaf6ff','#def1ff','#d0eaff','#c0e2ff','#aed8ff','#9bceff','#87c2ff','#73b7ff']
+  },
+  local_fan_terrace: {
+    aboveDomain:[0,5,10,15,20,30,40,50,60,80],
+    aboveRange:['#eaf7e3','#e4f2d9','#d9ebca','#cce3b8','#c4d7a5','#d9c792','#e2bb82','#e8ae73','#e09e61','#d28c4f'],
+    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
+    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
+  },
+  local_inland_basin: {
+    aboveDomain:[0,200,400,500,620,740,860,980,1100,1200,1500],
+    aboveRange:['#eef4ef','#e8efe9','#e0e9e2','#f3e6cf','#eacb9a','#e0b775','#d6a45c','#c48f4a','#b07d3f','#a06f3a','#cfcfcf'],
+    belowDomain:[0,1,2,3,5,8,12,20],
+    belowRange:['#eaf6ff','#e1f1ff','#d6ecff','#c8e4ff','#b7dbff','#a5d1ff','#92c6ff','#7ebaef']
   }
 };
 
@@ -129,7 +217,7 @@ export default {
   components: { MiniTooltip },
   data:()=>({
     menuContentSize:{width:'300px',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
-    presetKey:'mountain'  // 既定を地理院風「山地」に。好みで変更OK
+    presetKey:'mountain'  // 既定（必要なら 'gsi_mountain' などに）
   }),
   methods:{
     ensure(){
@@ -191,7 +279,6 @@ export default {
             }
           }, beforeId);
 
-          // ※ ラベル補助は停止中（ENABLE_LABEL_HELPERS を true にすれば復活）
           if (ENABLE_LABEL_HELPERS) {
             this.placeTintBelowSymbols(map, LYR_ID);
             this.boostLabelHalo(map, { color:'rgba(255,255,255,0.65)', width:1.6, blur:0.4 });
@@ -200,7 +287,7 @@ export default {
       });
     },
 
-    /* 停止中の補助機能（コード温存） */
+    /* 温存中の補助機能 */
     placeTintBelowSymbols(map, tintLayerId='oh-dem-tint'){
       try{
         const layers = map.getStyle()?.layers||[];
