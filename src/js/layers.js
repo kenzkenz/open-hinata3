@@ -12735,80 +12735,188 @@ let layers01 = [
 // GSI dem_png を取得 → RGB→標高デコード → 段彩で着色 → PNGとして返す
 // ※ 1回だけ呼んでください（アプリ初期化時）
 // === 一度だけ呼ぶ：OpenLayersの flood2 を模倣した色付けPNG生成プロトコル ===
+// 陸も海も配色：d3.scaleLinear 相当のランプ（ズームしてもボケない）
+// 陸(>=level)・海(<level) ともに完全ステップ配色（補間なし）
 export function registerDemFloodProtocol(maplibregl, {
     schemeId = 'demflood',
-    defaultLevel = 0,                // m（初期の海面基準）
-    paleSea = { r:180, g:200, b:230, a:0.75 }  // data.colors.paleSea 相当
+    defaultLevel = 0
 } = {}) {
 
-    function parseQS(u){                // ?level=3 などを取る
-        const q = {}; const m = u.match(/\?(.*)$/); if (!m) return q;
-        for (const kv of m[1].split('&')) {
-            const [k,v] = kv.split('=');
-            if (!k) continue; q[decodeURIComponent(k)] = v ? decodeURIComponent(v) : '';
-        }
+    // ---- ステップ配色（d3.scaleLinear の補間は一切しない）----
+    const hexToRgb = (h)=>{
+        const s=h.replace('#',''); const v=parseInt(s.length===3 ? s.split('').map(x=>x+x).join('') : s,16);
+        return {r:(v>>16)&255,g:(v>>8)&255,b:v&255};
+    };
+    // 陸側（あなたの配色をそのまま bins に）
+    const aboveDomain = [0, 100, 1000, 2500, 9000, 20000];
+    const aboveRange  = ['#00FF00','#FFFF00','#FF8C00','#FF4400','#FF0000','#880000'].map(hexToRgb);
+    // 海側（必要なら好きな階級に変更可）
+    const belowDomain = [0, 1, 5, 10, 50, 100, 500, 1000, 2000, 5000, 10000, 20000];
+    const belowRange  = ['#e8f6ff','#cfe9ff','#a8d6ff','#7fc2ff','#57adff','#3697ff',
+        '#1f83ff','#0f6be0','#0a51bf','#073e9e','#052e7f','#041f5f'].map(hexToRgb);
+
+    // v が属する区間の色をそのまま返す（補間なし）
+    function stepColor(domain, range, v){
+        const vv = Math.max(domain[0], Math.min(domain[domain.length-1], v));
+        let i = 0;
+        // 右詰め探索：domain[i] <= v < domain[i+1]
+        while (i < domain.length-1 && vv >= domain[i+1]) i++;
+        return range[i];
+    }
+
+    function parseQS(u){ const q={}; const m=u.match(/\?(.*)$/); if(!m) return q;
+        for (const kv of m[1].split('&')){ const [k,v]=kv.split('='); if(!k) continue; q[decodeURIComponent(k)]=v?decodeURIComponent(v):''; }
         return q;
     }
 
-    async function action(params, abortController) {
-        // demflood://https://.../{z}/{x}/{y}.png?level=3 の ?level を読む
-        const url = params.url.replace(/^demflood:\/\//, '');
-        const qs = parseQS(url);
+    async function action(params, abortController){
+        const url = params.url.replace(/^demflood:\/\//,'');
+        const qs  = parseQS(url);
         const level = Number.isFinite(+qs.level) ? +qs.level : defaultLevel;
 
         const res  = await fetch(url, { signal: abortController.signal });
         const blob = await res.blob();
 
-        // 画像→Canvas
         const bmp = (self.createImageBitmap)
             ? await createImageBitmap(blob)
-            : await new Promise((resolve)=>{ const img=new Image(); img.onload=()=>resolve(img); img.src=URL.createObjectURL(blob); });
+            : await new Promise(r=>{ const img=new Image(); img.onload=()=>r(img); img.src=URL.createObjectURL(blob); });
 
         const w=bmp.width, h=bmp.height;
         let cvs, ctx;
-        try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d'); }
+        try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d', { willReadFrequently:true }); }
         catch { cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
+
+        // ← Canvas 側の補間も無効化（ドット）
+        ctx.imageSmoothingEnabled = false;
         ctx.drawImage(bmp,0,0);
+
         const id = ctx.getImageData(0,0,w,h);
         const d  = id.data;
 
-        // --- dem_png を "OLのflood2" と同じ式でデコード ---
-        // alpha==255 の時だけ値を持つ。RGB を 24bit として取り出し、しきい値 0x7F0000 超を負値（2の補数）に変換、÷100 で m
-        // ※ 0x800000(NoData) も来るので alpha==0 / raw==0x800000 は透明に。
-        const TH = 0x7F0000;             // = 8323072（OLコード準拠）
+        const TH = 0x7F0000; // = 8323072（OL 準拠）
+
         for (let i=0;i<d.length;i+=4){
-            const A = d[i+3];
-            if (A === 0) {                  // 透明=NoData
-                continue;
-            }
+            if (d[i+3] === 0) continue;                     // 透明=NoData
             let raw = (d[i]<<16) + (d[i+1]<<8) + d[i+2];
             if (raw === 0x800000) { d[i+3]=0; continue; }   // NoData
+            if (raw >= TH) raw -= 16777216;                 // 2の補数
+            const elev = raw / 100.0;                       // m
 
-            // 2の補数 → signed 24bit
-            if (raw >= TH) raw -= 16777216;                 // 0x1000000
-            const elev = raw / 100.0;                       // ← OLの flood2 と同じ「÷100」
-
-            if (elev >= level) {
-                // 陸上（= しきい値以上）→ 透明にする（ベース地図を見せる）
-                d[i+3] = 0;
+            if (elev >= level){
+                // 陸：depth = elev - level（m）→ 完全ステップ色
+                const depth = Math.max(0, Math.min(20000, Math.floor(elev - level)));
+                const c = stepColor(aboveDomain, aboveRange, depth);
+                d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
             } else {
-                // 海面下だけ色を塗る（paleSea）
-                d[i]   = paleSea.r;
-                d[i+1] = paleSea.g;
-                d[i+2] = paleSea.b;
-                d[i+3] = Math.round((paleSea.a ?? 1)*255);
+                // 海：depth = level - elev（m）→ 完全ステップ色
+                const depth = Math.max(0, Math.min(20000, Math.floor(level - elev)));
+                const c = stepColor(belowDomain, belowRange, depth);
+                d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
             }
         }
-        ctx.putImageData(id,0,0);
 
-        const out = cvs.convertToBlob
-            ? await cvs.convertToBlob({type:'image/png'})
+        ctx.putImageData(id,0,0);
+        const out = cvs.convertToBlob ? await cvs.convertToBlob({type:'image/png'})
             : await new Promise(r=>cvs.toBlob(r,'image/png'));
         return { data: await out.arrayBuffer() };
     }
 
-    try { maplibregl.addProtocol(schemeId, action); } catch(_) { /* 重複は無視 */ }
+    try { maplibregl.addProtocol(schemeId, action); } catch(_) {}
 }
+
+// export function registerDemFloodProtocol(maplibregl, {
+//     schemeId = 'demflood',
+//     defaultLevel = 0
+// } = {}) {
+//
+//     // ---- d3.scaleLinear 相当（domain→range を線形補間）----
+//     const hexToRgb = (h)=>{
+//         const s=h.replace('#',''); const v=parseInt(s.length===3? s.split('').map(x=>x+x).join(''):s,16);
+//         return {r:(v>>16)&255,g:(v>>8)&255,b:v&255};
+//     };
+//     // 陸側（elev >= level）：あなたの配色
+//     const aboveDomain = [0, 100, 1000, 2500, 9000, 20000];
+//     const aboveRange  = ['#00FF00','#FFFF00','#FF8C00','#FF4400','#FF0000','#880000'].map(hexToRgb);
+//     // 海側（elev < level）：青系（必要なら好きな配色に差し替え可）
+//     const belowDomain = [0, 1, 5, 10, 50, 100, 500, 1000, 2000, 5000, 10000, 20000];
+//     const belowRange  = ['#e8f6ff','#cfe9ff','#a8d6ff','#7fc2ff','#57adff','#3697ff','#1f83ff','#0f6be0','#0a51bf','#073e9e','#052e7f','#041f5f'].map(hexToRgb);
+//
+//     function interp(domain, range, v){
+//         const vv = Math.max(domain[0], Math.min(domain[domain.length-1], v));
+//         let i = 0; while (i < domain.length-2 && vv > domain[i+1]) i++;
+//         const d0=domain[i], d1=domain[i+1], t=(vv-d0)/(d1-d0||1);
+//         const c0=range[i],  c1=range[i+1];
+//         return {
+//             r:Math.round(c0.r+(c1.r-c0.r)*t),
+//             g:Math.round(c0.g+(c1.g-c0.g)*t),
+//             b:Math.round(c0.b+(c1.b-c0.b)*t)
+//         };
+//     }
+//     const colorAbove = (depth)=>interp(aboveDomain, aboveRange, depth);
+//     const colorBelow = (depth)=>interp(belowDomain, belowRange, depth);
+//
+//     // ---- クエリ取り出し ----
+//     function parseQS(u){
+//         const q={}; const m=u.match(/\?(.*)$/); if(!m) return q;
+//         for (const kv of m[1].split('&')){ const [k,v]=kv.split('='); if(!k) continue; q[decodeURIComponent(k)]=v?decodeURIComponent(v):''; }
+//         return q;
+//     }
+//
+//     // ---- プロトコル本体 ----
+//     async function action(params, abortController){
+//         const url = params.url.replace(/^demflood:\/\//,'');
+//         const qs  = parseQS(url);
+//         const level = Number.isFinite(+qs.level) ? +qs.level : defaultLevel;
+//
+//         const res  = await fetch(url, { signal: abortController.signal });
+//         const blob = await res.blob();
+//
+//         const bmp = (self.createImageBitmap)
+//             ? await createImageBitmap(blob)
+//             : await new Promise(r=>{ const img=new Image(); img.onload=()=>r(img); img.src=URL.createObjectURL(blob); });
+//
+//         const w=bmp.width, h=bmp.height;
+//         let cvs, ctx;
+//         try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d', { willReadFrequently:true }); }
+//         catch { cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
+//         ctx.imageSmoothingEnabled = false;     // ← Canvas 側の補間も禁止
+//         ctx.drawImage(bmp,0,0);
+//
+//         const id = ctx.getImageData(0,0,w,h);
+//         const d  = id.data;
+//
+//         const TH = 0x7F0000; // OL準拠
+//
+//         for (let i=0;i<d.length;i+=4){
+//             if (d[i+3] === 0) continue;               // alpha 0 → NoData
+//
+//             let raw = (d[i]<<16) + (d[i+1]<<8) + d[i+2];
+//             if (raw === 0x800000){ d[i+3]=0; continue; } // NoData
+//             if (raw >= TH) raw -= 16777216;               // 2の補数
+//             const elev = raw / 100.0;                     // m
+//
+//             if (elev >= level){
+//                 // 陸側：depth = elev - level（m）
+//                 const depth = Math.floor(elev - level);
+//                 const c = colorAbove(depth);
+//                 d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
+//             } else {
+//                 // 海側：depth = level - elev（m）
+//                 const depth = Math.floor(level - elev);
+//                 const c = colorBelow(depth);
+//                 d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
+//             }
+//         }
+//
+//         ctx.putImageData(id,0,0);
+//         const out = cvs.convertToBlob ? await cvs.convertToBlob({type:'image/png'})
+//             : await new Promise(r=>cvs.toBlob(r,'image/png'));
+//         return { data: await out.arrayBuffer() };
+//     }
+//
+//     try { maplibregl.addProtocol(schemeId, action); } catch(_) {}
+// }
+
 
 // ソース（raster）— demflood:// で dem_png を色付きPNGへ
 const gsiFloodSrc = {
