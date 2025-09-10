@@ -4,7 +4,7 @@
     <div style="font-size:14px;color:#666;margin-bottom:6px;">おすすめスタイル</div>
 
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:10px;">
-      <!-- 地理院（標準） -->
+      <!-- 地理院風 -->
       <MiniTooltip text="陸：0→5→10→50→100→500→1500m／海：0→1→2→3→5→10→20→50m" :offset-x="0" :offset-y="0">
         <v-chip
             class="oh-chip-lg"
@@ -14,17 +14,34 @@
         >地理院風</v-chip>
       </MiniTooltip>
 
-      <!-- 既存3種 -->
+      <!-- 沿岸 -->
       <MiniTooltip text="範囲：-20〜+20m" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='coast'?'primary':undefined" size="large" @click="usePreset('coast')">沿岸</v-chip>
+        <v-chip
+            class="oh-chip-lg"
+            :color="presetKey==='coast' ? 'primary' : undefined"
+            size="large"
+            @click="usePreset('coast')"
+        >沿岸</v-chip>
       </MiniTooltip>
 
+      <!-- 低地 -->
       <MiniTooltip text="範囲：0〜120m" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='lowland'?'primary':undefined" size="large" @click="usePreset('lowland')">低地</v-chip>
+        <v-chip
+            class="oh-chip-lg"
+            :color="presetKey==='lowland' ? 'primary' : undefined"
+            size="large"
+            @click="usePreset('lowland')"
+        >低地</v-chip>
       </MiniTooltip>
 
+      <!-- 山地 -->
       <MiniTooltip text="範囲：0〜3000m" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='mountain'?'primary':undefined" size="large" @click="usePreset('mountain')">山地（標準）</v-chip>
+        <v-chip
+            class="oh-chip-lg"
+            :color="presetKey==='mountain' ? 'primary' : undefined"
+            size="large"
+            @click="usePreset('mountain')"
+        >山地（標準）</v-chip>
       </MiniTooltip>
     </div>
 
@@ -37,23 +54,18 @@
 import MiniTooltip from '@/components/MiniTooltip'
 
 /**
- * 各プリセットのしきい値（Domain）と色（Range）
- * - belowDomain/Range: 海（深さ[m]） 0=海面。値が大きいほど深い
- * - aboveDomain/Range: 陸（標高[m]） 0=海面。値が大きいほど高い
- * 色数＝しきい値数。最後の色が最上位クラス（しきい値最大以上）に適用されます。
+ * しきい値（Domain）と色（Range）
+ * - below: 海（深さ[m]）
+ * - above: 陸（標高[m]）
  */
 const PRESETS = {
-  // ★ 地理院「自分で作る色別標高図」風
+  // 地理院「自分で作る色別標高図」風
   gsi: {
-    // 海：0,1,2,3,5,10,20,50 m
     belowDomain: [0, 1, 2, 3, 5, 10, 20, 50],
     belowRange:  ['#eaf6ff','#cfe7ff','#a6d3ff','#79bbff','#4ea2ff','#1e8cff','#0b6fe6','#084fae'],
-    // 陸：0,5,10,50,100,500,1500 m
     aboveDomain: [0, 5, 10, 50, 100, 500, 1500],
     aboveRange:  ['#0052ff','#198cff','#46e0ff','#9cf24b','#fff300','#ff8c00','#ff3a1a']
   },
-
-  // 既存
   coast: {
     aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange: ['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
@@ -80,54 +92,95 @@ export default {
   components: { MiniTooltip },
   data:()=>({
     menuContentSize:{width:'300px',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
-    presetKey:'mountain' // 追加直後は地理院を既定にしておくならここを 'gsi'
+    // 既定プリセット（あなたの現在運用に合わせて変更OK）
+    presetKey:'mountain'
   }),
   methods:{
     ensure(){
       if(!this.$store.state.demTint){
-        this.$store.state.demTint = { mode:'step', palette: PRESETS[this.presetKey] };
+        this.$store.state.demTint = {
+          mode:'step',
+          palette: PRESETS[this.presetKey],
+          opacity: 1   // ← 不透明度をストアで保持
+        };
       }
     },
+
     usePreset(key){
       this.ensure();
       this.presetKey = key;
+      // ディープコピーしてストアへ
       this.$store.state.demTint.palette = JSON.parse(JSON.stringify(PRESETS[key]));
       this.apply(); // 押した瞬間に反映
     },
+
     apply(){
       const map = this.$store.state[this.mapName];
       if(!map) return;
 
-      const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
+      const SRC_ID='oh-dem-tint-src';
+      const LYR_ID='oh-dem-tint';
       const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png';
-      // level を付けない＝絶対標高モード。styleキーはキャッシュ破り用
+
+      // 1) いまの不透明度を確保（レイヤ削除前に取得）
+      this.ensure();
+      let curOpacity = this.$store.state.demTint.opacity;
+      if (map.getLayer(LYR_ID)) {
+        const v = map.getPaintProperty(LYR_ID, 'raster-opacity');
+        if (typeof v === 'number') curOpacity = v;
+      }
+      if (!Number.isFinite(curOpacity)) curOpacity = 1;
+      this.$store.state.demTint.opacity = curOpacity;
+
+      // 2) スタイルキー（キャッシュバスター）— palette が変わるとURLも変わる
       const styleKey = this.hash(JSON.stringify(this.$store.state.demTint.palette));
       const url = `${base}?style=${styleKey}`;
 
-      // 既存位置の直後に再挿入（順序維持）
+      // 3) 既存位置の直後に再挿入（順序維持）
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[];
         const idx = layers.findIndex(l=>l.id===LYR_ID);
         if(idx===-1) return undefined;
-        for(let k=idx+1;k<layers.length;k++){ const id=layers[k]?.id; if(id&&map.getLayer(id)) return id; }
+        for(let k=idx+1;k<layers.length;k++){
+          const id = layers[k]?.id; if(id && map.getLayer(id)) return id;
+        }
         return undefined;
       })();
 
+      // 4) 作り直し＆opacityを再適用
       requestAnimationFrame(()=>{
         try{
-          if(map.getLayer(LYR_ID)) map.removeLayer(LYR_ID);
+          if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID);
           if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
 
-          map.addSource(SRC_ID,{type:'raster',tiles:[url],tileSize:256,scheme:'xyz',maxzoom:15});
+          map.addSource(SRC_ID,{
+            type:'raster', tiles:[url], tileSize:256, scheme:'xyz', maxzoom:15
+          });
+
           map.addLayer({
-            id:LYR_ID,type:'raster',source:SRC_ID,
-            paint:{ 'raster-resampling':'nearest','raster-fade-duration':0,'raster-opacity':1 }
+            id: LYR_ID,
+            type: 'raster',
+            source: SRC_ID,
+            paint: {
+              'raster-resampling':'nearest',
+              'raster-fade-duration':0,
+              'raster-opacity': curOpacity
+            }
           }, beforeId);
+
+          // 念のため追い書き（将来差異への保険）
+          map.setPaintProperty(LYR_ID,'raster-opacity', curOpacity);
         }catch(e){ console.warn(e); }
       });
     },
-    hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h.toString(16); }
+
+    hash(s){
+      let h = 2166136261>>>0;
+      for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h,16777619); }
+      return h.toString(16);
+    }
   },
+
   mounted(){
     const h = document.querySelector('#handle-'+this.item.id);
     if(h) h.innerHTML = `<span style="font-size: large;">${this.item.label}</span>`;
