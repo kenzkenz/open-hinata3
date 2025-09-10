@@ -12727,6 +12727,9 @@ let layers01 = [
         ]
     },
 ]
+
+
+
 if (store.state.isOffline) {
     layers01 = layers01.filter(layer => layer.id === 'offline')
 }
