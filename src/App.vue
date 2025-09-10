@@ -2232,12 +2232,13 @@ import drawMethods, {
 } from "@/js/draw";
 import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
+  buildBookmarksMenu,
   buildGoogleMapsSearchUrl,
   buildJosmRemoteUrlByCenter,
   buildMapillaryUrl,
   buildOsmEditorUrl,
   buildRapidMapillaryUrl,
-  buildRapidUrl, buildShortLinksMenu,
+  buildRapidUrl, buildRoutingMenuORS, buildShortLinksMenu,
   buildStreetViewUrl,
   buildSVUrlSimple,
   exportVisibleGeoJSON_fromMap01,
@@ -8220,22 +8221,28 @@ export default {
             label: 'その他',
             children: [
               buildTri50Submenu({ map: map }, '基準点測量50°三角形', { addAboveLayerId: 'oh-some-layer-below-tri' }),
-              buildTri50Submenu({ map }, '基準点測量40°三角形', { addAboveLayerId: 'oh-some-layer-below-tri', baseAngleDeg: 40 })
+              buildTri50Submenu({ map }, '基準点測量40°三角形', { addAboveLayerId: 'oh-some-layer-below-tri', baseAngleDeg: 40 }),
+              {
+                label: '簡易でURL記憶',
+                // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
+                ...buildShortLinksMenu({
+                  metersForBBox: 200,
+                  onSelectUrl: (url, ctx) => {
+                    console.log('shortURL', url, ctx);
+                    window.open(url, '_blank', 'noopener')
+                  }
+                })
+              },
+              buildBookmarksMenu(),
+              buildRoutingMenuORS({
+                orsApiKey: 'YOUR_ORS_API_KEY',       // ★フロント直出しは避けるのが推奨
+                defaultProfile: 'driving-car',
+                // addAboveLayerId: 'oh-some-layer-below-route', // ルートをこのレイヤの直下に
+                sourceId: 'oh-route',
+                lineId: 'oh-route-line'
+              })
             ]
           },
-
-          // 簡易でURL記憶
-            // 自前で処理するなら onSelectUrl を渡す（window.open 等はしない）
-            // ...buildShortLinksMenu({
-              // metersForBBox: 200,
-              // onSelectUrl: (url, ctx) => {
-              //   // ← ここで好きに処理（開かない）
-              //   // 例) ストアに積む / モーダル表示 / postMessage / ルーター遷移など
-              //   console.log('shortURL', url, ctx);
-              //   // window.open(url, '_blank', 'noopener') したいなら今ここで
-              // }
-            // })
-          // },
         ]
       });
       /**

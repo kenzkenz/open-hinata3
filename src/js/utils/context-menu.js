@@ -34,6 +34,7 @@
 import store from '@/store'
 import {featureCollectionAdd, markerAddAndRemove, removeThumbnailMarkerByKey} from '@/js/downLoad'
 import {haptic} from '@/js/utils/haptics'
+import maplibregl from "maplibre-gl";
 
 export default function attachMapRightClickMenu({
                                                     map,
@@ -982,4 +983,342 @@ export function exportVisibleGeoJSON_fromMap01(opts = {}) {
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+
+/* ============================== */
+/* ブックマーク/お気に入り地点（動的・即時反映） */
+/* ============================== */
+const BOOKMARKS_KEY = 'oh3.bookmarks.v1';
+
+export function resolveBookmark(meta, { map } = {}) {
+    const z = Number.isFinite(meta.zoom) ? meta.zoom : (map?.getZoom?.() ?? 18);
+    return { lat: meta.lat, lng: meta.lng, zoom: z };
+}
+
+export function loadBookmarks() {
+    try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '[]'); } catch { return []; }
+}
+
+export function saveBookmarks(arr) { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(arr || [])); }
+
+export function addBookmark(bookmark) {
+    const arr = loadBookmarks();
+    arr.push({ label: bookmark.label, lat: bookmark.lat, lng: bookmark.lng, zoom: bookmark.zoom });
+    saveBookmarks(arr);
+}
+
+export function clearBookmarks() { localStorage.removeItem(BOOKMARKS_KEY); }
+
+export function removeBookmarkByIndex(idx) {
+    const arr = loadBookmarks();
+    if (!Array.isArray(arr)) return;
+    const i = Number(idx);
+    if (!Number.isFinite(i) || i < 0 || i >= arr.length) return;
+    arr.splice(i, 1);
+    saveBookmarks(arr);
+}
+
+export function removeBookmarkByLabel(label) {
+    const arr = loadBookmarks();
+    const i = arr.findIndex((x) => (x?.label || `${x?.lat},${x?.lng}`) === label);
+    if (i >= 0) {
+        arr.splice(i, 1);
+        saveBookmarks(arr);
+    }
+}
+
+export function buildBookmarksMenu({
+                                       title = '地点を記憶',
+                                       defaultZoom = 18,
+                                       allowManage = true,
+                                   } = {}) {
+    const clickHandler = (meta) => (ctx) => {
+        const { map, lngLat, originalEvent } = ctx;
+        const { lat, lng, zoom } = resolveBookmark(meta, { map });
+
+        // Alt/Cmd でコピー（座標をクリップボード）
+        if (originalEvent && (originalEvent.altKey || originalEvent.metaKey)) {
+            cmCopyToClipboard(`${lat.toFixed(6)},${lng.toFixed(6)}`);
+            return;
+        }
+
+        // 既定: flyTo で移動
+        try {
+            map.flyTo({ center: [lng, lat], zoom: zoom || defaultZoom });
+        } catch (e) {
+            console.warn('bookmark flyTo failed', e);
+        }
+    };
+
+    const dynamicItems = (ctx) => {
+        const saved = loadBookmarks();
+        const items = saved.map((meta) => ({
+            label: meta.label || `${meta.lat.toFixed(4)}, ${meta.lng.toFixed(4)} (z${meta.zoom || '?'})`,
+            onSelect: clickHandler(meta)
+        }));
+
+        if (allowManage) {
+            if (items.length) items.push({ type: 'separator' });
+            items.push({
+                label: '現在地を追加',
+                keepOpen: true,
+                onSelect: ({ map }) => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+                    const label = prompt('表示名を入力してください', '○○町');
+                    if (!label) return;
+                    addBookmark({ label, lat: center.lat, lng: center.lng, zoom: Math.round(zoom) });
+                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                }
+            });
+            // items.push({
+            //     label: '右クリック地点を追加',
+            //     keepOpen: true,
+            //     onSelect: ({ lngLat, map }) => {
+            //         const zoom = map.getZoom();
+            //         const label = prompt('ブックマークの表示名を入力してください', 'お気に入り地点');
+            //         if (!label) return;
+            //         addBookmark({ label, lat: lngLat.lat, lng: lngLat.lng, zoom: Math.round(zoom) });
+            //         try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+            //     }
+            // });
+            items.push({
+                label: '地点を個別に削除',
+                keepOpen: true,
+                items: () => {
+                    const saved = loadBookmarks();
+                    if (!saved.length) return [{ label: '（保存済みなし）', onSelect: () => {} }];
+                    return saved.map((meta, idx) => ({
+                        label: (meta.label || `${meta.lat.toFixed(4)}, ${meta.lng.toFixed(4)}`) + ' を削除',
+                        keepOpen: true,
+                        onSelect: ({ map }) => {
+                            if (!confirm(`「${meta.label || `${meta.lat.toFixed(4)}, ${meta.lng.toFixed(4)}`}」を削除しますか？`)) return;
+                            removeBookmarkByIndex(idx);
+                            try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                        }
+                    }));
+                }
+            });
+            items.push({
+                label: '全削除',
+                keepOpen: true,
+                onSelect: ({ map }) => {
+                    if (!confirm('すべて削除しますか？')) return;
+                    clearBookmarks();
+                    try { map.getContainer().dispatchEvent(new CustomEvent('oh3:rcm:refresh')); } catch {}
+                }
+            });
+        }
+
+        if (!items.length) {
+            items.push({ label: '（ブックマークなし）', onSelect: () => {} });
+        }
+
+        return items;
+    };
+
+    return { label: title, items: dynamicItems };
+}
+
+/* ==============================
+ * OpenRouteService クリックルート一式（出発→到着を連続クリック）
+ * - メニュー選択後：地図をクリック → 出発地
+ *   続けて：地図をクリック → 到着地 → ORSでルート描画
+ * - Esc でキャンセル
+ * - 依存：maplibregl, store（OH3既存）
+ * ============================== */
+
+// ===== 設定 =====
+const ORS_ENDPOINT = 'https://api.openrouteservice.org/v2/directions';
+
+// 進行中のピッカー状態
+let __routePick = null;
+
+// かんたんヒントUI
+function _ensureRouteHintStyle(root) {
+    const doc = root.ownerDocument || document;
+    if (doc.getElementById('ml-route-hint-style')) return;
+    const st = doc.createElement('style');
+    st.id = 'ml-route-hint-style';
+    st.textContent = `
+  .ml-route-hint { position:absolute; left:50%; top:10px; transform:translateX(-50%);
+    z-index:2147483647; background:rgba(0,0,0,.72); color:#fff; padding:8px 12px;
+    border-radius:999px; font:14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,.25); opacity:0; transition:opacity .12s linear; }
+  .ml-route-hint.show { opacity:1; }
+  `;
+    (doc.head || doc.documentElement).appendChild(st);
+}
+function _showRouteHint(container, text) {
+    _ensureRouteHintStyle(container);
+    let el = container.querySelector('.ml-route-hint');
+    if (!el) { el = document.createElement('div'); el.className = 'ml-route-hint'; container.appendChild(el); }
+    el.textContent = text; requestAnimationFrame(()=> el.classList.add('show'));
+    return el;
+}
+function _hideRouteHint(container) {
+    const el = container.querySelector('.ml-route-hint');
+    if (el) { el.classList.remove('show'); setTimeout(()=> el.remove(), 140); }
+}
+
+// ============ ORS 呼び出し＆描画 ============
+export async function routeWithORS(map, coordsLngLat, {
+    profile = 'driving-car',
+    apiKey,
+    fit = true,
+    sourceId = 'oh-route',
+    lineId = 'oh-route-line',
+    addAboveLayerId = null,
+} = {}) {
+    if (!apiKey) throw new Error('ORS APIキーが必要です');
+    if (!coordsLngLat || coordsLngLat.length < 2) throw new Error('始点と終点が必要です');
+
+    const body = { coordinates: coordsLngLat, instructions: false };
+    const res = await fetch(`${ORS_ENDPOINT}/${encodeURIComponent(profile)}/geojson`, {
+        method: 'POST',
+        headers: {
+            'Authorization': apiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/geo+json, application/json'
+        },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`ORS ${res.status} ${await res.text().catch(()=>res.statusText)}`);
+    const geojson = await res.json();
+    drawRouteGeoJSON(map, geojson, { sourceId, lineId, addAboveLayerId });
+    if (fit) fitRouteBounds(map, geojson);
+    return geojson;
+}
+
+export function drawRouteGeoJSON(map, geojson, {
+    sourceId = 'oh-route',
+    lineId = 'oh-route-line',
+    addAboveLayerId = null
+} = {}) {
+    const ensure = () => {
+        if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, { type: 'geojson', data: geojson });
+        }
+        if (!map.getLayer(`${lineId}-casing`)) {
+            const casing = { id: `${lineId}-casing`, type: 'line', source: sourceId,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': '#000', 'line-opacity': 0.25, 'line-width': 8 } };
+            if (addAboveLayerId && map.getLayer(addAboveLayerId)) map.addLayer(casing, addAboveLayerId); else map.addLayer(casing);
+        }
+        if (!map.getLayer(lineId)) {
+            const line = { id: lineId, type: 'line', source: sourceId,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': '#2E7CF6', 'line-width': 4 } };
+            map.addLayer(line, `${lineId}-casing`);
+        }
+    };
+    if (map.isStyleLoaded && !map.isStyleLoaded()) { map.once('load', () => drawRouteGeoJSON(map, geojson, { sourceId, lineId, addAboveLayerId })); return; }
+    ensure();
+    map.getSource(sourceId).setData(geojson);
+}
+
+export function fitRouteBounds(map, geojson) {
+    const feats = geojson.type === 'FeatureCollection' ? geojson.features : [geojson];
+    const b = new maplibregl.LngLatBounds();
+    for (const f of feats) {
+        const g = f.geometry; if (!g) continue;
+        if (g.type === 'LineString') g.coordinates.forEach(c => b.extend(c));
+        if (g.type === 'MultiLineString') g.coordinates.flat().forEach(c => b.extend(c));
+    }
+    if (!b.isEmpty()) map.fitBounds(b, { padding: 60, duration: 700 });
+}
+
+export function clearRoute(map, sourceId = 'oh-route') {
+    const s = map.getSource(sourceId); if (s && s.setData) s.setData({ type: 'FeatureCollection', features: [] });
+}
+
+// ============ クリックフロー本体 ============
+export function routeClickFlowORS({ map, orsApiKey, profile = 'driving-car', sourceId = 'oh-route', lineId = 'oh-route-line', addAboveLayerId = null, fit = true } = {}) {
+    if (!map) return;
+    if (__routePick && __routePick.active) { // 二重起動なら前のフローを落とす
+        try { __routePick.cancel(); } catch {}
+    }
+
+    const container = map.getContainer();
+    const canvas = map.getCanvas();
+    const prevCursor = canvas.style.cursor;
+    const hint1 = _showRouteHint(container, '出発地をクリック');
+    canvas.style.cursor = 'crosshair';
+
+    let start = null;
+
+    function cleanup() {
+        try { map.off('click', onStart); } catch {}
+        try { map.off('click', onDest); } catch {}
+        try { window.removeEventListener('keydown', onKey, true); } catch {}
+        canvas.style.cursor = prevCursor || '';
+        _hideRouteHint(container);
+        __routePick = null;
+    }
+
+    function onKey(e) { if (e.key === 'Escape') { cleanup(); alert('ルート選択をキャンセルしました'); } }
+
+    async function onDest(e) {
+        try {
+            window.removeEventListener('keydown', onKey, true);
+            _showRouteHint(container, 'ルート計算中…');
+            const dest = e.lngLat;
+            const coords = [ [start.lng, start.lat], [dest.lng, dest.lat] ];
+            await routeWithORS(map, coords, { profile, apiKey: orsApiKey, fit, sourceId, lineId, addAboveLayerId });
+        } catch (err) {
+            console.error(err); alert('ORSエラー: ' + (err?.message || err));
+        } finally {
+            cleanup();
+        }
+    }
+
+    function onStart(e) {
+        start = e.lngLat;
+        _showRouteHint(container, '到着地をクリック');
+        map.off('click', onStart);
+        map.once('click', onDest);
+    }
+
+    // 起動
+    window.addEventListener('keydown', onKey, true);
+    map.once('click', onStart);
+
+    __routePick = { active: true, cancel: cleanup };
+}
+
+// ============ メニュー統合：クリック版のみ ============
+export function buildRoutingMenuORS({
+                                        orsApiKey,
+                                        defaultProfile = 'driving-car',
+                                        addAboveLayerId = null,
+                                        sourceId = 'oh-route',
+                                        lineId = 'oh-route-line'
+                                    } = {}) {
+    const startFlow = (ctx, profile) => routeClickFlowORS({ map: ctx.map, orsApiKey, profile, sourceId, lineId, addAboveLayerId, fit: true });
+    return {
+        label: 'ルート',
+        items: [
+            { label: 'クリックでルート（車）',   onSelect: (ctx) => startFlow(ctx, 'driving-car') },
+            { label: 'クリックでルート（徒歩）', onSelect: (ctx) => startFlow(ctx, 'foot-walking') },
+            { label: 'クリックでルート（自転車）', onSelect: (ctx) => startFlow(ctx, 'cycling-regular') },
+            '-',
+            { label: 'ルート線をクリア', onSelect: ({ map }) => clearRoute(map, sourceId) },
+        ]
+    };
+}
+
+/* ===== 親への組み込み例 =====
+attachMapRightClickMenu({
+  map: store.state.map01,
+  items: [
+    // …既存項目
+    buildRoutingMenuORS({
+      orsApiKey: 'YOUR_ORS_API_KEY',       // ★フロント直出しは避け、プロキシ推奨
+      defaultProfile: 'driving-car',
+      addAboveLayerId: 'oh-some-layer-below-route',
+      sourceId: 'oh-route',
+      lineId: 'oh-route-line'
+    })
+  ]
+});
+*/
 

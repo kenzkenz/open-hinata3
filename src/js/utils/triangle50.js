@@ -135,7 +135,7 @@ function snapIfNeeded(map, lnglat, opts = {}) {
     // opts.snapLayerIds: 対象レイヤID配列（未指定なら全レイヤからポイントを検索）
     // opts.snapPx: ピクセル許容半径（既定 8）
     // opts.excludeLayerIds: 除外するレイヤID配列（既定: 自分のポイントレイヤ）
-    const tol = Math.max(1, Number(opts.snapPx) || 8)
+    const tol = Math.max(1, Number(opts.snapPx) || 20)
     const p = map.project([lnglat.lng, lnglat.lat])
     const bbox = [[p.x - tol, p.y - tol], [p.x + tol, p.y + tol]]
 
