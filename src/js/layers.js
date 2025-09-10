@@ -12731,6 +12731,119 @@ let layers01 = [
 ]
 
 //ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+// ===== registerDemColorProtocol(maplibregl) ================================
+// GSI dem_png を取得 → RGB→標高デコード → 段彩で着色 → PNGとして返す
+// ※ 1回だけ呼んでください（アプリ初期化時）
+// === 一度だけ呼ぶ：OpenLayersの flood2 を模倣した色付けPNG生成プロトコル ===
+export function registerDemFloodProtocol(maplibregl, {
+    schemeId = 'demflood',
+    defaultLevel = 0,                // m（初期の海面基準）
+    paleSea = { r:180, g:200, b:230, a:0.75 }  // data.colors.paleSea 相当
+} = {}) {
+
+    function parseQS(u){                // ?level=3 などを取る
+        const q = {}; const m = u.match(/\?(.*)$/); if (!m) return q;
+        for (const kv of m[1].split('&')) {
+            const [k,v] = kv.split('=');
+            if (!k) continue; q[decodeURIComponent(k)] = v ? decodeURIComponent(v) : '';
+        }
+        return q;
+    }
+
+    async function action(params, abortController) {
+        // demflood://https://.../{z}/{x}/{y}.png?level=3 の ?level を読む
+        const url = params.url.replace(/^demflood:\/\//, '');
+        const qs = parseQS(url);
+        const level = Number.isFinite(+qs.level) ? +qs.level : defaultLevel;
+
+        const res  = await fetch(url, { signal: abortController.signal });
+        const blob = await res.blob();
+
+        // 画像→Canvas
+        const bmp = (self.createImageBitmap)
+            ? await createImageBitmap(blob)
+            : await new Promise((resolve)=>{ const img=new Image(); img.onload=()=>resolve(img); img.src=URL.createObjectURL(blob); });
+
+        const w=bmp.width, h=bmp.height;
+        let cvs, ctx;
+        try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d'); }
+        catch { cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
+        ctx.drawImage(bmp,0,0);
+        const id = ctx.getImageData(0,0,w,h);
+        const d  = id.data;
+
+        // --- dem_png を "OLのflood2" と同じ式でデコード ---
+        // alpha==255 の時だけ値を持つ。RGB を 24bit として取り出し、しきい値 0x7F0000 超を負値（2の補数）に変換、÷100 で m
+        // ※ 0x800000(NoData) も来るので alpha==0 / raw==0x800000 は透明に。
+        const TH = 0x7F0000;             // = 8323072（OLコード準拠）
+        for (let i=0;i<d.length;i+=4){
+            const A = d[i+3];
+            if (A === 0) {                  // 透明=NoData
+                continue;
+            }
+            let raw = (d[i]<<16) + (d[i+1]<<8) + d[i+2];
+            if (raw === 0x800000) { d[i+3]=0; continue; }   // NoData
+
+            // 2の補数 → signed 24bit
+            if (raw >= TH) raw -= 16777216;                 // 0x1000000
+            const elev = raw / 100.0;                       // ← OLの flood2 と同じ「÷100」
+
+            if (elev >= level) {
+                // 陸上（= しきい値以上）→ 透明にする（ベース地図を見せる）
+                d[i+3] = 0;
+            } else {
+                // 海面下だけ色を塗る（paleSea）
+                d[i]   = paleSea.r;
+                d[i+1] = paleSea.g;
+                d[i+2] = paleSea.b;
+                d[i+3] = Math.round((paleSea.a ?? 1)*255);
+            }
+        }
+        ctx.putImageData(id,0,0);
+
+        const out = cvs.convertToBlob
+            ? await cvs.convertToBlob({type:'image/png'})
+            : await new Promise(r=>cvs.toBlob(r,'image/png'));
+        return { data: await out.arrayBuffer() };
+    }
+
+    try { maplibregl.addProtocol(schemeId, action); } catch(_) { /* 重複は無視 */ }
+}
+
+// ソース（raster）— demflood:// で dem_png を色付きPNGへ
+const gsiFloodSrc = {
+    id: 'oh-gsi-flood-src',
+    obj: {
+        type: 'raster',
+        // level=0 をクエリで渡す。値を変えたい時は setTiles(...) で ?level= を更新
+        tiles: ['demflood://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png?level=0'],
+        tileSize: 256,
+        scheme: 'xyz',
+        maxzoom: 22
+    }
+};
+
+// レイヤ（最近傍で拡大＝ボケなし）
+const gsiFloodLayer = {
+    id: 'oh-gsi-flood',
+    type: 'raster',
+    source: 'oh-gsi-flood-src',
+    paint: {
+        'raster-resampling': 'nearest',   // ← 補間禁止（ドット強調）
+        'raster-fade-duration': 0,
+        'raster-opacity': 1
+    }
+};
+
+layers01.push({
+    id: 'oh-gsi-flood',
+    label: '⭐️DEM: GSI flood（OL互換・ピクセル強調）',
+    sources: [gsiFloodSrc],
+    layers:  [gsiFloodLayer],
+    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>'
+});
+
+
 //ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
 
 if (store.state.isOffline) {

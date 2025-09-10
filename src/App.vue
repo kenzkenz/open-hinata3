@@ -2198,16 +2198,26 @@ import maplibregl from 'maplibre-gl'
 import { Protocol, PMTiles } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {
-  chibanzuSources, cityGeojsonLabelLayer, cityGeojsonLineLayer, cityGeojsonPolygonLayer,
+  chibanzuSources,
+  cityGeojsonLabelLayer,
+  cityGeojsonLineLayer,
+  cityGeojsonPolygonLayer,
   cityGeojsonSource,
   clickCircleSource,
   extLayer,
-  extSource, geotiffLayer,
+  extSource,
+  geotiffLayer,
   geotiffSource,
   monoLayers,
   monoSources,
   osmBrightLayers,
-  osmBrightSources, paleLayer, paleSource, publicSources, vertexSource, zenkokuChibanzuAddLayer
+  osmBrightSources,
+  paleLayer,
+  paleSource,
+  publicSources,
+  registerDemColorProtocol, registerDemFloodProtocol,
+  vertexSource,
+  zenkokuChibanzuAddLayer
 } from "@/js/layers"
 import muni from '@/js/muni'
 import { kml } from '@tmcw/togeojson';
@@ -6756,8 +6766,9 @@ export default {
       });
 
 
-
-
+      registerDemFloodProtocol(maplibregl, {
+        defaultLevel: 0 // 初期しきい値[m]
+      });
 
 
       // ======================================================================
