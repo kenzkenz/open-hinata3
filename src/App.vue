@@ -6785,10 +6785,6 @@ export default {
         // store.state.demTint が null の時は DEFAULT にフォールバック
         getState: () => store.state.demTint ?? DEFAULT_DEMTINT
       });
-      // registerDemTintProtocol(maplibregl, {
-      //   getState: () => store.state.demTint   // ★ globalThis 不要で最新状態を参照
-      // });
-
 
       // ======================================================================
       let protocol = new Protocol();

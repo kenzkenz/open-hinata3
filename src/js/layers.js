@@ -12732,7 +12732,6 @@ let layers01 = [
 
 //ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
 
-
 // ソース（raster）— demtint:// で dem_png を色別標高PNGへ
 const demTintSrc = {
     id: 'oh-dem-tint-src',
@@ -12760,10 +12759,11 @@ const demTintLayer = {
 
 layers01.push({
     id: 'oh-dem-tint',
-    label: '⭐️DEM: 色別標高図（陸メイン・ピクセル強調）',
+    label: '⭐️色別標高図',
     sources: [demTintSrc],
     layers:  [demTintLayer],
-    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>'
+    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>',
+    ext: {name:'extDemTint'},
 });
 
 
