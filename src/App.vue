@@ -1760,7 +1760,6 @@ import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
 
-
 import {
   addDraw,
   addSvgAsImage,
@@ -6755,6 +6754,11 @@ export default {
         isTouching = false; // タッチ中フラグをOFF
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
+
+
+
+
+
 
       // ======================================================================
       let protocol = new Protocol();

@@ -9,7 +9,6 @@ import VueQrcode from '@chenfengyuan/vue-qrcode'
 import { auth, db } from './firebase'
 import '@/registerServiceWorker';
 import Haptics from '@/js/utils/haptics'
-import {setupEmbedMode} from "@/js/utils/embed";
 
 loadFonts()
 
