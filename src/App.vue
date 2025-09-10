@@ -8235,7 +8235,7 @@ export default {
               },
               buildBookmarksMenu(),
               buildRoutingMenuORS({
-                orsApiKey: 'YOUR_ORS_API_KEY',       // ★フロント直出しは避けるのが推奨
+                orsApiKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQwNzIwNGIyZjc4MDQyZWI5ZDNiNjgwNjBlZDZhMjE4IiwiaCI6Im11cm11cjY0In0=',       // ★フロント直出しは避けるのが推奨
                 defaultProfile: 'driving-car',
                 // addAboveLayerId: 'oh-some-layer-below-route', // ルートをこのレイヤの直下に
                 sourceId: 'oh-route',
