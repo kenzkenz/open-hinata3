@@ -32,9 +32,10 @@
  */
 
 import store from '@/store'
-import {featureCollectionAdd, markerAddAndRemove, removeThumbnailMarkerByKey} from '@/js/downLoad'
+import {addDraw, featureCollectionAdd, markerAddAndRemove, removeThumbnailMarkerByKey} from '@/js/downLoad'
 import {haptic} from '@/js/utils/haptics'
 import maplibregl from "maplibre-gl";
+import {colorNameToRgba} from "@/js/pyramid";
 
 export default function attachMapRightClickMenu({
                                                     map,
@@ -1133,6 +1134,48 @@ const ORS_ENDPOINT = 'https://api.openrouteservice.org/v2/directions';
 // 進行中のピッカー状態
 let __routePick = null;
 
+// 一時表示用：出発地点ポイント層（ルート生成までの仮ピン）
+const ROUTE_TEMP_SRC_ID = 'oh-route-temp-src';
+const ROUTE_TEMP_LAYER_ID = 'oh-route-temp-point';
+function ensureRouteTempPointLayer(map, { addAboveLayerId = null } = {}) {
+    if (!map.getSource(ROUTE_TEMP_SRC_ID)) {
+        map.addSource(ROUTE_TEMP_SRC_ID, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    }
+    if (!map.getLayer(ROUTE_TEMP_LAYER_ID)) {
+        const layer = {
+            id: ROUTE_TEMP_LAYER_ID,
+            type: 'circle',
+            source: ROUTE_TEMP_SRC_ID,
+            paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff9800',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.95
+            }
+        };
+        if (addAboveLayerId && map.getLayer(addAboveLayerId)) {
+            map.addLayer(layer, addAboveLayerId);
+        } else {
+            map.addLayer(layer);
+        }
+    }
+}
+function setRouteTempPoint(map, lngLat, { addAboveLayerId = null } = {}) {
+    if (map.isStyleLoaded && !map.isStyleLoaded()) {
+        map.once('load', () => setRouteTempPoint(map, lngLat, { addAboveLayerId }));
+        return;
+    }
+    ensureRouteTempPointLayer(map, { addAboveLayerId });
+    const feature = { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } };
+    const fc = { type: 'FeatureCollection', features: [feature] };
+    map.getSource(ROUTE_TEMP_SRC_ID).setData(fc);
+}
+function clearRouteTempPoint(map) {
+    const src = map.getSource(ROUTE_TEMP_SRC_ID);
+    if (src && src.setData) src.setData({ type: 'FeatureCollection', features: [] });
+}
+
 // かんたんヒントUI
 function _ensureRouteHintStyle(root) {
     const doc = root.ownerDocument || document;
@@ -1184,8 +1227,9 @@ export async function routeWithORS(map, coordsLngLat, {
     });
     if (!res.ok) throw new Error(`ORS ${res.status} ${await res.text().catch(()=>res.statusText)}`);
     const geojson = await res.json();
-    drawRouteGeoJSON(map, geojson, { sourceId, lineId, addAboveLayerId });
+    // drawRouteGeoJSON(map, geojson, { sourceId, lineId, addAboveLayerId });
     if (fit) fitRouteBounds(map, geojson);
+
     return geojson;
 }
 
@@ -1199,15 +1243,11 @@ export function drawRouteGeoJSON(map, geojson, {
             map.addSource(sourceId, { type: 'geojson', data: geojson });
         }
         if (!map.getLayer(`${lineId}-casing`)) {
-            const casing = { id: `${lineId}-casing`, type: 'line', source: sourceId,
-                layout: { 'line-cap': 'round', 'line-join': 'round' },
-                paint: { 'line-color': '#000', 'line-opacity': 0.25, 'line-width': 8 } };
+            const casing = { id: `${lineId}-casing`, type: 'line', source: sourceId};
             if (addAboveLayerId && map.getLayer(addAboveLayerId)) map.addLayer(casing, addAboveLayerId); else map.addLayer(casing);
         }
         if (!map.getLayer(lineId)) {
-            const line = { id: lineId, type: 'line', source: sourceId,
-                layout: { 'line-cap': 'round', 'line-join': 'round' },
-                paint: { 'line-color': '#2E7CF6', 'line-width': 4 } };
+            const line = { id: lineId, type: 'line', source: sourceId};
             map.addLayer(line, `${lineId}-casing`);
         }
     };
@@ -1229,6 +1269,15 @@ export function fitRouteBounds(map, geojson) {
 
 export function clearRoute(map, sourceId = 'oh-route') {
     const s = map.getSource(sourceId); if (s && s.setData) s.setData({ type: 'FeatureCollection', features: [] });
+    /**
+     * ドローから削除
+     */
+    const src = map.getSource('click-circle-source');
+    const fc = src._data.type === 'FeatureCollection' ? src._data : { type: 'FeatureCollection', features: [] };
+    const next = { type: 'FeatureCollection', features: fc.features.filter(f => f?.properties?.isRoot === null) };
+    src.setData(next);
+    store.state.clickCircleGeojsonText = JSON.stringify(next)
+    store.state.updatePermalinkFire = !store.state.updatePermalinkFire
 }
 
 // ============ クリックフロー本体 ============
@@ -1252,6 +1301,7 @@ export function routeClickFlowORS({ map, orsApiKey, profile = 'driving-car', sou
         try { window.removeEventListener('keydown', onKey, true); } catch {}
         canvas.style.cursor = prevCursor || '';
         _hideRouteHint(container);
+        try { clearRouteTempPoint(map); } catch {}
         __routePick = null;
     }
 
@@ -1263,7 +1313,18 @@ export function routeClickFlowORS({ map, orsApiKey, profile = 'driving-car', sou
             _showRouteHint(container, 'ルート計算中…');
             const dest = e.lngLat;
             const coords = [ [start.lng, start.lat], [dest.lng, dest.lat] ];
-            await routeWithORS(map, coords, { profile, apiKey: orsApiKey, fit, sourceId, lineId, addAboveLayerId });
+            const geojson = await routeWithORS(map, coords, { profile, apiKey: orsApiKey, fit, sourceId, lineId, addAboveLayerId });
+            /**
+             * ドローに追加
+             */
+            geojson.features.forEach(f => {
+                f.properties.isRoot = true
+                f.properties.color = 'navy'
+                f.properties['line-width'] = 8
+            })
+            addDraw(geojson)
+
+            try { clearRouteTempPoint(map); } catch {}
         } catch (err) {
             console.error(err); alert('ORSエラー: ' + (err?.message || err));
         } finally {
@@ -1273,6 +1334,7 @@ export function routeClickFlowORS({ map, orsApiKey, profile = 'driving-car', sou
 
     function onStart(e) {
         start = e.lngLat;
+        try { setRouteTempPoint(map, start, { addAboveLayerId }); } catch {}
         _showRouteHint(container, '到着地をクリック');
         map.off('click', onStart);
         map.once('click', onDest);
@@ -1295,7 +1357,7 @@ export function buildRoutingMenuORS({
                                     } = {}) {
     const startFlow = (ctx, profile) => routeClickFlowORS({ map: ctx.map, orsApiKey, profile, sourceId, lineId, addAboveLayerId, fit: true });
     return {
-        label: 'ルート',
+        label: 'ORSでルート検索',
         items: [
             { label: 'クリックでルート（車）',   onSelect: (ctx) => startFlow(ctx, 'driving-car') },
             { label: 'クリックでルート（徒歩）', onSelect: (ctx) => startFlow(ctx, 'foot-walking') },
@@ -1321,4 +1383,5 @@ attachMapRightClickMenu({
   ]
 });
 */
+
 

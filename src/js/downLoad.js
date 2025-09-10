@@ -8956,7 +8956,7 @@ export function addDraw (geojson,isFit,isNini) {
         feature.properties['id'] = id
         if (!feature.properties.label) feature.properties['label'] = ''
         if (!feature.properties.color) feature.properties['color'] = 'rgba(0,0,255,0.1)'
-        feature.properties['line-width'] = 1
+        if (!feature.properties['line-width']) feature.properties['line-width'] = 1
         feature.properties['arrow-type'] = 'none'
         feature.properties['text-size'] = 16
         feature.properties['labelType'] = '1'
