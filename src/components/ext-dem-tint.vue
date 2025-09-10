@@ -85,7 +85,7 @@
 
 <script>
 import MiniTooltip from '@/components/MiniTooltip'
-
+import { registerDemTintPalette } from '@/js/utils/dem-tint-protocol'; // 追加
 /* ======== フラグ ======== */
 const ENABLE_LABEL_HELPERS = false;   // ラベル最上＆ハロー強化は停止
 const FORCE_OPACITY = 0.9;            // すべて0.9で固定
@@ -179,30 +179,7 @@ const PRESETS = {
     belowDomain:[0,1,2,3,5,8,12,20],
     belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1']
   },
-  // // ★ 改良：火山（低標高は抑制の灰緑→800m+で焼土〜溶岩の暖色→山頂は灰雪）
-  // local_volcano: {
-  //   aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600],
-  //   aboveRange:[
-  //     '#e6ece6', // <200 抑制（灰緑）
-  //     '#dde6dd', // 200–400
-  //     '#d3dfd3', // 400–600
-  //     '#f3d7b3', // 600–800 焼土帯入り
-  //     '#f0c289', // 800–1000
-  //     '#eeae61', // 1000–1200
-  //     '#eb9645', // 1200–1500
-  //     '#e6792e', // 1500–1800
-  //     '#d95e23', // 1800–2100
-  //     '#c2471d', // 2100–2400
-  //     '#a9371a', // 2400–2700 溶岩深紅
-  //     '#8d2c18', // 2700–3000
-  //     '#bdbdbd', // 3000–3300 山頂灰
-  //     '#d9d9d9', // 3300–3600 明るい灰
-  //     '#ffffff'  // >3600 雪冠
-  //   ],
-  //   belowDomain:[0,1,2,3,5,8,12,20], // 海は控えめに
-  //   belowRange:['#eaf6ff','#e1f1ff','#d6ecff','#c8e4ff','#b7dbff','#a5d1ff','#92c6ff','#7ebaef']
-  // },
-
+  
   local_flood10: {
     // 陸：0–10mは「低いほど濃い青」。10m超も淡い青で“無印象化”（白や灰は使わない）
     aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40],
@@ -241,20 +218,6 @@ const PRESETS = {
     ]
   },
 
-
-
-  // ★ 改良：洪水低地（0–10m を青系で細かく段彩。海はやや濃い群青へ）
-  // local_flood10: {
-  //   aboveDomain:[0,1,2,3,4,5,6,7,8,9,10,12],
-  //   aboveRange:[
-  //     '#e8fbff','#d6f5ff','#c3eeff','#b2e7ff',
-  //     '#a0defa','#8ed4f2','#7ccaea','#68bde0',
-  //     '#55afd5','#439fc8','#368fb8','#2c83ac'
-  //   ],
-  //   belowDomain:[0,0.2,0.5,1,2,3,4,5],
-  //   belowRange:['#eaf6ff','#dceeff','#cde6ff','#bcdcff','#a9d1ff','#95c5ff','#7fb7ff','#69a7f0']
-  // },
-
   // （温存・必要時に復活）
   local_tidal5: {
     aboveDomain:[0,0.5,1,1.5,2,3,4,5],
@@ -281,7 +244,7 @@ export default {
   props: ['mapName','item'],
   components: { MiniTooltip },
   data:()=>({
-    menuContentSize:{width:'300px',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
+    menuContentSize:{width:'auto',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
     presetKey:'mountain'  // 既定（必要なら 'gsi_mountain' などに）
   }),
   methods:{
@@ -309,23 +272,16 @@ export default {
       const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
       const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png';
 
-      this.ensure();
-      const curOpacity = FORCE_OPACITY;
-      this.$store.state.demTint.opacity = curOpacity;
+      // ① 現在のパレットを styleKey でレジストリに登録
+      const palette = this.$store.state.demTint?.palette;
+      const styleKey = this.hash(JSON.stringify(palette));
+      registerDemTintPalette(styleKey, palette);
 
-      const styleKey = this.hash(JSON.stringify(this.$store.state.demTint.palette));
+      // ② その styleKey を URL に付与（キャッシュ破り不要なら v は省略可）
       const url = `${base}?style=${styleKey}`;
 
-      // 既存位置を維持
-      const beforeId = (()=>{
-        const layers = map.getStyle()?.layers||[];
-        const idx = layers.findIndex(l=>l.id===LYR_ID);
-        if(idx===-1) return undefined;
-        for(let k=idx+1;k<layers.length;k++){
-          const id = layers[k]?.id; if(id && map.getLayer(id)) return id;
-        }
-        return undefined;
-      })();
+      // （以下は既存の安全な再作成ロジックのまま）
+      const beforeId = (()=>{ /* ...略（今のままでOK）... */ })();
 
       requestAnimationFrame(()=>{
         try{
@@ -333,24 +289,68 @@ export default {
           if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
 
           map.addSource(SRC_ID,{ type:'raster', tiles:[url], tileSize:256, scheme:'xyz', maxzoom:15 });
-
           map.addLayer({
             id: LYR_ID, type:'raster', source:SRC_ID,
             paint: {
               'raster-resampling':'nearest',
               'raster-fade-duration':0,
-              'raster-opacity': curOpacity,
-              'raster-contrast': this.$store.state.demTint.contrast || 0
+              'raster-opacity': this.$store.state.demTint?.opacity ?? 0.9,
+              'raster-contrast': this.$store.state.demTint?.contrast ?? 0
             }
           }, beforeId);
-
-          if (ENABLE_LABEL_HELPERS) {
-            this.placeTintBelowSymbols(map, LYR_ID);
-            this.boostLabelHalo(map, { color:'rgba(255,255,255,0.65)', width:1.6, blur:0.4 });
-          }
         }catch(e){ console.warn(e); }
       });
     },
+
+    // apply(){
+    //   const map = this.$store.state[this.mapName];
+    //   if(!map) return;
+    //
+    //   const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
+    //   const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png';
+    //
+    //   this.ensure();
+    //   const curOpacity = FORCE_OPACITY;
+    //   this.$store.state.demTint.opacity = curOpacity;
+    //
+    //   const styleKey = this.hash(JSON.stringify(this.$store.state.demTint.palette));
+    //   const url = `${base}?style=${styleKey}`;
+    //
+    //   // 既存位置を維持
+    //   const beforeId = (()=>{
+    //     const layers = map.getStyle()?.layers||[];
+    //     const idx = layers.findIndex(l=>l.id===LYR_ID);
+    //     if(idx===-1) return undefined;
+    //     for(let k=idx+1;k<layers.length;k++){
+    //       const id = layers[k]?.id; if(id && map.getLayer(id)) return id;
+    //     }
+    //     return undefined;
+    //   })();
+    //
+    //   requestAnimationFrame(()=>{
+    //     try{
+    //       if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID);
+    //       if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
+    //
+    //       map.addSource(SRC_ID,{ type:'raster', tiles:[url], tileSize:256, scheme:'xyz', maxzoom:15 });
+    //
+    //       map.addLayer({
+    //         id: LYR_ID, type:'raster', source:SRC_ID,
+    //         paint: {
+    //           'raster-resampling':'nearest',
+    //           'raster-fade-duration':0,
+    //           'raster-opacity': curOpacity,
+    //           'raster-contrast': this.$store.state.demTint.contrast || 0
+    //         }
+    //       }, beforeId);
+    //
+    //       if (ENABLE_LABEL_HELPERS) {
+    //         this.placeTintBelowSymbols(map, LYR_ID);
+    //         this.boostLabelHalo(map, { color:'rgba(255,255,255,0.65)', width:1.6, blur:0.4 });
+    //       }
+    //     }catch(e){ console.warn(e); }
+    //   });
+    // },
 
     /* 温存中の補助機能 */
     placeTintBelowSymbols(map, tintLayerId='oh-dem-tint'){

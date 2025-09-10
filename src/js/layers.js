@@ -12759,7 +12759,7 @@ const demTintLayer = {
 
 layers01.unshift({
     id: 'oh-dem-tint',
-    label: '<span style="color: red">NEW</span>⭐️プリセット色別標高図',
+    label: '<span style="color: red">NEW</span>️プリセット色別標高図',
     sources: [demTintSrc],
     layers:  [demTintLayer],
     attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>',
