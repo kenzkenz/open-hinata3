@@ -295,7 +295,9 @@ export default {
       if(!palette) return
       const styleKey = this.hash(JSON.stringify(palette))
       registerDemTintPalette(styleKey, palette)
-      const url = `${base}?style=${styleKey}`
+      // const url = `${base}?style=${styleKey}`
+      const shade = 'shade=soft&sa=0.25';   // ← おすすめ（弱め）
+      const url = `${base}?style=${styleKey}&${shade}`;
 
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[]

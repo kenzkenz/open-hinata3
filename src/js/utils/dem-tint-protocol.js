@@ -1,239 +1,227 @@
-// --- パレットを styleKey で保持するレジストリ ---
-const DEMTINT_REG = Object.create(null);
+// dem-tint-protocol.js
+// DEM PNG (GSI dem_png) を色分けして返すカスタムプロトコル。
+// 追加：おすすめの「マイクロ陰影（soft）」をURLパラメータでオン。
+// 使い方例： demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png?style=XXXX&shade=soft&sa=0.25&az=315&alt=45
 
-// 外側(Vue)からパレットを登録する
+// ===== スタイルレジストリ =====
+const PALETTE_REG = new Map();
+/** 外側から palette を登録して styleKey で引けるようにする */
 export function registerDemTintPalette(styleKey, palette) {
-    DEMTINT_REG[String(styleKey)] = normalizePalette(palette);
+    if (!styleKey || !palette) return;
+    PALETTE_REG.set(String(styleKey), normalizePalette(palette));
 }
 
-// 文字列/rgba/オブジェクト => 常に {r,g,b,a}
-function normColor(c){
-    if (!c) return { r:160, g:205, b:255, a:1 };
-    if (typeof c === 'string') {
-        const s = c.trim();
-        if (s[0] === '#') {
-            const hex = s.slice(1);
-            const full = hex.length===3 ? hex.split('').map(x=>x+x).join('') : hex;
-            const v = parseInt(full, 16);
-            if (!Number.isNaN(v)) return { r:(v>>16)&255, g:(v>>8)&255, b:v&255, a:1 };
-        }
-        const m = s.match(/^rgba?\(([^)]+)\)$/i);
-        if (m) {
-            const [r,g,b,a=1] = m[1].split(',').map(x=>+x.trim());
-            if ([r,g,b].every(n=>Number.isFinite(n))) return { r, g, b, a:Number.isFinite(a)?a:1 };
-        }
-        return { r:160, g:205, b:255, a:1 };
-    }
-    const r = +c.r, g = +c.g, b = +c.b, a = (c.a!=null? +c.a : 1);
-    if ([r,g,b].every(n=>Number.isFinite(n))) return { r,g,b,a:Number.isFinite(a)?a:1 };
-    return { r:160, g:205, b:255, a:1 };
-}
-
-function normalizePalette(p){
-    const sea = { r:160, g:205, b:255, a:1 };
-    const aboveRange = Array.isArray(p?.aboveRange) ? p.aboveRange.map(normColor) : [sea];
-    const belowRange = Array.isArray(p?.belowRange) ? p.belowRange.map(normColor) : [sea];
+// ===== パレット正規化（HEX→RGB） =====
+function normalizePalette(p) {
+    const toRGB = (hex) => {
+        const m = hex.replace('#','');
+        return {
+            r: parseInt(m.slice(0,2),16),
+            g: parseInt(m.slice(2,4),16),
+            b: parseInt(m.slice(4,6),16)
+        };
+    };
+    const nr = (arr)=> (arr||[]).map(toRGB);
     return {
-        aboveDomain: Array.isArray(p?.aboveDomain) ? p.aboveDomain : [0],
-        aboveRange,
-        belowDomain: Array.isArray(p?.belowDomain) ? p.belowDomain : [0],
-        belowRange
+        aboveDomain: [...(p.aboveDomain||[])],
+        aboveRange:  nr(p.aboveRange||[]),
+        belowDomain: [...(p.belowDomain||[])],
+        belowRange:  nr(p.belowRange||[])
     };
 }
 
-function parseStyleKey(url){
-    const q = url.split('?')[1] || '';
-    const s = new URLSearchParams(q);
-    return s.get('style') || '';
+// ===== クエリ文字列 =====
+function parseQS(u){
+    const q = {}; const m = u.match(/\?(.*)$/); if (!m) return q;
+    for (const kv of m[1].split('&')) {
+        const [k,v] = kv.split('=');
+        if (!k) continue; q[decodeURIComponent(k)] = v ? decodeURIComponent(v) : '';
+    }
+    return q;
 }
 
-function classify(elev, pal, sea){
-    if (!Number.isFinite(elev)) return sea;
-    if (elev >= 0) {
-        const d = pal.aboveDomain, c = pal.aboveRange;
-        for (let i=d.length-1; i>=0; i--) if (elev >= d[i]) return c[Math.min(i, c.length-1)] || sea;
-        return c[0] || sea;
-    } else {
-        const depth = -elev;
-        const d = pal.belowDomain, c = pal.belowRange;
-        for (let i=d.length-1; i>=0; i--) if (depth >= d[i]) return c[Math.min(i, c.length-1)] || sea;
-        return c[0] || sea;
-    }
+// ===== dem_png デコード（OL準拠） =====
+const NEG_TH = 0x7F0000;        // 8323072
+const NODATA = 0x800000;        // 8388608
+
+function decodeElevationRGBA(r,g,b,a){
+    if (a === 0) return { ok:false, elev:NaN };  // 透明=NoData
+    let raw = (r<<16) + (g<<8) + b;
+    if (raw === NODATA) return { ok:false, elev:NaN };
+    if (raw >= NEG_TH) raw -= 16777216; // 2の補数
+    return { ok:true, elev: raw / 100.0 };
 }
 
-async function decodeToCanvas(blob, isIOS){
-    if (isIOS) {
-        const url = URL.createObjectURL(blob);
-        const img = new Image(); img.decoding = 'sync'; img.src = url;
-        await (img.decode?.().catch(()=>{}) || new Promise(res=>{ img.onload=res; }));
-        const cvs = document.createElement('canvas'); cvs.width=img.width; cvs.height=img.height;
-        const ctx = cvs.getContext('2d', { willReadFrequently:true });
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img,0,0);
-        URL.revokeObjectURL(url);
-        return { cvs, ctx };
+// ===== 色分類（ステップ） =====
+function pickStepColor(value, domain, range){ // range: [{r,g,b}]
+                                              // domain は昇順。value が domain[i]〜domain[i+1) に入る i を選ぶ。
+                                              // 最初/最後の外側は端色。
+    const n = domain.length;
+    if (n === 0 || range.length === 0) return {r:0,g:0,b:0};
+    if (n !== range.length) {
+        // 念のため長さ不整合はトリム
+        const m = Math.min(n, range.length);
+        domain = domain.slice(0,m); range = range.slice(0,m);
     }
-    let bmp = null;
-    try { bmp = (self.createImageBitmap) ? await createImageBitmap(blob) : null; } catch {}
-    if (bmp) {
-        let cvs; try { cvs = new OffscreenCanvas(bmp.width, bmp.height); }
-        catch { cvs = document.createElement('canvas'); cvs.width=bmp.width; cvs.height=bmp.height; }
-        const ctx = cvs.getContext('2d', { willReadFrequently:true });
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(bmp,0,0);
-        return { cvs, ctx };
+    if (value <= domain[0]) return range[0];
+    for (let i=0; i<n-1; i++){
+        if (value < domain[i+1]) return range[i];
     }
-    // フォールバック
-    const url = URL.createObjectURL(blob);
-    const img = new Image(); img.src = url;
-    await (img.decode?.().catch(()=>{}) || new Promise(res=>{ img.onload=res; }));
-    const cvs = document.createElement('canvas'); cvs.width=img.width; cvs.height=img.height;
-    const ctx = cvs.getContext('2d', { willReadFrequently:true });
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img,0,0);
-    URL.revokeObjectURL(url);
-    return { cvs, ctx };
+    return range[n-1];
 }
 
-export function registerDemTintProtocol(maplibregl, {
-    schemeId = 'demtint',
-    seaBase  = { r:160, g:205, b:255, a:1.0 }
-} = {}) {
+// ===== 位置→m/px（陰影スケール用） =====
+function parseZXY(url){
+    const m = url.match(/\/(\d+)\/(\d+)\/(\d+)\.png/);
+    return m ? { z:+m[1], x:+m[2], y:+m[3] } : { z:0,x:0,y:0 };
+}
+function tileYToLat(y, z){
+    const n = Math.PI - 2*Math.PI*y/Math.pow(2,z);
+    return (180/Math.PI)*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
+}
+function metersPerPixel(z, y){
+    const lat = tileYToLat(y, z);
+    const earth = 6378137, circ = 2*Math.PI*earth;
+    return Math.cos(lat*Math.PI/180) * circ / (256*Math.pow(2,z));
+}
 
-    const SEA = normColor(seaBase);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// ===== マイクロ陰影（Horn法ベース・超弱） =====
+function buildSoftShade(elev, w, h, mpp, az=315, alt=45){
+    const azr = (360-az) * Math.PI/180;   // 右手座標に合わせ反転
+    const altr= alt * Math.PI/180;
+    const lx = Math.cos(altr)*Math.cos(azr);
+    const ly = Math.cos(altr)*Math.sin(azr);
+    const lz = Math.sin(altr);
+
+    const shade = new Float32Array(w*h);
+    const idx = (x,y)=>y*w+x;
+
+    // 欠損を埋める（ごく簡易：前方の値 or 0）
+    for(let i=0;i<elev.length;i++){
+        if (!Number.isFinite(elev[i])) elev[i] = (i>0 && Number.isFinite(elev[i-1])) ? elev[i-1] : 0;
+    }
+
+    // Sobel/Horn 風 3x3 勾配
+    const k = 1/(8*mpp);
+    for(let y=1;y<h-1;y++){
+        for(let x=1;x<w-1;x++){
+            const z1=elev[idx(x-1,y-1)], z2=elev[idx(x,y-1)],   z3=elev[idx(x+1,y-1)];
+            const z4=elev[idx(x-1,y  )], /*z5*/                z6=elev[idx(x+1,y  )];
+            const z7=elev[idx(x-1,y+1)], z8=elev[idx(x,y+1)],   z9=elev[idx(x+1,y+1)];
+            const dzdx = ((z3 + 2*z6 + z9) - (z1 + 2*z4 + z7)) * k;
+            const dzdy = ((z7 + 2*z8 + z9) - (z1 + 2*z2 + z3)) * k;
+
+            const nx = -dzdx, ny = -dzdy, nz = 1;
+            const inv = 1/Math.sqrt(nx*nx + ny*ny + nz*nz);
+            const nxd = nx*inv, nyd = ny*inv, nzd = nz*inv;
+            let s = nxd*lx + nyd*ly + nzd*lz; // -1..1
+            s = Math.max(0, s);               // 0..1
+            shade[idx(x,y)] = s;
+        }
+    }
+    // 端の埋め
+    for(let x=0;x<w;x++){ shade[idx(x,0)]=shade[idx(x,1)]; shade[idx(x,h-1)]=shade[idx(x,h-2)]; }
+    for(let y=0;y<h;y++){ shade[idx(0,y)]=shade[idx(1,y)]; shade[idx(w-1,y)]=shade[idx(w-2,y)]; }
+    return shade;
+}
+
+// ===== メイン：プロトコル登録 =====
+export function registerDemTintProtocol(maplibregl, { schemeId='demtint' } = {}) {
 
     async function action(params, abortController) {
-        const url = params.url.replace(/^demtint:\/\//, '');
-        const styleKey = parseStyleKey(url);
-        const pal = DEMTINT_REG[styleKey];                // ★ URLの style でパレット取得
-        const palette = pal || normalizePalette(null);    // 未登録でも必ず形は保つ
+        const rawUrl = params.url.replace(/^demtint:\/\//, '');
+        const qs     = parseQS(rawUrl);
+        const styleKey = qs.style || '';
+        const palette  = PALETTE_REG.get(styleKey);
 
-        const res  = await fetch(url, { signal: abortController.signal });
+        // パレット未登録なら安全に抜ける（薄いグレーで返す）
+        if (!palette) {
+            const res = await fetch(rawUrl, { signal: abortController.signal });
+            const blob = await res.blob();
+            const bmp  = (self.createImageBitmap)
+                ? await createImageBitmap(blob)
+                : await new Promise((resolve)=>{ const img=new Image(); img.onload=()=>resolve(img); img.src=URL.createObjectURL(blob); });
+
+            const w=bmp.width, h=bmp.height;
+            let cvs, ctx;
+            try { cvs = new OffscreenCanvas(w,h); ctx=cvs.getContext('2d'); }
+            catch { cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
+            ctx.drawImage(bmp,0,0);
+            const id=ctx.getImageData(0,0,w,h), d=id.data;
+            for(let i=0;i<d.length;i+=4){ d[i]=d[i+1]=d[i+2]=215; d[i+3]=255; }
+            ctx.putImageData(id,0,0);
+            const out = cvs.convertToBlob ? await cvs.convertToBlob({type:'image/png'}) : await new Promise(r=>cvs.toBlob(r,'image/png'));
+            return { data: await out.arrayBuffer() };
+        }
+
+        // 元タイル取得
+        const res  = await fetch(rawUrl, { signal: abortController.signal });
         const blob = await res.blob();
 
-        const { cvs, ctx } = await decodeToCanvas(blob, isIOS);
-        const w = cvs.width, h = cvs.height;
+        // 画像→Canvas
+        const bmp = (self.createImageBitmap)
+            ? await createImageBitmap(blob)
+            : await new Promise((resolve)=>{ const img=new Image(); img.onload=()=>resolve(img); img.src=URL.createObjectURL(blob); });
+
+        const w=bmp.width, h=bmp.height;
+        let cvs, ctx;
+        try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d'); }
+        catch { cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
+
+        ctx.drawImage(bmp,0,0);
         const id = ctx.getImageData(0,0,w,h);
         const d  = id.data;
 
-        const TH = 0x7F0000;
-        const SR=SEA.r, SG=SEA.g, SB=SEA.b, SA=Math.round(255*(SEA.a??1));
-
-        for (let i=0; i<d.length; i+=4){
-            const A = d[i+3];
-            if (A === 0) { d[i]=SR; d[i+1]=SG; d[i+2]=SB; d[i+3]=SA; continue; }  // NoData→海色
-
-            let raw = (d[i]<<16) + (d[i+1]<<8) + d[i+2];
-            if (raw === 0x800000) { d[i]=SR; d[i+1]=SG; d[i+2]=SB; d[i+3]=SA; continue; }
-            if (raw >= TH) raw -= 16777216;
-            const elev = raw / 100.0;
-
-            const c = classify(elev, palette, SEA);
-            d[i]   = c.r|0; d[i+1]=c.g|0; d[i+2]=c.b|0; d[i+3] = Math.round(255*(c.a??1));
+        // 1) 標高デコード（m）を配列に確保（陰影用にも使う）
+        const elev = new Float32Array(w*h);
+        for (let p=0, i=0; i<d.length; i+=4, p++){
+            const dec = decodeElevationRGBA(d[i], d[i+1], d[i+2], d[i+3]);
+            elev[p] = dec.ok ? dec.elev : NaN;
         }
 
+        // 2) パレットで色塗り（絶対標高：0m以上=陸、0m未満=海）
+        const aDom = palette.aboveDomain, aRan = palette.aboveRange;
+        const bDom = palette.belowDomain, bRan = palette.belowRange;
+        for (let p=0, i=0; i<d.length; i+=4, p++){
+            const z = elev[p];
+            if (!Number.isFinite(z)) { d[i+3]=0; continue; } // 欠損は透明
+            let rgb;
+            if (z >= 0) {
+                rgb = pickStepColor(z, aDom, aRan);
+            } else {
+                rgb = pickStepColor(-z, bDom, bRan); // 海は“深さ”
+            }
+            d[i] = rgb.r; d[i+1] = rgb.g; d[i+2] = rgb.b; d[i+3] = 255;
+        }
+
+        // 3) （おすすめ）マイクロ陰影：URLパラメータでON
+        //    ?shade=soft&sa=0.25&az=315&alt=45
+        const shadeMode = (qs.shade||'').toLowerCase();
+        const sa = Math.max(0, Math.min(1, +qs.sa || 0)); // 強さ
+        if (shadeMode === 'soft' && sa > 0) {
+            const {z, y} = parseZXY(rawUrl);
+            const mpp = metersPerPixel(z, y || 0);
+            const shade = buildSoftShade(elev, w, h, mpp, +qs.az||315, +qs.alt||45);
+
+            // 乗算系で ±30% * sa までの微調整
+            for (let p=0, i=0; i<d.length; i+=4, p++){
+                if (d[i+3] === 0) continue;
+                const f = 1.0 + (shade[p]-0.5) * 2 * sa * 0.3; // 0.7〜1.3レンジ
+                d[i]   = clamp255(d[i]  * f);
+                d[i+1] = clamp255(d[i+1]* f);
+                d[i+2] = clamp255(d[i+2]* f);
+            }
+        }
+
+        // 完了
         ctx.putImageData(id,0,0);
         const out = cvs.convertToBlob
-            ? await cvs.convertToBlob({ type:'image/png' })
+            ? await cvs.convertToBlob({type:'image/png'})
             : await new Promise(r=>cvs.toBlob(r,'image/png'));
         return { data: await out.arrayBuffer() };
     }
 
-    try { maplibregl.addProtocol(schemeId, action); } catch {}
+    function clamp255(v){ return Math.max(0, Math.min(255, Math.round(v))); }
+
+    try { maplibregl.addProtocol(schemeId, action); } catch(_) { /* 二重登録は無視 */ }
 }
-
-
-// // ============================================================
-// // demtint プロトコル（グローバル不要版）
-// // 使い方: アプリ初期化時に一度だけ
-// //   registerDemTintProtocol(maplibregl, { getState: () => store.state.demTint })
-// // これで action() が常に store の現在値を参照します。
-// // ============================================================
-// export function registerDemTintProtocol(maplibregl, { schemeId='demtint', getState } = {}) {
-//     // デフォパレット（storeが未用意でも動く用）
-//     const DEFAULT = {
-//         mode: 'step',
-//         level: 0,
-//         palette: {
-//             aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
-//             aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'],
-//             belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
-//             belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#08365b','#072b46','#051f34']
-//         }
-//     };
-//
-//     const hexToRgb = (h)=>{ const s=h.replace('#',''); const v=parseInt(s.length===3?s.split('').map(x=>x+x).join(''):s,16);
-//         return {r:(v>>16)&255,g:(v>>8)&255,b:v&255}; };
-//     const stepColor = (domain, range, v)=>{
-//         if (!domain?.length || !range?.length) return {r:0,g:0,b:0};
-//         const min=domain[0], max=domain[domain.length-1];
-//         const vv = Math.max(min, Math.min(max, v));
-//         let i=0; while (i<domain.length-1 && vv >= domain[i+1]) i++;
-//         const col = range[i] || '#000000';
-//         return typeof col==='string' ? hexToRgb(col) : col;
-//     };
-//     const parseQS = (u)=>{ const q={}, m=u.match(/\?(.*)$/); if(!m) return q;
-//         for (const kv of m[1].split('&')){ const [k,v]=kv.split('='); if(!k) continue; q[decodeURIComponent(k)]=v?decodeURIComponent(v):''; }
-//         return q;
-//     };
-//
-//     async function action(params, abortController){
-//         // URL と ?level 取得
-//         const raw  = params.url.replace(/^demtint:\/\//,'');
-//         const qs   = parseQS(raw);
-//         const url  = raw.replace(/\?.*$/,'');
-//         const st   = (typeof getState === 'function' ? getState() : null) || DEFAULT;
-//         const pal  = st.palette || DEFAULT.palette;
-//         const lvl  = Number.isFinite(+qs.level) ? +qs.level : (st.level ?? 0);
-//
-//         // タイル取得
-//         const res  = await fetch(url, { signal: abortController.signal });
-//         const blob = await res.blob();
-//
-//         // 画像→Canvas
-//         const bmp = (self.createImageBitmap)
-//             ? await createImageBitmap(blob)
-//             : await new Promise(r=>{ const img=new Image(); img.onload=()=>r(img); img.src=URL.createObjectURL(blob); });
-//
-//         const w=bmp.width, h=bmp.height;
-//         let cvs, ctx;
-//         try { cvs = new OffscreenCanvas(w,h); ctx = cvs.getContext('2d', { willReadFrequently:true }); }
-//         catch { cvs = document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
-//
-//         ctx.imageSmoothingEnabled = false; // ドット最優先
-//         ctx.drawImage(bmp,0,0);
-//
-//         const id = ctx.getImageData(0,0,w,h);
-//         const d  = id.data;
-//         const TH = 0x7F0000; // 8323072 (OL 準拠)
-//
-//         const { aboveDomain, aboveRange, belowDomain, belowRange } = pal;
-//
-//         for (let i=0;i<d.length;i+=4){
-//             if (d[i+3] === 0) continue; // NoData
-//             let raw = (d[i]<<16) + (d[i+1]<<8) + d[i+2];
-//             if (raw === 0x800000){ d[i+3]=0; continue; } // NoData
-//             if (raw >= TH) raw -= 16777216;              // 2の補数
-//             const elev = raw / 100.0;
-//
-//             if (elev >= lvl){
-//                 const depth = Math.max(0, Math.min(20000, Math.floor(elev - lvl)));
-//                 const c = stepColor(aboveDomain, aboveRange, depth);
-//                 d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
-//             } else {
-//                 const depth = Math.max(0, Math.min(20000, Math.floor(lvl - elev)));
-//                 const c = stepColor(belowDomain, belowRange, depth);
-//                 d[i]=c.r; d[i+1]=c.g; d[i+2]=c.b; d[i+3]=255;
-//             }
-//         }
-//
-//         ctx.putImageData(id,0,0);
-//         const out = cvs.convertToBlob ? await cvs.convertToBlob({type:'image/png'})
-//             : await new Promise(r=>cvs.toBlob(r,'image/png'));
-//         return { data: await out.arrayBuffer() };
-//     }
-//
-//     try { maplibregl.addProtocol(schemeId, action); } catch(_) { /* 二重登録は無視 */ }
-// }
