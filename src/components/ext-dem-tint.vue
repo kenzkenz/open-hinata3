@@ -54,27 +54,20 @@
           洪水低地
         </v-chip>
       </MiniTooltip>
-
-      <!-- 扇状地（有効化したいときはコメント解除）
-      <MiniTooltip text="範囲：10〜80m（扇状地・段丘面）" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='local_fan_terrace' ? 'primary' : undefined" size="large" @click="usePreset('local_fan_terrace')">
-          扇状地・段丘（10–80m）
-        </v-chip>
-      </MiniTooltip>
-      -->
     </div>
 
-    <!-- 上級者向け：カスタム分割（普段は隠す） -->
+    <!-- Advanced（普段は隠す） -->
     <div class="d-flex align-center" style="gap:10px; margin:6px 0;">
       <v-btn variant="tonal" size="small" @click="showAdvanced = !showAdvanced">
-        {{ showAdvanced ? '上級者設定を隠す' : '上級者設定を表示' }}
+        {{ showAdvanced ? 'Hide advanced' : 'Advanced' }}
       </v-btn>
       <div v-if="customSummary" style="font-size:12px;color:#666;">{{ customSummary }}</div>
     </div>
 
     <v-expand-transition>
       <v-sheet v-if="showAdvanced" class="pa-3 oh-adv-panel">
-        <div class="d-flex flex-wrap" style="gap:10px;">
+        <!-- 1段目：Low / High -->
+        <div class="d-flex flex-wrap" style="gap:10px; margin-bottom:8px;">
           <v-text-field
               v-model.number="adv.low"
               type="number" density="compact" hide-details
@@ -85,24 +78,29 @@
               type="number" density="compact" hide-details
               label="高い側 (m)" style="max-width:140px"
           />
-          <div style="flex:1; min-width:220px;">
-            <div style="font-size:12px; color:#666; margin-bottom:2px;">分割数</div>
-            <v-slider
-                v-model.number="adv.splits" :min="3" :max="24" step="1"
-                density="compact" hide-details thumb-label
-            />
-          </div>
         </div>
 
-        <div style="font-size:12px; color:#666; margin:6px 0 2px;">ベース配色</div>
-        <div class="d-flex" style="gap:8px; margin-bottom:10px;">
+        <!-- 2段目：ベース配色（順序：OH3→GSI→洪水低地） -->
+        <div style="font-size:12px; color:#666; margin:2px 0 6px;">ベース配色</div>
+        <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:8px;">
+          <v-chip :color="adv.base==='oh3' ? 'primary' : undefined" size="small" @click="adv.base='oh3'">OH3 標準</v-chip>
           <v-chip :color="adv.base==='gsi' ? 'primary' : undefined" size="small" @click="adv.base='gsi'">地理院風</v-chip>
-          <v-chip :color="adv.base==='oh3' ? 'primary' : undefined" size="small" @click="adv.base='oh3'">OH3標準</v-chip>
+          <v-chip :color="adv.base==='flood' ? 'primary' : undefined" size="small" @click="adv.base='flood'">洪水低地</v-chip>
         </div>
 
-        <div class="d-flex" style="gap:8px;">
+        <!-- 3段目：分割（下の段に改行） -->
+        <div>
+          <div style="font-size:12px; color:#666; margin-bottom:2px;">分割数</div>
+          <v-slider
+              v-model.number="adv.splits" :min="3" :max="24" step="1"
+              density="compact" hide-details thumb-label
+          />
+        </div>
+
+        <!-- 操作 -->
+        <div class="d-flex" style="gap:8px; margin-top:10px;">
           <v-btn color="primary" @click="applyCustom">この条件で作る</v-btn>
-          <v-btn variant="text" @click="resetCustom">リセット</v-btn>
+          <v-btn variant="tonal" color="warning" @click="hideTint">非表示にする</v-btn>
         </div>
       </v-sheet>
     </v-expand-transition>
@@ -121,7 +119,7 @@ import { registerDemTintProtocol, registerDemTintPalette } from '@/js/utils/dem-
 const ENABLE_LABEL_HELPERS = false;   // ラベル最上＆ハロー強化は停止
 const FORCE_OPACITY = 0.9;            // すべて0.9で固定
 
-/* ======== 配色（ベース） ======== */
+/* ======== 配色（ベースランプ） ======== */
 const GSI_RAMP_18 = [
   '#0052ff','#0e60ff','#1972ff','#2a95ff','#3abaff','#47dadf',
   '#60e88d','#86f04f','#b2f734','#e8f324','#ffe100','#ffc200',
@@ -144,7 +142,19 @@ const OH3_SEA_18 = [
   '#145fa0','#0f4f8a','#0b416f','#08365b','#072b46','#051f34'
 ];
 
-/* ======== 既存プリセット ======== */
+/* 洪水低地ベース（青系だけで上昇・低いほど濃い） */
+const FLOOD_RAMP_18 = [
+  '#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3',
+  '#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff',
+  '#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff','#f6fbff'
+];
+const FLOOD_SEA_18 = [
+  '#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff',
+  '#89c1ff','#73b3f0','#5aa0d9','#4a91c8','#3c83b8','#2f74a7',
+  '#266897','#1f5e8a','#1a557e','#154c73','#114569','#0d3f61'
+];
+
+/* ======== 既存プリセット（本体そのまま） ======== */
 const PRESETS = {
   gsi_coast:   { aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40], aboveRange: GSI_RAMP_18.slice(0,12),
     belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65], belowRange: GSI_SEA_18.slice(0,12) },
@@ -164,9 +174,8 @@ const PRESETS = {
   mountain:    { aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange: OH3_RAMP_18,
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],      belowRange: OH3_SEA_18 },
 
-  local_volcano: { /* 省略：あなたの最終版をそのまま */ },
-  local_flood10: { /* 省略：あなたの最終版をそのまま */ },
-  // local_fan_terrace: { …必要なら復活… }
+  local_volcano: { /* 最終版そのまま（省略） */ },
+  local_flood10: { /* 最終版そのまま（省略） */ }
 };
 
 export default {
@@ -177,13 +186,14 @@ export default {
     menuContentSize:{width:'auto',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
     presetKey:'mountain',
     showAdvanced:false,
-    adv:{ low:0, high:3000, splits:12, base:'gsi' },  // 上級者既定
+    adv:{ low:0, high:100, splits:12, base:'oh3' }  // 高い側の初期値=100m / ベース先頭=OH3
   }),
   computed:{
     customSummary(){
       if(!this.$store.state.demTint?.__custom) return '';
       const {low,high,splits,base} = this.$store.state.demTint.__custom;
-      return `カスタム：${low}〜${high}m / ${splits}分割 / ${base==='gsi'?'地理院風':'OH3標準'}`;
+      const baseName = (base==='oh3'?'OH3標準':base==='gsi'?'地理院風':'洪水低地');
+      return `カスタム：${low}〜${high}m / ${splits}分割 / ${baseName}`;
     }
   },
   methods:{
@@ -193,7 +203,8 @@ export default {
           mode:'step',
           palette: PRESETS[this.presetKey],
           opacity: FORCE_OPACITY,
-          contrast: 0
+          contrast: 0,
+          hidden:false
         };
       }
     },
@@ -201,76 +212,80 @@ export default {
       this.ensure();
       this.presetKey = key;
       this.$store.state.demTint.palette = JSON.parse(JSON.stringify(PRESETS[key]));
-      delete this.$store.state.demTint.__custom;             // カスタム表示は解除
+      delete this.$store.state.demTint.__custom;
       this.$store.state.demTint.opacity = FORCE_OPACITY;
+      this.$store.state.demTint.hidden = false;
       this.apply();
     },
 
-    /* —— 上級者：任意レンジ×任意分割 —— */
+    /* —— Advanced：任意レンジ×任意分割 —— */
     applyCustom(){
       let {low,high,splits,base} = this.adv;
-      // バリデーション＆補正
       if(!Number.isFinite(low)) low = 0;
-      if(!Number.isFinite(high)) high = 1000;
+      if(!Number.isFinite(high)) high = 100;
       if(low === high) high = low + 1;
       if(low > high) [low,high] = [high,low];
       splits = Math.max(3, Math.min(24, Math.round(splits||12)));
 
-      // ベース配色（陸の連続ランプ）
-      const baseRamp = (base==='gsi') ? GSI_RAMP_18 : OH3_RAMP_18;
-      const seaRamp  = (base==='gsi') ? GSI_SEA_18 : OH3_SEA_18;
+      // ベース選択
+      const baseRamp = (base==='oh3') ? OH3_RAMP_18 : (base==='gsi' ? GSI_RAMP_18 : FLOOD_RAMP_18);
+      const seaRamp  = (base==='oh3') ? OH3_SEA_18 : (base==='gsi' ? GSI_SEA_18 : FLOOD_SEA_18);
 
-      // 均等分割のドメイン（端を含む等間隔：N個）
+      // 均等分割
       const aboveDomain = this.linspace(low, high, splits);
-      // 連続ランプから N色サンプリング（RGB線形補間）
       const aboveRange  = this.sampleRamp(baseRamp, splits);
 
-      // 範囲外（<low, >high）の見え方：控えめ色（淡緑とグレージュ）
-      // → dem-tint-protocol は「最後の色が最大以上」に当たるので
-      //   low 未満を淡緑で“前置き”したい場合、先頭に 1段 追加する
-      const preColor  = '#eef5ef';  // low未満
-      const postColor = '#e6e1da';  // high超
-      const aDomainExt = [Math.min(-10000, low-1e9), ...aboveDomain, high+1]; // 先頭ダミーしきい値
+      // 範囲外の表現（より目立つ色に変更）
+      const preColor  = '#e2f0ff'; // low未満：薄い水色
+      const postColor = '#f3e7d6'; // high超過：淡い黄土
+      const aDomainExt = [Math.min(-10000, low-1e9), ...aboveDomain, high+1];
       const aRangeExt  = [preColor, ...aboveRange.slice(0, -1), aboveRange[aboveRange.length-1], postColor];
 
-      // 海側は既定（ベースに合わせる）
-      const belowDomain = seaRamp.map((_,i)=>i); // ダミー連番でもOK（プロトコル側は数だけ使う）
+      // 海側はベースに合わせる
+      const belowDomain = seaRamp.map((_,i)=>i);
       const belowRange  = seaRamp.slice();
 
       const palette = { aboveDomain: aDomainExt, aboveRange: aRangeExt, belowDomain, belowRange };
 
-      // ストアへ反映＆メタ保存
       this.ensure();
       this.$store.state.demTint.palette = palette;
       this.$store.state.demTint.opacity = FORCE_OPACITY;
       this.$store.state.demTint.__custom = { low, high, splits, base };
+      this.$store.state.demTint.hidden = false;
 
-      // プリセット選択の色付けを外すためにキーは保持したまま実反映
       this.apply(true);
     },
 
-    resetCustom(){
-      this.adv = { low:0, high:3000, splits:12, base:'gsi' };
-      delete this.$store.state.demTint?.__custom;
+    // 完全に非表示（レイヤ削除）
+    hideTint(){
+      const map = this.$store.state[this.mapName];
+      if(!map) return;
+      const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
+      try{
+        if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID);
+        if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
+      }catch(e){ console.warn(e); }
+      this.ensure();
+      this.$store.state.demTint.hidden = true;
+      delete this.$store.state.demTint.__custom;
     },
 
-    /* 実反映（カスタム時も既存時も共通） */
+    /* 実反映 */
     apply(isCustom=false){
       const map = this.$store.state[this.mapName];
       if(!map) return;
+      if(this.$store.state.demTint?.hidden){ return; } // 非表示なら何もしない
 
       const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
       const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png';
 
-      // 現在のパレットを styleKey でレジストリに登録
       const palette = this.$store.state.demTint?.palette;
       const styleKey = this.hash(JSON.stringify(palette));
-      registerDemTintPalette(styleKey, palette); // ← dem-tint-protocol 側のレジストリへ
+      registerDemTintPalette(styleKey, palette);
 
-      // その styleKey を URL に付与
       const url = `${base}?style=${styleKey}`;
 
-      // レイヤ順維持：既存レイヤ直後の beforeId を見つける
+      // レイヤ順維持
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[];
         const idx = layers.findIndex(l=>l.id===LYR_ID);
