@@ -16,6 +16,32 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @cancel="onConfirmCancel"
       />
 
+
+
+      <!--  -->
+      <FloatingWindow
+          windowId = "warp-wizard"
+          title = "warp-wizard"
+          type="normal"
+          :default-top = "10"
+          :default-left = "10"
+          :default-width = "auto"
+          :keepAspectRatio = "false"
+          :showMaxRestore="false"
+          @close = "mapillaryClose"
+      >
+        <!-- 既存のワープ領域を置き換え -->
+        <WarpWizard
+            :mapName="mapName"
+            :item="{ id:'warp-wizard', label:'Warp Wizard' }"
+            v-model:gcpList="gcpList"
+            :file="pendingFile"
+            :url="pendingUrl"
+            @confirm="onWizardConfirm"
+            @close="aaa"
+        />
+      </FloatingWindow>
+
       <!-- マピラリフィルター -->
       <FloatingWindow
           windowId = "mapillary-filter"
@@ -1413,180 +1439,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
           <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
 
-          <div
-              v-if="showFloatingImage && mapName === 'map01'"
-              class="floating-image-panel"
-              style="
-              position: absolute;
-              top: 60px;
-              left: 60px;
-              z-index: 10;
-              background: #ffffff;
-              border: 1px solid #ccc;
-              padding: 4px;
-              border-radius: 8px;
-              pointer-events: auto;"
-          >
-            <div style="position: relative; display: inline-block; pointer-events: auto;">
-              <!-- 画像 -->
-              <img
-                  id="warp-image"
-                  class="floating-image"
-                  ref="floatingImage"
-                  @load="onImageLoad"
-                  :src="uploadedImageUrl"
-                  :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showOriginal ? 0.9 : 0, display: 'block' }"
-                  @click="onWarpImageClick"
-              />
-              <!-- 上：仮ワープした画像を描くCanvas -->
-              <canvas
-                  ref="warpCanvas"
-                  id="warp-canvas"
-                  :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showWarpCanvas ? 1 : 0, position: 'absolute', top: 0, left: 0 }"
-                  @click="onWarpImageClick"
-              ></canvas>
-
-              <!-- マーカー -->
-              <div
-                  v-for="item in gcpWithImageCoord"
-                  :key="'image-marker-' + item.index"
-                  class="image-marker"
-                  :style="getImageMarkerStyle(item.gcp.imageCoord)"
-                  @mousedown="startDragging($event, item.index)"
-                  style="pointer-events: auto;"
-              >
-                {{ item.index + 1 }}
-              </div>
-            </div>
-
-            <!-- ✅ 改良GCP一覧テーブル -->
-            <div class="gcp-list-table" style="margin-top: 10px; max-height: 180px; overflow-y: auto;">
-              <table style="font-size: 13px; width: 100%; border-collapse: collapse;">
-                <thead>
-                <tr :style="{ background: primaryColor, color: 'white' }">
-                  <th style="padding: 6px;">#</th>
-                  <th style="padding: 6px;">画像X</th>
-                  <th style="padding: 6px;">画像Y</th>
-                  <th style="padding: 6px;">経度Lng</th>
-                  <th style="padding: 6px;">緯度Lat</th>
-                  <th style="padding: 6px;"></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr
-                    v-for="(gcp, i) in gcpList"
-                    :key="i"
-                    style="border-bottom: 1px solid #e0e0e0; background: #ffffff;"
-                    @mouseover="hoveredRow = i"
-                    @mouseleave="hoveredRow = null"
-                    :style="{ background: hoveredRow === i ? '#f9f9f9' : '#ffffff' }"
-                >
-                  <td style="padding: 6px; text-align: center;">{{ i + 1 }}</td>
-                  <td style="padding: 6px;">
-                    <input type="number" style="width: 70px;" :value="gcp.imageCoord?.[0] ?? ''"
-                           @input="updateImageCoordX(i, $event.target.value)">
-                  </td>
-                  <td style="padding: 6px;">
-                    <input type="number" style="width: 70px;" :value="gcp.imageCoord?.[1] ?? ''"
-                           @input="updateImageCoordY(i, $event.target.value)">
-                  </td>
-                  <td style="padding: 6px;">
-                    <input type="number" style="width: 90px;" :value="gcp.mapCoord?.[0] ?? ''"
-                           @input="updateMapCoordLng(i, $event.target.value)">
-                  </td>
-                  <td style="padding: 6px;">
-                    <input type="number" style="width: 90px;" :value="gcp.mapCoord?.[1] ?? ''"
-                           @input="updateMapCoordLat(i, $event.target.value)">
-                  </td>
-                  <td style="padding: 6px; text-align: center;">
-                    <button @click="removeGcp(i)" style="
-                      background: none;
-                      border: none;
-                      color: black;
-                      font-weight: bold;
-                      font-size: 20px;
-                      cursor: pointer;
-                      line-height: 1;
-                    ">×</button>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-            <div style="margin-top: 4px; text-align: left; padding: 10px;">
-              <v-btn class="tiny-btn" small color="red" @click="removeFloatingImage">画像を消す</v-btn>
-              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="resetGcp">GCPリセット</v-btn>
-              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="saveGcpToLocal">GCP保存</v-btn>
-              <v-btn class="tiny-btn" style="margin-left: 5px;" small color="primary" @click="loadGcpFromLocal">GCP復元</v-btn>
-              <v-btn
-                  style="margin-left: 5px;"
-                  v-if="(() => {
-                    const imageCount = gcpList.filter(gcp =>
-                      Array.isArray(gcp.imageCoord) &&
-                      gcp.imageCoord.length === 2 &&
-                      typeof gcp.imageCoord[0] === 'number' &&
-                      typeof gcp.imageCoord[1] === 'number'
-                    ).length;
-
-                    const mapCount = gcpList.filter(gcp =>
-                      Array.isArray(gcp.mapCoord) &&
-                      gcp.mapCoord.length === 2 &&
-                      typeof gcp.mapCoord[0] === 'number' &&
-                      typeof gcp.mapCoord[1] === 'number'
-                    ).length;
-
-                    const bothCount = gcpList.filter(gcp =>
-                      Array.isArray(gcp.imageCoord) &&
-                      Array.isArray(gcp.mapCoord) &&
-                      gcp.imageCoord.length === 2 &&
-                      gcp.mapCoord.length === 2 &&
-                      typeof gcp.imageCoord[0] === 'number' &&
-                      typeof gcp.imageCoord[1] === 'number' &&
-                      typeof gcp.mapCoord[0] === 'number' &&
-                      typeof gcp.mapCoord[1] === 'number'
-                    ).length;
-
-                    return imageCount === bothCount &&
-                           mapCount === bothCount &&
-                           (bothCount === 2 || bothCount >= 4);
-                  })()"
-                  class="tiny-btn"
-                  small
-                  color="primary"
-                  @click="previewAffineWarp"
-              >
-                変&nbsp;&nbsp;換
-              </v-btn>
-              <v-btn
-                  v-if="showWarpCanvas"
-                  class="tiny-btn"
-                  style="margin-left: 5px;"
-                  small
-                  color="grey"
-                  @click="clearWarp"
-              >
-                クリア
-              </v-btn>
-<!--              <v-btn-->
-<!--                  v-if="showUploadButton"-->
-<!--                  class="tiny-btn"-->
-<!--                  style="margin-left: 5px;"-->
-<!--                  color="primary"-->
-<!--                  @click="openTileUploadDialog"-->
-<!--              >-->
-<!--                アップロード-->
-<!--              </v-btn>-->
-              <v-btn
-                  :disabled="!canUpload"
-                  class="tiny-btn"
-                  style="margin-left: 5px;"
-                  color="primary"
-                  @click="openTileUploadDialog"
-              >
-                アップロード
-              </v-btn>
-            </div>
-          </div>
 
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
@@ -1768,6 +1620,8 @@ import MessageDialog from '@/components/Message-Dialog'
 import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
+import WarpWizard from '@/components/WarpWizard.vue'
+
 
 import {
   addDraw,
@@ -2443,8 +2297,13 @@ export default {
     MessageDialog,
     MapillaryFilter,
     VDialogConfirm,
+    WarpWizard
   },
   data: () => ({
+    pendingFile: null,   // ← D&D/読み込み直後のファイルを保持
+
+    wizardOpen: false,
+    // gcpList: [],
     affineM: null,   // ★ 追加（リアクティブ）
 
     isRightDiv: true,
@@ -3440,6 +3299,12 @@ export default {
     },
   },
   methods: {
+    onWizardConfirm({ file, affineM, blob }) {
+      // file は念のため保持、画像は blob を優先
+      this.openTileUploadDialog(affineM, blob);
+    },
+
+
     onWarpImageClick (e) {
       const img = e.currentTarget;
       const rect = img.getBoundingClientRect();
@@ -4578,45 +4443,37 @@ export default {
       this.imageLoaded = true;
       console.log('Image loaded');
     },
-    openTileUploadDialog() {
-      // ダイアログを開く前に変換後の画像とワールドファイルをstoreに保存
-      if (this.showWarpCanvas) {
-        const canvas = document.querySelector("#warp-canvas");
-        if (!canvas || !canvas.toBlob) {
-          console.error('Canvas or toBlob is not available. Canvas:', canvas);
-          return;
-        }
+    openTileUploadDialog(affineM, blobFromChild = null) {
+      // 1) PNG Blob を決める（子が渡してきたものを最優先）
+      const makeFromCanvas = () => new Promise((resolve, reject) => {
+        const canvas = document.querySelector('#warp-canvas');
+        if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
+        if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+      });
 
-        // キャンバスの準備を確認
-        if (canvas.width === 0 || canvas.height === 0) {
-          console.error('Canvas dimensions are invalid:', { width: canvas.width, height: canvas.height });
-          return;
-        }
+      const ensureBlob = blobFromChild
+          ? Promise.resolve(blobFromChild)
+          : makeFromCanvas(); // フォールバック（将来の互換用）
 
-        canvas.toBlob(blob => {
-          if (!blob) {
-            console.error('Failed to create blob from canvas');
-            return;
-          }
-          const baseName = this.gazoNameFromStore || 'converted'; // デフォルト名を考慮
-          const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
-          const worldFileContent = this.generateWorldFile();
-          if (!worldFileContent) {
-            console.error('World file generation failed');
-            return;
-          }
-          // ワールドファイルを同名.pgwとして保存
-          const worldFile = new File([worldFileContent], `${baseName}.pgw`, { type: 'text/plain' });
+      ensureBlob.then((blob) => {
+        const baseName = this.gazoNameFromStore || this.s_gazoName || 'converted';
+        const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
 
-          // storeに保存
-          this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
+        // 2) ワールドファイルは affineM から生成（引数必須）
+        const worldFileContent = this.generateWorldFile(affineM);
+        if (!worldFileContent) throw new Error('World file generation failed');
+        const worldFile = new File([worldFileContent], `${baseName}.pgw`, { type: 'text/plain' });
 
-          // ワールドファイルの内容をコンソールログで表示
-          console.log('World File Content:', worldFileContent);
-          console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name }); // デバッグ用
-        }, 'image/png');
-      }
-      this.showTileDialog = true;
+        // 3) store に保存してダイアログを開く
+        this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
+        this.showTileDialog = true;
+        // デバッグ
+        console.log('World File Content:', worldFileContent);
+        console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name });
+      }).catch(err => {
+        console.error('openTileUploadDialog failed:', err);
+      });
     },
     clearWarp() {
       this.showOriginal = true;
@@ -9368,6 +9225,31 @@ export default {
                         this.uploadedImageUrl = evt.target.result;
                         this.showFloatingImage = true;
                         this.s_gazoName = fileName.split('.')[0]
+
+
+                        // data:()=>({ wizardOpen:false, gcpList:[], pendingFile:null, pendingUrl:'' }),
+// D&DやFileReader完了時
+                            this.pendingFile = file;   // or this.pendingUrl = droppedUrl;
+                        this.wizardOpen  = true;
+                        this.$store.dispatch('showFloatingWindow', 'warp-wizard');
+
+
+
+
+                        // this.pendingFile = file;           // ← いったん保持
+                        // this.wizardOpen = true;            // ダイアログを表示
+                        // this.$nextTick(() => {
+                        //      // ファイルを渡してプレビュー準備（画像読み込みもダイアログ側で処理）
+                        //          this.$refs.wizard?.openWithFile(file)
+                        // })
+
+                        // if (!this.$refs.wizard) {
+                        //   this.wizardOpen = true
+                        //   this.$nextTick(() => this.$refs.wizard.openWithFile(file))
+                        // } else {
+                        //   this.$refs.wizard.openWithFile(file)
+                        // }
+
                         // alert('読み込み終了')
                       };
                       reader.readAsDataURL(file);
