@@ -8053,7 +8053,7 @@ export default {
           const refreshRadiusHighlightObj = {
             queryLayers: ['oh-homusyo-2025-kijyunten'],
             idProperty: '名称',
-            radiusMeters: 200,                  // 任意半径
+            radiusMeters: 200,
             highlight: {
               fillColor: 'rgba(255,160,0,0.35)',
               lineColor: 'rgba(255,120,0,1.0)',
@@ -8066,12 +8066,12 @@ export default {
           const refreshRadiusHighlightObj2 = {
             queryLayers: ['oh-gaiku-layer'],
             idProperty: 'X座標',
-            radiusMeters: 200,                  // 任意半径
+            radiusMeters: 200,
             highlight: {
               fillColor: 'rgba(255,160,0,0.35)',
               lineColor: 'rgba(255,120,0,1.0)',
               lineWidth: 3,
-              circleColor: 'rgba(255,120,0,1.0)',
+              circleColor: 'rgba(0,0,0,1.0)',
               circleRadius: 6,
             },
             zoom: 14
