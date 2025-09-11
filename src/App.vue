@@ -8059,8 +8059,22 @@ export default {
               lineColor: 'rgba(255,120,0,1.0)',
               lineWidth: 3,
               circleColor: 'rgba(255,120,0,1.0)',
-              circleRadius: 6
-            }
+              circleRadius: 6,
+            },
+            zoom: 16
+          }
+          const refreshRadiusHighlightObj2 = {
+            queryLayers: ['oh-gaiku-layer'],
+            idProperty: 'X座標',
+            radiusMeters: 200,                  // 任意半径
+            highlight: {
+              fillColor: 'rgba(255,160,0,0.35)',
+              lineColor: 'rgba(255,120,0,1.0)',
+              lineWidth: 3,
+              circleColor: 'rgba(255,120,0,1.0)',
+              circleRadius: 6,
+            },
+            zoom: 14
           }
 
           let lngLat = null
@@ -8069,10 +8083,18 @@ export default {
             if (this.$store.state.isRadius200) {
               refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
             }
+            if (this.$store.state.isRadius2002) {
+              refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj2)
+            }
           })
           map.on('zoomend', (e) => {
-            if (this.$store.state.isRadius200) {
-              if (lngLat) refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+            if (lngLat) {
+              if (this.$store.state.isRadius200) {
+                refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj)
+              }
+              if (this.$store.state.isRadius2002) {
+                refreshRadiusHighlight(map, lngLat, refreshRadiusHighlightObj2)
+              }
             }
           })
 

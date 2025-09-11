@@ -1,24 +1,4 @@
 <template>
-  <v-dialog v-model="dialog" max-width="500px">
-    <v-card>
-      <v-card-title>
-        座標系選択
-      </v-card-title>
-      <v-card-text>
-        <v-select class="scrollable-content"
-                  v-model="s_zahyokei"
-                  :items="items"
-                  label="座標系を選択してください"
-                  outlined
-        ></v-select>
-        <v-btn @click="saveSimaGaiku">SIMA保存</v-btn>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="blue-darken-1" text @click="dialog = false">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
   <div :style="menuContentSize">
     <div style="font-size: large;margin-bottom: 10px;"></div>
     <v-select
@@ -35,7 +15,18 @@
       <!-- 選択結果の描画を完全にスキップ -->
       <template #selection=""></template>
     </v-select>
+    <div class="d-flex align-center" style="gap: 8px; margin-bottom: 15px;">
+    <v-switch
+        v-if="item.id === 'oh-gaiku'"
+        style="margin-left: 20px;"
+        v-model="s_isRadius2002"
+        color="primary"
+        hide-details
+        density="compact"
+        :label="'半径200m'"
+    />
     <v-btn style="margin-top: 0px;margin-left: 0px;margin-bottom: 10px;" @click="saveSimaGaiku">sima保存</v-btn>
+    </div>
 <!--    <hr style="margin-bottom: 10px;">-->
     <div v-html="item.attribution"></div>
   </div>
@@ -54,6 +45,7 @@ import {
   saveSima2,
   saveSimaGaiku
 } from "@/js/downLoad";
+import {clearRadiusHighlight} from "@/js/utils/radius-highlight";
 
 export default {
   name: 'ext-gaiku',
@@ -86,9 +78,17 @@ export default {
       '公共座標19系'
     ],
     kei: '',
-    menuContentSize: {'width':'240px','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
+    menuContentSize: {'width':'auto','height': 'auto','margin': '10px', 'overflow': 'hidden', 'user-select': 'text', 'font-size':'large'}
   }),
   computed: {
+    s_isRadius2002: {
+      get() {
+        return this.$store.state.isRadius2002
+      },
+      set(value) {
+        this.$store.state.isRadius2002 = value
+      }
+    },
     s_extFire () {
       return this.$store.state.extFire
     },
@@ -174,7 +174,6 @@ export default {
         layerId = 'oh-gaiku-layer'
       }
       saveSimaGaiku(map,layerId)
-      // history('街区SIMA保存',window.location.href)
     },
   },
   created() {
@@ -188,9 +187,19 @@ export default {
 
   },
   watch: {
-    s_extFire () {
-      // this.selectItem()
-    },
+    s_isRadius200(v) {
+      if (v) {
+        this.$store.state.loadingMessage3 = '地図上をクリックすると200m半径の円を書きます。<br>円内部の基準点のみSIMA保存します。'
+        this.$store.state.loading3 = true
+        setTimeout(() => {
+          this.$store.state.loading3 = false
+        },2000)
+      } else {
+        // 円と中心点を消し、oh200mIds を [] に
+        clearRadiusHighlight(this.$store.state.map01)
+        clearRadiusHighlight(this.$store.state.map02)
+      }
+    }
   }
 }
 </script>

@@ -47,7 +47,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.486,
+    clientVersion: 1.487,
     demTint: null,
     mode: 'step',     // 将来: 'linear' でグラデ
     level: 0,         // しきい値[m]
@@ -58,6 +58,7 @@ export default createStore({
       belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
       belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#08365b','#072b46','#051f34']
     },
+    isRadius2002: false,
     isRadius200: false,
     oh200mGeoJSON: null,
     oh200mIds: [],

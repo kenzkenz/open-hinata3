@@ -2988,23 +2988,27 @@ export function saveSimaKijyunten (map,layerId) {
 }
 
 export function saveSimaGaiku (map,layerId) {
-    if (map.getZoom() <= 12) {
-        alert('ズーム12以上にしてください。')
-        return
+    let geojson
+    if (store.state.oh200mIds.length > 0) {
+        geojson = store.state.oh200mGeoJSON
+    } else {
+        if (map.getZoom() <= 12) {
+            alert('ズーム16以上にしてください。')
+            return
+        }
+        const features = map.queryRenderedFeatures({
+            layers: [layerId] // 対象のレイヤー名を指定
+        });
+        geojson = {
+            type: 'FeatureCollection',
+            features: features.map(feature => ({
+                type: 'Feature',
+                geometry: feature.geometry,
+                properties: feature.properties
+            }))
+        };
     }
-    console.log(layerId)
-    const features = map.queryRenderedFeatures({
-        layers: [layerId] // 対象のレイヤー名を指定
-    });
-    // GeoJSON形式に変換
-    const geojson = {
-        type: 'FeatureCollection',
-        features: features.map(feature => ({
-            type: 'Feature',
-            geometry: feature.geometry,
-            properties: feature.properties
-        }))
-    };
+
     console.log(geojson)
     console.log(store.state.zahyokei)
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
@@ -5254,7 +5258,6 @@ export async function geoTiffLoadForUser2 (map,mapName,isUpload) {
 }
 
 export async function geoTiffLoad2 (map,mapName,isUpload) {
-    alert()
     history('GEOTIFF2読込',window.location.href)
     const zahyokei0 = zahyokei.find(item => item.kei === store.state.zahyokei)
     if (!zahyokei0) {

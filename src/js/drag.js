@@ -8,7 +8,6 @@ const drag = {
     };
 
     const startDrag = (el, event) => {
-      alert()
       const e = event.type.includes('touch') ? event.touches[0] : event;
       store.dragging = true;
       store.dragTarget = el;

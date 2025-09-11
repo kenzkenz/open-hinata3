@@ -57,9 +57,9 @@ const STATE_KEY = '__oh_radius_state';
  * @returns {Promise<{ids:string[], features:GeoJSON.Feature[]}>}
  */
 export async function refreshRadiusHighlight(map, centerLngLat, opts) {
-    const exists = !!(map && map.getLayer('oh-homusyo-2025-kijyunten'));
-    if (!exists) return
-    if (!store.state.isRadius200) return
+    // const exists = !!(map && map.getLayer('oh-homusyo-2025-kijyunten'));
+    // if (!exists) return
+    // if (!store.state.isRadius200) return
 
     ensureTurf();
 
@@ -73,7 +73,8 @@ export async function refreshRadiusHighlight(map, centerLngLat, opts) {
         addAboveLayerId = 'oh-homusyo-2025-kijyunten',
         highlight = {},
         idsStoreKey = 'oh200mIds',
-        geojsonStoreKey = 'oh200mGeoJSON'
+        geojsonStoreKey = 'oh200mGeoJSON',
+        zoom = 16
     } = opts || {};
 
     if (!idProperty || typeof idProperty !== 'string') {
@@ -96,7 +97,7 @@ export async function refreshRadiusHighlight(map, centerLngLat, opts) {
     addCenterPoint(map, center, { centerSourceId: 'oh-radius-center-source', centerLayerId: 'oh-radius-center-layer', addAboveLayerId });
 
     // 3) 円の内外判定 → **PMTiles z=16** / GeoJSON で ID 配列を作成
-    const { ids, features } = await collectIdsAtZ16(map, circleFeature, queryLayers, idProperty);
+    const { ids, features } = await collectIdsAtZ16(map, circleFeature, queryLayers, idProperty, zoom);
 
     // 4) ハイライト色を適用（指定レイヤーたちに動的式をセット）
     applyConditionalColor(map, highlightLayers, idProperty, ids, highlight);
@@ -189,8 +190,8 @@ function addCenterPoint(map, center, { centerSourceId, centerLayerId, addAboveLa
  * - queryLayers で与えられた各レイヤーの source / source-layer を参照
  * - スタイルの source.url が pmtiles:// であることが前提
  */
-async function collectIdsAtZ16(map, circlePolygon, queryLayers, idProperty) {
-    const z = 16; // 固定
+async function collectIdsAtZ16(map, circlePolygon, queryLayers, idProperty, zoom) {
+    const z = zoom;
     const bbox = turf.bbox(circlePolygon); // [minLng,minLat,maxLng,maxLat]
     const [minX, minY] = lngLatToTile(bbox[0], bbox[3], z);
     const [maxX, maxY] = lngLatToTile(bbox[2], bbox[1], z);
