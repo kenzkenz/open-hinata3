@@ -53,7 +53,6 @@
           洪水低地
         </v-chip>
       </MiniTooltip>
-      <!-- 温存: 内陸盆地/扇状地などは必要時に復活 -->
     </div>
 
     <!-- ===================== Advanced トグル ===================== -->
@@ -73,15 +72,15 @@
         <v-chip :color="adv.base==='flood' ? 'primary' : undefined" size="large" @click="adv.base='flood'">洪水低地</v-chip>
       </div>
 
-      <!-- 低い地/高い地（横幅を抑える） -->
+      <!-- 低い地/高い地：横幅を完全に均等に -->
       <div class="d-flex" style="gap:8px; margin-bottom:20px;">
         <v-text-field
             v-model.number="adv.low" type="number" density="compact"
-            label="低い地 (m)" hide-details class="oh-num"
+            label="低い地 (m)" hide-details class="oh-num" style="flex:1 1 0; min-width:0;"
         />
         <v-text-field
             v-model.number="adv.high" type="number" density="compact"
-            label="高い地 (m)" hide-details class="oh-num"
+            label="高い地 (m)" hide-details class="oh-num" style="flex:1 1 0; min-width:0;"
         />
       </div>
 
@@ -92,7 +91,7 @@
         <div style="width:32px; text-align:right; font-size:12px;">{{ adv.parts }}</div>
       </div>
 
-      <!-- 操作ボタン（左：リセット / 右：生成） -->
+      <!-- 操作ボタン（右：リセット / 左：生成 → 要望に合わせ左右逆なら入れ替えてOK） -->
       <div class="d-flex justify-space-between" style="gap:8px;">
         <v-btn color="primary" @click="generateAndApply" class="oh-btn-w">生成</v-btn>
         <v-btn variant="outlined" color="secondary" @click="resetAdvanced" class="oh-btn-w">リセット</v-btn>
@@ -132,9 +131,8 @@ const GSI_SEA_18 = [
   '#3686d8','#2976c3','#1f69b1','#155a9c','#0e4f8b','#09457c'
 ]
 
-/* ======== プリセット定義（要点のみ抜粋・既存と整合） ======== */
+/* ======== プリセット定義（要点のみ） ======== */
 const PRESETS = {
-  /* 地理院風 */
   gsi_coast: {
     aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange: GSI_RAMP_12,
@@ -153,8 +151,6 @@ const PRESETS = {
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
     belowRange: GSI_SEA_18
   },
-
-  /* OH3標準（自然系） */
   coast: {
     aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
@@ -173,8 +169,6 @@ const PRESETS = {
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
     belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34']
   },
-
-  /* 局所（必要部分のみ） */
   local_volcano: {
     aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600],
     aboveRange:['#171a1c','#1f2326','#2a2f31','#3a2b2b','#541b1b','#6b1313','#8a1010','#a01914','#b02a1e','#bf3d23','#5a4d49','#444141','#3a3a3d','#5b5e62','#8b8f94'],
@@ -189,7 +183,7 @@ const PRESETS = {
   }
 }
 
-/* 0–1 の t で配列から線形補間色を取得（HEX配列 → HEX） */
+/* 0–1 線形補間で色生成（HEX配列） */
 function lerpHexRamp(ramp, t) {
   if (ramp.length === 0) return '#000000'
   if (ramp.length === 1) return ramp[0]
@@ -213,14 +207,8 @@ export default {
 
   data:()=>({
     menuContentSize:{ width:'340px', height:'auto', margin:'10px', overflow:'hidden', 'user-select':'text', 'font-size':'large' },
-    presetKey:'mountain',   // 既定プリセット
-    adv:{
-      show:false,
-      base:'oh3',           // 'oh3' | 'gsi' | 'flood'
-      low:0,
-      high:10,              // ★ 高い地の初期値 10m
-      parts:12               // 段数
-    }
+    presetKey:'mountain',
+    adv:{ show:false, base:'oh3', low:0, high:10, parts:12 }
   }),
 
   computed:{
@@ -229,7 +217,6 @@ export default {
           : this.adv.base==='flood' ? '洪水低地'
               : 'OH3標準'
     },
-    // Advanced の “海側” ベース
     advSeaBase(){
       if (this.adv.base === 'gsi')
         return { domain:[...PRESETS.gsi_mountain.belowDomain],  range:[...PRESETS.gsi_mountain.belowRange] }
@@ -242,16 +229,9 @@ export default {
   methods:{
     ensure(){
       if(!this.$store.state.demTint){
-        this.$store.state.demTint = {
-          mode:'step',
-          palette: PRESETS[this.presetKey],
-          opacity: FORCE_OPACITY,
-          contrast: 0
-        }
+        this.$store.state.demTint = { mode:'step', palette: PRESETS[this.presetKey], opacity: 0.9, contrast: 0 }
       }
     },
-
-    // —— プリセット適用（上段のチップ用） ——
     usePreset(key){
       this.ensure()
       this.presetKey = key
@@ -259,83 +239,64 @@ export default {
       this.$store.state.demTint.opacity = FORCE_OPACITY
       this.apply()
     },
-
-    // —— Advanced: リセット（設定初期化 & レイヤー非表示） ——
     resetAdvanced(){
       this.adv.base = 'oh3'
       this.adv.low  = 0
       this.adv.high = 10
-      this.adv.parts= 8
-      // レイヤーを消して“非表示”に
+      this.adv.parts= 12
       const map = this.$store.state[this.mapName]
       if (!map) return
       try{
         if(map.getLayer('oh-dem-tint'))  map.removeLayer('oh-dem-tint')
         if(map.getSource('oh-dem-tint-src')) map.removeSource('oh-dem-tint-src')
-      }catch(e){/* noop */}
+      }catch(e){}
     },
-
-    // —— Advanced: 生成 → 適用 ——
     generateAndApply(){
       const low  = Number(this.adv.low)||0
-      const high = Math.max(low+1, Number(this.adv.high)||10) // high > low
+      const high = Math.max(low+1, Number(this.adv.high)||10)
       const parts= Math.max(3, Math.min(48, Number(this.adv.parts)||8))
 
-      // ベースランプ（陸側）
       const baseAboveRamp =
           this.adv.base==='gsi'   ? GSI_RAMP_18
               : this.adv.base==='flood' ? PRESETS.local_flood10.aboveRange
                   : PRESETS.mountain.aboveRange
 
-      // 0〜low は“範囲外（低すぎ）”として淡色、high 以上はグレーで抑制
-      const outsideLowColor  = '#e9f3ff'  // 淡青
-      const outsideHighColor = '#cfcfcf'  // グレー
+      const outsideLowColor  = '#e9f3ff'
+      const outsideHighColor = '#cfcfcf'
 
-      // ドメイン作成（0〜low）+（low〜high の等分）+（high〜∞）
       const aboveDomain = [0, low]
       const step = (high - low) / parts
-      for (let i=1;i<=parts;i++){
-        aboveDomain.push( Math.round(low + step*i) )
-      }
-      // range は domain 長に合わせて色を用意
+      for (let i=1;i<=parts;i++) aboveDomain.push( Math.round(low + step*i) )
+
       const aboveRange = []
       for (let i=0;i<aboveDomain.length;i++){
-        if (i===0) { aboveRange.push(outsideLowColor); continue }         // 0〜low
-        if (i===aboveDomain.length-1) { aboveRange.push(outsideHighColor); continue } // >= high
-        const t = (i-1)/(parts-1 || 1)   // 0..1
+        if (i===0) { aboveRange.push(outsideLowColor); continue }
+        if (i===aboveDomain.length-1) { aboveRange.push(outsideHighColor); continue }
+        const t = (i-1)/(parts-1 || 1)
         aboveRange.push( lerpHexRamp(baseAboveRamp, t) )
       }
 
-      // 海側はベースをそのまま（細工不要）
       const belowDomain = this.advSeaBase.domain
       const belowRange  = this.advSeaBase.range
 
       const palette = { aboveDomain, aboveRange, belowDomain, belowRange }
-
-      // ストアへ反映 → apply
       this.ensure()
       this.$store.state.demTint.palette = palette
       this.$store.state.demTint.opacity = FORCE_OPACITY
       this.apply()
     },
-
-    // —— 既存の安全な作り直しで反映 ——
     apply(){
       const map = this.$store.state[this.mapName]
       if(!map) return
-
       const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint'
       const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png'
 
-      // パレットをレジストリに登録 → styleKey で参照
       const palette = this.$store.state.demTint?.palette
       if(!palette) return
       const styleKey = this.hash(JSON.stringify(palette))
       registerDemTintPalette(styleKey, palette)
-
       const url = `${base}?style=${styleKey}`
 
-      // 既存位置を維持
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[]
         const idx = layers.findIndex(l=>l.id===LYR_ID)
@@ -364,7 +325,6 @@ export default {
         }catch(e){ console.warn(e) }
       })
     },
-
     hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)} return h.toString(16) }
   },
 
@@ -398,17 +358,17 @@ export default {
 .oh-adv-breadcrumb {
   font-size: 12px;
   color: #555;
-  margin-bottom: 6px;
   margin-bottom: 20px;
 }
 
-/* 数値入力の横幅を抑える */
-.oh-num { max-width: 120px; }
+/* 数値入力：均等幅にするので max-width は外し、最小幅のみ */
+.oh-num { min-width: 0; }
 
 /* ボタン横幅（左右均等） */
 .oh-btn-w { flex: 1 1 0; min-width: 0; }
 
 .oh-sublabel {
   font-size: 14px;
+  margin-bottom: 10px;
 }
 </style>
