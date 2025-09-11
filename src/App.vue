@@ -1436,14 +1436,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @load="onImageLoad"
                   :src="uploadedImageUrl"
                   :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showOriginal ? 0.9 : 0, display: 'block' }"
-                  @click="onImageClick"
+                  @click="onWarpImageClick"
               />
               <!-- 上：仮ワープした画像を描くCanvas -->
               <canvas
                   ref="warpCanvas"
                   id="warp-canvas"
                   :style="{ maxWidth: '50vw', maxHeight: '50vh', opacity: showWarpCanvas ? 1 : 0, position: 'absolute', top: 0, left: 0 }"
-                  @click="onImageClick"
+                  @click="onWarpImageClick"
               ></canvas>
 
               <!-- マーカー -->
@@ -1567,8 +1567,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 クリア
               </v-btn>
+<!--              <v-btn-->
+<!--                  v-if="showUploadButton"-->
+<!--                  class="tiny-btn"-->
+<!--                  style="margin-left: 5px;"-->
+<!--                  color="primary"-->
+<!--                  @click="openTileUploadDialog"-->
+<!--              >-->
+<!--                アップロード-->
+<!--              </v-btn>-->
               <v-btn
-                  v-if="showUploadButton"
+                  :disabled="!canUpload"
                   class="tiny-btn"
                   style="margin-left: 5px;"
                   color="primary"
@@ -1847,6 +1856,156 @@ import {
   zahyokei,
   zipDownloadSimaText
 } from '@/js/downLoad'
+
+/* ======== GCPワープ改善ユーティリティ ======== */
+
+/* ======== GCPワープ改善ユーティリティ ======== */
+function lngLatToMerc([lng, lat]){
+  const x = lng * 20037508.34 / 180;
+  const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+  const yMeters = y * 20037508.34 / 180;
+  return [x, yMeters];
+}
+function imageCssToNatural([x, y], img){
+  const sx = img.naturalWidth  / (img.clientWidth  || img.naturalWidth);
+  const sy = img.naturalHeight / (img.clientHeight || img.naturalHeight);
+  return [x * sx, y * sy];
+}
+function fitSimilarity2P(srcPts, dstPts){
+  // 2点→スケール一様・回転・平行移動（人の感覚に近い）
+  const [x1,y1] = srcPts[0], [x2,y2] = srcPts[1];
+  const [X1,Y1] = dstPts[0], [X2,Y2] = dstPts[1];
+  const dxs = x2 - x1, dys = y2 - y1;
+  const dxt = X2 - X1, dyt = Y2 - Y1;
+  const ds = Math.hypot(dxs, dys) || 1;
+  const dt = Math.hypot(dxt, dyt) || 1;
+  const s  = dt / ds; // 一様スケール
+  const th = Math.atan2(dyt, dxt) - Math.atan2(dys, dxs); // 回転差
+  const cos = Math.cos(th), sin = Math.sin(th);
+  // 変換: [X Y]^T = s * R * [x y]^T + t
+  const A = s *  cos, B = s * (-sin);
+  const D = s *  sin, E = s *   cos;
+  const C = X1 - (A * x1 + B * y1);
+  const F = Y1 - (D * x1 + E * y1);
+  return [A,B,C,D,E,F];
+}
+function fitAffineN(srcPts, dstPts, w){
+  // N>=3 の加重最小二乗（アフィン6係数）
+  const n = srcPts.length; const M = 6;
+  const A = Array.from({length:M},()=>Array(M).fill(0));
+  const b = Array(M).fill(0);
+  for(let i=0;i<n;i++){
+    const wi = w? w[i] : 1;
+    const [x,y] = srcPts[i];
+    const [X,Y] = dstPts[i];
+    const rowX = [x, y, 1, 0, 0, 0].map(v=>wi*v);
+    const rowY = [0, 0, 0, x, y, 1].map(v=>wi*v);
+    for(let j=0;j<M;j++){
+      for(let k=0;k<M;k++){
+        A[j][k] += rowX[j]*rowX[k] + rowY[j]*rowY[k];
+      }
+      b[j] += rowX[j]*X + rowY[j]*Y;
+    }
+  }
+  // ガウス消去
+  const x = b.slice(); const N=A.length; const B=A.map(r=>r.slice());
+  for(let i=0;i<N;i++){
+    // pivot
+    let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r }
+    if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]] }
+    const diag = B[i][i] || 1e-12;
+    for(let j=i+1;j<N;j++){
+      const f = B[j][i]/diag;
+      for(let k=i;k<N;k++) B[j][k]-=f*B[i][k];
+      x[j]-=f*x[i];
+    }
+  }
+  for(let i=N-1;i>=0;i--){
+    let s=0; for(let j=i+1;j<N;j++) s+=B[i][j]*x[j];
+    x[i]=(x[i]-s)/(B[i][i]||1e-12);
+  }
+  return x; // [A,B,C,D,E,F]
+}
+function huberWeights(res, delta){
+  return res.map(r => {
+    const a = Math.abs(r);
+    return a<=delta ? 1 : (delta/a);
+  });
+}
+function fitAffineRobust(srcPts, dstPts, iters=3){
+  let w = Array(srcPts.length).fill(1);
+  let coeff = fitAffineN(srcPts, dstPts, w);
+  for(let t=0;t<iters;t++){
+    // 残差
+    const res = srcPts.map(([x,y],i)=>{
+      const [A,B,C,D,E,F] = coeff;
+      const Xp = A*x + B*y + C; const Yp = D*x + E*y + F;
+      const [X,Y] = dstPts[i];
+      return Math.hypot(Xp-X, Yp-Y);
+    });
+    w = huberWeights(res, Math.max(1, 1.4826*median(res))); // ロバスト
+    coeff = fitAffineN(srcPts, dstPts, w);
+  }
+  return coeff;
+}
+function median(arr){ const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2 }
+function applyAffine([A,B,C,D,E,F],[x,y]){ return [A*x+B*y+C, D*x+E*y+F] }
+function composeAffine([A1,B1,C1,D1,E1,F1],[A2,B2,C2,D2,E2,F2]){ // M = M1 ∘ M2
+  const A = A1*A2 + B1*D2;
+  const B = A1*B2 + B1*E2;
+  const C = A1*C2 + B1*F2 + C1;
+  const D = D1*A2 + E1*D2;
+  const E = D1*B2 + E1*E2;
+  const F = D1*C2 + E1*F2 + F1;
+  return [A,B,C,D,E,F];
+}
+function previewOnCanvas(img, canvas, M){
+  const ctx = canvas.getContext('2d');
+  const w = img.naturalWidth, h = img.naturalHeight;
+  // 変換後の4隅
+  const corners = [[0,0],[w,0],[w,h],[0,h]].map(p=>applyAffine(M,p));
+  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+
+  // キャンバスは表示サイズに合わせる（非表示時は natural を使う）
+  const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
+  const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+  canvas.width  = cw;
+  canvas.height = ch;
+
+  const W = Math.max(1, maxX - minX);
+  const H = Math.max(1, maxY - minY);
+  const s = Math.min(cw / W, ch / H);  // 一様スケール
+
+  // ★ 重要：キャンバスは +Y が下向き。地図（メルカトル）は +Y が上向き。
+  // そのため Y 軸を反転して合わせる。
+  // T: world(m) → canvas(px)
+  const T = [ s, 0, -minX * s,
+    0,-s,  maxY * s ];
+
+  const Mv = composeAffine(T, M); // v' = T(M(v))
+  const [A,B,C,D,E,F] = Mv;
+  ctx.setTransform(A,D,B,E,C,F);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0);
+}
+function worldFileFromAffine([A,B,C,D,E,F]){
+  // ワールドファイル仕様：
+  // 1:A(px→X) 2:D 3:B 4:E 5:C 6:F （上から順）
+  return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}`;
+}
+
+
+/* ======== GCPワープ改善ユーティリティ ======== */
+
+
+
+
+
+
+
 
 
 function onLineClick(e,map,map2Flg) {
@@ -2286,6 +2445,8 @@ export default {
     VDialogConfirm,
   },
   data: () => ({
+    affineM: null,   // ★ 追加（リアクティブ）
+
     isRightDiv: true,
     fanMenuOffsetX: -60,
     segments: 100,
@@ -2503,6 +2664,10 @@ export default {
       'isUsingServerGeojson',
       'drawFeature',
     ]),
+    canUpload() {
+      const pairs = (this.gcpList || []).filter(g => Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
+      return pairs.length >= 2 && !!this.affineM && !this.isUploading;
+    },
     s_showConfirm: {
       get() {
         return this.$store.state.showConfirm
@@ -3275,6 +3440,103 @@ export default {
     },
   },
   methods: {
+    onWarpImageClick (e) {
+      const img = e.currentTarget;
+      const rect = img.getBoundingClientRect();
+      const xCss = e.clientX - rect.left;
+      const yCss = e.clientY - rect.top;
+
+      // ← ここが肝。CSS px → natural px に正規化して保存する
+      const sx = img.naturalWidth  / (img.clientWidth  || img.naturalWidth);
+      const sy = img.naturalHeight / (img.clientHeight || img.naturalHeight);
+      const xNat = xCss * sx;
+      const yNat = yCss * sy;
+
+      if (!Array.isArray(this.gcpList)) this.gcpList = [];
+      this.gcpList.push({
+        imageCoordCss: [xCss, yCss],   // デバッグ用に残してOK
+        imageCoord:    [xNat, yNat],   // ← 計算・保存はこっちを使う
+        mapCoord:      null            // 地図側クリックで後から埋める想定
+      });
+
+      // 自動プレビューしたければ（2点以上で類似変換→直感に合う）
+      if (this.gcpList.filter(g => g.imageCoord && g.mapCoord).length >= 2) {
+        this.previewAffineWarp();
+      }
+    },
+
+
+
+
+    previewAffineWarp(){
+      const img = document.getElementById('warp-image');
+      const canvas = document.getElementById('warp-canvas');
+      if(!img || !canvas){ console.warn('img/canvas not found'); return }
+
+      const pairs = (this.gcpList || []).filter(g =>
+          (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+      );
+      if(pairs.length < 2){ this.$store.dispatch('showSnackbar', 'GCPは最低2点必要です'); return }
+
+      // 画像CSS px → natural px（保存済みが natural でも安全に処理できる）
+      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+      // 画像座標を「Y↑の数学座標」に正規化
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+      // 地図側は Webメルカトル（Y↑）
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+
+      let Mup; // 画像(Y↑)→世界(Y↑)
+      if (pairs.length === 2){
+        Mup = fitSimilarity2P(srcUp, dstUp); // 2点＝平行移動+回転+一様スケール
+      } else {
+        Mup = fitAffineRobust(srcUp, dstUp, 3); // 3点以上＝ロバストアフィン
+      }
+      // 実画像は Y↓ なので固定の反転を合成して「画像(Y↓)→世界(Y↑)」へ
+      const FLIP_Y = [1,0,0,0,-1,0];
+      const M = composeAffine(Mup, FLIP_Y);
+
+      // this._lastAffineM = M;            // 非リアクティブ保持（互換）
+      // if (this.hasOwnProperty('affineM')) this.affineM = M; // リアクティブ保持（ボタン制御用）
+
+      this._lastAffineM = M;
+      this.affineM = M;
+
+      this.showOriginal = false;
+      this.showWarpCanvas = true;
+      this.$nextTick(()=> previewOnCanvas(img, canvas, M));
+    },
+
+    // ③ 差し替え：generateWorldFile（正規化＆ロバスト解を共通化）
+    generateWorldFile(){
+      const img = document.getElementById('warp-image');
+      if(!img){ console.warn('image not found'); return null }
+
+      const pairs = (this.gcpList || []).filter(g =>
+          (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+      );
+      if(pairs.length < 2){ console.warn('GCPは2点以上必要です'); return null }
+
+      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+
+      let Mup;
+      if (pairs.length === 2){ Mup = fitSimilarity2P(srcUp, dstUp) } else { Mup = fitAffineRobust(srcUp, dstUp, 4) }
+      const FLIP_Y = [1,0,0,0,-1,0];
+      const M = composeAffine(Mup, FLIP_Y);
+
+      this._lastAffineM = M;
+      // if (this.hasOwnProperty('affineM')) this.affineM = M;
+      this.affineM = M;
+      return worldFileFromAffine(M);
+    },
+
+
+
+
+
+
+
     onConfirmOk () {
       const s = this.$store.state
       const r = s.confirmResolve;
@@ -4360,228 +4622,6 @@ export default {
       }
       this.showTileDialog = true;
     },
-    generateWorldFile() {
-      if (this.gcpList.length < 4) {
-        console.warn('GCPが4点以上必要です');
-        return null;
-      }
-
-      const gcpImageCoords = this.gcpList.map(gcp => gcp.imageCoord);
-      const gcpMapCoords = this.gcpList.map(gcp => {
-        const [lng, lat] = gcp.mapCoord;
-        // WGS84 → Webメルカトル
-        const x = lng * 20037508.34 / 180;
-        const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
-        const yMeters = y * 20037508.34 / 180;
-        return [x, yMeters];
-      });
-
-      const N = gcpImageCoords.length;
-      const M = 6; // アフィン係数6個
-
-      const A = new Array(M).fill(0).map(() => new Array(M).fill(0));
-      const b = new Array(M).fill(0);
-
-      for (let i = 0; i < N; i++) {
-        const [x, y] = gcpImageCoords[i];
-        const [X, Y] = gcpMapCoords[i];
-
-        const rowX = [x, y, 1, 0, 0, 0]; // X = Ax + By + C
-        const rowY = [0, 0, 0, x, y, 1]; // Y = Dx + Ey + F
-
-        for (let j = 0; j < M; j++) {
-          for (let k = 0; k < M; k++) {
-            A[j][k] += rowX[j] * rowX[k] + rowY[j] * rowY[k];
-          }
-          b[j] += rowX[j] * X + rowY[j] * Y;
-        }
-      }
-
-      // 解く（ガウス消去法）
-      const solve = (A, b) => {
-        const n = b.length;
-        for (let i = 0; i < n; i++) {
-          // Pivot
-          let maxRow = i;
-          for (let k = i + 1; k < n; k++) {
-            if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) {
-              maxRow = k;
-            }
-          }
-          [A[i], A[maxRow]] = [A[maxRow], A[i]];
-          [b[i], b[maxRow]] = [b[maxRow], b[i]];
-
-          // Eliminate
-          for (let k = i + 1; k < n; k++) {
-            const factor = A[k][i] / A[i][i];
-            for (let j = i; j < n; j++) {
-              A[k][j] -= factor * A[i][j];
-            }
-            b[k] -= factor * b[i];
-          }
-        }
-
-        // Back substitution
-        const x = new Array(n);
-        for (let i = n - 1; i >= 0; i--) {
-          let sum = 0;
-          for (let j = i + 1; j < n; j++) {
-            sum += A[i][j] * x[j];
-          }
-          x[i] = (b[i] - sum) / A[i][i];
-        }
-
-        return x;
-      };
-
-      const coeffs = solve(A, b);
-      const [A_, B_, C_, D_, E_, F_] = coeffs;
-
-      // デバッグ表示
-      console.log('Affine Coefficients:', coeffs);
-
-      const worldFileContent = `
-            ${A_.toFixed(10)}
-            ${D_.toFixed(10)}
-            ${B_.toFixed(10)}
-            ${E_.toFixed(10)}
-            ${C_.toFixed(10)}
-            ${F_.toFixed(10)}
-            `.trim();
-
-      return worldFileContent;
-    },
-    previewAffineWarp() {
-      let gcpListToUse;
-
-      if (this.gcpList.length === 2) {
-        this.gcpList = autoCompleteGcpToRectangle(this.gcpList);
-      } else if (this.gcpList.length >= 4) {
-        // gcpListToUse = this.gcpList;
-        console.log()
-      } else {
-        console.warn('GCPは2点または4点以上が必要です（3点は不可）');
-        return;
-      }
-      this.showOriginal = false;
-      this.showWarpCanvas = true;
-      this.$nextTick(() => {
-        ensureOpenCvReady(() => {
-          const canvas = document.getElementById('warp-canvas');
-          const map = this.$store.state.map01;
-          const img = document.getElementById('warp-image');
-
-          if (!canvas || !img || !map || typeof window.cv === 'undefined') {
-            console.warn('必要な要素またはOpenCVが読み込まれていません');
-            return;
-          }
-
-          if (!img.complete) {
-            img.onload = () => this.previewAffineWarp();
-            return;
-          }
-
-          const src = window.cv.imread('warp-image');
-
-          if (src.empty() || src.cols === 0 || src.rows === 0) {
-            console.error('Failed to load image into Mat');
-            src.delete();
-            return;
-          }
-          console.log('Image size:', src.cols, src.rows);
-
-          if (this.gcpList.length < 4) {
-            console.warn('GCPが4点以上必要です');
-            return;
-          }
-
-          const from = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
-          const to = this.gcpList.slice(0, 4).map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
-
-          console.log('From points:', from);
-          console.log('To points:', to);
-
-          const minX = Math.min(...to.map(p => p[0]));
-          const maxX = Math.max(...to.map(p => p[0]));
-          const minY = Math.min(...to.map(p => p[1]));
-          const maxY = Math.max(...to.map(p => p[1]));
-
-          const scaleX = src.cols / (maxX - minX);
-          const scaleY = src.rows / (maxY - minY);
-          const scaledTo = to.map(p => [
-            (p[0] - minX) * scaleX,
-            (p[1] - minY) * scaleY
-          ]);
-          console.log('Scaled To points:', scaledTo);
-
-          canvas.width = src.cols;
-          canvas.height = src.rows;
-          const size = new window.cv.Size(src.cols, src.rows);
-
-          try {
-            const dst = new window.cv.Mat();
-            const srcQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-              from[0][0], from[0][1],
-              from[1][0], from[1][1],
-              from[2][0], from[2][1],
-              from[3][0], from[3][1]
-            ].map(Number));
-            const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-              scaledTo[0][0], scaledTo[0][1],
-              scaledTo[1][0], scaledTo[1][1],
-              scaledTo[2][0], scaledTo[2][1],
-              scaledTo[3][0], scaledTo[3][1]
-            ].map(Number));
-
-            const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
-            if (warpMat.empty()) {
-              console.error('Invalid transformation matrix');
-              srcQuad.delete();
-              dstQuad.delete();
-              src.delete();
-              dst.delete();
-              return;
-            }
-
-            window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
-
-            if (dst.empty()) {
-              console.error('Transformation failed, output Mat is empty');
-            } else {
-              window.cv.imshow('warp-canvas', dst);
-              console.log('Transformation applied');
-
-              // ✅ 黒っぽいピクセルを透過（Canvas操作）
-              const ctx = canvas.getContext('2d');
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const data = imageData.data;
-              const threshold = 50; // ← ここを変えると検出の厳しさが変わる
-
-              for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                const avg = (r + g + b) / 3;
-                if (avg < threshold) {
-                  data[i + 3] = 0; // alpha = 0 に
-                }
-              }
-
-              ctx.putImageData(imageData, 0, 0);
-            }
-
-            src.delete();
-            dst.delete();
-            srcQuad.delete();
-            dstQuad.delete();
-            warpMat.delete();
-          } catch (e) {
-            console.error('OpenCV処理中にエラーが発生しました:', e);
-          }
-        });
-      });
-    },
-
     clearWarp() {
       this.showOriginal = true;
       this.showWarpCanvas = false;
