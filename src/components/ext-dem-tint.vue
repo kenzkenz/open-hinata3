@@ -1,6 +1,6 @@
 <template>
-  <div :style="menuContentSize">
-    <!-- OH3標準 -->
+  <div :style="menuContentSize" class="oh-demtint-root">
+    <!-- ===================== OH3標準 ===================== -->
     <div style="font-size: 14px; margin:6px 0 6px;">OH3標準</div>
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:10px;">
       <MiniTooltip text="範囲：-20〜+20m（自然系）" :offset-x="0" :offset-y="0">
@@ -20,7 +20,7 @@
       </MiniTooltip>
     </div>
 
-    <!-- 地理院風 -->
+    <!-- ===================== 地理院風 ===================== -->
     <div style="font-size: 14px; margin:6px 0 6px;">地理院風</div>
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:12px;">
       <MiniTooltip text="範囲：-20〜+20m（GSI配色）" :offset-x="0" :offset-y="0">
@@ -40,7 +40,7 @@
       </MiniTooltip>
     </div>
 
-    <!-- 局所（用途特化） -->
+    <!-- ===================== 局所 ===================== -->
     <div style="font-size: 14px; margin:6px 0 6px;">局所</div>
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:12px;">
       <MiniTooltip text="高地火山域（800m+：溶岩〜焼土の暖色で強調／山頂は灰雪）" :offset-x="0" :offset-y="0">
@@ -48,62 +48,56 @@
           火山
         </v-chip>
       </MiniTooltip>
-
-      <MiniTooltip text="範囲：0〜10m（低地を青系で微妙に段彩）" :offset-x="0" :offset-y="0">
+      <MiniTooltip text="範囲：0〜10m（低いほど濃い青、10m超は淡青で抑制）" :offset-x="0" :offset-y="0">
         <v-chip class="oh-chip-lg" :color="presetKey==='local_flood10' ? 'primary' : undefined" size="large" @click="usePreset('local_flood10')">
           洪水低地
         </v-chip>
       </MiniTooltip>
+      <!-- 温存: 内陸盆地/扇状地などは必要時に復活 -->
     </div>
 
-    <!-- Advanced（普段は隠す） -->
-    <div class="d-flex align-center" style="gap:10px; margin:6px 0;">
-      <v-btn variant="tonal" size="small" @click="showAdvanced = !showAdvanced">
-        {{ showAdvanced ? 'Hide advanced' : 'Advanced' }}
-      </v-btn>
-      <div v-if="customSummary" style="font-size:12px;color:#666;">{{ customSummary }}</div>
+    <!-- ===================== Advanced トグル ===================== -->
+    <v-btn block class="oh-adv-toggle" @click="adv.show=!adv.show">Advanced</v-btn>
+
+    <!-- ===================== Advanced パネル ===================== -->
+    <div v-show="adv.show" class="oh-adv-panel">
+      <div class="oh-adv-breadcrumb">
+        {{ advBaseLabel }} / 低: {{ adv.low }}m — 高: {{ adv.high }}m / {{ adv.parts }}分割
+      </div>
+
+      <!-- ベースパレット選択（OH3 / GSI / 洪水低地） -->
+      <div class="oh-sublabel">ベースマップ</div>
+      <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:20px;">
+        <v-chip :color="adv.base==='oh3'   ? 'primary' : undefined" size="large" @click="adv.base='oh3'">OH3標準</v-chip>
+        <v-chip :color="adv.base==='gsi'   ? 'primary' : undefined" size="large" @click="adv.base='gsi'">地理院風</v-chip>
+        <v-chip :color="adv.base==='flood' ? 'primary' : undefined" size="large" @click="adv.base='flood'">洪水低地</v-chip>
+      </div>
+
+      <!-- 低い地/高い地（横幅を抑える） -->
+      <div class="d-flex" style="gap:8px; margin-bottom:20px;">
+        <v-text-field
+            v-model.number="adv.low" type="number" density="compact"
+            label="低い地 (m)" hide-details class="oh-num"
+        />
+        <v-text-field
+            v-model.number="adv.high" type="number" density="compact"
+            label="高い地 (m)" hide-details class="oh-num"
+        />
+      </div>
+
+      <!-- 分割（改行して下段） -->
+      <div class="d-flex align-center" style="gap:8px; margin-bottom:10px;">
+        <div class="oh-sublabel">分割</div>
+        <v-slider v-model="adv.parts" :min="3" :max="24" step="1" hide-details density="compact" class="flex-grow-1"/>
+        <div style="width:32px; text-align:right; font-size:12px;">{{ adv.parts }}</div>
+      </div>
+
+      <!-- 操作ボタン（左：リセット / 右：生成） -->
+      <div class="d-flex justify-space-between" style="gap:8px;">
+        <v-btn color="primary" @click="generateAndApply" class="oh-btn-w">生成</v-btn>
+        <v-btn variant="outlined" color="secondary" @click="resetAdvanced" class="oh-btn-w">リセット</v-btn>
+      </div>
     </div>
-
-    <v-expand-transition>
-      <v-sheet v-if="showAdvanced" class="pa-3 oh-adv-panel">
-        <!-- 1段目：Low / High -->
-        <div class="d-flex flex-wrap" style="gap:10px; margin-bottom:8px;">
-          <v-text-field
-              v-model.number="adv.low"
-              type="number" density="compact" hide-details
-              label="低い側 (m)" style="max-width:140px"
-          />
-          <v-text-field
-              v-model.number="adv.high"
-              type="number" density="compact" hide-details
-              label="高い側 (m)" style="max-width:140px"
-          />
-        </div>
-
-        <!-- 2段目：ベース配色（順序：OH3→GSI→洪水低地） -->
-        <div style="font-size:12px; color:#666; margin:2px 0 6px;">ベース配色</div>
-        <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:8px;">
-          <v-chip :color="adv.base==='oh3' ? 'primary' : undefined" size="small" @click="adv.base='oh3'">OH3 標準</v-chip>
-          <v-chip :color="adv.base==='gsi' ? 'primary' : undefined" size="small" @click="adv.base='gsi'">地理院風</v-chip>
-          <v-chip :color="adv.base==='flood' ? 'primary' : undefined" size="small" @click="adv.base='flood'">洪水低地</v-chip>
-        </div>
-
-        <!-- 3段目：分割（下の段に改行） -->
-        <div>
-          <div style="font-size:12px; color:#666; margin-bottom:2px;">分割数</div>
-          <v-slider
-              v-model.number="adv.splits" :min="3" :max="24" step="1"
-              density="compact" hide-details thumb-label
-          />
-        </div>
-
-        <!-- 操作 -->
-        <div class="d-flex" style="gap:8px; margin-top:10px;">
-          <v-btn color="primary" @click="applyCustom">この条件で作る</v-btn>
-          <v-btn variant="tonal" color="warning" @click="hideTint">非表示にする</v-btn>
-        </div>
-      </v-sheet>
-    </v-expand-transition>
 
     <hr style="margin:12px 0;">
     <div style="font-size:14px" v-html="item.attribution"></div>
@@ -115,87 +109,136 @@ import MiniTooltip from '@/components/MiniTooltip'
 import maplibregl from 'maplibre-gl'
 import { registerDemTintProtocol, registerDemTintPalette } from '@/js/utils/dem-tint-protocol'
 
-/* ======== フラグ ======== */
-const ENABLE_LABEL_HELPERS = false;   // ラベル最上＆ハロー強化は停止
-const FORCE_OPACITY = 0.9;            // すべて0.9で固定
+/* ======== 固定設定 ======== */
+const FORCE_OPACITY = 0.9;  // すべて 0.9 固定
 
-/* ======== 配色（ベースランプ） ======== */
+/* ======== 地理院風の配色（ベース） ======== */
+const GSI_RAMP_12 = [
+  '#0052ff','#146af9','#198cff','#2fb8ff','#46e0ff',
+  '#7be87a','#b6f83d','#fff300','#ffc300','#ff9b00','#ff5d20','#ff3a1a'
+]
 const GSI_RAMP_18 = [
   '#0052ff','#0e60ff','#1972ff','#2a95ff','#3abaff','#47dadf',
   '#60e88d','#86f04f','#b2f734','#e8f324','#ffe100','#ffc200',
   '#ffa100','#ff7e00','#ff5a10','#ff3a1a','#d92c18','#b51f15'
-];
+]
+const GSI_SEA_12 = [
+  '#eaf6ff','#d9efff','#c9e8ff','#b5deff','#9fd3ff',
+  '#8ac8ff','#75bcff','#5eafff','#479fff','#338fe0','#257fcb','#1a70b6'
+]
 const GSI_SEA_18 = [
   '#eaf6ff','#dff2ff','#d5edff','#c9e8ff','#bde1ff','#b0dbff',
   '#a1d3ff','#91cbff','#7fbfff','#6db3ff','#5aa6ff','#4797f0',
   '#3686d8','#2976c3','#1f69b1','#155a9c','#0e4f8b','#09457c'
-];
+]
 
-const OH3_RAMP_18 = [
-  '#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663',
-  '#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749',
-  '#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'
-];
-const OH3_SEA_18 = [
-  '#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff',
-  '#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6',
-  '#145fa0','#0f4f8a','#0b416f','#08365b','#072b46','#051f34'
-];
-
-/* 洪水低地ベース（青系だけで上昇・低いほど濃い） */
-const FLOOD_RAMP_18 = [
-  '#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3',
-  '#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff',
-  '#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff','#f6fbff'
-];
-const FLOOD_SEA_18 = [
-  '#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff',
-  '#89c1ff','#73b3f0','#5aa0d9','#4a91c8','#3c83b8','#2f74a7',
-  '#266897','#1f5e8a','#1a557e','#154c73','#114569','#0d3f61'
-];
-
-/* ======== 既存プリセット（本体そのまま） ======== */
+/* ======== プリセット定義（要点のみ抜粋・既存と整合） ======== */
 const PRESETS = {
-  gsi_coast:   { aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40], aboveRange: GSI_RAMP_18.slice(0,12),
-    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65], belowRange: GSI_SEA_18.slice(0,12) },
-  gsi_lowland: { aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120], aboveRange: GSI_RAMP_18.slice(0,12),
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],     belowRange: GSI_SEA_18.slice(0,12) },
-  gsi_mountain:{ aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange: GSI_RAMP_18,
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],      belowRange: GSI_SEA_18 },
+  /* 地理院風 */
+  gsi_coast: {
+    aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
+    aboveRange: GSI_RAMP_12,
+    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
+    belowRange: GSI_SEA_12
+  },
+  gsi_lowland: {
+    aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
+    aboveRange: GSI_RAMP_12,
+    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],
+    belowRange: GSI_SEA_12
+  },
+  gsi_mountain: {
+    aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
+    aboveRange: GSI_RAMP_18,
+    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
+    belowRange: GSI_SEA_18
+  },
 
-  coast:       { aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
+  /* OH3標準（自然系） */
+  coast: {
+    aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
     aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
     belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
-    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6'] },
-  lowland:     { aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
+    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
+  },
+  lowland: {
+    aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
     aboveRange:['#eaf7e3','#dff2d6','#cfe9bf','#bfe1a8','#a9da92','#94d07d','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
     belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],
-    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6'] },
-  mountain:    { aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange: OH3_RAMP_18,
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],      belowRange: OH3_SEA_18 },
+    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
+  },
+  mountain: {
+    aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
+    aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'],
+    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
+    belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34']
+  },
 
-  local_volcano: { /* 最終版そのまま（省略） */ },
-  local_flood10: { /* 最終版そのまま（省略） */ }
-};
+  /* 局所（必要部分のみ） */
+  local_volcano: {
+    aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600],
+    aboveRange:['#171a1c','#1f2326','#2a2f31','#3a2b2b','#541b1b','#6b1313','#8a1010','#a01914','#b02a1e','#bf3d23','#5a4d49','#444141','#3a3a3d','#5b5e62','#8b8f94'],
+    belowDomain:[0,1,2,3,5,8,12,20],
+    belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1']
+  },
+  local_flood10: {
+    aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40],
+    aboveRange:['#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3','#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff','#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff'],
+    belowDomain:[0,0.2,0.5,1,1.5,2,3,4,5],
+    belowRange:['#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff','#89c1ff','#73b3f0','#5aa0d9']
+  }
+}
+
+/* 0–1 の t で配列から線形補間色を取得（HEX配列 → HEX） */
+function lerpHexRamp(ramp, t) {
+  if (ramp.length === 0) return '#000000'
+  if (ramp.length === 1) return ramp[0]
+  const n = ramp.length - 1
+  const i = Math.max(0, Math.min(n - 1, Math.floor(t * n)))
+  const frac = (t * n) - i
+  const c1 = ramp[i], c2 = ramp[i + 1]
+  const [r1,g1,b1] = hexToRgb(c1), [r2,g2,b2] = hexToRgb(c2)
+  const r = Math.round(r1 + (r2 - r1) * frac)
+  const g = Math.round(g1 + (g2 - g1) * frac)
+  const b = Math.round(b1 + (b2 - b1) * frac)
+  return rgbToHex(r,g,b)
+}
+function hexToRgb(h){ const m=h.replace('#',''); return [parseInt(m.slice(0,2),16),parseInt(m.slice(2,4),16),parseInt(m.slice(4,6),16)] }
+function rgbToHex(r,g,b){ return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}` }
 
 export default {
-  name: 'ext-demtint-quick',
+  name: 'ext-dem-tint',
   props: ['mapName','item'],
   components: { MiniTooltip },
+
   data:()=>({
-    menuContentSize:{width:'auto',height:'auto',margin:'10px',overflow:'hidden','user-select':'text','font-size':'large'},
-    presetKey:'mountain',
-    showAdvanced:false,
-    adv:{ low:0, high:100, splits:12, base:'oh3' }  // 高い側の初期値=100m / ベース先頭=OH3
+    menuContentSize:{ width:'340px', height:'auto', margin:'10px', overflow:'hidden', 'user-select':'text', 'font-size':'large' },
+    presetKey:'mountain',   // 既定プリセット
+    adv:{
+      show:false,
+      base:'oh3',           // 'oh3' | 'gsi' | 'flood'
+      low:0,
+      high:10,              // ★ 高い地の初期値 10m
+      parts:12               // 段数
+    }
   }),
+
   computed:{
-    customSummary(){
-      if(!this.$store.state.demTint?.__custom) return '';
-      const {low,high,splits,base} = this.$store.state.demTint.__custom;
-      const baseName = (base==='oh3'?'OH3標準':base==='gsi'?'地理院風':'洪水低地');
-      return `カスタム：${low}〜${high}m / ${splits}分割 / ${baseName}`;
+    advBaseLabel(){
+      return this.adv.base==='gsi' ? '地理院風'
+          : this.adv.base==='flood' ? '洪水低地'
+              : 'OH3標準'
+    },
+    // Advanced の “海側” ベース
+    advSeaBase(){
+      if (this.adv.base === 'gsi')
+        return { domain:[...PRESETS.gsi_mountain.belowDomain],  range:[...PRESETS.gsi_mountain.belowRange] }
+      if (this.adv.base === 'flood')
+        return { domain:[...PRESETS.local_flood10.belowDomain], range:[...PRESETS.local_flood10.belowRange] }
+      return { domain:[...PRESETS.mountain.belowDomain],        range:[...PRESETS.mountain.belowRange] }
     }
   },
+
   methods:{
     ensure(){
       if(!this.$store.state.demTint){
@@ -203,105 +246,112 @@ export default {
           mode:'step',
           palette: PRESETS[this.presetKey],
           opacity: FORCE_OPACITY,
-          contrast: 0,
-          hidden:false
-        };
+          contrast: 0
+        }
       }
     },
+
+    // —— プリセット適用（上段のチップ用） ——
     usePreset(key){
-      this.ensure();
-      this.presetKey = key;
-      this.$store.state.demTint.palette = JSON.parse(JSON.stringify(PRESETS[key]));
-      delete this.$store.state.demTint.__custom;
-      this.$store.state.demTint.opacity = FORCE_OPACITY;
-      this.$store.state.demTint.hidden = false;
-      this.apply();
+      this.ensure()
+      this.presetKey = key
+      this.$store.state.demTint.palette = JSON.parse(JSON.stringify(PRESETS[key]))
+      this.$store.state.demTint.opacity = FORCE_OPACITY
+      this.apply()
     },
 
-    /* —— Advanced：任意レンジ×任意分割 —— */
-    applyCustom(){
-      let {low,high,splits,base} = this.adv;
-      if(!Number.isFinite(low)) low = 0;
-      if(!Number.isFinite(high)) high = 100;
-      if(low === high) high = low + 1;
-      if(low > high) [low,high] = [high,low];
-      splits = Math.max(3, Math.min(24, Math.round(splits||12)));
-
-      // ベース選択
-      const baseRamp = (base==='oh3') ? OH3_RAMP_18 : (base==='gsi' ? GSI_RAMP_18 : FLOOD_RAMP_18);
-      const seaRamp  = (base==='oh3') ? OH3_SEA_18 : (base==='gsi' ? GSI_SEA_18 : FLOOD_SEA_18);
-
-      // 均等分割
-      const aboveDomain = this.linspace(low, high, splits);
-      const aboveRange  = this.sampleRamp(baseRamp, splits);
-
-      // 範囲外の表現（より目立つ色に変更）
-      const preColor  = '#e2f0ff'; // low未満：薄い水色
-      const postColor = '#f3e7d6'; // high超過：淡い黄土
-      const aDomainExt = [Math.min(-10000, low-1e9), ...aboveDomain, high+1];
-      const aRangeExt  = [preColor, ...aboveRange.slice(0, -1), aboveRange[aboveRange.length-1], postColor];
-
-      // 海側はベースに合わせる
-      const belowDomain = seaRamp.map((_,i)=>i);
-      const belowRange  = seaRamp.slice();
-
-      const palette = { aboveDomain: aDomainExt, aboveRange: aRangeExt, belowDomain, belowRange };
-
-      this.ensure();
-      this.$store.state.demTint.palette = palette;
-      this.$store.state.demTint.opacity = FORCE_OPACITY;
-      this.$store.state.demTint.__custom = { low, high, splits, base };
-      this.$store.state.demTint.hidden = false;
-
-      this.apply(true);
-    },
-
-    // 完全に非表示（レイヤ削除）
-    hideTint(){
-      const map = this.$store.state[this.mapName];
-      if(!map) return;
-      const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
+    // —— Advanced: リセット（設定初期化 & レイヤー非表示） ——
+    resetAdvanced(){
+      this.adv.base = 'oh3'
+      this.adv.low  = 0
+      this.adv.high = 10
+      this.adv.parts= 8
+      // レイヤーを消して“非表示”に
+      const map = this.$store.state[this.mapName]
+      if (!map) return
       try{
-        if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID);
-        if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
-      }catch(e){ console.warn(e); }
-      this.ensure();
-      this.$store.state.demTint.hidden = true;
-      delete this.$store.state.demTint.__custom;
+        if(map.getLayer('oh-dem-tint'))  map.removeLayer('oh-dem-tint')
+        if(map.getSource('oh-dem-tint-src')) map.removeSource('oh-dem-tint-src')
+      }catch(e){/* noop */}
     },
 
-    /* 実反映 */
-    apply(isCustom=false){
-      const map = this.$store.state[this.mapName];
-      if(!map) return;
-      if(this.$store.state.demTint?.hidden){ return; } // 非表示なら何もしない
+    // —— Advanced: 生成 → 適用 ——
+    generateAndApply(){
+      const low  = Number(this.adv.low)||0
+      const high = Math.max(low+1, Number(this.adv.high)||10) // high > low
+      const parts= Math.max(3, Math.min(48, Number(this.adv.parts)||8))
 
-      const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint';
-      const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png';
+      // ベースランプ（陸側）
+      const baseAboveRamp =
+          this.adv.base==='gsi'   ? GSI_RAMP_18
+              : this.adv.base==='flood' ? PRESETS.local_flood10.aboveRange
+                  : PRESETS.mountain.aboveRange
 
-      const palette = this.$store.state.demTint?.palette;
-      const styleKey = this.hash(JSON.stringify(palette));
-      registerDemTintPalette(styleKey, palette);
+      // 0〜low は“範囲外（低すぎ）”として淡色、high 以上はグレーで抑制
+      const outsideLowColor  = '#e9f3ff'  // 淡青
+      const outsideHighColor = '#cfcfcf'  // グレー
 
-      const url = `${base}?style=${styleKey}`;
+      // ドメイン作成（0〜low）+（low〜high の等分）+（high〜∞）
+      const aboveDomain = [0, low]
+      const step = (high - low) / parts
+      for (let i=1;i<=parts;i++){
+        aboveDomain.push( Math.round(low + step*i) )
+      }
+      // range は domain 長に合わせて色を用意
+      const aboveRange = []
+      for (let i=0;i<aboveDomain.length;i++){
+        if (i===0) { aboveRange.push(outsideLowColor); continue }         // 0〜low
+        if (i===aboveDomain.length-1) { aboveRange.push(outsideHighColor); continue } // >= high
+        const t = (i-1)/(parts-1 || 1)   // 0..1
+        aboveRange.push( lerpHexRamp(baseAboveRamp, t) )
+      }
 
-      // レイヤ順維持
+      // 海側はベースをそのまま（細工不要）
+      const belowDomain = this.advSeaBase.domain
+      const belowRange  = this.advSeaBase.range
+
+      const palette = { aboveDomain, aboveRange, belowDomain, belowRange }
+
+      // ストアへ反映 → apply
+      this.ensure()
+      this.$store.state.demTint.palette = palette
+      this.$store.state.demTint.opacity = FORCE_OPACITY
+      this.apply()
+    },
+
+    // —— 既存の安全な作り直しで反映 ——
+    apply(){
+      const map = this.$store.state[this.mapName]
+      if(!map) return
+
+      const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint'
+      const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png'
+
+      // パレットをレジストリに登録 → styleKey で参照
+      const palette = this.$store.state.demTint?.palette
+      if(!palette) return
+      const styleKey = this.hash(JSON.stringify(palette))
+      registerDemTintPalette(styleKey, palette)
+
+      const url = `${base}?style=${styleKey}`
+
+      // 既存位置を維持
       const beforeId = (()=>{
-        const layers = map.getStyle()?.layers||[];
-        const idx = layers.findIndex(l=>l.id===LYR_ID);
-        if(idx===-1) return undefined;
+        const layers = map.getStyle()?.layers||[]
+        const idx = layers.findIndex(l=>l.id===LYR_ID)
+        if(idx===-1) return undefined
         for(let k=idx+1;k<layers.length;k++){
-          const id = layers[k]?.id; if(id && map.getLayer(id)) return id;
+          const id = layers[k]?.id; if(id && map.getLayer(id)) return id
         }
-        return undefined;
-      })();
+        return undefined
+      })()
 
       requestAnimationFrame(()=>{
         try{
-          if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID);
-          if(map.getSource(SRC_ID)) map.removeSource(SRC_ID);
+          if(map.getLayer(LYR_ID))  map.removeLayer(LYR_ID)
+          if(map.getSource(SRC_ID)) map.removeSource(SRC_ID)
 
-          map.addSource(SRC_ID,{ type:'raster', tiles:[url], tileSize:256, scheme:'xyz', maxzoom:15 });
+          map.addSource(SRC_ID,{ type:'raster', tiles:[url], tileSize:256, scheme:'xyz', maxzoom:15 })
           map.addLayer({
             id: LYR_ID, type:'raster', source:SRC_ID,
             paint: {
@@ -310,90 +360,55 @@ export default {
               'raster-opacity': this.$store.state.demTint?.opacity ?? 0.9,
               'raster-contrast': this.$store.state.demTint?.contrast ?? 0
             }
-          }, beforeId);
-
-          if (ENABLE_LABEL_HELPERS) {
-            this.placeTintBelowSymbols(map, LYR_ID);
-            this.boostLabelHalo(map, { color:'rgba(255,255,255,0.65)', width:1.6, blur:0.4 });
-          }
-        }catch(e){ console.warn(e); }
-      });
+          }, beforeId)
+        }catch(e){ console.warn(e) }
+      })
     },
 
-    /* ユーティリティ */
-    linspace(min, max, n){
-      if(n<=1) return [min];
-      const step = (max - min) / (n - 1);
-      const arr = new Array(n);
-      for(let i=0;i<n;i++) arr[i] = +(min + step*i).toFixed(6);
-      return arr;
-    },
-    sampleRamp(ramp, n){
-      if(n<=1) return [ramp[0]];
-      const m = ramp.length;
-      const out = [];
-      for(let i=0;i<n;i++){
-        const t = (n===1)?0 : i/(n-1);
-        const x = t*(m-1);
-        const i0 = Math.floor(x), i1 = Math.min(m-1, i0+1);
-        const f  = x - i0;
-        out.push(this.lerpHex(ramp[i0], ramp[i1], f));
-      }
-      return out;
-    },
-    lerpHex(h1,h2,t){
-      const c1 = this.hexToRgb(h1), c2 = this.hexToRgb(h2);
-      const r = Math.round(c1.r + (c2.r-c1.r)*t);
-      const g = Math.round(c1.g + (c2.g-c1.g)*t);
-      const b = Math.round(c1.b + (c2.b-c1.b)*t);
-      return `#${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
-    },
-    hexToRgb(hex){
-      const s = hex.replace('#','');
-      const n = parseInt(s,16);
-      return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
-    },
-
-    placeTintBelowSymbols(map, tintLayerId='oh-dem-tint'){
-      try{
-        const layers = map.getStyle()?.layers||[];
-        const firstSymbol = layers.find(l=>l.type==='symbol')?.id;
-        if(firstSymbol && map.getLayer(tintLayerId)) map.moveLayer(tintLayerId, firstSymbol);
-      }catch(e){ console.warn('placeTintBelowSymbols:', e); }
-    },
-    boostLabelHalo(map,{color='rgba(255,255,255,0.6)',width=1.5,blur=0.5}={}){
-      try{
-        const layers = map.getStyle()?.layers||[];
-        for(const l of layers){
-          if(l.type!=='symbol') continue;
-          const id=l.id; if(!map.getLayer(id)) continue;
-          const curColor = map.getPaintProperty(id,'text-halo-color');
-          const curWidth = map.getPaintProperty(id,'text-halo-width');
-          const curBlur  = map.getPaintProperty(id,'text-halo-blur');
-          if(!curColor) map.setPaintProperty(id,'text-halo-color',color);
-          if(!(typeof curWidth==='number' && curWidth>=width)) map.setPaintProperty(id,'text-halo-width',width);
-          if(!curBlur) map.setPaintProperty(id,'text-halo-blur',blur);
-        }
-      }catch(e){ console.warn('boostLabelHalo:', e); }
-    },
-    hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h.toString(16); }
+    hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)} return h.toString(16) }
   },
 
   mounted(){
-    registerDemTintProtocol(maplibregl);
-    const h = document.querySelector('#handle-'+this.item.id);
-    if(h) h.innerHTML = `<span style="font-size: large;">${this.item.label}</span>`;
-    this.ensure();
-    this.apply();
+    registerDemTintProtocol(maplibregl)
+    const h = document.querySelector('#handle-'+this.item.id)
+    if(h) h.innerHTML = `<span style="font-size: large;">${this.item.label}</span>`
+    this.ensure()
+    this.apply()
   }
 }
 </script>
 
 <style scoped>
 .oh-chip-lg { font-size: 15px; padding: 8px 12px; }
+
+/* ルートは固定幅で横伸びしない */
+.oh-demtint-root { box-sizing: border-box; }
+
+/* Advanced トグル */
+.oh-adv-toggle { margin-bottom: 8px; }
+
+/* Advanced パネルは薄い背景色＋角丸、横幅固定 */
 .oh-adv-panel {
-  background: #fafbfe;
-  border: 1px solid #e3e8ff;
-  border-radius: 10px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+.oh-adv-breadcrumb {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 6px;
+  margin-bottom: 20px;
+}
+
+/* 数値入力の横幅を抑える */
+.oh-num { max-width: 120px; }
+
+/* ボタン横幅（左右均等） */
+.oh-btn-w { flex: 1 1 0; min-width: 0; }
+
+.oh-sublabel {
+  font-size: 14px;
 }
 </style>
