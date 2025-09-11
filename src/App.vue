@@ -3331,43 +3331,91 @@ export default {
       }
     },
 
-
-
-
     previewAffineWarp(){
-      const img = document.getElementById('warp-image');
-      const canvas = document.getElementById('warp-canvas');
-      if(!img || !canvas){ console.warn('img/canvas not found'); return }
 
-      const pairs = (this.gcpList || []).filter(g =>
-          (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+      // 追加: 正規化ヘルパ
+      function toNaturalCoord(g, img){
+        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
+        if (Array.isArray(g.imageCoord))    return g.imageCoord;
+        return null;
+      }
+      function residualsMeters(Mup, srcUp, dstUp){
+        const err = srcUp.map(([x,y],i) => {
+          const [A,B,C,D,E,F] = Mup;
+          const Xp = A*x + B*y + C, Yp = D*x + E*y + F;
+          const [X,Y] = dstUp[i];
+          return Math.hypot(Xp - X, Yp - Y);
+        });
+        const rms = Math.sqrt(err.reduce((s,e)=>s+e*e,0) / Math.max(1, err.length));
+        return {err, rms};
+      }
+      const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
+      if(!img||!canvas) return;
+
+      const pairs=(this.gcpList||[]).filter(g =>
+          (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
       );
-      if(pairs.length < 2){ this.$store.dispatch('showSnackbar', 'GCPは最低2点必要です'); return }
+      if (pairs.length < 2){ this.affineM=null; this.clearCanvas(canvas); return; }
 
-      // 画像CSS px → natural px（保存済みが natural でも安全に処理できる）
-      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-      // 画像座標を「Y↑の数学座標」に正規化
+      // 画像 natural(px) → “上向き”座標
+      const srcNat = pairs.map(g => toNaturalCoord(g, img));
       const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-      // 地図側は Webメルカトル（Y↑）
+
+      // 地図 (lng,lat) → 3857(m)（上向き）
       const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
 
-      let Mup; // 画像(Y↑)→世界(Y↑)
-      if (pairs.length === 2){
-        Mup = fitSimilarity2P(srcUp, dstUp); // 2点＝平行移動+回転+一様スケール
-      } else {
-        Mup = fitAffineRobust(srcUp, dstUp, 3); // 3点以上＝ロバストアフィン
-      }
-      // 実画像は Y↓ なので固定の反転を合成して「画像(Y↓)→世界(Y↑)」へ
-      const FLIP_Y = [1,0,0,0,-1,0];
-      const M = composeAffine(Mup, FLIP_Y);
+      // 2点=相似 / 3点以上=ロバストアフィン
+      const Mup = (pairs.length === 2) ? fitSimilarity2P(srcUp, dstUp)
+          : fitAffineRobust(srcUp, dstUp, 3);
 
-      this._lastAffineM = M;
+      // 残差ログ（デバッグ）
+      const {err, rms} = residualsMeters(Mup, srcUp, dstUp);
+      console.log('per-point residuals(m):', err.map(e=>e.toFixed(2)), '  RMS=', rms.toFixed(2));
+
+      // 実運用は y下向き画像→上向き世界の順序で1回反転
+      const FLIP_Y=[1,0,0, 0,-1,0];
+      const M = composeAffine(Mup, FLIP_Y); // q_world = M(p_imgNatural)
       this.affineM = M;
-
-      this.showOriginal = false;
-      this.showWarpCanvas = true;
-      this.$nextTick(()=> previewOnCanvas(img, canvas, M));
+alert(888)
+      // プレビュー（世界→キャンバスの追加スケーリング/反転は preview 内でのみ）
+      previewOnCanvas(img, canvas, M);
     },
+
+
+    // previewAffineWarp(){
+    //   const img = document.getElementById('warp-image');
+    //   const canvas = document.getElementById('warp-canvas');
+    //   if(!img || !canvas){ console.warn('img/canvas not found'); return }
+    //
+    //   const pairs = (this.gcpList || []).filter(g =>
+    //       (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+    //   );
+    //   if(pairs.length < 2){ this.$store.dispatch('showSnackbar', 'GCPは最低2点必要です'); return }
+    //
+    //   // 画像CSS px → natural px（保存済みが natural でも安全に処理できる）
+    //   const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+    //   // 画像座標を「Y↑の数学座標」に正規化
+    //   const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+    //   // 地図側は Webメルカトル（Y↑）
+    //   const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+    //
+    //   let Mup; // 画像(Y↑)→世界(Y↑)
+    //   if (pairs.length === 2){
+    //     Mup = fitSimilarity2P(srcUp, dstUp); // 2点＝平行移動+回転+一様スケール
+    //   } else {
+    //     Mup = fitAffineRobust(srcUp, dstUp, 3); // 3点以上＝ロバストアフィン
+    //   }
+    //   // 実画像は Y↓ なので固定の反転を合成して「画像(Y↓)→世界(Y↑)」へ
+    //   const FLIP_Y = [1,0,0,0,-1,0];
+    //   const M = composeAffine(Mup, FLIP_Y);
+    //
+    //   this._lastAffineM = M;
+    //   this.affineM = M;
+    //
+    //   this.showOriginal = false;
+    //   this.showWarpCanvas = true;
+    //   this.$nextTick(()=> previewOnCanvas(img, canvas, M));
+    // },
 
     // ③ 差し替え：generateWorldFile（正規化＆ロバスト解を共通化）
     generateWorldFile(){

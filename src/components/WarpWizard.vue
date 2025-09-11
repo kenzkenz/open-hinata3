@@ -267,7 +267,60 @@ export default {
     removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
 
     // ===== プレビュー / 出力 =====
-    previewAffineWarp(){ const img=this.$refs.warpImage; const canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if(pairs.length<2){ this.affineM=null; this.clearCanvas(canvas); return } const srcNat=pairs.map(g=> imageCssToNatural(g.imageCoordCss||g.imageCoord, img)); const srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=> lngLatToMerc(g.mapCoord)); let Mup; if(pairs.length===2){ Mup=fitSimilarity2P(srcUp,dstUp) } else { Mup=fitAffineRobust(srcUp,dstUp,3) } const FLIP_Y=[1,0,0,0,-1,0]; const M=composeAffine(Mup,FLIP_Y); this.affineM=M; previewOnCanvas(img, canvas, M) },
+    // previewAffineWarp(){ const img=this.$refs.warpImage; const canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if(pairs.length<2){ this.affineM=null; this.clearCanvas(canvas); return } const srcNat=pairs.map(g=> imageCssToNatural(g.imageCoordCss||g.imageCoord, img)); const srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=> lngLatToMerc(g.mapCoord)); let Mup; if(pairs.length===2){ Mup=fitSimilarity2P(srcUp,dstUp) } else { Mup=fitAffineRobust(srcUp,dstUp,3) } const FLIP_Y=[1,0,0,0,-1,0]; const M=composeAffine(Mup,FLIP_Y); this.affineM=M; previewOnCanvas(img, canvas, M) },
+
+
+    previewAffineWarp(){
+
+      // 追加: 正規化ヘルパ
+      function toNaturalCoord(g, img){
+        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
+        if (Array.isArray(g.imageCoord))    return g.imageCoord;
+        return null;
+      }
+      function residualsMeters(Mup, srcUp, dstUp){
+        const err = srcUp.map(([x,y],i) => {
+          const [A,B,C,D,E,F] = Mup;
+          const Xp = A*x + B*y + C, Yp = D*x + E*y + F;
+          const [X,Y] = dstUp[i];
+          return Math.hypot(Xp - X, Yp - Y);
+        });
+        const rms = Math.sqrt(err.reduce((s,e)=>s+e*e,0) / Math.max(1, err.length));
+        return {err, rms};
+      }
+      const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
+      if(!img||!canvas) return;
+
+      const pairs=(this.gcpList||[]).filter(g =>
+          (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+      );
+      if (pairs.length < 2){ this.affineM=null; this.clearCanvas(canvas); return; }
+
+      // 画像 natural(px) → “上向き”座標
+      const srcNat = pairs.map(g => toNaturalCoord(g, img));
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+
+      // 地図 (lng,lat) → 3857(m)（上向き）
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+
+      // 2点=相似 / 3点以上=ロバストアフィン
+      const Mup = (pairs.length === 2) ? fitSimilarity2P(srcUp, dstUp)
+          : fitAffineRobust(srcUp, dstUp, 3);
+
+      // 残差ログ（デバッグ）
+      const {err, rms} = residualsMeters(Mup, srcUp, dstUp);
+      console.log('per-point residuals(m):', err.map(e=>e.toFixed(2)), '  RMS=', rms.toFixed(2));
+
+      // 実運用は y下向き画像→上向き世界の順序で1回反転
+      const FLIP_Y=[1,0,0, 0,-1,0];
+      const M = composeAffine(Mup, FLIP_Y); // q_world = M(p_imgNatural)
+      this.affineM = M;
+      // プレビュー（世界→キャンバスの追加スケーリング/反転は preview 内でのみ）
+      previewOnCanvas(img, canvas, M);
+    },
+
+
+
     downloadWorldFile(){ if(!this.affineM) return; const txt=worldFileFromAffine(this.affineM); const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='image.pgw'; a.click(); URL.revokeObjectURL(a.href) },
     confirm(){ if(!this.affineM) return; const f=this.$props.file||null; const canvas=this.$refs.warpCanvas; if(!canvas||!canvas.toBlob){ this.$emit('confirm',{ file:f, affineM:this.affineM, blob:null }); return } canvas.toBlob((blob)=>{ this.$emit('confirm',{ file:f, affineM:this.affineM, blob }) }, 'image/png') },
   }
