@@ -1,10 +1,10 @@
 <template>
   <!-- フローティングウインドウ内にそのまま置く版（v-dialog不使用） -->
-  <div class="oh-warp-root">
+  <div class="oh-warp-root" v-show="isOpen">
     <div class="oh-toolbar">
       <div class="oh-title">
-        <span class="oh-icon">🪄</span>
-        Warp Wizard
+<!--        <span class="oh-icon">🪄</span>-->
+<!--        Warp Wizard-->
       </div>
       <div class="oh-tools">
         <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
@@ -16,11 +16,11 @@
         <v-chip size="small" class="mr-1" label>GCP {{ pairsCount }}</v-chip>
         <v-chip v-if="transformKind" :color="transformKindColor" size="small" class="mr-1" label>{{ transformKind }}</v-chip>
         <v-chip v-if="imgMeta" size="small" class="mr-1" label>{{ imgMeta }}</v-chip>
-        <v-btn icon variant="text" @click="onClose" :title="'閉じる'"><v-icon>mdi-close</v-icon></v-btn>
+        <!-- 子のクローズボタンは不要になったため削除 -->
       </div>
     </div>
 
-    <div class="oh-body">
+    <div class="oh-body" :class="{ stacked }">
       <div class="left-pane">
         <div v-if="!imgUrl" class="empty">画像がありません</div>
         <div v-else class="img-wrap" @click="onImageAreaClick">
@@ -35,11 +35,11 @@
       </div>
 
       <div class="right-pane">
-        <div class="pane-title">対応点（GCP）</div>
-        <div class="gcp-help">画像をクリック→地図をクリック（フローティングなので地図側もそのまま操作できます）</div>
+<!--        <div class="pane-title">対応点（GCP）</div>-->
+<!--        <div class="gcp-help">画像をクリック→地図をクリック</div>-->
         <v-table density="compact" class="gcp-table">
           <thead>
-          <tr><th>#</th><th>Image (px)</th><th>Map (lng,lat)</th><th></th></tr>
+          <tr><th></th><th>Image (px)</th><th>Map (lng,lat)</th><th></th></tr>
           </thead>
           <tbody>
           <tr v-for="(g,i) in gcpList" :key="i">
@@ -54,8 +54,8 @@
         </v-table>
 
         <div class="actions">
-          <v-btn variant="text" :disabled="pairsCount<2" @click="previewAffineWarp"><v-icon class="mr-1">mdi-eye</v-icon>プレビュー</v-btn>
-          <v-btn variant="text" :disabled="!affineM" @click="downloadWorldFile"><v-icon class="mr-1">mdi-content-save-outline</v-icon>WorldFile</v-btn>
+          <!-- 手動プレビューボタンは撤去。2点以上そろえば自動で描画します -->
+<!--          <v-btn variant="text" :disabled="!affineM" @click="downloadWorldFile"><v-icon class="mr-1">mdi-content-save-outline</v-icon>WorldFile</v-btn>-->
           <v-btn color="primary" :disabled="!affineM" @click="confirm"><v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード</v-btn>
         </div>
       </div>
@@ -160,13 +160,18 @@ function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}\n${D}\n${B}\n${E}\n${C
 export default {
   name: 'WarpWizard',
   props: {
+    // 親が閉じた時にもクリーンアップしたいので modelValue を受ける（v-model 対応）
+    modelValue: { type:Boolean, default: true },
+    open:       { type:Boolean, default: undefined }, // 互換: v-model:open を使う場合
+
     mapName: { type:String, default:'map01' },
     item:    { type:Object, default: () => ({ id:'warp', label:'Warp Wizard' }) },
     gcpList: { type:Array,  default: () => [] }, // v-model 用（親と共有）
     file:    { type:[File,Blob], default:null }, // 親から渡されると表示
     url:     { type:String, default:'' },        // URLでも表示
+    stacked: { type:Boolean, default:true },     // 画像の下にGCP
   },
-  emits: ['update:gcpList','confirm','close'],
+  emits: ['update:gcpList','confirm','close','update:modelValue','update:open'],
   data(){
     return {
       imgUrl: null,
@@ -177,9 +182,14 @@ export default {
       history: [],
       histIndex: -1,
       isRestoring: false,
+      closedOnce: false,
     }
   },
   watch: {
+    // 親が閉じたらクリーンアップ（v-model 対応）
+    modelValue(v){ if(v===false) this.onExternalClose() },
+    open(v){ if(v===false) this.onExternalClose() },
+
     file: {
       immediate: true,
       handler(f){
@@ -194,7 +204,7 @@ export default {
     // GCP 追加で即プレビュー＋履歴
     gcpList: { deep:true, handler(){ if(!this.isRestoring) this.pushHistory('gcp'); if(this.pairsCount>=2) this.previewAffineWarp(); this.$nextTick(this.redrawMarkers) } }
   },
-  beforeUnmount(){ if(this.objUrl) URL.revokeObjectURL(this.objUrl); window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize) },
+  beforeUnmount(){ this.onExternalClose(true) },
   mounted(){
     const h = document.querySelector('#handle-'+this.item?.id)
     if(h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`
@@ -203,6 +213,7 @@ export default {
     this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers() })
   },
   computed: {
+    isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false },
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
     transformKind(){ if(!this.affineM) return ''; return this.pairsCount>=3 ? 'Affine' : 'Similarity' },
@@ -217,7 +228,18 @@ export default {
     fmtPx(p){ if(!Array.isArray(p) || p.length<2) return '-'; const x=Number(p[0]), y=Number(p[1]); if(!Number.isFinite(x)||!Number.isFinite(y)) return '-'; return `${Math.round(x)}, ${Math.round(y)}` },
     fmtLL(ll){ if(!Array.isArray(ll) || ll.length<2) return '-'; const lng=Number(ll[0]), lat=Number(ll[1]); if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}` },
 
-    onClose(){ this.$emit('close') },
+    // ====== クローズ連携 ======
+    onExternalClose(fromUnmount=false){
+      if(this.closedOnce) return; this.closedOnce = true
+      try{
+        window.removeEventListener('keydown', this.onKeydown)
+        window.removeEventListener('resize', this.onResize)
+      }catch(e){}
+      if(this.objUrl){ URL.revokeObjectURL(this.objUrl); this.objUrl=null }
+      this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas)
+      if(!fromUnmount){ /* 親が非表示にしただけの場合、状態は保持するならここで何もしない */ }
+    },
+
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
     resetAll(){ this.affineM=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
     onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM) this.previewAffineWarp() },
@@ -247,32 +269,23 @@ export default {
     // ===== プレビュー / 出力 =====
     previewAffineWarp(){ const img=this.$refs.warpImage; const canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if(pairs.length<2){ this.affineM=null; this.clearCanvas(canvas); return } const srcNat=pairs.map(g=> imageCssToNatural(g.imageCoordCss||g.imageCoord, img)); const srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=> lngLatToMerc(g.mapCoord)); let Mup; if(pairs.length===2){ Mup=fitSimilarity2P(srcUp,dstUp) } else { Mup=fitAffineRobust(srcUp,dstUp,3) } const FLIP_Y=[1,0,0,0,-1,0]; const M=composeAffine(Mup,FLIP_Y); this.affineM=M; previewOnCanvas(img, canvas, M) },
     downloadWorldFile(){ if(!this.affineM) return; const txt=worldFileFromAffine(this.affineM); const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='image.pgw'; a.click(); URL.revokeObjectURL(a.href) },
-    // confirm(){ if(!this.affineM) return; const f=this.$props.file||null; this.$emit('confirm',{ file:f, affineM:this.affineM }) },
-    confirm(){
-      if(!this.affineM) return;
-      const f = this.$props.file || null;
-      const canvas = this.$refs.warpCanvas;
-      if (!canvas || !canvas.toBlob) {
-        this.$emit('confirm', { file:f, affineM:this.affineM, blob:null });
-        return;
-      }
-      canvas.toBlob((blob)=>{
-        this.$emit('confirm', { file:f, affineM:this.affineM, blob });
-      }, 'image/png');
-    }
+    confirm(){ if(!this.affineM) return; const f=this.$props.file||null; const canvas=this.$refs.warpCanvas; if(!canvas||!canvas.toBlob){ this.$emit('confirm',{ file:f, affineM:this.affineM, blob:null }); return } canvas.toBlob((blob)=>{ this.$emit('confirm',{ file:f, affineM:this.affineM, blob }) }, 'image/png') },
   }
 }
 </script>
 
 <style scoped>
-.oh-warp-root{ width: 860px; max-width: calc(100vw - 40px); box-sizing: border-box; background: #fff; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.12); overflow: hidden; }
+.oh-warp-root{ width: 500px; max-width: calc(100vw - 40px); box-sizing: border-box; background: #fff; overflow: hidden; }
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom: 1px solid rgba(0,0,0,0.08); }
 .oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06) }
 .oh-title{ font-weight:600; display:flex; align-items:center; gap:8px; }
 .oh-icon{ font-size: 16px; }
 .oh-tools{ display:flex; align-items:center; gap:4px; }
 .oh-body{ display:grid; grid-template-columns: 1fr 380px; gap:10px; padding:10px; }
-.left-pane{ display:flex; align-items:center; justify-content:center; min-height: 300px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; }
+.oh-body.stacked{ grid-template-columns: 1fr; grid-template-rows: auto auto; }
+.oh-body.stacked .left-pane{ order:1; }
+.oh-body.stacked .right-pane{ order:2; }
+.left-pane{ display:flex; align-items:center; justify-content:center; min-height: 420px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; }
 .img-wrap{ position: relative; display:inline-block; max-width:100%; cursor: crosshair; }
 #warp-image{ position:relative; z-index:0; display:block; max-width:100%; height:auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
 #warp-image.hidden{ visibility:hidden; }

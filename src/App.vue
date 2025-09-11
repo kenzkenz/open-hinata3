@@ -21,24 +21,24 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!--  -->
       <FloatingWindow
           windowId = "warp-wizard"
-          title = "warp-wizard"
+          title = "ジオリファレンス （2点で相似、3点以上でアフィン変換）"
           type="normal"
-          :default-top = "10"
-          :default-left = "10"
-          :default-width = "auto"
+          :resizable="false"
+          :default-top = "0"
+          :default-left = "0"
+          :default-width = "400"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
           @close = "mapillaryClose"
       >
-        <!-- 既存のワープ領域を置き換え -->
         <WarpWizard
+            v-model="showWarpWizard"
             :mapName="mapName"
             :item="{ id:'warp-wizard', label:'Warp Wizard' }"
             v-model:gcpList="gcpList"
             :file="pendingFile"
-            :url="pendingUrl"
-            @confirm="onWizardConfirm"
-            @close="aaa"
+            :stacked="true"
+            @confirm="({ affineM, blob }) => openTileUploadDialog(affineM, blob)"
         />
       </FloatingWindow>
 
