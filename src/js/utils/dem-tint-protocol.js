@@ -54,8 +54,6 @@ function decodeElevationRGBA(r,g,b,a){
 
 // ===== 色分類（ステップ） =====
 function pickStepColor(value, domain, range){ // range: [{r,g,b}]
-                                              // domain は昇順。value が domain[i]〜domain[i+1) に入る i を選ぶ。
-                                              // 最初/最後の外側は端色。
     const n = domain.length;
     if (n === 0 || range.length === 0) return {r:0,g:0,b:0};
     if (n !== range.length) {
@@ -134,6 +132,12 @@ export function registerDemTintProtocol(maplibregl, { schemeId='demtint' } = {})
         const styleKey = qs.style || '';
         const palette  = PALETTE_REG.get(styleKey);
 
+        // ★ 追加：近傍ゼロしきい値（m）。?nz=1.5 で上書き可（0〜5の範囲にクリップ）
+        const nearZeroTol = (() => {
+            const v = parseFloat(qs.nz);
+            return Number.isFinite(v) ? Math.max(0, Math.min(5, v)) : 3.0;
+        })();
+
         // パレット未登録なら安全に抜ける（薄いグレーで返す）
         if (!palette) {
             const res = await fetch(rawUrl, { signal: abortController.signal });
@@ -147,7 +151,7 @@ export function registerDemTintProtocol(maplibregl, { schemeId='demtint' } = {})
             try { cvs = new OffscreenCanvas(w,h); ctx=cvs.getContext('2d'); }
             catch { cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h; ctx=cvs.getContext('2d'); }
             ctx.drawImage(bmp,0,0);
-            const id=ctx.getImageData(0,0,w,h), d=id.data;
+            const id=ctx.getImageData(0,0,w, h), d=id.data;
             for(let i=0;i<d.length;i+=4){ d[i]=d[i+1]=d[i+2]=215; d[i+3]=255; }
             ctx.putImageData(id,0,0);
             const out = cvs.convertToBlob ? await cvs.convertToBlob({type:'image/png'}) : await new Promise(r=>cvs.toBlob(r,'image/png'));
@@ -176,7 +180,15 @@ export function registerDemTintProtocol(maplibregl, { schemeId='demtint' } = {})
         const elev = new Float32Array(w*h);
         for (let p=0, i=0; i<d.length; i+=4, p++){
             const dec = decodeElevationRGBA(d[i], d[i+1], d[i+2], d[i+3]);
-            elev[p] = dec.ok ? dec.elev : NaN;
+            let z = dec.ok ? dec.elev : NaN;
+
+            // ★ 追加：異常値を 0m に丸める（-1000m 未満 or 10000m 超）
+            if (Number.isFinite(z) && (z < -1000 || z > 10000)) z = 0;
+
+            // ★ 追加：-ε〜0m は 0m 扱い（堤防内の微小な負値を陸に）
+            if (Number.isFinite(z) && z > -nearZeroTol && z < 0) z = 0;
+
+            elev[p] = z;
         }
 
         // 2) パレットで色塗り（絶対標高：0m以上=陸、0m未満=海）
