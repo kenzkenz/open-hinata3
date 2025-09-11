@@ -7,7 +7,7 @@
       top: top + 'px',
       ...(anchor === 'right' ? { right: right + 'px' } : { left: left + 'px' }),
       width: width + 'px',
-      height: height + 'px',
+      height: rootHeightStyle,
       cursor: fullDraggable ? 'move' : 'default',
       zIndex: zIndex,
     }"
@@ -55,10 +55,7 @@
     <!-- コンテンツ領域（overflow は props で制御。既定は var(--fw-overflow, hidden)） -->
     <div
         class="content"
-        :style="[
-        headerShown ? { height: `calc(100% - ${headerHeight}px)` } : { height: '100%' },
-        { overflow: contentOverflowStyle }
-      ]"
+        :style="contentBoxStyle"
     >
       <slot />
     </div>
@@ -90,7 +87,7 @@ export default {
 
     // 初期サイズ・位置
     defaultWidth: { type: Number, default: 200 },
-    defaultHeight: { type: Number, default: 200 },
+    defaultHeight: { type: [Number, String], default: 'auto' },
     defaultTop: { type: Number, default: 120 },
     defaultLeft: { type: Number, default: 100 },
     defaultRight: { type: Number, default: 0 },
@@ -160,7 +157,8 @@ export default {
       left: this.defaultLeft,
       right: this.defaultRight,
       width: this.defaultWidth,
-      height: this.defaultHeight,
+      height: typeof this.defaultHeight === 'number' ? this.defaultHeight : 0,
+      autoHeight: this.defaultHeight === 'auto' || this.defaultHeight === '' || this.defaultHeight === null || this.defaultHeight === undefined,
       zIndex: 0,
 
       dragging: false,
@@ -203,6 +201,19 @@ export default {
     resizerDirs() {
       return ["top-left", "top-right", "bottom-left", "bottom-right"];
     },
+    rootHeightStyle() {
+      if (this.isMaximized) return this.height + 'px';
+      return this.autoHeight ? 'auto' : (this.height + 'px');
+    },
+    contentBoxStyle() {
+      if (this.autoHeight) {
+        return { height: 'auto', overflow: this.contentOverflowStyle };
+      }
+      return [
+        this.headerShown ? { height: `calc(100% - ${this.headerHeight}px)` } : { height: '100%' },
+        { overflow: this.contentOverflowStyle }
+      ];
+    },
     contentOverflowStyle() {
       const v = (this.overflow || '').trim();
       return v || 'var(--fw-overflow, hidden)';
@@ -210,6 +221,13 @@ export default {
   },
 
   methods: {
+    currentHeight() {
+      if (this.autoHeight) {
+        const el = this.$el;
+        if (el && el.offsetHeight) return el.offsetHeight;
+      }
+      return this.height;
+    },
     /* -------------------- 永続化 -------------------- */
     saveToStorage() {
       if (!this.persist) return;         // 全体オプトアウト
@@ -224,6 +242,7 @@ export default {
         r: this.right,
         w: this.width,
         h: this.height,
+        ah: this.autoHeight,
         z: this.zIndex,
         max: false, // 最大化状態は保存しない
       };
@@ -241,7 +260,7 @@ export default {
           if (Number.isFinite(p.l)) this.left = p.l;
           if (Number.isFinite(p.r)) this.right = p.r;
           if (Number.isFinite(p.w)) this.width = p.w;
-          if (Number.isFinite(p.h)) this.height = p.h;
+          this.autoHeight = !!p.ah; if (!this.autoHeight && Number.isFinite(p.h)) this.height = p.h;
           if (Number.isFinite(p.z)) this.zIndex = p.z;
         }
       } catch (_) {}
@@ -259,8 +278,9 @@ export default {
       );
       // 上下
       if (ed.has('top') && this.top <= s) this.top = 0;
-      const bottomGap = containerH - (this.top + this.height);
-      if (ed.has('bottom') && bottomGap <= s) this.top = Math.max(0, containerH - this.height);
+      const currH = this.currentHeight();
+      const bottomGap = containerH - (this.top + currH);
+      if (ed.has('bottom') && bottomGap <= s) this.top = Math.max(0, containerH - currH);
       // 左右（アンカーに応じて）
       if (this.anchor === 'right') {
         if (ed.has('right') && this.right <= s) this.right = 0;
@@ -278,7 +298,7 @@ export default {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const w = Math.min(this.width, vw);
-      const h = Math.min(this.height, vh);
+      const h = Math.min(this.currentHeight(), vh);
       const x = this.anchor === 'right' ? vw - (this.right + w) : this.left;
       const y = this.top;
       const interW = Math.min(x + w, vw) - Math.max(x, 0);
@@ -364,6 +384,7 @@ export default {
       this.startY = e.clientY;
       this.startLeft = this.left;
       this.startTop = this.top;
+      if (this.autoHeight) { this.height = this.$el ? this.$el.offsetHeight : 0; this.autoHeight = false; }
       this.startWidth = this.width;
       this.startHeight = this.height;
       this.originalAspect = this.startWidth / this.startHeight;
@@ -404,7 +425,7 @@ export default {
       document.removeEventListener('pointermove', this.onResize);
       document.removeEventListener('pointerup', this.stopResize);
       document.removeEventListener('pointercancel', this.stopResize);
-      this.top = Math.min(this.top, Math.max(0, window.innerHeight - this.height));
+      this.top = Math.min(this.top, Math.max(0, window.innerHeight - this.currentHeight()));
       if (this.anchor === 'right') this.right = Math.min(this.right, Math.max(0, window.innerWidth - this.width));
       else this.left = Math.min(this.left, Math.max(0, window.innerWidth - this.width));
       this.snapToEdges();
@@ -414,10 +435,10 @@ export default {
     /* -------------------- 最大化/復元 -------------------- */
     maximize() {
       if (this.isMaximized) return;
-      this.preMaxState = { top: this.top, left: this.left, right: this.right, width: this.width, height: this.height };
+      this.preMaxState = { top: this.top, left: this.left, right: this.right, width: this.width, height: this.height, autoHeight: this.autoHeight };
       this.isMaximized = true;
       this.left = 0; this.right = 0; this.top = 0;
-      this.width = window.innerWidth; this.height = window.innerHeight;
+      this.width = window.innerWidth; this.height = window.innerHeight; this.autoHeight = false;
       this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
       this.$emit('maximize');
       window.addEventListener('resize', this.syncMaxSize, { passive: true });
@@ -432,6 +453,7 @@ export default {
         this.right = this.preMaxState.right;
         this.width = this.preMaxState.width;
         this.height = this.preMaxState.height;
+        this.autoHeight = !!this.preMaxState.autoHeight;
       }
       this.isMaximized = false;
       this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
@@ -601,7 +623,6 @@ export default {
 .header .window-controls button:hover { color: blue !important; }
 
 .content {
-
   /* overflow は props から渡す（contentOverflowStyle） */
 }
 

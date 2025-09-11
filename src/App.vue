@@ -28,9 +28,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-top = "0"
           :default-left = "0"
           :default-width = "400"
+          :default-height = "600"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
-          @close = "mapillaryClose"
       >
         <WarpWizard
             v-model="showWarpWizard"
