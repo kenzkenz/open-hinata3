@@ -1,5 +1,7 @@
+<!-- components/ext-dem-tint.vue -->
 <template>
   <div :style="menuContentSize" class="oh-demtint-root">
+
     <!-- ===================== OH3標準 ===================== -->
     <div style="font-size: 14px; margin:6px 0 6px;">OH3標準</div>
     <div class="d-flex flex-wrap" style="gap:8px; margin-bottom:10px;">
@@ -55,6 +57,20 @@
       </MiniTooltip>
     </div>
 
+    <!-- ===== 表示オプション（陰影スイッチ） ===== -->
+    <div class="d-flex align-center justify-space-between oh-subtoolbar">
+<!--      <div class="oh-sublabel">表示オプション</div>-->
+      <!-- ★ 必要なければこの <v-switch> ブロックごとコメントアウトでOK -->
+      <v-switch
+          v-model="shadeEnabled"
+          color="primary"
+          hide-details
+          density="compact"
+          inset
+          :label="'陰影'"
+      />
+    </div>
+
     <!-- ===================== Advanced トグル ===================== -->
     <v-btn block class="oh-adv-toggle" @click="adv.show=!adv.show">Advanced</v-btn>
 
@@ -72,26 +88,20 @@
         <v-chip :color="adv.base==='flood' ? 'primary' : undefined" size="large" @click="adv.base='flood'">洪水低地</v-chip>
       </div>
 
-      <!-- 低い地/高い地：横幅を完全に均等に -->
+      <!-- 低い地/高い地 -->
       <div class="d-flex" style="gap:8px; margin-bottom:20px;">
-        <v-text-field
-            v-model.number="adv.low" type="number" density="compact"
-            label="低い地 (m)" hide-details class="oh-num" style="flex:1 1 0; min-width:0;"
-        />
-        <v-text-field
-            v-model.number="adv.high" type="number" density="compact"
-            label="高い地 (m)" hide-details class="oh-num" style="flex:1 1 0; min-width:0;"
-        />
+        <v-text-field v-model.number="adv.low"  type="number" density="compact" label="低い地 (m)" hide-details class="oh-num"/>
+        <v-text-field v-model.number="adv.high" type="number" density="compact" label="高い地 (m)" hide-details class="oh-num"/>
       </div>
 
-      <!-- 分割（改行して下段） -->
+      <!-- 分割（下段） -->
       <div class="d-flex align-center" style="gap:8px; margin-bottom:10px;">
         <div class="oh-sublabel">分割</div>
         <v-slider v-model="adv.parts" :min="3" :max="24" step="1" hide-details density="compact" class="flex-grow-1"/>
         <div style="width:32px; text-align:right; font-size:12px;">{{ adv.parts }}</div>
       </div>
 
-      <!-- 操作ボタン（右：リセット / 左：生成 → 要望に合わせ左右逆なら入れ替えてOK） -->
+      <!-- 操作ボタン -->
       <div class="d-flex justify-space-between" style="gap:8px;">
         <v-btn color="primary" @click="generateAndApply" class="oh-btn-w">生成</v-btn>
         <v-btn variant="outlined" color="secondary" @click="resetAdvanced" class="oh-btn-w">リセット</v-btn>
@@ -108,90 +118,38 @@ import MiniTooltip from '@/components/MiniTooltip'
 import maplibregl from 'maplibre-gl'
 import { registerDemTintProtocol, registerDemTintPalette } from '@/js/utils/dem-tint-protocol'
 
-/* ======== 固定設定 ======== */
-const FORCE_OPACITY = 0.9;  // すべて 0.9 固定
+const FORCE_OPACITY = 0.9
+const TRANSITION_MS = 240;
 
-/* ======== 地理院風の配色（ベース） ======== */
-const GSI_RAMP_12 = [
-  '#0052ff','#146af9','#198cff','#2fb8ff','#46e0ff',
-  '#7be87a','#b6f83d','#fff300','#ffc300','#ff9b00','#ff5d20','#ff3a1a'
-]
-const GSI_RAMP_18 = [
-  '#0052ff','#0e60ff','#1972ff','#2a95ff','#3abaff','#47dadf',
-  '#60e88d','#86f04f','#b2f734','#e8f324','#ffe100','#ffc200',
-  '#ffa100','#ff7e00','#ff5a10','#ff3a1a','#d92c18','#b51f15'
-]
-const GSI_SEA_12 = [
-  '#eaf6ff','#d9efff','#c9e8ff','#b5deff','#9fd3ff',
-  '#8ac8ff','#75bcff','#5eafff','#479fff','#338fe0','#257fcb','#1a70b6'
-]
-const GSI_SEA_18 = [
-  '#eaf6ff','#dff2ff','#d5edff','#c9e8ff','#bde1ff','#b0dbff',
-  '#a1d3ff','#91cbff','#7fbfff','#6db3ff','#5aa6ff','#4797f0',
-  '#3686d8','#2976c3','#1f69b1','#155a9c','#0e4f8b','#09457c'
-]
 
-/* ======== プリセット定義（要点のみ） ======== */
+/* GSI配色とプリセット（※既存のまま。省略せず記載） */
+const GSI_RAMP_12 = ['#0052ff','#146af9','#198cff','#2fb8ff','#46e0ff','#7be87a','#b6f83d','#fff300','#ffc300','#ff9b00','#ff5d20','#ff3a1a']
+const GSI_RAMP_18 = ['#0052ff','#0e60ff','#1972ff','#2a95ff','#3abaff','#47dadf','#60e88d','#86f04f','#b2f734','#e8f324','#ffe100','#ffc200','#ffa100','#ff7e00','#ff5a10','#ff3a1a','#d92c18','#b51f15']
+const GSI_SEA_12  = ['#eaf6ff','#d9efff','#c9e8ff','#b5deff','#9fd3ff','#8ac8ff','#75bcff','#5eafff','#479fff','#338fe0','#257fcb','#1a70b6']
+const GSI_SEA_18  = ['#eaf6ff','#dff2ff','#d5edff','#c9e8ff','#bde1ff','#b0dbff','#a1d3ff','#91cbff','#7fbfff','#6db3ff','#5aa6ff','#4797f0','#3686d8','#2976c3','#1f69b1','#155a9c','#0e4f8b','#09457c']
+
 const PRESETS = {
-  gsi_coast: {
-    aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
-    aboveRange: GSI_RAMP_12,
-    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
-    belowRange: GSI_SEA_12
-  },
-  gsi_lowland: {
-    aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
-    aboveRange: GSI_RAMP_12,
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],
-    belowRange: GSI_SEA_12
-  },
-  gsi_mountain: {
-    aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
-    aboveRange: GSI_RAMP_18,
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
-    belowRange: GSI_SEA_18
-  },
-  coast: {
-    aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40],
-    aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
-    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
-    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
-  },
-  lowland: {
-    aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],
-    aboveRange:['#eaf7e3','#dff2d6','#cfe9bf','#bfe1a8','#a9da92','#94d07d','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'],
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160],
-    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
-  },
-  mountain: {
-    aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
-    aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'],
-    belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
-    belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34']
-  },
-  local_volcano: {
-    aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600],
-    aboveRange:['#171a1c','#1f2326','#2a2f31','#3a2b2b','#541b1b','#6b1313','#8a1010','#a01914','#b02a1e','#bf3d23','#5a4d49','#444141','#3a3a3d','#5b5e62','#8b8f94'],
-    belowDomain:[0,1,2,3,5,8,12,20],
-    belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1']
-  },
-  local_flood10: {
-    aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40],
-    aboveRange:['#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3','#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff','#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff'],
-    belowDomain:[0,0.2,0.5,1,1.5,2,3,4,5],
-    belowRange:['#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff','#89c1ff','#73b3f0','#5aa0d9']
-  }
+  gsi_coast:   { aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40], aboveRange:GSI_RAMP_12, belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65], belowRange:GSI_SEA_12 },
+  gsi_lowland: { aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120],            aboveRange:GSI_RAMP_12, belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160], belowRange:GSI_SEA_12 },
+  gsi_mountain:{ aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange:GSI_RAMP_18, belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500], belowRange:GSI_SEA_18 },
+
+  coast:   { aboveDomain:[0,2,4,6,8,10,12,15,18,22,28,40], aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'], belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65], belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6'] },
+  lowland: { aboveDomain:[0,10,20,30,40,50,60,70,80,90,100,120], aboveRange:['#eaf7e3','#dff2d6','#cfe9bf','#bfe1a8','#a9da92','#94d07d','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749'], belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160], belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6'] },
+  mountain:{ aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'], belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500], belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34'] },
+
+  local_volcano:{ aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600], aboveRange:['#171a1c','#1f2326','#2a2f31','#3a2b2b','#541b1b','#6b1313','#8a1010','#a01914','#b02a1e','#bf3d23','#5a4d49','#444141','#3a3a3d','#5b5e62','#8b8f94'], belowDomain:[0,1,2,3,5,8,12,20], belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1'] },
+  local_flood10:{ aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40], aboveRange:['#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3','#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff','#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff'], belowDomain:[0,0.2,0.5,1,1.5,2,3,4,5], belowRange:['#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff','#89c1ff','#73b3f0','#5aa0d9'] }
 }
 
-/* 0–1 線形補間で色生成（HEX配列） */
+/* ユーティリティ（色補間） */
 function lerpHexRamp(ramp, t) {
-  if (ramp.length === 0) return '#000000'
+  if (!ramp?.length) return '#000000'
   if (ramp.length === 1) return ramp[0]
   const n = ramp.length - 1
   const i = Math.max(0, Math.min(n - 1, Math.floor(t * n)))
   const frac = (t * n) - i
-  const c1 = ramp[i], c2 = ramp[i + 1]
-  const [r1,g1,b1] = hexToRgb(c1), [r2,g2,b2] = hexToRgb(c2)
+  const [r1,g1,b1] = hexToRgb(ramp[i])
+  const [r2,g2,b2] = hexToRgb(ramp[i+1])
   const r = Math.round(r1 + (r2 - r1) * frac)
   const g = Math.round(g1 + (g2 - g1) * frac)
   const b = Math.round(b1 + (b2 - b1) * frac)
@@ -214,24 +172,35 @@ export default {
   computed:{
     advBaseLabel(){
       return this.adv.base==='gsi' ? '地理院風'
-          : this.adv.base==='flood' ? '洪水低地'
-              : 'OH3標準'
+          : this.adv.base==='flood' ? '洪水低地' : 'OH3標準'
     },
     advSeaBase(){
       if (this.adv.base === 'gsi')
         return { domain:[...PRESETS.gsi_mountain.belowDomain],  range:[...PRESETS.gsi_mountain.belowRange] }
       if (this.adv.base === 'flood')
         return { domain:[...PRESETS.local_flood10.belowDomain], range:[...PRESETS.local_flood10.belowRange] }
-      return { domain:[...PRESETS.mountain.belowDomain],        range:[...PRESETS.mountain.belowRange] }
+      return   { domain:[...PRESETS.mountain.belowDomain],      range:[...PRESETS.mountain.belowRange] }
+    },
+    // 陰影スイッチの get/set（ストアに保存）
+    shadeEnabled:{
+      get(){ this.ensure(); return !!this.$store.state.demTint.shadeEnabled },
+      set(v){ this.ensure(); this.$store.state.demTint.shadeEnabled = !!v; this.apply(); }
     }
   },
 
   methods:{
     ensure(){
       if(!this.$store.state.demTint){
-        this.$store.state.demTint = { mode:'step', palette: PRESETS[this.presetKey], opacity: 0.9, contrast: 0 }
+        this.$store.state.demTint = {
+          mode:'step',
+          palette: PRESETS[this.presetKey],
+          opacity: FORCE_OPACITY,
+          contrast: 0,
+          shadeEnabled: true   // ★ 追加：陰影は既定On
+        }
       }
     },
+
     usePreset(key){
       this.ensure()
       this.presetKey = key
@@ -239,18 +208,20 @@ export default {
       this.$store.state.demTint.opacity = FORCE_OPACITY
       this.apply()
     },
+
     resetAdvanced(){
       this.adv.base = 'oh3'
       this.adv.low  = 0
       this.adv.high = 10
-      this.adv.parts= 12
+      this.adv.parts= 8
       const map = this.$store.state[this.mapName]
       if (!map) return
       try{
-        if(map.getLayer('oh-dem-tint'))  map.removeLayer('oh-dem-tint')
+        if(map.getLayer('oh-dem-tint'))      map.removeLayer('oh-dem-tint')
         if(map.getSource('oh-dem-tint-src')) map.removeSource('oh-dem-tint-src')
       }catch(e){}
     },
+
     generateAndApply(){
       const low  = Number(this.adv.low)||0
       const high = Math.max(low+1, Number(this.adv.high)||10)
@@ -285,9 +256,11 @@ export default {
       this.$store.state.demTint.opacity = FORCE_OPACITY
       this.apply()
     },
+
     apply(){
       const map = this.$store.state[this.mapName]
       if(!map) return
+
       const SRC_ID='oh-dem-tint-src', LYR_ID='oh-dem-tint'
       const base='demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png'
 
@@ -295,9 +268,14 @@ export default {
       if(!palette) return
       const styleKey = this.hash(JSON.stringify(palette))
       registerDemTintPalette(styleKey, palette)
-      // const url = `${base}?style=${styleKey}`
-      const shade = 'shade=soft&sa=0.25';   // ← おすすめ（弱め）
-      const url = `${base}?style=${styleKey}&${shade}`;
+
+      // ★ 陰影クエリ（ONのときだけ付与）
+      const shadeOn = !!this.$store.state.demTint?.shadeEnabled
+      // ほんのり：0.20〜0.28くらいが無難。動かしたくなければ固定値で。
+      const sa = 0.24
+      const shadeQS = shadeOn ? `&shade=soft&sa=${sa}` : ''
+
+      const url = `${base}?style=${styleKey}${shadeQS}`
 
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[]
@@ -327,6 +305,7 @@ export default {
         }catch(e){ console.warn(e) }
       })
     },
+
     hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)} return h.toString(16) }
   },
 
@@ -342,14 +321,9 @@ export default {
 
 <style scoped>
 .oh-chip-lg { font-size: 15px; padding: 8px 12px; }
-
-/* ルートは固定幅で横伸びしない */
 .oh-demtint-root { box-sizing: border-box; }
-
-/* Advanced トグル */
 .oh-adv-toggle { margin-bottom: 8px; }
-
-/* Advanced パネルは薄い背景色＋角丸、横幅固定 */
+/* 薄めの背景（濃すぎた版から調整） */
 .oh-adv-panel {
   background: rgba(0,0,0,0.04);
   border-radius: 8px;
@@ -357,20 +331,13 @@ export default {
   box-sizing: border-box;
   margin-bottom: 10px;
 }
-.oh-adv-breadcrumb {
-  font-size: 12px;
-  color: #555;
-  margin-bottom: 20px;
-}
+.oh-adv-breadcrumb { font-size: 12px; color: #555; margin-bottom: 20px; }
 
-/* 数値入力：均等幅にするので max-width は外し、最小幅のみ */
-.oh-num { min-width: 0; }
+/* サブツールバー（陰影スイッチ置き場） */
+.oh-subtoolbar { margin-bottom: 6px; }
 
-/* ボタン横幅（左右均等） */
+/* 数値入力の横幅を抑える */
+.oh-num { max-width: 120px; }
 .oh-btn-w { flex: 1 1 0; min-width: 0; }
-
-.oh-sublabel {
-  font-size: 14px;
-  margin-bottom: 10px;
-}
+.oh-sublabel { font-size: 14px; }
 </style>
