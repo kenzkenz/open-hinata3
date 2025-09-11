@@ -18,16 +18,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
-      <!--  -->
+      <!-- ジオリファレンス -->
       <FloatingWindow
           windowId = "warp-wizard"
           title = "ジオリファレンス"
           type="normal"
-          :resizable="true"
+          :resizable="false"
           :overflow="'auto'"
-          :default-top = "0"
-          :default-left = "0"
-          :default-width = "400"
+          :default-top = "10"
+          :default-left = "10"
+          :default-width = "505"
           :default-height = "630"
           :keepAspectRatio = "false"
           :showMaxRestore="false"

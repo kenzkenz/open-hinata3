@@ -52,6 +52,7 @@
 <!--        </v-table>-->
 
         <div class="actions">
+          <p>2〜4点、上記画像と地図をクリックしてください。 </p>
           <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">
             <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード
           </v-btn>

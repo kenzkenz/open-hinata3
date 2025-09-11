@@ -240,12 +240,17 @@ export default {
         t: this.top,
         l: this.left,
         r: this.right,
-        w: this.width,
-        h: this.height,
-        ah: this.autoHeight,
         z: this.zIndex,
         max: false, // 最大化状態は保存しない
       };
+
+      // ★ サイズは resizable のときのみ保存
+      if (this.resizable) {
+        payload.w  = this.width;
+        payload.h  = this.height;
+        payload.ah = this.autoHeight;
+      }
+
       try { localStorage.setItem(key, JSON.stringify(payload)); } catch (_) {}
     },
     restoreFromStorage() {
@@ -259,8 +264,14 @@ export default {
           if (Number.isFinite(p.t)) this.top = p.t;
           if (Number.isFinite(p.l)) this.left = p.l;
           if (Number.isFinite(p.r)) this.right = p.r;
-          if (Number.isFinite(p.w)) this.width = p.w;
-          this.autoHeight = !!p.ah; if (!this.autoHeight && Number.isFinite(p.h)) this.height = p.h;
+
+          // ★ サイズは resizable のときだけ復元（既存ローカルストレージの w/h/ah を無視）
+          if (this.resizable) {
+            if (Number.isFinite(p.w)) this.width = p.w;
+            if (p.ah !== undefined) this.autoHeight = !!p.ah;
+            if (!this.autoHeight && Number.isFinite(p.h)) this.height = p.h;
+          }
+
           if (Number.isFinite(p.z)) this.zIndex = p.z;
         }
       } catch (_) {}
@@ -307,9 +318,15 @@ export default {
       if (!visibleEnough) {
         this.top = this.defaultTop;
         this.width = Math.min(this.defaultWidth, vw);
-        this.height = Math.min(this.defaultHeight, vh);
+        // defaultHeight が 'auto' の場合に NaN を避ける
+        if (typeof this.defaultHeight === 'number') {
+          this.height = Math.min(this.defaultHeight, vh);
+          this.autoHeight = false;
+        } else {
+          this.autoHeight = true;
+        }
         if (this.anchor === 'right') this.right = this.defaultRight; else this.left = this.defaultLeft;
-        this.top = Math.min(this.top, Math.max(0, vh - this.height));
+        this.top = Math.min(this.top, Math.max(0, vh - this.currentHeight()));
         if (this.anchor === 'right') this.right = Math.min(this.right, Math.max(0, vw - this.width));
         else this.left = Math.min(this.left, Math.max(0, vw - this.width));
       }
@@ -636,6 +653,6 @@ export default {
 }
 .top-left    { top: -5px; left: -5px; cursor: nwse-resize; }
 .top-right   { top: -5px; right: -5px; cursor: nesw-resize; }
-.bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.bottom-left { bottom: -5px; left: -5px; cursor: nwse-resize; }
 .bottom-right{ bottom: -5px; right: -5px; cursor: nwse-resize; width: 30px; height: 30px; }
 </style>
