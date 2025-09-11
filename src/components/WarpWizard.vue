@@ -3,8 +3,8 @@
   <div class="oh-warp-root" v-show="isOpen">
     <div class="oh-toolbar">
       <div class="oh-title">
-<!--        <span class="oh-icon">🪄</span>-->
-<!--        Warp Wizard-->
+        <!-- <span class="oh-icon">🪄</span>-->
+        <!-- Warp Wizard-->
       </div>
       <div class="oh-tools">
         <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
@@ -35,8 +35,6 @@
       </div>
 
       <div class="right-pane">
-<!--        <div class="pane-title">対応点（GCP）</div>-->
-<!--        <div class="gcp-help">画像をクリック→地図をクリック</div>-->
         <v-table density="compact" class="gcp-table">
           <thead>
           <tr><th></th><th>Image (px)</th><th>Map (lng,lat)</th><th></th></tr>
@@ -54,9 +52,9 @@
         </v-table>
 
         <div class="actions">
-          <!-- 手動プレビューボタンは撤去。2点以上そろえば自動で描画します -->
-<!--          <v-btn variant="text" :disabled="!affineM" @click="downloadWorldFile"><v-icon class="mr-1">mdi-content-save-outline</v-icon>WorldFile</v-btn>-->
-          <v-btn color="primary" :disabled="!affineM" @click="confirm"><v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード</v-btn>
+          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">
+            <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード
+          </v-btn>
         </div>
       </div>
     </div>
@@ -70,6 +68,12 @@ function lngLatToMerc([lng, lat]){
   const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
   const yMeters = y * 20037508.34 / 180;
   return [x, yMeters];
+}
+function mercToLngLat([X, Y]){
+  const lng = X * 180 / 20037508.34;
+  const ydeg = Y * 180 / 20037508.34;
+  const lat = (Math.atan(Math.exp(ydeg * Math.PI/180)) * 360/Math.PI) - 90;
+  return [lng, lat];
 }
 function imageCssToNatural([x, y], img){
   const sx = img.naturalWidth  / (img.clientWidth  || img.naturalWidth);
@@ -146,8 +150,8 @@ function previewOnCanvas(img, canvas, M){
   const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
   const ch = Math.max(1, img.clientHeight || img.naturalHeight);
   canvas.width  = cw; canvas.height = ch;
-  const W = Math.max(1, maxX - minX); const H = Math.max(1, maxY - minY);
-  const s = Math.min(cw / W, ch / H);
+  const W = Math.max(1, maxX - minX); const Hh = Math.max(1, maxY - minY);
+  const s = Math.min(cw / W, ch / Hh);
   const T = [ s, 0, -minX * s, 0, -s,  maxY * s ];
   const Mv = composeAffine(T, M); const [A,B,C,D,E,F] = Mv;
   const ctx2 = ctx; ctx2.setTransform(A,D,B,E,C,F);
@@ -156,6 +160,222 @@ function previewOnCanvas(img, canvas, M){
   ctx2.drawImage(img, 0, 0);
 }
 function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}`; }
+
+/* ======== 射影（ホモグラフィ）ユーティリティ ======== */
+// 3x3 行列（簡易）
+function mat33Mul(A,B){
+  return [
+    [A[0][0]*B[0][0]+A[0][1]*B[1][0]+A[0][2]*B[2][0],
+      A[0][0]*B[0][1]+A[0][1]*B[1][1]+A[0][2]*B[2][1],
+      A[0][0]*B[0][2]+A[0][1]*B[1][2]+A[0][2]*B[2][2]],
+    [A[1][0]*B[0][0]+A[1][1]*B[1][0]+A[1][2]*B[2][0],
+      A[1][0]*B[0][1]+A[1][1]*B[1][1]+A[1][2]*B[2][1],
+      A[1][0]*B[0][2]+A[1][1]*B[1][2]+A[1][2]*B[2][2]],
+    [A[2][0]*B[0][0]+A[2][1]*B[1][0]+A[2][2]*B[2][0],
+      A[2][0]*B[0][1]+A[2][1]*B[1][1]+A[2][2]*B[2][1],
+      A[2][0]*B[0][2]+A[2][1]*B[1][2]+A[2][2]*B[2][2]],
+  ];
+}
+// アフィン型の 3x3（下段 [0,0,1]）の逆行列
+function mat33InvAffine(M){
+  const a=M[0][0], b=M[0][1], c=M[0][2];
+  const d=M[1][0], e=M[1][1], f=M[1][2];
+  const det = a*e - b*d || 1e-12;
+  return [
+    [ e/det, -b/det, (b*f - e*c)/det ],
+    [ -d/det, a/det, (d*c - a*f)/det ],
+    [ 0, 0, 1 ],
+  ];
+}
+function triMatrix(p0,p1,p2){
+  return [
+    [p1[0]-p0[0], p2[0]-p0[0], p0[0]],
+    [p1[1]-p0[1], p2[1]-p0[1], p0[1]],
+    [0,0,1],
+  ];
+}
+// ソース三角形→デスト三角形のアフィン行列（Canvas setTransform 用）
+function affineFromTriangles(srcTri, dstTri){
+  const Ms = triMatrix(srcTri[0], srcTri[1], srcTri[2]);
+  const Md = triMatrix(dstTri[0], dstTri[1], dstTri[2]);
+  const T = mat33Mul(Md, mat33InvAffine(Ms));
+  // Canvas: setTransform(a, b, c, d, e, f) は [[a c e],[b d f]]
+  return [T[0][0], T[1][0], T[0][1], T[1][1], T[0][2], T[1][2]];
+}
+// ホモグラフィの適用
+function applyHomography(H, [x,y]){
+  const X = H[0][0]*x + H[0][1]*y + H[0][2];
+  const Y = H[1][0]*x + H[1][1]*y + H[1][2];
+  const W = H[2][0]*x + H[2][1]*y + H[2][2];
+  const iw = W ? (1/W) : 1e-12;
+  return [X*iw, Y*iw];
+}
+// 線形最小二乗で H（h9=1 で固定）
+// 式： X = (h1 x + h2 y + h3)/(h7 x + h8 y + 1)
+//      Y = (h4 x + h5 y + h6)/(h7 x + h8 y + 1)
+function solveLeastSquares(ATA, ATb){ // Gauss 消去
+  const N = ATA.length;
+  const A = ATA.map(r=>r.slice());
+  const b = ATb.slice();
+  for(let i=0;i<N;i++){
+    let p=i;
+    for(let r=i+1;r<N;r++) if(Math.abs(A[r][i])>Math.abs(A[p][i])) p=r;
+    if(p!==i){ [A[i],A[p]]=[A[p],A[i]]; [b[i],b[p]]=[b[p],b[i]]; }
+    const diag = A[i][i] || 1e-12;
+    for(let r=i+1;r<N;r++){
+      const f = A[r][i]/diag;
+      for(let c=i;c<N;c++) A[r][c]-=f*A[i][c];
+      b[r]-=f*b[i];
+    }
+  }
+  const x = new Array(N).fill(0);
+  for(let i=N-1;i>=0;i--){
+    let s=0; for(let c=i+1;c<N;c++) s+=A[i][c]*x[c];
+    x[i] = (b[i]-s)/(A[i][i]||1e-12);
+  }
+  return x;
+}
+function estimateHomographyLinear(srcPts, dstPts, w){
+  const n = srcPts.length;
+  const A = []; const B=[];
+  for(let i=0;i<n;i++){
+    const wi = w ? w[i] : 1;
+    const [x,y] = srcPts[i];
+    const [X,Y] = dstPts[i];
+    // 行（X式）
+    A.push([wi*x, wi*y, wi*1, 0,0,0, wi*(-x*X), wi*(-y*X)]);
+    B.push(wi*X);
+    // 行（Y式）
+    A.push([0,0,0, wi*x, wi*y, wi*1, wi*(-x*Y), wi*(-y*Y)]);
+    B.push(wi*Y);
+  }
+  // 正規方程式
+  const m = 8;
+  const ATA = Array.from({length:m},()=>Array(m).fill(0));
+  const ATb = Array(m).fill(0);
+  for(let r=0;r<A.length;r++){
+    const row = A[r];
+    for(let i=0;i<m;i++){
+      ATb[i]+= row[i]*B[r];
+      for(let j=0;j<m;j++) ATA[i][j]+= row[i]*row[j];
+    }
+  }
+  const h = solveLeastSquares(ATA, ATb); // [h1..h8]
+  return [
+    [h[0], h[1], h[2]],
+    [h[3], h[4], h[5]],
+    [h[6], h[7], 1   ],
+  ];
+}
+function estimateHomographyRobust(srcPts, dstPts, iters=3){
+  let w = new Array(srcPts.length).fill(1);
+  let H = estimateHomographyLinear(srcPts, dstPts, w);
+  for(let t=0;t<iters;t++){
+    const res = srcPts.map((p,i)=>{
+      const q = applyHomography(H, p);
+      return Math.hypot(q[0]-dstPts[i][0], q[1]-dstPts[i][1]);
+    });
+    const med = median(res);
+    const delta = Math.max(1, 1.4826*med);
+    w = res.map(r => { const a=Math.abs(r); return a<=delta ? 1 : (delta/a); });
+    H = estimateHomographyLinear(srcPts, dstPts, w);
+  }
+  return H;
+}
+// プレビュー：ホモグラフィをメッシュで近似描画（Canvas2Dは射影が直接できないため）
+function previewProjectiveOnCanvas(img, canvas, H, mesh=24){
+  const ctx = canvas.getContext('2d');
+  const W = img.naturalWidth, Himg = img.naturalHeight;
+
+  // 1) 変換後の四隅の bbox を測ってキャンバスにフィット
+  const corners = [[0,0],[W,0],[W,Himg],[0,Himg]].map(p => applyHomography(H, p));
+  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+
+  const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
+  const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+  canvas.width=cw; canvas.height=ch;
+
+  const spanX = Math.max(1, maxX-minX), spanY = Math.max(1, maxY-minY);
+  const s = Math.min(cw/spanX, ch/spanY);
+  // world(y↑)→canvas(y↓) のフィット（Y反転）
+  const Tfit = [
+    [ s, 0, -minX*s ],
+    [ 0,-s,  maxY*s ],
+    [ 0, 0, 1 ],
+  ];
+  const Hc = mat33Mul(Tfit, H); // 画像(px↓) → キャンバス(px↓)
+
+  // 2) メッシュで分割して、それぞれをアフィンとして描画
+  ctx.clearRect(0,0,cw,ch);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  const nx = mesh, ny = mesh;
+  const sx = W/nx, sy = Himg/ny;
+
+  for(let j=0;j<ny;j++){
+    for(let i=0;i<nx;i++){
+      const x0 = i*sx,  y0 = j*sy;
+      const x1 = (i+1)*sx, y1 = (j+1)*sy;
+
+      const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
+      const d00=applyHomography(Hc, s00);
+      const d10=applyHomography(Hc, s10);
+      const d11=applyHomography(Hc, s11);
+      const d01=applyHomography(Hc, s01);
+
+      // 三角1: (00,10,11)
+      drawTri(ctx, img, [s00,s10,s11], [d00,d10,d11]);
+      // 三角2: (00,11,01)
+      drawTri(ctx, img, [s00,s11,s01], [d00,d11,d01]);
+    }
+  }
+
+  function drawTri(ctx, img, srcTri, dstTri){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(dstTri[0][0], dstTri[0][1]);
+    ctx.lineTo(dstTri[1][0], dstTri[1][1]);
+    ctx.lineTo(dstTri[2][0], dstTri[2][1]);
+    ctx.closePath();
+    ctx.clip();
+    const [a,b,c,d,e,f] = affineFromTriangles(srcTri, dstTri);
+    ctx.setTransform(a,b,c,d,e,f);
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+  }
+}
+
+// 追加：投影GCPをキャンバスに描く（赤=入力、青=投影）
+function drawProjectedGCPsOnCanvas(canvas, img, projectToCanvas){
+  const ctx = canvas.getContext('2d');
+  const r=6;
+
+  // 既存の赤丸は markerCanvas に描いてるので、ここは投影（青）だけ描画
+  const cvs = canvas;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,160,255,0.95)';
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+
+  const warpRoot = (this.gcpList||[]).filter(g=>Array.isArray(g.mapCoord) && (g.imageCoord || g.imageCoordCss));
+  const imgNat = warpRoot.map(g => {
+    if (g.imageCoord) return g.imageCoord;
+    return imageCssToNatural(g.imageCoordCss, img);
+  });
+
+  for(let i=0;i<imgNat.length;i++){
+    // 画像座標(px↓) → キャンバス(px↓) へ投影
+    const pCanvas = projectToCanvas(imgNat[i]);
+    ctx.beginPath();
+    ctx.arc(pCanvas[0], pCanvas[1], r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 
 export default {
   name: 'WarpWizard',
@@ -175,7 +395,8 @@ export default {
   data(){
     return {
       imgUrl: null,
-      affineM: null,
+      affineM: null,   // 2x3（相似/アフィン用）
+      H: null,         // 3x3（ホモグラフィ用）
       grid: true,
       objUrl: null,
       // undo/redo
@@ -216,10 +437,17 @@ export default {
     isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false },
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
-    transformKind(){ if(!this.affineM) return ''; return this.pairsCount>=3 ? 'Affine' : 'Similarity' },
-    transformKindColor(){ return this.pairsCount>=3 ? 'deep-purple' : 'teal' },
+    transformKind(){
+      if(!(this.affineM || this.H)) return '';
+      if (this.pairsCount >= 4) return 'Homography';
+      return this.pairsCount >= 3 ? 'Affine' : 'Similarity';
+    },
+    transformKindColor(){
+      if (this.pairsCount >= 4) return 'pink';
+      return this.pairsCount >= 3 ? 'deep-purple' : 'teal';
+    },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
-    hideBaseImage(){ return !!this.affineM }, // ★ プレビュー成立で原画像は不可視
+    hideBaseImage(){ return !!(this.affineM || this.H) }, // ★ プレビュー成立で原画像は不可視
     canUndo(){ return this.histIndex > 0 },
     canRedo(){ return this.histIndex >= 0 && this.history && this.histIndex < this.history.length - 1 },
   },
@@ -241,15 +469,15 @@ export default {
     },
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
-    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM) this.previewAffineWarp() },
+    resetAll(){ this.affineM=null; this.H=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
+    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H) this.previewAffineWarp() },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.pairsCount>=2) this.previewAffineWarp() },
 
     // ===== Undo/Redo =====
-    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null } },
+    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null } },
     resetHistory(){ this.history=[]; this.histIndex=-1 },
     pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
+    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
     redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
     onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
@@ -267,34 +495,30 @@ export default {
     removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
 
     // ===== プレビュー / 出力 =====
-    // previewAffineWarp(){ const img=this.$refs.warpImage; const canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if(pairs.length<2){ this.affineM=null; this.clearCanvas(canvas); return } const srcNat=pairs.map(g=> imageCssToNatural(g.imageCoordCss||g.imageCoord, img)); const srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=> lngLatToMerc(g.mapCoord)); let Mup; if(pairs.length===2){ Mup=fitSimilarity2P(srcUp,dstUp) } else { Mup=fitAffineRobust(srcUp,dstUp,3) } const FLIP_Y=[1,0,0,0,-1,0]; const M=composeAffine(Mup,FLIP_Y); this.affineM=M; previewOnCanvas(img, canvas, M) },
-
-
     previewAffineWarp(){
-
       // 追加: 正規化ヘルパ
       function toNaturalCoord(g, img){
         if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
         if (Array.isArray(g.imageCoord))    return g.imageCoord;
         return null;
       }
-      function residualsMeters(Mup, srcUp, dstUp){
-        const err = srcUp.map(([x,y],i) => {
-          const [A,B,C,D,E,F] = Mup;
-          const Xp = A*x + B*y + C, Yp = D*x + E*y + F;
-          const [X,Y] = dstUp[i];
-          return Math.hypot(Xp - X, Yp - Y);
+      function residualsMetersProj(Hup, srcUp, dstUp){
+        const err = srcUp.map((p,i) => {
+          const [X,Y] = applyHomography(Hup, p);
+          const [Xr,Yr] = dstUp[i];
+          return Math.hypot(X-Xr, Y-Yr);
         });
         const rms = Math.sqrt(err.reduce((s,e)=>s+e*e,0) / Math.max(1, err.length));
         return {err, rms};
       }
+
       const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
       if(!img||!canvas) return;
 
       const pairs=(this.gcpList||[]).filter(g =>
           (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
       );
-      if (pairs.length < 2){ this.affineM=null; this.clearCanvas(canvas); return; }
+      if (pairs.length < 2){ this.affineM=null; this.H=null; this.clearCanvas(canvas); return; }
 
       // 画像 natural(px) → “上向き”座標
       const srcNat = pairs.map(g => toNaturalCoord(g, img));
@@ -303,26 +527,75 @@ export default {
       // 地図 (lng,lat) → 3857(m)（上向き）
       const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
 
-      // 2点=相似 / 3点以上=ロバストアフィン
-      const Mup = (pairs.length === 2) ? fitSimilarity2P(srcUp, dstUp)
-          : fitAffineRobust(srcUp, dstUp, 3);
+      if (pairs.length === 2){
+        // 相似：2点は厳密一致
+        const Mup = fitSimilarity2P(srcUp, dstUp); // 2x3
+        const FLIP_Y_A = [1,0,0, 0,-1,0];
+        const M = composeAffine(Mup, FLIP_Y_A); // world = M * p_img
+        this.H = null;
+        this.affineM = M;
+        previewOnCanvas(img, canvas, M);
+        console.log('[Similarity] ok');
+        return;
+      }
 
-      // 残差ログ（デバッグ）
-      const {err, rms} = residualsMeters(Mup, srcUp, dstUp);
-      console.log('per-point residuals(m):', err.map(e=>e.toFixed(2)), '  RMS=', rms.toFixed(2));
+      if (pairs.length === 3){
+        // アフィンの厳密解（3点ピタリ）
+        const Mup = fitAffineN(srcUp, dstUp);
+        const FLIP_Y_A = [1,0,0, 0,-1,0];
+        const M = composeAffine(Mup, FLIP_Y_A);
+        this.H = null;
+        this.affineM = M;
+        previewOnCanvas(img, canvas, M);
+        console.log('[Affine exact-3] ok');
+        return;
+      }
 
-      // 実運用は y下向き画像→上向き世界の順序で1回反転
-      const FLIP_Y=[1,0,0, 0,-1,0];
-      const M = composeAffine(Mup, FLIP_Y); // q_world = M(p_imgNatural)
-      this.affineM = M;
-      // プレビュー（世界→キャンバスの追加スケーリング/反転は preview 内でのみ）
-      previewOnCanvas(img, canvas, M);
+      // 4点以上 → 射影（ホモグラフィ）
+      const Hup = (pairs.length === 4)
+          ? estimateHomographyLinear(srcUp, dstUp)
+          : estimateHomographyRobust(srcUp, dstUp, 3);
+
+      const {err, rms} = residualsMetersProj(Hup, srcUp, dstUp);
+      console.log(`[Homography] per-point residuals(m):`, err.map(e=>e.toFixed(2)), '  RMS=', rms.toFixed(2));
+
+      // y↓画像 → y↑世界：H = Hup * FLIP_Y
+      const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
+      const H = mat33Mul(Hup, FLIP_Y_H);
+
+      this.affineM = null;
+      this.H = H;
+      previewProjectiveOnCanvas(img, canvas, H, 28); // メッシュ密度お好みで
     },
 
-
-
     downloadWorldFile(){ if(!this.affineM) return; const txt=worldFileFromAffine(this.affineM); const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='image.pgw'; a.click(); URL.revokeObjectURL(a.href) },
-    confirm(){ if(!this.affineM) return; const f=this.$props.file||null; const canvas=this.$refs.warpCanvas; if(!canvas||!canvas.toBlob){ this.$emit('confirm',{ file:f, affineM:this.affineM, blob:null }); return } canvas.toBlob((blob)=>{ this.$emit('confirm',{ file:f, affineM:this.affineM, blob }) }, 'image/png') },
+    confirm(){
+      if(!(this.affineM || this.H)) return;
+
+      const f=this.$props.file||null;
+      const canvas=this.$refs.warpCanvas;
+
+      // 角の地理座標（ホモグラフィ時に返すと便利）
+      let cornersLngLat = null;
+      if (this.H && this.$refs.warpImage){
+        const img=this.$refs.warpImage;
+        const W=img.naturalWidth, Hh=img.naturalHeight;
+        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];  // TL, TR, BR, BL
+        const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p)); // 3857(m)
+        cornersLngLat = cornersWorld.map(mercToLngLat);
+      }
+
+      const payload = {
+        file: f,
+        affineM: this.affineM || null, // 相似/アフィンのとき使用
+        H: this.H || null,              // ホモグラフィのとき使用（3x3）
+        kind: this.H ? 'homography' : (this.pairsCount>=3 ? 'affine' : 'similarity'),
+        cornersLngLat,
+      };
+
+      if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return }
+      canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png')
+    },
   }
 }
 </script>

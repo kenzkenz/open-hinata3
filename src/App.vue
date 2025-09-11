@@ -21,7 +21,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!--  -->
       <FloatingWindow
           windowId = "warp-wizard"
-          title = "ジオリファレンス （2点で相似、3点以上でアフィン変換）"
+          title = "ジオリファレンス"
           type="normal"
           :resizable="false"
           :overflow="'auto'"
