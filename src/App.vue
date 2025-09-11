@@ -3495,9 +3495,6 @@ export default {
       const FLIP_Y = [1,0,0,0,-1,0];
       const M = composeAffine(Mup, FLIP_Y);
 
-      // this._lastAffineM = M;            // 非リアクティブ保持（互換）
-      // if (this.hasOwnProperty('affineM')) this.affineM = M; // リアクティブ保持（ボタン制御用）
-
       this._lastAffineM = M;
       this.affineM = M;
 
@@ -3526,7 +3523,6 @@ export default {
       const M = composeAffine(Mup, FLIP_Y);
 
       this._lastAffineM = M;
-      // if (this.hasOwnProperty('affineM')) this.affineM = M;
       this.affineM = M;
       return worldFileFromAffine(M);
     },
