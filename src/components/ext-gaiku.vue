@@ -189,6 +189,7 @@ export default {
   watch: {
     s_isRadius2002(v) {
       if (v) {
+        this.$store.state.isRadius200 = false
         this.$store.state.loadingMessage3 = '地図上をクリックすると200m半径の円を書きます。<br>円内部の基準点のみSIMA保存します。'
         this.$store.state.loading3 = true
         setTimeout(() => {
