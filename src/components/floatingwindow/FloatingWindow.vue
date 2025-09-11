@@ -9,7 +9,7 @@
       width: width + 'px',
       height: height + 'px',
       cursor: fullDraggable ? 'move' : 'default',
-      zIndex: zIndex
+      zIndex: zIndex,
     }"
       @pointerdown="onDivPointerDown"
   >
@@ -52,21 +52,26 @@
     <!-- simple の場合、ヘッダー外にボタン -->
     <button v-else class="close-btn" @click.stop="close($event)">×</button>
 
-    <!-- コンテンツ領域 -->
+    <!-- コンテンツ領域（overflow は props で制御。既定は var(--fw-overflow, hidden)） -->
     <div
         class="content"
-        :style="headerShown ? { height: `calc(100% - ${headerHeight}px)` } : { height: '100%' }"
+        :style="[
+        headerShown ? { height: `calc(100% - ${headerHeight}px)` } : { height: '100%' },
+        { overflow: contentOverflowStyle }
+      ]"
     >
-      <slot></slot>
+      <slot />
     </div>
 
-    <!-- リサイズハンドル -->
-    <div
-        v-for="dir in resizerDirs"
-        :key="dir"
-        :class="['resizer', dir]"
-        @pointerdown.stop="startResize($event, dir)"
-    ></div>
+    <!-- リサイズハンドル（ESLint対策: v-if を wrapper に） -->
+    <template v-if="resizable">
+      <div
+          v-for="dir in resizerDirs"
+          :key="dir"
+          :class="['resizer', dir]"
+          @pointerdown.stop="startResize($event, dir)"
+      ></div>
+    </template>
   </div>
 </template>
 
@@ -92,6 +97,9 @@ export default {
 
     keepAspectRatio: { type: Boolean, default: false },
     showMaxRestore: { type: Boolean, default: false },
+
+    /** このウィンドウ自体をユーザーがリサイズできるか */
+    resizable: { type: Boolean, default: true },
 
     type: {
       type: String,
@@ -139,6 +147,11 @@ export default {
       default: "normal",
       validator: (v) => ["never", "normal", "always"].includes(v),
     },
+
+    /** content 要素の overflow を直接指定（'hidden' | 'auto' | 'scroll' | 'visible' など）。
+     *  未指定時は CSS 変数 --fw-overflow を見て、無ければ hidden。
+     */
+    overflow: { type: String, default: "" },
   },
 
   data() {
@@ -190,17 +203,18 @@ export default {
     resizerDirs() {
       return ["top-left", "top-right", "bottom-left", "bottom-right"];
     },
+    contentOverflowStyle() {
+      const v = (this.overflow || '').trim();
+      return v || 'var(--fw-overflow, hidden)';
+    },
   },
 
   methods: {
     /* -------------------- 永続化 -------------------- */
     saveToStorage() {
-      // 全体オプトアウト
-      if (!this.persist) return;
-      // モードで分岐
+      if (!this.persist) return;         // 全体オプトアウト
       if (this.persistMode === "never") return;
-      // normal: 最大化中は保存しない（要件）
-      if (this.persistMode === "normal" && this.isMaximized) return;
+      if (this.persistMode === "normal" && this.isMaximized) return; // 最大化中は保存しない
 
       const key = this.storageKey || `fw:${this.windowId}`;
       const payload = {
@@ -213,9 +227,7 @@ export default {
         z: this.zIndex,
         max: false, // 最大化状態は保存しない
       };
-      try {
-        localStorage.setItem(key, JSON.stringify(payload));
-      } catch (_e) {}
+      try { localStorage.setItem(key, JSON.stringify(payload)); } catch (_) {}
     },
     restoreFromStorage() {
       if (!this.persist) return;
@@ -224,49 +236,40 @@ export default {
         const raw = localStorage.getItem(key);
         if (!raw) return;
         const p = JSON.parse(raw);
-        if (p && typeof p === "object") {
+        if (p && typeof p === 'object') {
           if (Number.isFinite(p.t)) this.top = p.t;
           if (Number.isFinite(p.l)) this.left = p.l;
           if (Number.isFinite(p.r)) this.right = p.r;
           if (Number.isFinite(p.w)) this.width = p.w;
           if (Number.isFinite(p.h)) this.height = p.h;
           if (Number.isFinite(p.z)) this.zIndex = p.z;
-          // isMaximized は復元しない（画面サイズ依存）
         }
-      } catch (_e) {}
+      } catch (_) {}
     },
 
     /* -------------------- スナップ -------------------- */
     snapToEdges(containerW = window.innerWidth, containerH = window.innerHeight) {
-      if (this.snap === "off") return;
+      if (this.snap === 'off') return;
       const s = Math.max(0, this.snapPx | 0);
       const ed = new Set(
-          this.snap === "xy"
-              ? ["top", "bottom", "left", "right"]
-              : this.snap === "x"
-                  ? ["left", "right"]
-                  : this.snap === "y"
-                      ? ["top", "bottom"]
-                      : Array.isArray(this.snapEdges)
-                          ? this.snapEdges
-                          : []
+          this.snap === 'xy' ? ['top','bottom','left','right'] :
+              this.snap === 'x'  ? ['left','right'] :
+                  this.snap === 'y'  ? ['top','bottom'] :
+                      Array.isArray(this.snapEdges) ? this.snapEdges : []
       );
       // 上下
-      if (ed.has("top") && this.top <= s) this.top = 0;
+      if (ed.has('top') && this.top <= s) this.top = 0;
       const bottomGap = containerH - (this.top + this.height);
-      if (ed.has("bottom") && bottomGap <= s)
-        this.top = Math.max(0, containerH - this.height);
+      if (ed.has('bottom') && bottomGap <= s) this.top = Math.max(0, containerH - this.height);
       // 左右（アンカーに応じて）
-      if (this.anchor === "right") {
-        if (ed.has("right") && this.right <= s) this.right = 0;
+      if (this.anchor === 'right') {
+        if (ed.has('right') && this.right <= s) this.right = 0;
         const leftGap = containerW - (this.right + this.width);
-        if (ed.has("left") && leftGap <= s)
-          this.right = Math.max(0, containerW - this.width);
+        if (ed.has('left') && leftGap <= s) this.right = Math.max(0, containerW - this.width);
       } else {
-        if (ed.has("left") && this.left <= s) this.left = 0;
+        if (ed.has('left') && this.left <= s) this.left = 0;
         const rightGap = containerW - (this.left + this.width);
-        if (ed.has("right") && rightGap <= s)
-          this.left = Math.max(0, containerW - this.width);
+        if (ed.has('right') && rightGap <= s) this.left = Math.max(0, containerW - this.width);
       }
     },
 
@@ -274,59 +277,34 @@ export default {
     ensureInitialIfOffscreen() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-
-      // 評価用サイズ（画面より大きければ収まる範囲で判定）
       const w = Math.min(this.width, vw);
       const h = Math.min(this.height, vh);
-
-      // 左上位置（rightアンカーはxを計算）
-      const x = this.anchor === "right" ? vw - (this.right + w) : this.left;
+      const x = this.anchor === 'right' ? vw - (this.right + w) : this.left;
       const y = this.top;
-
-      // 可視領域との交差（24px以上見えていればOK）
       const interW = Math.min(x + w, vw) - Math.max(x, 0);
       const interH = Math.min(y + h, vh) - Math.max(y, 0);
       const visibleEnough = interW > 24 && interH > 24;
-
       if (!visibleEnough) {
-        // 初期値へ戻す（クランプ込み）
         this.top = this.defaultTop;
         this.width = Math.min(this.defaultWidth, vw);
         this.height = Math.min(this.defaultHeight, vh);
-        if (this.anchor === "right") {
-          this.right = this.defaultRight;
-        } else {
-          this.left = this.defaultLeft;
-        }
-        // 念のためクランプ
+        if (this.anchor === 'right') this.right = this.defaultRight; else this.left = this.defaultLeft;
         this.top = Math.min(this.top, Math.max(0, vh - this.height));
-        if (this.anchor === "right") {
-          this.right = Math.min(this.right, Math.max(0, vw - this.width));
-        } else {
-          this.left = Math.min(this.left, Math.max(0, vw - this.width));
-        }
+        if (this.anchor === 'right') this.right = Math.min(this.right, Math.max(0, vw - this.width));
+        else this.left = Math.min(this.left, Math.max(0, vw - this.width));
       }
     },
 
     /* -------------------- 閉じる -------------------- */
     close(e) {
-      this.$emit("close", {
+      this.$emit('close', {
         id: this.windowId,
         isMaximized: this.isMaximized,
-        rect: {
-          top: this.top,
-          left: this.left,
-          right: this.right,
-          width: this.width,
-          height: this.height,
-        },
+        rect: { top: this.top, left: this.left, right: this.right, width: this.width, height: this.height },
         nativeEvent: e || null,
         timestamp: Date.now(),
       });
-      this.$store.commit("setFloatingVisible", {
-        id: this.windowId,
-        visible: false,
-      });
+      this.$store.commit('setFloatingVisible', { id: this.windowId, visible: false });
     },
 
     /* -------------------- ドラッグ -------------------- */
@@ -335,7 +313,7 @@ export default {
       this.zIndex = getNextZIndex();
       this.$nextTick(() => {
         setTimeout(() => {
-          document.querySelectorAll(".v-overlay").forEach((elm) => {
+          document.querySelectorAll('.v-overlay').forEach((elm) => {
             elm.style.zIndex = getNextZIndex();
           });
         }, 30);
@@ -345,58 +323,41 @@ export default {
     },
     handlePointerDown(e) {
       if (this.resizing) return;
-      if (
-          !this.fullDraggable &&
-          this.headerShown &&
-          this.$refs.header &&
-          !this.$refs.header.contains(e.target)
-      )
-        return;
+      if (!this.fullDraggable && this.headerShown && this.$refs.header && !this.$refs.header.contains(e.target)) return;
       this.startDrag(e);
     },
     startDrag(e) {
       this.dragging = true;
       this.startX = e.clientX;
       this.startY = e.clientY;
-
-      // 右寄せ開始位置に対応
-      if (this.anchor === "right") {
-        this.startLeft = window.innerWidth - (this.right + this.width);
-      } else {
-        this.startLeft = this.left;
-      }
+      if (this.anchor === 'right') this.startLeft = window.innerWidth - (this.right + this.width);
+      else this.startLeft = this.left;
       this.startTop = this.top;
-
-      document.addEventListener("pointermove", this.onDrag, { passive: false });
-      document.addEventListener("pointerup", this.stopDrag, { passive: true });
-      document.addEventListener("pointercancel", this.stopDrag, { passive: true });
+      document.addEventListener('pointermove', this.onDrag, { passive: false });
+      document.addEventListener('pointerup', this.stopDrag, { passive: true });
+      document.addEventListener('pointercancel', this.stopDrag, { passive: true });
     },
     onDrag(e) {
       if (!this.dragging) return;
       if (e.cancelable) e.preventDefault();
       const newLeft = this.startLeft + (e.clientX - this.startX);
       const newTop = this.startTop + (e.clientY - this.startY);
-
-      if (this.anchor === "right") {
-        this.right = window.innerWidth - Math.max(0, newLeft) - this.width; // 右端は越境可（newLeft側は負値禁止）
-      } else {
-        this.left = Math.max(0, newLeft);
-      }
+      if (this.anchor === 'right') this.right = window.innerWidth - Math.max(0, newLeft) - this.width; // newLeft は負値禁止
+      else this.left = Math.max(0, newLeft);
       this.top = Math.max(0, newTop);
     },
     stopDrag() {
       this.dragging = false;
-      document.removeEventListener("pointermove", this.onDrag);
-      document.removeEventListener("pointerup", this.stopDrag);
-      document.removeEventListener("pointercancel", this.stopDrag);
-      // スナップ＆保存
+      document.removeEventListener('pointermove', this.onDrag);
+      document.removeEventListener('pointerup', this.stopDrag);
+      document.removeEventListener('pointercancel', this.stopDrag);
       this.snapToEdges();
       this.saveToStorage();
     },
 
     /* -------------------- リサイズ -------------------- */
     startResize(e, dir) {
-      if (this.isMaximized) return;
+      if (!this.resizable || this.isMaximized) return;
       this.resizing = true;
       this.resizeDir = dir;
       this.startX = e.clientX;
@@ -406,11 +367,10 @@ export default {
       this.startWidth = this.width;
       this.startHeight = this.height;
       this.originalAspect = this.startWidth / this.startHeight;
-
       if (e.cancelable) e.preventDefault();
-      document.addEventListener("pointermove", this.onResize, { passive: false });
-      document.addEventListener("pointerup", this.stopResize, { passive: true });
-      document.addEventListener("pointercancel", this.stopResize, { passive: true });
+      document.addEventListener('pointermove', this.onResize, { passive: false });
+      document.addEventListener('pointerup', this.stopResize, { passive: true });
+      document.addEventListener('pointercancel', this.stopResize, { passive: true });
     },
     onResize(e) {
       if (!this.resizing) return;
@@ -419,42 +379,33 @@ export default {
       const dy = e.clientY - this.startY;
       let newW = this.startWidth;
       let newH = this.startHeight;
-
       if (this.keepAspectRatio) {
-        if (this.resizeDir.includes("right")) newW = this.startWidth + dx;
-        else if (this.resizeDir.includes("left")) newW = this.startWidth - dx;
-        else if (this.resizeDir.includes("bottom")) newH = this.startHeight + dy;
-        else if (this.resizeDir.includes("top")) newH = this.startHeight - dy;
+        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
+        else if (this.resizeDir.includes('left')) newW = this.startWidth - dx;
+        else if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
+        else if (this.resizeDir.includes('top')) newH = this.startHeight - dy;
         newH = newW / this.originalAspect;
         newW = newH * this.originalAspect;
       } else {
-        if (this.resizeDir.includes("right")) newW = this.startWidth + dx;
-        if (this.resizeDir.includes("left")) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
-        if (this.resizeDir.includes("bottom")) newH = this.startHeight + dy;
-        if (this.resizeDir.includes("top")) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
+        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
+        if (this.resizeDir.includes('left')) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
+        if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
+        if (this.resizeDir.includes('top')) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
       }
-
-      if (this.keepAspectRatio && this.resizeDir.includes("left")) {
-        this.left = this.startLeft + (this.startWidth - newW);
-      }
-      if (this.keepAspectRatio && this.resizeDir.includes("top")) {
-        this.top = this.startTop + (this.startHeight - newH);
-      }
-
+      if (this.keepAspectRatio && this.resizeDir.includes('left')) this.left = this.startLeft + (this.startWidth - newW);
+      if (this.keepAspectRatio && this.resizeDir.includes('top'))  this.top  = this.startTop  + (this.startHeight - newH);
       this.width = Math.max(20, newW);
       this.height = Math.max(20, newH);
-      this.$emit("width-changed", this.width);
-      this.$emit("height-changed", this.height);
+      this.$emit('width-changed', this.width);
+      this.$emit('height-changed', this.height);
     },
     stopResize() {
       this.resizing = false;
-      document.removeEventListener("pointermove", this.onResize);
-      document.removeEventListener("pointerup", this.stopResize);
-      document.removeEventListener("pointercancel", this.stopResize);
-      // 画面内に収めてスナップ＆保存
+      document.removeEventListener('pointermove', this.onResize);
+      document.removeEventListener('pointerup', this.stopResize);
+      document.removeEventListener('pointercancel', this.stopResize);
       this.top = Math.min(this.top, Math.max(0, window.innerHeight - this.height));
-      if (this.anchor === "right")
-        this.right = Math.min(this.right, Math.max(0, window.innerWidth - this.width));
+      if (this.anchor === 'right') this.right = Math.min(this.right, Math.max(0, window.innerWidth - this.width));
       else this.left = Math.min(this.left, Math.max(0, window.innerWidth - this.width));
       this.snapToEdges();
       this.saveToStorage();
@@ -467,47 +418,49 @@ export default {
       this.isMaximized = true;
       this.left = 0; this.right = 0; this.top = 0;
       this.width = window.innerWidth; this.height = window.innerHeight;
-      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
-      this.$emit("maximize");
-      window.addEventListener("resize", this.syncMaxSize, { passive: true });
-      // ガード付きなので normal モードでは保存されない
-      this.saveToStorage();
+      this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
+      this.$emit('maximize');
+      window.addEventListener('resize', this.syncMaxSize, { passive: true });
+      this.saveToStorage(); // normal モードでは isMaximized によりセーブ抑止
     },
     restore() {
       if (!this.isMaximized) return;
-      window.removeEventListener("resize", this.syncMaxSize);
+      window.removeEventListener('resize', this.syncMaxSize);
       if (this.preMaxState) {
-        this.top = this.preMaxState.top; this.left = this.preMaxState.left; this.right = this.preMaxState.right;
-        this.width = this.preMaxState.width; this.height = this.preMaxState.height;
+        this.top = this.preMaxState.top;
+        this.left = this.preMaxState.left;
+        this.right = this.preMaxState.right;
+        this.width = this.preMaxState.width;
+        this.height = this.preMaxState.height;
       }
       this.isMaximized = false;
-      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
-      this.$emit("restore");
+      this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
+      this.$emit('restore');
       this.saveToStorage();
     },
     syncMaxSize() {
       if (!this.isMaximized) return;
-      this.width = window.innerWidth; this.height = window.innerHeight;
-      this.$nextTick(() => { this.$emit("width-changed", this.width); this.$emit("height-changed", this.height); });
+      this.width = window.innerWidth;
+      this.height = window.innerHeight;
+      this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
     },
 
     /* -------------------- キーボード操作 -------------------- */
     onKeydown(e) {
       if (!this.visible || this.isMaximized) return;
       const step = e.shiftKey ? 10 : 1;
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) e.preventDefault();
-
-      if (e.key === "ArrowUp")   { this.top = Math.max(0, this.top - step); this.saveToStorage(); }
-      if (e.key === "ArrowDown") { this.top = this.top + step;               this.saveToStorage(); }
-      if (e.key === "ArrowLeft") {
-        if (e.altKey) { this.width = Math.max(100, this.width - 10); this.$emit("width-changed", this.width); }
-        else if (this.anchor === "right") this.right = this.right + step; // 右アンカー: 左へ移動
+      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+      if (e.key === 'ArrowUp')   { this.top = Math.max(0, this.top - step); this.saveToStorage(); }
+      if (e.key === 'ArrowDown') { this.top = this.top + step;               this.saveToStorage(); }
+      if (e.key === 'ArrowLeft') {
+        if (e.altKey && this.resizable) { this.width = Math.max(100, this.width - 10); this.$emit('width-changed', this.width); }
+        else if (this.anchor === 'right') this.right = this.right + step; // 右アンカー: 左へ移動
         else this.left = Math.max(0, this.left - step);
         this.saveToStorage();
       }
-      if (e.key === "ArrowRight") {
-        if (e.altKey) { this.width = this.width + 10; this.$emit("width-changed", this.width); }
-        else if (this.anchor === "right") this.right = this.right - step;   // ★ 越境許可: 0未満OK
+      if (e.key === 'ArrowRight') {
+        if (e.altKey && this.resizable) { this.width = this.width + 10; this.$emit('width-changed', this.width); }
+        else if (this.anchor === 'right') this.right = this.right - step; // 0未満OK（越境許可）
         else this.left = this.left + step;
         this.saveToStorage();
       }
@@ -517,14 +470,12 @@ export default {
   mounted() {
     // 初期座標（右基準なら right を採用）
     this.top = this.defaultTop;
-    if (this.anchor === "right") this.right = this.defaultRight; else this.left = this.defaultLeft;
-
+    if (this.anchor === 'right') this.right = this.defaultRight; else this.left = this.defaultLeft;
     // 保存値復元 → 画面外チェック
     this.restoreFromStorage();
     this.ensureInitialIfOffscreen();
-
     // キー操作
-    window.addEventListener("keydown", this.onKeydown, { passive: false });
+    window.addEventListener('keydown', this.onKeydown, { passive: false });
   },
 
   watch: {
@@ -539,21 +490,20 @@ export default {
             elm.style.zIndex = getNextZIndex();
           });
         }, 30);
-        if (val) this.ensureInitialIfOffscreen(); // 表示になったら再チェック
+        if (val) this.ensureInitialIfOffscreen();
       });
     },
   },
 
   beforeUnmount() {
-    // クリーンアップ
-    document.removeEventListener("pointermove", this.onDrag);
-    document.removeEventListener("pointerup", this.stopDrag);
-    document.removeEventListener("pointercancel", this.stopDrag);
-    document.removeEventListener("pointermove", this.onResize);
-    document.removeEventListener("pointerup", this.stopResize);
-    document.removeEventListener("pointercancel", this.stopResize);
-    window.removeEventListener("resize", this.syncMaxSize);
-    window.removeEventListener("keydown", this.onKeydown);
+    document.removeEventListener('pointermove', this.onDrag);
+    document.removeEventListener('pointerup', this.stopDrag);
+    document.removeEventListener('pointercancel', this.stopDrag);
+    document.removeEventListener('pointermove', this.onResize);
+    document.removeEventListener('pointerup', this.stopResize);
+    document.removeEventListener('pointercancel', this.stopResize);
+    window.removeEventListener('resize', this.syncMaxSize);
+    window.removeEventListener('keydown', this.onKeydown);
   },
 };
 </script>
@@ -567,19 +517,16 @@ export default {
   border: 1px solid whitesmoke;
   border-radius: 4px;
   transition: opacity 1s;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  /* 親はスクロール/ジェスチャーを基本許可。ドラッグ領域側で抑止する */
-  touch-action: auto;
+  /*-webkit-user-select: none;*/
+  /*-moz-user-select: none;*/
+  /*-ms-user-select: none;*/
+  /*user-select: none;*/
+  touch-action: auto; /* 親はスクロール/ジェスチャーを基本許可。ドラッグ領域側で抑止する */
   -webkit-overflow-scrolling: touch;
-  overflow: hidden;
+  overflow: hidden; /* ルートは常に隠す。スクロールは .content で制御 */
 }
 
-.draggable-div.maximized {
-  border-radius: 0;
-}
+.draggable-div.maximized { border-radius: 0; }
 
 .header {
   position: relative;
@@ -598,15 +545,8 @@ export default {
   touch-action: none;
 }
 
-/* タイトル内 HTML の軽い調整 */
-.header .title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.header .title :deep(small) {
-  opacity: 0.9;
-}
+.header .title { display: inline-flex; align-items: center; gap: 6px; }
+.header .title :deep(small) { opacity: 0.9; }
 
 /* simple: headerなし、全体ドラッグ、×はホバー時のみ */
 .draggable-div.simple .close-btn {
@@ -618,9 +558,7 @@ export default {
   font-size: 36px;
   transition: opacity 0.2s, color 0.2s;
 }
-.draggable-div.simple:hover .close-btn {
-  opacity: 1;
-}
+.draggable-div.simple:hover .close-btn { opacity: 1; }
 
 /* normal: ヘッダー内に配置、×は白、大きく、中央寄せ、ホバーで青 */
 .draggable-div.normal .header .close-btn {
@@ -637,9 +575,7 @@ export default {
   cursor: pointer;
   transition: color 0.2s, font-size 0.2s;
 }
-.draggable-div.normal .header .close-btn:hover {
-  color: blue;
-}
+.draggable-div.normal .header .close-btn:hover { color: blue; }
 
 /* Win風ウィンドウ操作 */
 .header .window-controls {
@@ -662,14 +598,11 @@ export default {
   padding: 0;
   transition: color 0.2s;
 }
-.header .window-controls button:hover {
-  color: blue !important;
-}
+.header .window-controls button:hover { color: blue !important; }
 
 .content {
-  width: 101%;
-  height: 102% !important;
-  overflow: hidden;
+
+  /* overflow は props から渡す（contentOverflowStyle） */
 }
 
 .resizer {
@@ -683,33 +616,5 @@ export default {
 .top-left    { top: -5px; left: -5px; cursor: nwse-resize; }
 .top-right   { top: -5px; right: -5px; cursor: nesw-resize; }
 .bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
-.bottom-right{
-  bottom: -5px;
-  right: -5px;
-  cursor: nwse-resize;
-  width: 30px;
-  height: 30px;
-}
+.bottom-right{ bottom: -5px; right: -5px; cursor: nwse-resize; width: 30px; height: 30px; }
 </style>
-
-
-
-<!--
-
-完全に覚えさせない（保存もしない・復元もしない）
-  <FloatingWindow :persist="false" />
-  ※ persist=false だと内部で保存・復元ロジックを丸ごとスキップします。
-
-「保存しない」だけを明示（persist は使うが方針でOFF）
-  <FloatingWindow persist-mode="never" />
-  ※ persist-mode="never" は常に保存しません（復元は既存データがあれば読む）。
-  復元もさせたくないなら :persist="false" を使うのが手っ取り早いです。
-
-既に保存されている位置サイズを消したいとき（任意）
-  例：windowId が 'mapillary-filter' の場合
-  localStorage.removeItem('fw:mapillary-filter')
-  storageKey を指定しているならそのキー名で消す
-
-参考：既定は persist=true ＋ persist-mode="normal"（通常時のみ保存・最大化中は保存しない）です。
-
--->

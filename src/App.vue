@@ -24,6 +24,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           title = "ジオリファレンス （2点で相似、3点以上でアフィン変換）"
           type="normal"
           :resizable="false"
+          :overflow="'auto'"
           :default-top = "0"
           :default-left = "0"
           :default-width = "400"
@@ -9212,6 +9213,7 @@ export default {
                   break
                 }
                 case 'jpg':
+                case 'jpeg':
                 case 'jgw':
                 {
                   if (files.length > 1) {
