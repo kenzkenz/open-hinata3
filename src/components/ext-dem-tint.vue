@@ -55,12 +55,16 @@
           洪水低地
         </v-chip>
       </MiniTooltip>
+      <!-- ★ 追加：古墳（微地形）プリセット -->
+      <MiniTooltip text="範囲：0〜80m（微地形：6〜25mを特に視認しやすく）／陰影強め" :offset-x="0" :offset-y="0">
+        <v-chip class="oh-chip-lg" :color="presetKey==='local_kofun' ? 'primary' : undefined" size="large" @click="usePreset('local_kofun')">
+          古墳（微地形）
+        </v-chip>
+      </MiniTooltip>
     </div>
 
     <!-- ===== 表示オプション（陰影スイッチ） ===== -->
     <div class="d-flex align-center justify-space-between oh-subtoolbar">
-<!--      <div class="oh-sublabel">表示オプション</div>-->
-      <!-- ★ 必要なければこの <v-switch> ブロックごとコメントアウトでOK -->
       <v-switch
           v-model="shadeEnabled"
           color="primary"
@@ -121,8 +125,7 @@ import { registerDemTintProtocol, registerDemTintPalette } from '@/js/utils/dem-
 const FORCE_OPACITY = 0.9
 const TRANSITION_MS = 240;
 
-
-/* GSI配色とプリセット（※既存のまま。省略せず記載） */
+/* GSI配色とプリセット（既存） */
 const GSI_RAMP_12 = ['#0052ff','#146af9','#198cff','#2fb8ff','#46e0ff','#7be87a','#b6f83d','#fff300','#ffc300','#ff9b00','#ff5d20','#ff3a1a']
 const GSI_RAMP_18 = ['#0052ff','#0e60ff','#1972ff','#2a95ff','#3abaff','#47dadf','#60e88d','#86f04f','#b2f734','#e8f324','#ffe100','#ffc200','#ffa100','#ff7e00','#ff5a10','#ff3a1a','#d92c18','#b51f15']
 const GSI_SEA_12  = ['#eaf6ff','#d9efff','#c9e8ff','#b5deff','#9fd3ff','#8ac8ff','#75bcff','#5eafff','#479fff','#338fe0','#257fcb','#1a70b6']
@@ -138,7 +141,15 @@ const PRESETS = {
   mountain:{ aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600], aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82','#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf','#eaeaea','#ffffff'], belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500], belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff','#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#072b46','#051f34'] },
 
   local_volcano:{ aboveDomain:[0,200,400,600,800,1000,1200,1500,1800,2100,2400,2700,3000,3300,3600], aboveRange:['#171a1c','#1f2326','#2a2f31','#3a2b2b','#541b1b','#6b1313','#8a1010','#a01914','#b02a1e','#bf3d23','#5a4d49','#444141','#3a3a3d','#5b5e62','#8b8f94'], belowDomain:[0,1,2,3,5,8,12,20], belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1'] },
-  local_flood10:{ aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40], aboveRange:['#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3','#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff','#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff'], belowDomain:[0,0.2,0.5,1,1.5,2,3,4,5], belowRange:['#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff','#89c1ff','#73b3f0','#5aa0d9'] }
+  local_flood10:{ aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40], aboveRange:['#072b46','#0b3f6d','#0f5394','#1668ba','#1e7ad0','#2b8ce3','#3c9ced','#4eabf4','#60b8f8','#74c4fb','#89cfff','#9fd9ff','#b6e2ff','#cceaff','#ddf2ff','#eaf7ff','#f0f9ff'], belowDomain:[0,0.2,0.5,1,1.5,2,3,4,5], belowRange:['#eaf7ff','#dff2ff','#d2ebff','#c3e3ff','#b2d9ff','#9fceff','#89c1ff','#73b3f0','#5aa0d9'] },
+
+  // ★ 追加：古墳（微地形）— 平野〜低丘陵での微高地を暖色で強調（0〜80m帯）
+  local_kofun:{
+    aboveDomain:[0,2,4,6,8,10,12,15,18,22,26,30,35,45,60,80],
+    aboveRange:['#f7f3e8','#efe6d4','#e6dac1','#dccfaf','#d1c39e','#c6b78e','#bcae81','#b1a474','#a69967','#9b8e5b','#8f834f','#847844','#786e3a','#6c642f','#605b28','#555221'],
+    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
+    belowRange:GSI_SEA_12
+  }
 }
 
 /* ユーティリティ（色補間） */
@@ -196,8 +207,12 @@ export default {
           palette: PRESETS[this.presetKey],
           opacity: FORCE_OPACITY,
           contrast: 0,
-          shadeEnabled: true   // ★ 追加：陰影は既定On
+          shadeEnabled: true,            // 既定On
+          // ★ 陰影パラメータ（既定値）
+          shadeParams: { sa: 0.24, az: 315, alt: 45 }
         }
+      } else if (!this.$store.state.demTint.shadeParams){
+        this.$store.state.demTint.shadeParams = { sa: 0.24, az: 315, alt: 45 }
       }
     },
 
@@ -206,6 +221,16 @@ export default {
       this.presetKey = key
       this.$store.state.demTint.palette = JSON.parse(JSON.stringify(PRESETS[key]))
       this.$store.state.demTint.opacity = FORCE_OPACITY
+
+      // ★ プリセット別の陰影推奨値（微地形＝古墳は少し強め＆低太陽）
+      const sp = key==='local_kofun' ? { sa: 0.32, az: 315, alt: 25 }
+          : key==='local_volcano' ? { sa: 0.28, az: 315, alt: 45 }
+              : { sa: 0.24, az: 315, alt: 45 }
+      this.$store.state.demTint.shadeParams = sp
+
+      // 微コントラスト（古墳のみごく弱く上げる）
+      this.$store.state.demTint.contrast = (key==='local_kofun') ? 0.05 : 0.0
+
       this.apply()
     },
 
@@ -269,13 +294,16 @@ export default {
       const styleKey = this.hash(JSON.stringify(palette))
       registerDemTintPalette(styleKey, palette)
 
-      // ★ 陰影クエリ（ONのときだけ付与）
+      // ★ 陰影クエリ（ONのとき保持）。sa/az/alt をストアから取得
       const shadeOn = !!this.$store.state.demTint?.shadeEnabled
-      // ほんのり：0.20〜0.28くらいが無難。動かしたくなければ固定値で。
-      const sa = 0.24
-      const shadeQS = shadeOn ? `&shade=soft&sa=${sa}` : ''
+      const sp = this.$store.state.demTint?.shadeParams || { sa:0.24, az:315, alt:45 }
+      const sa  = Number.isFinite(sp.sa)  ? sp.sa  : 0.24
+      const az  = Number.isFinite(sp.az)  ? sp.az  : 315
+      const alt = Number.isFinite(sp.alt) ? sp.alt : 45
+      const shadeQS = shadeOn ? `&shade=soft&sa=${sa}&az=${az}&alt=${alt}` : ''
 
-      const url = `${base}?style=${styleKey}${shadeQS}`
+      // 既定：近傍ゼロ抑制 nz=3（微起伏の誤差ノイズ低減）
+      const url = `${base}?style=${styleKey}${shadeQS}&nz=3`
 
       const beforeId = (()=>{
         const layers = map.getStyle()?.layers||[]
