@@ -35,25 +35,9 @@
       </div>
 
       <div class="right-pane">
-<!--        <v-table density="compact" class="gcp-table">-->
-<!--          <thead>-->
-<!--          <tr><th></th><th>Image (px)</th><th>Map (lng,lat)</th><th></th></tr>-->
-<!--          </thead>-->
-<!--          <tbody>-->
-<!--          <tr v-for="(g,i) in gcpList" :key="i">-->
-<!--            <td>{{ i+1 }}</td>-->
-<!--            <td class="mono">{{ fmtPx(g.imageCoord || g.imageCoordCss) }}</td>-->
-<!--            <td class="mono">{{ fmtLL(g.mapCoord) }}</td>-->
-<!--            <td>-->
-<!--              <v-btn icon size="x-small" variant="text" @click="removeGcp(i)"><v-icon>mdi-delete</v-icon></v-btn>-->
-<!--            </td>-->
-<!--          </tr>-->
-<!--          </tbody>-->
-<!--        </v-table>-->
-
         <div class="actions">
-          <p>2〜4点、上記画像と地図をクリックしてください。 </p>
-          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">
+          <p>2〜4点、または5点以上（TPS）で上記画像と地図をクリックしてください。</p>
+          <v-btn color="primary" :disabled="!(affineM || H || tps)" @click="confirm">
             <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード
           </v-btn>
         </div>
@@ -63,7 +47,7 @@
 </template>
 
 <script>
-// ======== 幾何ユーティリティ ========
+// ======== 幾何ユーティリティ（既存） ========
 function lngLatToMerc([lng, lat]){
   const x = lng * 20037508.34 / 180;
   const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
@@ -159,13 +143,11 @@ function previewOnCanvas(vm, img, canvas, M){
   ctx2.clearRect(0,0,canvas.width,canvas.height);
   ctx2.imageSmoothingEnabled = true; ctx2.imageSmoothingQuality = 'high';
   ctx2.drawImage(img, 0, 0);
-  // GCP投影（青）
-  // const projectToCanvas = (p)=>[A*p[0] + B*p[1] + C, D*p[0] + E*p[1] + F];
-  // drawProjectedGCPsOnCanvas(vm, canvas, img, projectToCanvas);
+  // （デバッグ用の投影GCP描画はコメントアウト済み）
 }
 function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}`; }
 
-/* ======== 射影（ホモグラフィ）ユーティリティ ======== */
+/* ======== 射影（ホモグラフィ）ユーティリティ（既存） ======== */
 function mat33Mul(A,B){
   return [
     [A[0][0]*B[0][0]+A[0][1]*B[1][0]+A[0][2]*B[2][0],
@@ -337,12 +319,9 @@ function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24){
     ctx.drawImage(img, 0, 0);
     ctx.restore();
   }
-
-  // GCP投影（青）
-  // drawProjectedGCPsOnCanvas(vm, canvas, img, (p)=>applyHomography(Hc, p));
 }
 
-// デバッグ：投影GCP描画
+// デバッグ：投影GCP描画（呼び出しはコメントアウトのまま）
 function drawProjectedGCPsOnCanvas(vm, canvas, img, projectToCanvas){
   const ctx = canvas.getContext('2d');
   ctx.save();
@@ -356,6 +335,85 @@ function drawProjectedGCPsOnCanvas(vm, canvas, img, projectToCanvas){
     ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.stroke();
   });
   ctx.restore();
+}
+
+// ======== TPS（薄板スプライン）実装：多数点用 ========
+function _U(r2){
+  const eps2 = 1e-12; const t = Math.max(r2, eps2); return t * Math.log(t);
+}
+function _solveLinear(A, b){
+  const n = A.length; const M = A.map(r=>r.slice()); const x = b.slice();
+  for(let i=0;i<n;i++){
+    let p=i; for(let r=i+1;r<n;r++) if(Math.abs(M[r][i])>Math.abs(M[p][i])) p=r;
+    if(p!==i){ [M[i],M[p]]=[M[p],M[i]]; [x[i],x[p]]=[x[p],x[i]] }
+    const diag=M[i][i]||1e-12;
+    for(let r=i+1;r<n;r++){
+      const f=M[r][i]/diag; for(let c=i;c<n;c++) M[r][c]-=f*M[i][c]; x[r]-=f*x[i];
+    }
+  }
+  const sol=new Array(n).fill(0);
+  for(let i=n-1;i>=0;i--){ let s=0; for(let c=i+1;c<n;c++) s+=M[i][c]*sol[c]; sol[i]=(x[i]-s)/(M[i][i]||1e-12); }
+  return sol;
+}
+function buildTPS(srcPts, dstPts){
+  const n = srcPts.length;
+  const K = Array.from({length:n},()=>Array(n).fill(0));
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const dx=srcPts[i][0]-srcPts[j][0]; const dy=srcPts[i][1]-srcPts[j][1];
+      K[i][j]=_U(dx*dx+dy*dy);
+    }
+  }
+  const P = srcPts.map(([x,y])=>[x,y,1]);
+  const L = Array.from({length:n+3},()=>Array(n+3).fill(0));
+  for(let r=0;r<n;r++){ for(let c=0;c<n;c++) L[r][c]=K[r][c]; for(let c=0;c<3;c++) L[r][n+c]=P[r][c]; }
+  for(let r=0;r<3;r++){ for(let c=0;c<n;c++) L[n+r][c]=P[c][r]; }
+  const bx = new Array(n+3).fill(0); for(let i=0;i<n;i++) bx[i]=dstPts[i][0];
+  const by = new Array(n+3).fill(0); for(let i=0;i<n;i++) by[i]=dstPts[i][1];
+  const coefX=_solveLinear(L,bx); const coefY=_solveLinear(L,by);
+  return { srcPts, wx:coefX.slice(0,n), wy:coefY.slice(0,n), ax:coefX.slice(n), ay:coefY.slice(n) };
+}
+function tpsMap(tps, p){
+  const [x,y]=p; const n=tps.srcPts.length; let sx=tps.ax[0]*x+tps.ax[1]*y+tps.ax[2]; let sy=tps.ay[0]*x+tps.ay[1]*y+tps.ay[2];
+  for(let i=0;i<n;i++){ const dx=x-tps.srcPts[i][0]; const dy=y-tps.srcPts[i][1]; const u=_U(dx*dx+dy*dy); sx+=tps.wx[i]*u; sy+=tps.wy[i]*u; }
+  return [sx,sy];
+}
+function previewTPSOnCanvas(vm, img, canvas, tps, mesh=20){
+  const ctx = canvas.getContext('2d');
+  const W = img.naturalWidth, Himg = img.naturalHeight;
+  const cornersImg = [[0,0],[W,0],[W,Himg],[0,Himg]];
+  const cornersUp = cornersImg.map(([x,y])=>[x,-y]);
+  const world = cornersUp.map(p=>tpsMap(tps,p));
+  const xs = world.map(p=>p[0]), ys = world.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
+  const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+  canvas.width=cw; canvas.height=ch;
+  const spanX=Math.max(1,maxX-minX), spanY=Math.max(1,maxY-minY);
+  const s = Math.min(cw/spanX, ch/spanY);
+  const Tfit = [ [ s,0,-minX*s ], [ 0,-s, maxY*s ], [0,0,1] ];
+
+  ctx.clearRect(0,0,cw,ch);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+
+  const nx=mesh, ny=mesh; const sx=W/nx, sy=Himg/ny;
+  for(let j=0;j<ny;j++){
+    for(let i=0;i<nx;i++){
+      const x0=i*sx, y0=j*sy, x1=(i+1)*sx, y1=(j+1)*sy;
+      const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
+      const d00=_applyTfit(Tfit, tpsMap(tps,[x0,-y0]));
+      const d10=_applyTfit(Tfit, tpsMap(tps,[x1,-y0]));
+      const d11=_applyTfit(Tfit, tpsMap(tps,[x1,-y1]));
+      const d01=_applyTfit(Tfit, tpsMap(tps,[x0,-y1]));
+      drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
+      drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
+    }
+  }
+  function _applyTfit(T,[X,Y]){ const x=T[0][0]*X+T[0][1]*Y+T[0][2]; const y=T[1][0]*X+T[1][1]*Y+T[1][2]; return [x,y] }
+  function drawTri(ctx, img, srcTri, dstTri){
+    ctx.save(); ctx.beginPath(); ctx.moveTo(dstTri[0][0],dstTri[0][1]); ctx.lineTo(dstTri[1][0],dstTri[1][1]); ctx.lineTo(dstTri[2][0],dstTri[2][1]); ctx.closePath(); ctx.clip();
+    const [a,b,c,d,e,f]=affineFromTriangles(srcTri,dstTri); ctx.setTransform(a,b,c,d,e,f); ctx.drawImage(img,0,0); ctx.restore();
+  }
 }
 
 export default {
@@ -376,6 +434,7 @@ export default {
       imgUrl: null,
       affineM: null,   // 2x3（相似/アフィン用）
       H: null,         // 3x3（ホモグラフィ用）
+      tps: null,       // 多数点用（TPS）
       grid: true,
       objUrl: null,
       history: [],
@@ -413,16 +472,18 @@ export default {
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
     transformKind(){
+      if(this.tps) return 'TPS';
       if(!(this.affineM || this.H)) return '';
       if (this.pairsCount >= 4) return 'Homography';
       return this.pairsCount >= 3 ? 'Affine' : 'Similarity';
     },
     transformKindColor(){
+      if (this.tps) return 'indigo';
       if (this.pairsCount >= 4) return 'pink';
       return this.pairsCount >= 3 ? 'deep-purple' : 'teal';
     },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
-    hideBaseImage(){ return !!(this.affineM || this.H) },
+    hideBaseImage(){ return !!(this.affineM || this.H || this.tps) },
     canUndo(){ return this.histIndex > 0 },
     canRedo(){ return this.histIndex >= 0 && this.history && this.histIndex < this.history.length - 1 },
   },
@@ -442,14 +503,14 @@ export default {
     },
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.H=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
-    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H) this.previewAffineWarp() },
+    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
+    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewAffineWarp() },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.pairsCount>=2) this.previewAffineWarp() },
 
-    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null } },
+    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null /* tps は都度再計算 */ } },
     resetHistory(){ this.history=[]; this.histIndex=-1 },
     pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
+    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps=null; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.pairsCount>=2) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
     redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
     onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
@@ -462,29 +523,15 @@ export default {
     onImageAreaClick(e){ const img=this.$refs.warpImage; if(!img) return; const rect=img.getBoundingClientRect(); const xCss=e.clientX-rect.left; const yCss=e.clientY-rect.top; const [xNat,yNat]=imageCssToNatural([xCss,yCss], img); const next=(this.gcpList||[]).slice(); next.push({ imageCoordCss:[xCss,yCss], imageCoord:[xNat,yNat], mapCoord:null }); this.$emit('update:gcpList', next); this.pushHistory('img-click'); this.$nextTick(this.redrawMarkers) },
     removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
 
+    // ==== 自動判定プレビュー（Similarity / Affine / Homography / TPS） ====
     previewAffineWarp(){
-      function toNaturalCoord(g, img){
-        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
-        if (Array.isArray(g.imageCoord))    return g.imageCoord;
-        return null;
-      }
-      function residualsMetersProj(Hup, srcUp, dstUp){
-        const err = srcUp.map((p,i) => {
-          const [X,Y] = applyHomography(Hup, p);
-          const [Xr,Yr] = dstUp[i];
-          return Math.hypot(X-Xr, Y-Yr);
-        });
-        const rms = Math.sqrt(err.reduce((s,e)=>s+e*e,0) / Math.max(1, err.length));
-        return {err, rms};
-      }
-
       const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
       if(!img||!canvas) return;
-
       const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
-      if (pairs.length < 2){ this.affineM=null; this.H=null; this.clearCanvas(canvas); return; }
+      if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.clearCanvas(canvas); return; }
 
-      const srcNat = pairs.map(g => toNaturalCoord(g, img));
+      const toNatural = (g)=> Array.isArray(g.imageCoordCss) ? imageCssToNatural(g.imageCoordCss, img) : g.imageCoord;
+      const srcNat = pairs.map(toNatural);
       const srcUp  = srcNat.map(([x,y]) => [x, -y]);
       const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
 
@@ -492,50 +539,77 @@ export default {
         const Mup = fitSimilarity2P(srcUp, dstUp);
         const FLIP_Y_A = [1,0,0, 0,-1,0];
         const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
+        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
       }
       if (pairs.length === 3){
         const Mup = fitAffineN(srcUp, dstUp);
         const FLIP_Y_A = [1,0,0, 0,-1,0];
         const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
+        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
       }
-
-      const Hup = (pairs.length === 4)
-          ? estimateHomographyExact4Pts(srcUp, dstUp)
-          : estimateHomographyRobust(srcUp, dstUp, 3);
-
-      const {err, rms} = residualsMetersProj(Hup, srcUp, dstUp);
-      console.log('[Homography] residuals(m)=', err.map(e=>e.toFixed(2)), ' rms=', rms.toFixed(2));
-
-      const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
-      const H = mat33Mul(Hup, FLIP_Y_H);
-
-      this.affineM = null; this.H = H; previewProjectiveOnCanvas(this, img, canvas, H, 28);
+      if (pairs.length === 4){
+        const Hup = estimateHomographyExact4Pts(srcUp, dstUp);
+        const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
+        const H = mat33Mul(Hup, FLIP_Y_H);
+        this.affineM = null; this.tps=null; this.H = H; previewProjectiveOnCanvas(this, img, canvas, H, 28); return;
+      }
+      // 5点以上 → TPS（多数点向け）
+      try{
+        const MAX_N = 120; // 安全策: 極端に多いときは間引き
+        let srcTPS = srcUp, dstTPS = dstUp;
+        if (srcUp.length > MAX_N){
+          const k = Math.ceil(srcUp.length / MAX_N);
+          srcTPS = srcUp.filter((_,i)=> i%k===0);
+          dstTPS = dstUp.filter((_,i)=> i%k===0);
+        }
+        const tps = buildTPS(srcTPS, dstTPS);
+        this.affineM=null; this.H=null; this.tps=tps; previewTPSOnCanvas(this, img, canvas, tps, 20);
+      }catch(err){
+        console.warn('TPS失敗。Homography(robust)にフォールバック:', err);
+        const Hup = estimateHomographyRobust(srcUp, dstUp, 3);
+        const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
+        const H = mat33Mul(Hup, FLIP_Y_H);
+        this.affineM = null; this.tps=null; this.H = H; previewProjectiveOnCanvas(this, img, canvas, H, 28);
+      }
     },
 
     downloadWorldFile(){ if(!this.affineM) return; const txt=worldFileFromAffine(this.affineM); const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='image.pgw'; a.click(); URL.revokeObjectURL(a.href) },
+
     confirm(){
-      if(!(this.affineM || this.H)) return;
+      if(!(this.affineM || this.H || this.tps)) return;
       const f=this.$props.file||null;
       const canvas=this.$refs.warpCanvas;
-      let cornersLngLat = null;
+      let cornersLngLat = null; let kind=''; let extra=null;
+
       if (this.H && this.$refs.warpImage){
-        const img=this.$refs.warpImage;
-        const W=img.naturalWidth, Hh=img.naturalHeight;
-        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];  // TL, TR, BR, BL
+        const img=this.$refs.warpImage; const W=img.naturalWidth, Hh=img.naturalHeight;
+        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]]; // TL, TR, BR, BL
         const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p)); // 3857(m)
         cornersLngLat = cornersWorld.map(mercToLngLat);
+        kind='homography';
+      } else if (this.affineM){
+        kind = (this.pairsCount>=3 ? 'affine' : 'similarity');
+      } else if (this.tps && this.$refs.warpImage){
+        const img=this.$refs.warpImage; const W=img.naturalWidth, Hh=img.naturalHeight;
+        const cornersUp = [[0,0],[W,0],[W,Hh],[0,Hh]].map(([x,y])=>[x,-y]);
+        const cornersWorld = cornersUp.map(p=> tpsMap(this.tps, p));
+        cornersLngLat = cornersWorld.map(mercToLngLat);
+        kind='tps';
+        // 係数を必要最小限で返す（復元用）。
+        extra = { tps:{ srcPts:this.tps.srcPts, wx:this.tps.wx, wy:this.tps.wy, ax:this.tps.ax, ay:this.tps.ay } };
       }
+
       const payload = {
         file: f,
         affineM: this.affineM || null,
         H: this.H || null,
-        kind: this.H ? 'homography' : (this.pairsCount>=3 ? 'affine' : 'similarity'),
+        kind,
         cornersLngLat,
+        ...(extra||{}),
       };
       if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return }
-      canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png') }
+      canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png')
+    }
   }
 }
 </script>
