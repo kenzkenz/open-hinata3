@@ -2992,10 +2992,13 @@ export function saveSimaGaiku (map,layerId) {
     const el = map.getContainer();  // HTMLElement
     const containerId = el.id;
     if (store.state.oh200mIds.length > 0) {
-        console.log(store.state.oh200mGeoJSON.features)
-        console.log(store.state.selectedGsikuItems)
-
-        geojson = turf.featureCollection(store.state.oh200mGeoJSON.features.filter(f =>  store.state.selectedGsikuItems[containerId].includes(f.properties.type)))
+        // console.log(store.state.oh200mGeoJSON.features)
+        // console.log(store.state.selectedGsikuItems)
+        if (store.state.selectedGsikuItems[containerId].length > 0) {
+            geojson = turf.featureCollection(store.state.oh200mGeoJSON.features.filter(f => store.state.selectedGsikuItems[containerId].includes(f.properties.type)))
+        } else {
+            geojson = store.state.oh200mGeoJSON
+        }
     } else {
         if (map.getZoom() <= 12) {
             alert('ズーム16以上にしてください。')
@@ -3013,17 +3016,16 @@ export function saveSimaGaiku (map,layerId) {
             }))
         };
     }
-    console.log(geojson)
+    // console.log(geojson)
     if (!geojson || geojson.features.length === 0) {
         alert('1件もありません。')
         return;
     }
 
-
-    console.log(geojson)
-    console.log(store.state.zahyokei)
+    // console.log(geojson)
+    // console.log(store.state.zahyokei)
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code
-    console.log(code)
+    // console.log(code)
 
     let simaData = 'G00,01,open-hinata3,\n';
     simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
