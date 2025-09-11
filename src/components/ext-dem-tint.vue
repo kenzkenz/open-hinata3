@@ -1,4 +1,3 @@
-<!-- components/ext-demtint-quick.vue -->
 <template>
   <div :style="menuContentSize">
     <!-- OH3標準 -->
@@ -56,26 +55,25 @@
         </v-chip>
       </MiniTooltip>
 
-      <!-- 必要になったらすぐ復活できるようコメントで温存 -->
-      <!--
-      <MiniTooltip text="範囲：±5m（干潟・湖沼）" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='local_tidal5' ? 'primary' : undefined" size="large" @click="usePreset('local_tidal5')">
-          干潟・湖沼（±5m）
-        </v-chip>
-      </MiniTooltip>
+
+<!--      <MiniTooltip text="範囲：±5m（干潟・湖沼）" :offset-x="0" :offset-y="0">-->
+<!--        <v-chip class="oh-chip-lg" :color="presetKey==='local_tidal5' ? 'primary' : undefined" size="large" @click="usePreset('local_tidal5')">-->
+<!--          干潟・湖沼（±5m）-->
+<!--        </v-chip>-->
+<!--      </MiniTooltip>-->
 
       <MiniTooltip text="範囲：10〜80m（扇状地・段丘面）" :offset-x="0" :offset-y="0">
         <v-chip class="oh-chip-lg" :color="presetKey==='local_fan_terrace' ? 'primary' : undefined" size="large" @click="usePreset('local_fan_terrace')">
-          扇状地・段丘（10–80m）
+          扇状地・段丘
         </v-chip>
       </MiniTooltip>
 
-      <MiniTooltip text="範囲：500〜1200m（帯域強調・周辺は抑制色）" :offset-x="0" :offset-y="0">
-        <v-chip class="oh-chip-lg" :color="presetKey==='local_inland_basin' ? 'primary' : undefined" size="large" @click="usePreset('local_inland_basin')">
-          内陸盆地（500–1200m）
-        </v-chip>
-      </MiniTooltip>
-      -->
+<!--      <MiniTooltip text="範囲：500〜1200m（帯域強調・周辺は抑制色）" :offset-x="0" :offset-y="0">-->
+<!--        <v-chip class="oh-chip-lg" :color="presetKey==='local_inland_basin' ? 'primary' : undefined" size="large" @click="usePreset('local_inland_basin')">-->
+<!--          内陸盆地（500–1200m）-->
+<!--        </v-chip>-->
+<!--      </MiniTooltip>-->
+
     </div>
 
     <hr style="margin:12px 0;">
@@ -85,7 +83,9 @@
 
 <script>
 import MiniTooltip from '@/components/MiniTooltip'
-import { registerDemTintPalette } from '@/js/utils/dem-tint-protocol'; // 追加
+import maplibregl from 'maplibre-gl'
+import { registerDemTintProtocol, registerDemTintPalette } from '@/js/utils/dem-tint-protocol'; // 追加
+
 /* ======== フラグ ======== */
 const ENABLE_LABEL_HELPERS = false;   // ラベル最上＆ハロー強化は停止
 const FORCE_OPACITY = 0.9;            // すべて0.9で固定
@@ -179,7 +179,7 @@ const PRESETS = {
     belowDomain:[0,1,2,3,5,8,12,20],
     belowRange:['#0e1b2b','#10263b','#12314b','#153d5d','#1a4b72','#1f5988','#24669c','#2a74b1']
   },
-  
+
   local_flood10: {
     // 陸：0–10mは「低いほど濃い青」。10m超も淡い青で“無印象化”（白や灰は使わない）
     aboveDomain:[0,0.5,1,2,3,4,5,6,7,8,9,10,12,15,20,30,40],
@@ -225,12 +225,48 @@ const PRESETS = {
     belowDomain:[0,0.5,1,1.5,2,3,4,5],
     belowRange:['#eaf6ff','#def1ff','#d0eaff','#c0e2ff','#aed8ff','#9bceff','#87c2ff','#73b7ff']
   },
+  /* 扇状地・段丘（10–80mを暖色で精細に。<10mと>80mは控えめ） */
   local_fan_terrace: {
-    aboveDomain:[0,5,10,15,20,30,40,50,60,80],
-    aboveRange:['#eaf7e3','#e4f2d9','#d9ebca','#cce3b8','#c4d7a5','#d9c792','#e2bb82','#e8ae73','#e09e61','#d28c4f'],
-    belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
-    belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
+    // 陸：10–80m を細かい階段で。<10m は淡い灰緑、>80m は淡いグレージュで抑制
+    aboveDomain: [0,5,8,10,12,14,16,18,20,22,24,26,28,30,34,38,42,46,50,56,62,68,74,80,100,150],
+    aboveRange: [
+      '#eef5ef', // <5    低湿地は淡く
+      '#f4ecdd', // 5–8
+      '#efe0c7', // 8–10 —— ここから扇状地帯
+      '#ead5b3', // 10–12
+      '#e4c99f', // 12–14
+      '#debe8c', // 14–16
+      '#d8b47b', // 16–18
+      '#d2aa6c', // 18–20
+      '#cca05e', // 20–22
+      '#c59653', // 22–24
+      '#be8d49', // 24–26
+      '#b68341', // 26–28
+      '#ae7a3a', // 28–30
+      '#a77134', // 30–34
+      '#9d682f', // 34–38
+      '#945f2b', // 38–42
+      '#8a5628', // 42–46
+      '#804d25', // 46–50
+      '#764523', // 50–56
+      '#6c3e21', // 56–62
+      '#63371f', // 62–68
+      '#5a311e', // 68–74
+      '#522c1d', // 74–80 —— 扇状地帯ここまで
+      '#cfc9c0', // 80–100   山麓の外は抑制
+      '#e9e4de'  // >150
+    ],
+
+    // 海：全体を邪魔しない柔らかい淡青
+    belowDomain: [0,0.5,1,2,3,5,8,12,20],
+    belowRange: ['#eaf6ff','#e3f2ff','#d8ecff','#cae4ff','#b9daff','#a5cfff','#90c3ff','#7ab6f0','#679fda']
   },
+  // local_fan_terrace: {
+  //   aboveDomain:[0,5,10,15,20,30,40,50,60,80],
+  //   aboveRange:['#eaf7e3','#e4f2d9','#d9ebca','#cce3b8','#c4d7a5','#d9c792','#e2bb82','#e8ae73','#e09e61','#d28c4f'],
+  //   belowDomain:[0,0.5,1,2,3,5,8,12,20,30,45,65],
+  //   belowRange:['#eaf6ff','#dff2ff','#cfeaff','#bfe2ff','#acdaff','#98d0ff','#83c5ff','#6db9ff','#55aaff','#3f99ef','#2e85d4','#216fb6']
+  // },
   local_inland_basin: {
     aboveDomain:[0,200,400,500,620,740,860,980,1100,1200,1500],
     aboveRange:['#eef4ef','#e8efe9','#e0e9e2','#f3e6cf','#eacb9a','#e0b775','#d6a45c','#c48f4a','#b07d3f','#a06f3a','#cfcfcf'],
@@ -378,8 +414,8 @@ export default {
 
     hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h.toString(16); }
   },
-
   mounted(){
+    registerDemTintProtocol(maplibregl);
     const h = document.querySelector('#handle-'+this.item.id);
     if(h) h.innerHTML = `<span style="font-size: large;">${this.item.label}</span>`;
     this.ensure();

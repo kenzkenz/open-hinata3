@@ -6766,26 +6766,6 @@ export default {
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
 
-      const DEFAULT_DEMTINT = {
-        mode: 'step',
-        level: 0,
-        palette: {
-          aboveDomain:[0,2,5,10,20,35,60,90,130,200,300,450,700,1100,1600,2200,3000,3600],
-          aboveRange:['#eaf7e3','#dbf0d1','#c7e6b3','#aede95','#95d27a','#7ec663','#cfc48e','#d7bc82',
-            '#dfb376','#e4a768','#d99759','#c88749','#b2733e','#9a6034','#84542d','#bfbfbf',
-            '#eaeaea','#ffffff'],
-          belowDomain:[0,1,2,3,5,8,12,20,35,60,100,160,260,420,650,1000,1600,2500],
-          belowRange:['#eaf6ff','#d7eeff','#c3e5ff','#b0dcff','#9bd1ff','#86c6ff','#71bbff','#5aafff',
-            '#439fff','#2f8fe0','#217fcb','#1a70b6','#145fa0','#0f4f8a','#0b416f','#08365b',
-            '#072b46','#051f34']
-        }
-      };
-
-      registerDemTintProtocol(maplibregl, {
-        // store.state.demTint が null の時は DEFAULT にフォールバック
-        getState: () => store.state.demTint ?? DEFAULT_DEMTINT
-      });
-
       // ======================================================================
       let protocol = new Protocol();
       maplibregl.addProtocol("pmtiles",protocol.tile)
