@@ -30,7 +30,12 @@
     <div class="oh-body" :class="{ stacked }">
       <div class="left-pane">
         <div v-if="!imgUrl" class="empty">画像がありません</div>
-        <div v-else class="img-wrap" @click="onImageAreaClick">
+        <div v-else
+             class="img-wrap"
+             :style="zoomStyle"
+             @wheel.prevent="onWheel"
+             @mousedown.left="onPanStart"
+             @click="onImageAreaClick">
           <img id="warp-image" ref="warpImage" :src="imgUrl" :class="{ hidden: hideBaseImage }" @load="onImageLoad">
           <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
           <canvas v-show="grid" ref="gridCanvas" class="grid-canvas"></canvas>
@@ -361,6 +366,11 @@ export default {
       histIndex: -1,
       isRestoring: false,
       closedOnce: false,
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      panning: false,
+      panStart: { x: 0, y: 0 },
+      panAtStart: { x: 0, y: 0 },
     }
   },
   watch: {
@@ -388,6 +398,12 @@ export default {
     this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers() })
   },
   computed: {
+    zoomStyle(){
+      return {
+        transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`,
+        transformOrigin: 'top left'
+      }
+    },
     isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false },
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
