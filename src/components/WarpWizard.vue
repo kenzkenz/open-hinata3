@@ -653,33 +653,82 @@ export default {
 }
 </script>
 
+<!-- グローバル（scoped外） -->
+<style>
+html, body, #app { height: 100%; }
+</style>
+
 <style scoped>
-.oh-warp-root{ width: 500px; max-width: calc(100vw - 40px); box-sizing: border-box; background: #fff; overflow: hidden; }
-.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom: 1px solid rgba(0,0,0,0.08); }
+/* ====== コンテナ ====== */
+.oh-warp-root{
+  width: 500px;
+  max-width: calc(100vw - 40px);
+  box-sizing: border-box;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;   /* 親が100%を持つ前提（↑の非scopedで付与） */
+  min-height: 0;  /* 子のoverflowを効かせるため必須 */
+}
+
+/* ====== ツールバー ====== */
+.oh-toolbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0));
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  flex: 0 0 auto;           /* 潰れ防止 */
+  min-height: 44px;         /* 好みで 40–48 に調整 */
+}
 .oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06) }
 .oh-title{ font-weight:600; display:flex; align-items:center; gap:8px; }
-.oh-icon{ font-size: 16px; }
 .oh-tools{ display:flex; align-items:center; gap:4px; }
-.oh-body{ display:grid; grid-template-columns: 1fr 380px; gap:10px; padding:10px; }
-.oh-body.stacked{ grid-template-columns: 1fr; grid-template-rows: auto auto; }
+.oh-icon{ font-size: 16px; }
+
+/* ====== 本体（左右レイアウト） ====== */
+.oh-body{
+  flex: 1 1 auto;
+  min-height: 0;            /* 内部スクロール許可 */
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:10px;
+  padding:10px;
+}
+
+/* stacked時は右ペインを残り高さで伸ばす（左=auto / 右=1fr） */
+.oh-body.stacked{
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
 .oh-body.stacked .left-pane{ order:1; }
 .oh-body.stacked .right-pane{ order:2; }
-.left-pane{ display:flex; align-items:center; justify-content:center; min-height: 420px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; }
+
+/* ====== 左ペイン（画像） ====== */
+.left-pane{
+  display:flex; align-items:center; justify-content:center;
+  min-height: 420px;
+  background: rgba(0,0,0,0.03);
+  border: 1px dashed rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
 .img-wrap{ position: relative; display:inline-block; max-width:100%; cursor: crosshair; }
 #warp-image{ position:relative; z-index:0; display:block; max-width:100%; height:auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
 #warp-image.hidden{ visibility:hidden; }
 .warp-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; z-index:1; }
 .grid-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; opacity:.45; z-index:2; }
 .marker-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; z-index:3; }
+
+/* ====== 右ペイン（編集） ====== */
 .right-pane{
   padding:4px 0;
-  overflow: auto;
+  display:flex;
+  flex-direction:column;
+  min-height:0;     /* 重要：子のoverflowを効かせる */
+  overflow:hidden;  /* 二重スクロールを避ける */
 }
-.gcp-table{ font-variant-numeric: tabular-nums; background:#fff; border-radius:8px; overflow:hidden; }
-.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-.actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
 
-/* ▼ 追加：GCPエディタ（ミニマル） */
+/* ====== GCPエディタ ====== */
 .gcp-editor{
   padding:0;
   margin-bottom:8px;
@@ -687,83 +736,42 @@ export default {
   border: 1px dashed rgba(0,0,0,0.2);
   border-radius: 10px;
 }
-.gcp-row{ display:grid; grid-template-columns: 24px 1fr 1fr 36px; align-items:center; gap:6px; padding:2px 0; }
-.gcp-row.header{ font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase; }
-.gcp-row .img, .gcp-row .map{ display:grid; grid-template-columns: 1fr 1fr; gap:6px; }
-.gcp-row .idx{
-  text-align:center;
-}
-.gcp-scroll{
-  height:190px;
-  overflow:auto;
-  margin-top:4px; }
-.del-btn{ justify-self:center; }
-:deep(.gcp-editor .v-field__input){ padding:0 4px; min-height:26px; }
-:deep(.gcp-editor .v-input--density-compact){ --v-input-control-height:28px; }
-:deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
-
-/* ---- GCP行をさらにコンパクトに ---- */
 .gcp-row{
-  grid-template-columns: 20px 1fr 1fr 32px; /* ちょい圧縮 */
-  gap: 4px;
-  padding: 0;                          /* 行の上下パディングを更に縮小 */
-  height: 38px;                        /* 背の低い行 */
-}
-
-/* ヘッダは少しだけ間隔 */
-.gcp-row.header{
-  padding: 0 0 4px;
-}
-
-/* 各行の超うすい下線（最後の行は無し） */
-.gcp-row:not(.header):not(:last-child){
-  border-bottom: 1px solid rgba(0,0,0,0.05); /* ほんのり */
-}
-
-/* 入力フィールドも薄く＆低くして行高を稼ぐ */
-:deep(.gcp-editor .v-input--density-compact){
-  --v-input-control-height: 24px;          /* デフォルト28→24 */
-}
-:deep(.gcp-editor .v-field__input){
-  min-height: 22px;                         /* デフォルト26→22 */
-  padding: 0 3px;
-}
-
-/* 余計なアウトライン/背景は引き続きオフ */
-:deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background: transparent; }
-:deep(.gcp-editor .v-field__outline){ display: none; }
-
-/* 追加 or 置き換え */
-
-/* ルートに高さを持たせる */
-html, body, #app { height: 100%; }
-
-/* ルートを縦フレックス＋100% */
-.oh-warp-root{
-  display:flex;
-  flex-direction:column;
-  height:100%;
-  min-height:0;            /* ← これ大事：子の overflow を効かせる */
-}
-
-/* ツールバーは縮まない */
-.oh-toolbar{
-  flex:0 0 auto;
-  min-height:44px;         /* 好みで 40–48px など */
-}
-
-/* 残りを占有する本体 */
-.oh-body{
-  flex:1 1 auto;
-  min-height:0;
   display:grid;
-  grid-template-columns: 1fr 380px;
-  gap:10px;
-  padding:10px;
+  grid-template-columns: 20px 1fr 1fr 32px; /* # / 画像 / 地図 / 削除 */
+  align-items:center;
+  gap:4px;
+  padding:0;
+  height:38px;
+}
+.gcp-row.header{
+  font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase;
+  padding:0 0 4px;
+}
+.gcp-row:not(.header):not(:last-child){
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.gcp-row .img, .gcp-row .map{
+  display:grid; grid-template-columns: 1fr 1fr; gap:6px;
+}
+.gcp-row .idx{ text-align:center; font-weight:700; }
+
+.gcp-scroll{
+  flex: 1 1 auto;   /* ここが伸縮する */
+  min-height: 0;
+  overflow: auto;
+  margin-top:4px;
 }
 
-/* 右ペインとスクロール領域 */
-.right-pane{ display:flex; flex-direction:column; min-height:0; }
-.right-pane .gcp-scroll{ flex:1 1 auto; min-height:0; overflow:auto; max-height:unset; }
+/* Vuetify のテキストフィールド微調整 */
+:deep(.gcp-editor .v-input--density-compact){ --v-input-control-height: 24px; }
+:deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
+:deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
+:deep(.gcp-editor .v-field__outline){ display:none; }
 
+/* 任意：その他 */
+.gcp-table{ font-variant-numeric: tabular-nums; background:#fff; border-radius:8px; overflow:hidden; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
 </style>
+
