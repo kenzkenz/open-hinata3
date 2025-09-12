@@ -31,6 +31,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-height = "630"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
+          @close="onWarpWindowClose"
       >
         <WarpWizard
             v-model="showWarpWizard"
@@ -40,6 +41,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :file="pendingFile"
             :stacked="true"
             @confirm="({ affineM, blob }) => openTileUploadDialog(affineM, blob)"
+            @clear-map-markers="clearBlueDotsOnMap"
         />
       </FloatingWindow>
 
@@ -2488,7 +2490,7 @@ export default {
     map02Tracker: null,
     stopSpin: null,
     stopPitch: null,
-
+    showWarpWizard: false,
   }),
   computed: {
     ...mapState([
@@ -3300,153 +3302,48 @@ export default {
     },
   },
   methods: {
-    onWizardConfirm({ file, affineM, blob }) {
-      // file は念のため保持、画像は blob を優先
-      this.openTileUploadDialog(affineM, blob);
+    onWarpWindowClose() {
+      // 1) v-model を閉じる（子の watch が発火して onExternalClose が呼ばれる）
+      this.showWarpWizard = false;
+      // 2) 念のため親側でも青丸を掃除（どちらか一方でOKだが堅牢）
+      this.clearBlueDotsOnMap();
     },
-
-
-    onWarpImageClick (e) {
-      const img = e.currentTarget;
-      const rect = img.getBoundingClientRect();
-      const xCss = e.clientX - rect.left;
-      const yCss = e.clientY - rect.top;
-
-      // ← ここが肝。CSS px → natural px に正規化して保存する
-      const sx = img.naturalWidth  / (img.clientWidth  || img.naturalWidth);
-      const sy = img.naturalHeight / (img.clientHeight || img.naturalHeight);
-      const xNat = xCss * sx;
-      const yNat = yCss * sy;
-
-      if (!Array.isArray(this.gcpList)) this.gcpList = [];
-      this.gcpList.push({
-        imageCoordCss: [xCss, yCss],   // デバッグ用に残してOK
-        imageCoord:    [xNat, yNat],   // ← 計算・保存はこっちを使う
-        mapCoord:      null            // 地図側クリックで後から埋める想定
-      });
-
-      // 自動プレビューしたければ（2点以上で類似変換→直感に合う）
-      if (this.gcpList.filter(g => g.imageCoord && g.mapCoord).length >= 2) {
-        this.previewAffineWarp();
-      }
+    clearBlueDotsOnMap() {
+      this.mapCoordMarkers?.forEach(m => m.remove());
+      this.mapCoordMarkers = [];
     },
-
-    previewAffineWarp(){
-
-      // 追加: 正規化ヘルパ
-      function toNaturalCoord(g, img){
-        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
-        if (Array.isArray(g.imageCoord))    return g.imageCoord;
-        return null;
-      }
-      function residualsMeters(Mup, srcUp, dstUp){
-        const err = srcUp.map(([x,y],i) => {
-          const [A,B,C,D,E,F] = Mup;
-          const Xp = A*x + B*y + C, Yp = D*x + E*y + F;
-          const [X,Y] = dstUp[i];
-          return Math.hypot(Xp - X, Yp - Y);
-        });
-        const rms = Math.sqrt(err.reduce((s,e)=>s+e*e,0) / Math.max(1, err.length));
-        return {err, rms};
-      }
-      const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
-      if(!img||!canvas) return;
-
-      const pairs=(this.gcpList||[]).filter(g =>
-          (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-      );
-      if (pairs.length < 2){ this.affineM=null; this.clearCanvas(canvas); return; }
-
-      // 画像 natural(px) → “上向き”座標
-      const srcNat = pairs.map(g => toNaturalCoord(g, img));
-      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-
-      // 地図 (lng,lat) → 3857(m)（上向き）
-      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
-
-      // 2点=相似 / 3点以上=ロバストアフィン
-      const Mup = (pairs.length === 2) ? fitSimilarity2P(srcUp, dstUp)
-          : fitAffineRobust(srcUp, dstUp, 3);
-
-      // 残差ログ（デバッグ）
-      const {err, rms} = residualsMeters(Mup, srcUp, dstUp);
-      console.log('per-point residuals(m):', err.map(e=>e.toFixed(2)), '  RMS=', rms.toFixed(2));
-
-      // 実運用は y下向き画像→上向き世界の順序で1回反転
-      const FLIP_Y=[1,0,0, 0,-1,0];
-      const M = composeAffine(Mup, FLIP_Y); // q_world = M(p_imgNatural)
-      this.affineM = M;
-alert(888)
-      // プレビュー（世界→キャンバスの追加スケーリング/反転は preview 内でのみ）
-      previewOnCanvas(img, canvas, M);
-    },
-
-
-    // previewAffineWarp(){
-    //   const img = document.getElementById('warp-image');
-    //   const canvas = document.getElementById('warp-canvas');
-    //   if(!img || !canvas){ console.warn('img/canvas not found'); return }
-    //
-    //   const pairs = (this.gcpList || []).filter(g =>
-    //       (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-    //   );
-    //   if(pairs.length < 2){ this.$store.dispatch('showSnackbar', 'GCPは最低2点必要です'); return }
-    //
-    //   // 画像CSS px → natural px（保存済みが natural でも安全に処理できる）
-    //   const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-    //   // 画像座標を「Y↑の数学座標」に正規化
-    //   const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-    //   // 地図側は Webメルカトル（Y↑）
-    //   const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
-    //
-    //   let Mup; // 画像(Y↑)→世界(Y↑)
-    //   if (pairs.length === 2){
-    //     Mup = fitSimilarity2P(srcUp, dstUp); // 2点＝平行移動+回転+一様スケール
-    //   } else {
-    //     Mup = fitAffineRobust(srcUp, dstUp, 3); // 3点以上＝ロバストアフィン
-    //   }
-    //   // 実画像は Y↓ なので固定の反転を合成して「画像(Y↓)→世界(Y↑)」へ
-    //   const FLIP_Y = [1,0,0,0,-1,0];
-    //   const M = composeAffine(Mup, FLIP_Y);
-    //
-    //   this._lastAffineM = M;
-    //   this.affineM = M;
-    //
-    //   this.showOriginal = false;
-    //   this.showWarpCanvas = true;
-    //   this.$nextTick(()=> previewOnCanvas(img, canvas, M));
-    // },
-
-    // ③ 差し替え：generateWorldFile（正規化＆ロバスト解を共通化）
-    generateWorldFile(){
+    generateWorldFile() {
       const img = document.getElementById('warp-image');
-      if(!img){ console.warn('image not found'); return null }
+      if (!img) {
+        console.warn('image not found');
+        return null
+      }
 
       const pairs = (this.gcpList || []).filter(g =>
           (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
       );
-      if(pairs.length < 2){ console.warn('GCPは2点以上必要です'); return null }
+      if (pairs.length < 2) {
+        console.warn('GCPは2点以上必要です');
+        return null
+      }
 
       const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+      const srcUp = srcNat.map(([x, y]) => [x, -y]);
+      const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord));
 
       let Mup;
-      if (pairs.length === 2){ Mup = fitSimilarity2P(srcUp, dstUp) } else { Mup = fitAffineRobust(srcUp, dstUp, 4) }
-      const FLIP_Y = [1,0,0,0,-1,0];
+      if (pairs.length === 2) {
+        Mup = fitSimilarity2P(srcUp, dstUp)
+      } else {
+        Mup = fitAffineRobust(srcUp, dstUp, 4)
+      }
+      const FLIP_Y = [1, 0, 0, 0, -1, 0];
       const M = composeAffine(Mup, FLIP_Y);
 
       this._lastAffineM = M;
       this.affineM = M;
       return worldFileFromAffine(M);
     },
-
-
-
-
-
-
-
     onConfirmOk () {
       const s = this.$store.state
       const r = s.confirmResolve;
@@ -9273,34 +9170,11 @@ alert(888)
                       const reader = new FileReader();
                       reader.onload = evt => {
                         this.uploadedImageUrl = evt.target.result;
-                        this.showFloatingImage = true;
+                        this.showWarpWizard = true;
                         this.s_gazoName = fileName.split('.')[0]
-
-
-                        // data:()=>({ wizardOpen:false, gcpList:[], pendingFile:null, pendingUrl:'' }),
-// D&DやFileReader完了時
-                            this.pendingFile = file;   // or this.pendingUrl = droppedUrl;
+                        this.pendingFile = file;   // or this.pendingUrl = droppedUrl;
                         this.wizardOpen  = true;
                         this.$store.dispatch('showFloatingWindow', 'warp-wizard');
-
-
-
-
-                        // this.pendingFile = file;           // ← いったん保持
-                        // this.wizardOpen = true;            // ダイアログを表示
-                        // this.$nextTick(() => {
-                        //      // ファイルを渡してプレビュー準備（画像読み込みもダイアログ側で処理）
-                        //          this.$refs.wizard?.openWithFile(file)
-                        // })
-
-                        // if (!this.$refs.wizard) {
-                        //   this.wizardOpen = true
-                        //   this.$nextTick(() => this.$refs.wizard.openWithFile(file))
-                        // } else {
-                        //   this.$refs.wizard.openWithFile(file)
-                        // }
-
-                        // alert('読み込み終了')
                       };
                       reader.readAsDataURL(file);
                     } else {

@@ -462,10 +462,10 @@ while ($currentMaxZoom >= $minZoom) {
     $currentMaxZoom--;
 }
 $max_zoom = $currentMaxZoom;
-if ($max_zoom < $minZoom) {
-    sendSSE(["error" => "最小ズームレベル以下"], "error");
-    exit;
-}
+//if ($max_zoom < $minZoom) {
+//    sendSSE(["error" => "最小ズームレベル以下"], "error");
+//    exit;
+//}
 sendSSE(["log" => "最終最大ズーム: $max_zoom"]);
 
 // MBTiles生成

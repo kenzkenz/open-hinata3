@@ -143,9 +143,13 @@ function previewOnCanvas(vm, img, canvas, M){
   ctx2.clearRect(0,0,canvas.width,canvas.height);
   ctx2.imageSmoothingEnabled = true; ctx2.imageSmoothingQuality = 'high';
   ctx2.drawImage(img, 0, 0);
-  // （デバッグ用の投影GCP描画はコメントアウト済み）
 }
-function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}`; }
+function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}
+${D}
+${B}
+${E}
+${C}
+${F}`; }
 
 /* ======== 射影（ホモグラフィ）ユーティリティ（既存） ======== */
 function mat33Mul(A,B){
@@ -321,22 +325,6 @@ function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24){
   }
 }
 
-// デバッグ：投影GCP描画（呼び出しはコメントアウトのまま）
-function drawProjectedGCPsOnCanvas(vm, canvas, img, projectToCanvas){
-  const ctx = canvas.getContext('2d');
-  ctx.save();
-  ctx.fillStyle = 'rgba(0,160,255,0.95)';
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2;
-  const pts=(vm.gcpList||[]).filter(g=>Array.isArray(g.mapCoord) && (g.imageCoord||g.imageCoordCss));
-  const toNat = (g)=> g.imageCoord ? g.imageCoord : imageCssToNatural(g.imageCoordCss, img);
-  pts.forEach(g=>{
-    const [x,y]=projectToCanvas(toNat(g));
-    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.stroke();
-  });
-  ctx.restore();
-}
-
 // ======== TPS（薄板スプライン）実装：多数点用 ========
 function _U(r2){
   const eps2 = 1e-12; const t = Math.max(r2, eps2); return t * Math.log(t);
@@ -428,7 +416,9 @@ export default {
     url:     { type:String, default:'' },
     stacked: { type:Boolean, default:true },
   },
-  emits: ['update:gcpList','confirm','close','update:modelValue','update:open'],
+  // 親は v-model / :open を閉じれば、この子も閉じる（watch で検知）。
+  // クローズ時は自分をまっさらにし、地図側の青丸もクリアするため 'clear-map-markers' を emit。
+  emits: ['update:gcpList','confirm','close','update:modelValue','update:open','clear-map-markers'],
   data(){
     return {
       imgUrl: null,
@@ -440,12 +430,11 @@ export default {
       history: [],
       histIndex: -1,
       isRestoring: false,
-      closedOnce: false,
     }
   },
   watch: {
-    modelValue(v){ if(v===false) this.onExternalClose() },
-    open(v){ if(v===false) this.onExternalClose() },
+    modelValue(v){ if(v===false) this.onExternalClose(false) },
+    open(v){ if(v===false) this.onExternalClose(false) },
     file: {
       immediate: true,
       handler(f){
@@ -491,19 +480,34 @@ export default {
     fmtPx(p){ if(!Array.isArray(p) || p.length<2) return '-'; const x=Number(p[0]), y=Number(p[1]); if(!Number.isFinite(x)||!Number.isFinite(y)) return '-'; return `${Math.round(x)}, ${Math.round(y)}` },
     fmtLL(ll){ if(!Array.isArray(ll) || ll.length<2) return '-'; const lng=Number(ll[0]), lat=Number(ll[1]); if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}` },
 
+    // 親がクローズしたら呼ばれる。自分をまっさらにし、地図側青丸もクリア。
     onExternalClose(fromUnmount=false){
-      if(this.closedOnce) return; this.closedOnce = true
       try{
-        window.removeEventListener('keydown', this.onKeydown)
-        window.removeEventListener('resize', this.onResize)
+        // グローバルリスナーはアンマウント時のみ除去
+        if(fromUnmount){
+          window.removeEventListener('keydown', this.onKeydown)
+          window.removeEventListener('resize', this.onResize)
+        }
       }catch(e){}
-      if(this.objUrl){ URL.revokeObjectURL(this.objUrl); this.objUrl=null }
-      this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas)
-      if(!fromUnmount){ }
+      if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null }
+
+      // 自分をまっさらに
+      this.affineM=null; this.H=null; this.tps=null;
+      this.imgUrl=null;
+      this.resetHistory();
+
+      // キャンバスをクリア
+      this.clearCanvas(this.$refs.warpCanvas);
+      this.clearCanvas(this.$refs.gridCanvas);
+      this.clearCanvas(this.$refs.markerCanvas);
+
+      // GCPと地図側のマーカーをクリア
+      this.$emit('update:gcpList', []);
+      if(!fromUnmount){ this.$emit('clear-map-markers') }
     },
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
+    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
     onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewAffineWarp() },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.pairsCount>=2) this.previewAffineWarp() },
 
@@ -527,7 +531,7 @@ export default {
     previewAffineWarp(){
       const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
       if(!img||!canvas) return;
-      const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
+      const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord||g.imageCoordCss)) && Array.isArray(g.mapCoord));
       if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.clearCanvas(canvas); return; }
 
       const toNatural = (g)=> Array.isArray(g.imageCoordCss) ? imageCssToNatural(g.imageCoordCss, img) : g.imageCoord;
