@@ -4,24 +4,26 @@
     <div class="oh-toolbar">
       <div class="oh-title"></div>
       <div class="oh-tools">
-        <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
-        <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
+        <v-btn :disabled="!(affineM || H)" @click="confirm">アップロード</v-btn>
+        <v-divider vertical class="mx-1"/>
+        <v-btn style="width: 25px;" icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
+        <v-btn style="width: 25px;" icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
         <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'"><v-icon>mdi-grid</v-icon></v-btn>
         <v-btn icon variant="text" @click="resetAll" :title="'全消去'"><v-icon>mdi-backspace</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
-        <v-chip size="small" class="mr-1" label>GCP {{ pairsCount }}</v-chip>
+        <v-chip size="small" class="mr-1" label> {{ pairsCount }}</v-chip>
         <v-chip v-if="transformKind" :color="transformKindColor" size="small" class="mr-1" label>{{ transformKind }}</v-chip>
         <v-chip v-if="imgMeta" size="small" class="mr-1" label>{{ imgMeta }}</v-chip>
-        <v-divider vertical class="mx-1"/>
+<!--        <v-divider vertical class="mx-1"/>-->
         <!-- DL: 4点の挙動で固定化したワールドファイル（3857） -->
-        <v-tooltip text="World File をダウンロード (EPSG:3857 / 4点相当のアフィン)" location="bottom">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" icon variant="text" :disabled="!canDownloadWorldFile" @click="downloadWorldFile" :title="worldFileHint">
-              <v-icon>mdi-download</v-icon>
-            </v-btn>
-          </template>
-        </v-tooltip>
+<!--        <v-tooltip text="World File をダウンロード (EPSG:3857 / 4点相当のアフィン)" location="bottom">-->
+<!--          <template #activator="{ props }">-->
+<!--            <v-btn v-bind="props" icon variant="text" :disabled="!canDownloadWorldFile" @click="downloadWorldFile" :title="worldFileHint">-->
+<!--              <v-icon>mdi-download</v-icon>-->
+<!--            </v-btn>-->
+<!--          </template>-->
+<!--        </v-tooltip>-->
       </div>
     </div>
 
@@ -37,12 +39,49 @@
       </div>
 
       <div class="right-pane">
-        <div class="actions">
-          <p>2〜4点、上記画像と地図をクリックしてください。 </p>
-          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">
-            <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード
-          </v-btn>
+        <!-- ▼▼▼ 追加：GCP編集テーブル（アップロードの上） ▼▼▼ -->
+        <div class="gcp-editor">
+          <div class="gcp-row header">
+            <span></span>
+            <span>Image (px)</span>
+            <span>Map (lng, lat)</span>
+            <span></span>
+          </div>
+          <div class="gcp-scroll">
+            <div class="gcp-row" v-for="(g,i) in gcpList" :key="i">
+              <div class="idx">{{ i+1 }}</div>
+              <div class="img">
+                <v-text-field
+                    type="number" density="compact" variant="plain" hide-details="auto"
+                    :model-value="getImgX(g)" @update:modelValue="setImgX(i, $event)" />
+                <v-text-field
+                    type="number" density="compact" variant="plain" hide-details="auto"
+                    :model-value="getImgY(g)" @update:modelValue="setImgY(i, $event)" />
+              </div>
+              <div class="map">
+                <v-text-field
+                    type="number" step="0.000001" density="compact" variant="plain" hide-details="auto"
+                    :model-value="getLng(g)" @update:modelValue="setLng(i, $event)" />
+                <v-text-field
+                    type="number" step="0.000001" density="compact" variant="plain" hide-details="auto"
+                    :model-value="getLat(g)" @update:modelValue="setLat(i, $event)" />
+              </div>
+              <div class="tools">
+                <v-btn icon size="small" variant="text" class="del-btn" @click="removeGcp(i)">
+                  <v-icon size="26">mdi-delete</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </div>
+          <p style="margin-left: 20px; margin-bottom: 10px;">最低2点、上記画像と地図をクリックしてください。 </p>
         </div>
+
+<!--        <div class="actions">-->
+<!--          <p>2〜4点、上記画像と地図をクリックしてください。 </p>-->
+<!--          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">-->
+<!--            <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード-->
+<!--          </v-btn>-->
+<!--        </div>-->
       </div>
     </div>
   </div>
@@ -442,7 +481,7 @@ export default {
           })()
           : estimateHomographyRobust(srcUp, dstUp, 3);
       const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
-      const H = mat33Mul(Hup, FLIP_Y_H); // natural (x,y) → 3857
+      const H = mat33Mul(FLIP_Y_H, Hup); // 注意：向き適用の順序（既存ロジックのまま）
       this.affineM = null; this.H = H; previewProjectiveOnCanvas(this, img, canvas, H, 28);
     },
 
@@ -453,62 +492,115 @@ export default {
       );
       if (pairs.length < 2) return null;
 
-      // 画像座標は必ず "natural px" に統一
       const toNatural = (g)=>{
         if (Array.isArray(g.imageCoord)) return g.imageCoord;
         if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
         return null;
       };
       const srcNat = pairs.map(toNatural);
-      const srcUp  = srcNat.map(([x,y]) => [x, -y]);           // 上向きY系
-      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));  // 3857 (m)
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
 
-      // GCPから“直接”ロバストに推定（H/TPSは使わない）
       let Mup;
-      if (pairs.length === 2) {
-        Mup = fitSimilarity2P(srcUp, dstUp);
-      } else {
-        Mup = fitAffineRobust(srcUp, dstUp, 4);
-      }
+      if (pairs.length === 2) Mup = fitSimilarity2P(srcUp, dstUp);
+      else Mup = fitAffineRobust(srcUp, dstUp, 4);
+
       const FLIP_Y_A = [1,0,0, 0,-1,0];
-      let M = composeAffine(Mup, FLIP_Y_A); // natural → 3857
+      let M = composeAffine(Mup, FLIP_Y_A);
 
-      // E<0 ガード（画像Yは下向き）
+      // 健全性チェック（既存ロジックのまま）
       let [A,B,C,D,E,F] = M;
-      if (E > 0) { A=-A; B=-B; D=-D; E=-E; M=[A,B,C,D,E,F]; }
-
-      // 物理量チェック（スケール爆発時は相似へフォールバック）
-      const scaleX = Math.hypot(A, D);       // m/px
-      const scaleY = Math.hypot(B, E);
+      const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E);
       const W = img.naturalWidth, Hh = img.naturalHeight;
       const worldW = scaleX * W, worldH = scaleY * Hh;
-
-      const TOO_BIG = 6e7;      // 60,000 km（地球サイズ超）
-      const TOO_FINE = 1e-3;    // 0.001 m/px 未満は異常
-      const TOO_COARSE = 1e4;   // 10 km/px 超は異常
+      const TOO_BIG = 6e7, TOO_FINE = 1e-3, TOO_COARSE = 1e4;
       const bad = !isFinite(worldW) || !isFinite(worldH) ||
-          worldW > TOO_BIG || worldH > TOO_BIG ||
-          scaleX < TOO_FINE || scaleY < TOO_FINE ||
-          scaleX > TOO_COARSE || scaleY > TOO_COARSE;
+          worldW>TOO_BIG || worldH>TOO_BIG ||
+          scaleX<TOO_FINE || scaleY<TOO_FINE ||
+          scaleX>TOO_COARSE || scaleY>TOO_COARSE;
 
-      if (bad && pairs.length >= 2) {
-        // 最遠2点で相似へ強制ダウングレード（安定化）
-        let i1=0, i2=1, maxd=-1;
-        for(let i=0;i<pairs.length;i++){
-          for(let j=i+1;j<pairs.length;j++){
-            const [x1,y1]=srcUp[i], [x2,y2]=srcUp[j];
-            const d = Math.hypot(x2-x1, y2-y1);
-            if(d>maxd){ maxd=d; i1=i; i2=j; }
+      if (bad && pairs.length>=2){
+        let i1=0,i2=1,maxd=-1;
+        for(let i=0;i<srcUp.length;i++){
+          for(let j=i+1;j<srcUp.length;j++){
+            const d=Math.hypot(srcUp[j][0]-srcUp[i][0], srcUp[j][1]-srcUp[i][1]);
+            if(d>maxd){maxd=d;i1=i;i2=j;}
           }
         }
-        const Mup2 = fitSimilarity2P([srcUp[i1],srcUp[i2]], [dstUp[i1],dstUp[i2]]);
-        M = composeAffine(Mup2, FLIP_Y_A);
-        let [a,b,c,d,e,f] = M;
-        if (e > 0) { a=-a; b=-b; d=-d; e=-e; M=[a,b,c,d,e,f]; }
+        M = composeAffine(fitSimilarity2P([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A);
       }
       return M;
     },
 
+    // ===== GCPテーブルの編集ロジック（最小限） =====
+    getImgX(g){
+      const img=this.$refs.warpImage;
+      if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[0]);
+      if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[0]);
+      return g?._editImgX ?? '';
+    },
+    getImgY(g){
+      const img=this.$refs.warpImage;
+      if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[1]);
+      if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[1]);
+      return g?._editImgY ?? '';
+    },
+    setImgX(i, v){
+      const img=this.$refs.warpImage; const x=Number(v);
+      const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) };
+      const y = Array.isArray(g.imageCoord) ? Number(g.imageCoord[1])
+          : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[1] : NaN);
+      if(Number.isFinite(x) && Number.isFinite(y)){
+        g.imageCoord=[x,y]; if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img);
+        delete g._editImgX; delete g._editImgY;
+      }else{
+        g._editImgX=v;
+      }
+      next[i]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers);
+    },
+    setImgY(i, v){
+      const img=this.$refs.warpImage; const y=Number(v);
+      const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) };
+      const x = Array.isArray(g.imageCoord) ? Number(g.imageCoord[0])
+          : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[0] : NaN);
+      if(Number.isFinite(x) && Number.isFinite(y)){
+        g.imageCoord=[x,y]; if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img);
+        delete g._editImgX; delete g._editImgY;
+      }else{
+        g._editImgY=v;
+      }
+      next[i]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers);
+    },
+    getLng(g){
+      if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[0]);
+      return g?._editLng ?? '';
+    },
+    getLat(g){
+      if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[1]);
+      return g?._editLat ?? '';
+    },
+    setLng(i, v){
+      const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) };
+      const lng = Number(v);
+      const lat = (g._editLat!==undefined) ? Number(g._editLat)
+          : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[1]) : NaN);
+      g._editLng = v;
+      if(Number.isFinite(lng) && Number.isFinite(lat)){
+        g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat;
+      }
+      next[i]=g; this.$emit('update:gcpList', next);
+    },
+    setLat(i, v){
+      const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) };
+      const lat = Number(v);
+      const lng = (g._editLng!==undefined) ? Number(g._editLng)
+          : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[0]) : NaN);
+      g._editLat = v;
+      if(Number.isFinite(lng) && Number.isFinite(lat)){
+        g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat;
+      }
+      next[i]=g; this.$emit('update:gcpList', next);
+    },
 
     // ===== ダウンロード (.jgw/.pgw/.tfw) =====
     inferredWorldExt(){
@@ -579,8 +671,99 @@ export default {
 .warp-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; z-index:1; }
 .grid-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; opacity:.45; z-index:2; }
 .marker-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; z-index:3; }
-.right-pane{ padding:4px 0; }
+.right-pane{
+  padding:4px 0;
+  overflow: auto;
+}
 .gcp-table{ font-variant-numeric: tabular-nums; background:#fff; border-radius:8px; overflow:hidden; }
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+/* ▼ 追加：GCPエディタ（ミニマル） */
+.gcp-editor{
+  padding:0;
+  margin-bottom:8px;
+  background: rgba(0,0,0,0.03);
+  border: 1px dashed rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
+.gcp-row{ display:grid; grid-template-columns: 24px 1fr 1fr 36px; align-items:center; gap:6px; padding:2px 0; }
+.gcp-row.header{ font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase; }
+.gcp-row .img, .gcp-row .map{ display:grid; grid-template-columns: 1fr 1fr; gap:6px; }
+.gcp-row .idx{
+  text-align:center;
+}
+.gcp-scroll{
+  height:190px;
+  overflow:auto;
+  margin-top:4px; }
+.del-btn{ justify-self:center; }
+:deep(.gcp-editor .v-field__input){ padding:0 4px; min-height:26px; }
+:deep(.gcp-editor .v-input--density-compact){ --v-input-control-height:28px; }
+:deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
+
+/* ---- GCP行をさらにコンパクトに ---- */
+.gcp-row{
+  grid-template-columns: 20px 1fr 1fr 32px; /* ちょい圧縮 */
+  gap: 4px;
+  padding: 0;                          /* 行の上下パディングを更に縮小 */
+  height: 38px;                        /* 背の低い行 */
+}
+
+/* ヘッダは少しだけ間隔 */
+.gcp-row.header{
+  padding: 0 0 4px;
+}
+
+/* 各行の超うすい下線（最後の行は無し） */
+.gcp-row:not(.header):not(:last-child){
+  border-bottom: 1px solid rgba(0,0,0,0.05); /* ほんのり */
+}
+
+/* 入力フィールドも薄く＆低くして行高を稼ぐ */
+:deep(.gcp-editor .v-input--density-compact){
+  --v-input-control-height: 24px;          /* デフォルト28→24 */
+}
+:deep(.gcp-editor .v-field__input){
+  min-height: 22px;                         /* デフォルト26→22 */
+  padding: 0 3px;
+}
+
+/* 余計なアウトライン/背景は引き続きオフ */
+:deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background: transparent; }
+:deep(.gcp-editor .v-field__outline){ display: none; }
+
+/* 追加 or 置き換え */
+
+/* ルートに高さを持たせる */
+html, body, #app { height: 100%; }
+
+/* ルートを縦フレックス＋100% */
+.oh-warp-root{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  min-height:0;            /* ← これ大事：子の overflow を効かせる */
+}
+
+/* ツールバーは縮まない */
+.oh-toolbar{
+  flex:0 0 auto;
+  min-height:44px;         /* 好みで 40–48px など */
+}
+
+/* 残りを占有する本体 */
+.oh-body{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:10px;
+  padding:10px;
+}
+
+/* 右ペインとスクロール領域 */
+.right-pane{ display:flex; flex-direction:column; min-height:0; }
+.right-pane .gcp-scroll{ flex:1 1 auto; min-height:0; overflow:auto; max-height:unset; }
+
 </style>
