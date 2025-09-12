@@ -203,7 +203,7 @@ sendSSE(["log" => "ファイル確認: $filePath"]);
 $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["fileName"]) : pathinfo($filePath, PATHINFO_FILENAME);
 $subDir = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["dir"]);
 $resolution = isset($_POST["resolution"]) && is_numeric($_POST["resolution"]) ? intval($_POST["resolution"]) : null;
-$sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "2450";
+$sourceEPSG = isset($_POST["srs"]) ? preg_replace('/[^0-9]/', '', $_POST["srs"]) : "3857";
 $transparent = isset($_POST["transparent"]) ? $_POST["transparent"] : "1"; // デフォルトは1
 if (!in_array($transparent, ["0", "1"])) {
     sendSSE(["error" => "無効なtransparent値: 0または1を指定してください"], "error");
@@ -249,7 +249,12 @@ if ($freeSpace === false || $freeSpace / (1024 * 1024) < 1000) {
 sendSSE(["log" => "/tmp 空き容量: " . round($freeSpace / (1024 * 1024), 2) . " MB"]);
 
 // ワールドファイル確認
-checkWorldFile($filePath);
+$wf = checkWorldFile($filePath);
+if ($wf) {
+    // World File がある＝単位は 3857 のメートル値として出している前提
+    $sourceEPSG = "3857";
+    sendSSE(["log" => "WorldFile検出：SRS=EPSG:3857 を適用"]);
+}
 
 // 中間ファイルクリーンアップ
 cleanTempFiles($fileName);
