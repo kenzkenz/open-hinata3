@@ -40,7 +40,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             v-model:gcpList="gcpList"
             :file="pendingFile"
             :stacked="true"
-            @confirm="({ affineM, blob }) => openTileUploadDialog(affineM, blob)"
+            @confirm="onWarpConfirm"
             @clear-map-markers="clearBlueDotsOnMap"
         />
       </FloatingWindow>
@@ -3302,6 +3302,40 @@ export default {
     },
   },
   methods: {
+    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
+      // 安全チェック（宇宙行き防止）
+      if (cornersLngLat && !this._validCorners(cornersLngLat)) {
+        console.warn('invalid corners, abort');
+        alert('推定コーナーが不正です。別のGCP配置を試してください。');
+        return;
+      }
+      if (kind === 'similarity' || kind === 'affine') {
+        // アフィンのみワールドファイルが正しく表現可能
+        const worldFile = this._worldFileFromAffine(affineM); // 下に実装例あり
+        this.openTileUploadDialog({ blob, worldFile, kind });
+      } else if (kind === 'homography') {
+        // ワールドファイルは使わない。四隅座標で画像ソースとして登録
+        // MapLibre/Mapbox の image source coordinates 順序は [TL, TR, BR, BL]
+        this.openTileUploadDialog({ blob, cornersLngLat, kind });
+      } else if (kind === 'tps') {
+        // TPSはワールドファイル不可。サーバ側でワーピングするか、
+        // ここで受け取った blob（既にプレビューで変形済みPNG）を
+        // ひとまず四隅で近似配置（精密にはサーバ側ワーピングを推奨）
+        this.openTileUploadDialog({ blob, cornersLngLat, tps, kind });
+      }
+    },
+    _validCorners(c) {
+      if (!Array.isArray(c) || c.length !== 4) return false;
+      return c.every(([lng,lat]) =>
+          Number.isFinite(lng) && Number.isFinite(lat) &&
+          Math.abs(lng) <= 180 && Math.abs(lat) <= 89.999  // WebMercatorの有効域
+      );
+    },
+    _worldFileFromAffine([A,B,C,D,E,F]) {
+      // .pgwは行順が A,D,B,E,C,F（X解像度, 回転Y, 回転X, Y解像度, 左上ピクセル中心X, 同Y）
+      // 文字列で返す（アップロード先でそのまま保存）
+      return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}\n`;
+    },
     onWarpWindowClose() {
       // 1) v-model を閉じる（子の watch が発火して onExternalClose が呼ばれる）
       this.showWarpWizard = false;
