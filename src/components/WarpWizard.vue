@@ -832,16 +832,11 @@ export default {
 }
 </script>
 
-<!-- グローバル（scoped外） -->
-<style>
-html, body, #app { height: 100%; }
-</style>
-
 <style scoped>
 /* ====== コンテナ ====== */
 .oh-warp-root{
-  width: 500px;
-  max-width: calc(100vw - 40px);
+  width: 100%;
+  max-width: none;
   box-sizing: border-box;
   background: #fff;
   overflow: hidden;
@@ -870,7 +865,7 @@ html, body, #app { height: 100%; }
   flex: 1 1 auto;
   min-height: 0;            /* 内部スクロール許可 */
   display:grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr auto;
   gap:10px;
   padding:10px;
 }
@@ -917,7 +912,7 @@ html, body, #app { height: 100%; }
 }
 .gcp-row{
   display:grid;
-  grid-template-columns: 20px 1fr 1fr 32px; /* # / 画像 / 地図 / 削除 */
+  grid-template-columns: auto auto auto auto; /* # / 画像 / 地図 / 削除 */
   align-items:center;
   gap:4px;
   padding:0;
@@ -931,7 +926,7 @@ html, body, #app { height: 100%; }
   border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 .gcp-row .img, .gcp-row .map{
-  display:grid; grid-template-columns: 1fr 1fr; gap:6px;
+  display:grid; grid-template-columns: auto auto; gap:6px;
 }
 .gcp-row .idx{ text-align:center; font-weight:700; }
 
