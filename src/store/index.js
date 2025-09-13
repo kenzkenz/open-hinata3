@@ -47,7 +47,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.496,
+    clientVersion: 1.497,
     demTint: null,
     mode: 'step',     // 将来: 'linear' でグラデ
     level: 0,         // しきい値[m]

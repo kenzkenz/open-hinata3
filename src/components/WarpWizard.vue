@@ -58,9 +58,11 @@
               <div class="idx">{{ i+1 }}</div>
               <div class="img">
                 <v-text-field
+                    class="img-x"
                     type="number" density="compact" variant="plain" hide-details="auto"
                     :model-value="getImgX(g)" @update:modelValue="setImgX(i, $event)" />
                 <v-text-field
+                    class="img-y"
                     type="number" density="compact" variant="plain" hide-details="auto"
                     :model-value="getImgY(g)" @update:modelValue="setImgY(i, $event)" />
               </div>
@@ -928,13 +930,21 @@ export default {
 .gcp-row .img, .gcp-row .map{
   display:grid; grid-template-columns: auto auto; gap:6px;
 }
-.gcp-row .idx{ text-align:center; font-weight:700; }
+.gcp-row .idx{
+  margin-left: 10px;
+  text-align:center;
+}
 
 .gcp-scroll{
   flex: 1 1 auto;   /* ここが伸縮する */
   min-height: 0;
   overflow: auto;
   margin-top:4px;
+}
+
+.img-x, .img-y{
+  margin-left: 10px;
+  width: 50px;
 }
 
 /* Vuetify のテキストフィールド微調整 */

@@ -4723,6 +4723,7 @@ export function addXyztileLayer(id,name,url,bbox) {
             duration: 1000 // アニメーション時間（ms）必要に応じて調整
         });
     }
+    // alert(document.querySelector('.draggable-div').style.display)
     fitBoundsAndThen(map01, bbox, () => {
         const currentZoom = map01.getZoom();
         map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
