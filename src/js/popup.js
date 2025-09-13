@@ -3591,6 +3591,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
             case 'click-circle-label-layer':
             case 'click-circle-polygon-symbol-area-layer':
             case 'click-circle-polygon-symbol-layer':
+            case 'click-circle-layer-ex':
             case 'segment-label-layer':
             {
                 console.log('⭐⭐️⭐⭐️到達！️')
@@ -3649,6 +3650,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 const isFreeHand = props['free-hand'] || false
                 const offsetX = Number(String(props.offsetValue).split(',')[0])
                 const offsetY = Number(String(props.offsetValue).split(',')[1])
+                const height = props.height || 0
                 let display = 'block'
                 let display2 = 'none'
                 let lineType = 'ラインストリング'
@@ -3761,7 +3763,8 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                                         '<div style="position: relative">' +
                                         '<div style="margin-left: 10px;margin-bottom: 10px; font-size: 16px;"><input ' + checked + ' type="checkbox" id="' + props.id + '" class="polygon-area-check" value=""><label for="' + props.id + '"> 面積表示</label>' +
 
-                                        // '<input id="' + props.id + '" type="number" class="oh-cool-input-number line-width-input" min="1" max="100" step="1" value="' + lineWidth +'" style="position: absolute;left:120px;top:0px;">' +
+                                        '<div style="position: absolute;left:140px;top:0px;"><input id="' + props.id + '" type="number" class="oh-cool-input-number polygon-height" min="0" max="100" step="1" value="' + height +'"> m</div>' +
+
 
                                         '</div>' +
                                         '<input id="' + props.id + '" style="width: 100%;margin-bottom: 5px;" type="text" class="oh-cool-input polygon-text" placeholder="ここに入力" value="' + props.label + '">' +

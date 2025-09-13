@@ -1024,6 +1024,23 @@ export const clickCircleLayer = {
         'fill-color': ['get', 'color'],
     }
 }
+export const clickCircleLayerEx = {
+    id: 'click-circle-layer-ex',
+    'type': 'fill-extrusion',
+    source: 'click-circle-source',
+    filter: [
+        'all',
+        ['has', 'height'],
+        ['>', ['to-number', ['get', 'height']], 0]
+    ],
+    paint: {
+        'fill-extrusion-base': 0,
+        "fill-extrusion-height": ['get', 'height'],
+        'fill-extrusion-color': ['get', 'color'],
+        'fill-extrusion-opacity': 0.7,
+        'fill-extrusion-vertical-gradient': true
+    }
+}
 export const clickCirclePolygonLineLayer = {
     id: 'click-circle-polygon-line-layer',
     type: 'line',

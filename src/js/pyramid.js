@@ -1681,6 +1681,16 @@ export default function pyramid () {
                 store.state.popupDialog = false
             }
         });
+        // -------------------------------------------------------------------------------------------------------------
+        mapElm.addEventListener('click', async (e) => {
+            if (e.target && (e.target.classList.contains("polygon-height"))) {
+                const map01 = store.state.map01
+                const id = String(e.target.getAttribute("id"))
+                const input = document.querySelector('.polygon-height')
+                const inputValue = Number(input.value)
+                store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,'height', inputValue)
+            }
+        });
     })
 }
 

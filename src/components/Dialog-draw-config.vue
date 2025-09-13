@@ -52,14 +52,14 @@
                   label="色を選択してください"
                   @update:modelValue="configChange('fill-color',s_titleColor)"
               />
-              <v-select
-                  v-model="titleScale"
-                  :items="titleScales"
-                  item-title="label"
-                  item-value="zoom"
-                  label="縮尺率固定"
-                  @update:modelValue="setZoom()"
-              />
+<!--              <v-select-->
+<!--                  v-model="titleScale"-->
+<!--                  :items="titleScales"-->
+<!--                  item-title="label"-->
+<!--                  item-value="zoom"-->
+<!--                  label="縮尺率固定"-->
+<!--                  @update:modelValue="setZoom()"-->
+<!--              />-->
               <v-select
                   v-if="s_isPrint"
                   v-model="s_titleDirection"

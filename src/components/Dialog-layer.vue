@@ -101,7 +101,7 @@ import {
   arrowsEndpointLayer,
   clickCircleKeikoLineLayer,
   clickCircleLabelLayer,
-  clickCircleLayer,
+  clickCircleLayer, clickCircleLayerEx,
   clickCircleLineLayer,
   clickCirclePolygonLineLayer,
   clickCircleSource, clickCircPolygonSymbolAreaLayer,
@@ -1029,6 +1029,7 @@ export default {
 
       if (map.getSource('click-circle-source')) {
         map.removeLayer('click-circle-layer')
+        map.removeLayer('click-circle-layer-ex')
         map.removeLayer('click-circle-polygon-line-layer')
         map.removeLayer('click-circle-polygon-symbol-layer')
         map.removeLayer('click-circle-polygon-symbol-area-layer')
@@ -1062,6 +1063,7 @@ export default {
       map.addSource('click-circle-source', clickCircleSource.obj)
       // map.removeLayer('click-circle-layer')// 逃げ
       map.addLayer(clickCircleLayer)
+      map.addLayer(clickCircleLayerEx)
       map.addLayer(clickCirclePolygonLineLayer)
       map.addLayer(clickCircPolygonSymbolLayer)
       map.addLayer(clickCircPolygonSymbolAreaLayer)

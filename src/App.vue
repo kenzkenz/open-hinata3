@@ -2220,7 +2220,7 @@ import {
   cityGeojsonLabelLayer,
   cityGeojsonLineLayer,
   cityGeojsonPolygonLayer,
-  cityGeojsonSource,
+  cityGeojsonSource, clickCircleLayerEx,
   clickCircleSource,
   extLayer,
   extSource,
@@ -3305,55 +3305,114 @@ export default {
   },
   methods: {
 
+    /** 単純 2x3 アフィン適用 */
+    _applyAffine (M, pt) {
+      const [a,b,c,d,e,f] = M; const [x,y] = pt;
+      return [a*x + b*y + c, d*x + e*y + f];
+    },
+
     /**
-     * ワールドファイル文字列を生成（PGW/JGW/WLD の6行テキスト）
-     * - 画像 natural サイズで推定した行列 M を、実際に保存するピクセル寸法に合わせて補正
-     * - 実保存サイズは .warp-canvas の width/height → this.exportWidth/Height → natural の順で採用
+     * 2点厳密Similarity（Helmert 2D）
+     * p1,p2 → q1,q2 を誤差ゼロで一致させる 2x3 行列 [a,b,c,d,e,f] を返す。
+     * 入力は y上向き座標（srcUp/dstUp）。
+     */
+    fitSimilarity2PExact (p1, p2, q1, q2) {
+      const dxs = p2[0] - p1[0];
+      const dys = p2[1] - p1[1];
+      const dxd = q2[0] - q1[0];
+      const dyd = q2[1] - q1[1];
+      const ns = Math.hypot(dxs, dys);
+      const nd = Math.hypot(dxd, dyd);
+      if (!(ns > 0) || !(nd > 0)) {
+        console.warn('fitSimilarity2PExact: 無効な2点（距離0）');
+        return null;
+      }
+      const angS = Math.atan2(dys, dxs);
+      const angD = Math.atan2(dyd, dxd);
+      const theta = angD - angS;
+      const cosT = Math.cos(theta);
+      const sinT = Math.sin(theta);
+      const s = nd / ns; // 一様スケール
+      // 回転+スケール
+      const a =  s * cosT;
+      const b = -s * sinT;
+      const d =  s * sinT;
+      const e =  s * cosT;
+      // 並進（q1 を厳密一致）
+      const c = q1[0] - (a * p1[0] + b * p1[1]);
+      const f = q1[1] - (d * p1[0] + e * p1[1]);
+      return [a, b, c, d, e, f];
+    },
+
+    /** 2点時の残差（m）をデバッグ表示 */
+    _debugCheckTwoPointResiduals (M, srcNat, dstMerc) {
+      if (srcNat.length !== 2 || dstMerc.length !== 2) return;
+      const r0 = this._applyAffine(M, srcNat[0]);
+      const r1 = this._applyAffine(M, srcNat[1]);
+      const e0 = Math.hypot(r0[0]-dstMerc[0][0], r0[1]-dstMerc[0][1]);
+      const e1 = Math.hypot(r1[0]-dstMerc[1][0], r1[1]-dstMerc[1][1]);
+      console.info('[2点厳密チェック] 残差(m):', { e0, e1 });
+    },
+
+    /**
+     * 2x3 アフィンからワールドファイル（6行）を生成
+     * 入力 M は「y下向きピクセル座標」前提。
+     * C,F に +0.5px の中心補正を入れる（左上ピクセルの中心）。
+     */
+    worldFileFromAffine (M) {
+      const [a, b, c, d, e, f] = M;
+      const C = c + a * 0.5 + b * 0.5;
+      const F = f + d * 0.5 + e * 0.5;
+      // const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
+      // return lines.map(v => String(v)).join('
+      // ') + '
+      // ';
+      const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
+      return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
+    },
+
+    /**
+     * メイン：ワールドファイルを生成
+     * - 自然サイズで推定した M を、実保存ピクセル寸法に合わせて補正
+     * - 2点: 厳密Similarity、3点以上: ロバストAffine
      */
     generateWorldFile () {
       const img = document.getElementById('warp-image');
-      if (!img) {
-        console.warn('image not found');
-        return null;
-      }
+      if (!img) { console.warn('image not found'); return null; }
 
-
+      // 有効なGCP（画像側/地図側の両方があるもの）
       const pairs = (this.gcpList || []).filter(g =>
           (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
       );
-      if (pairs.length < 2) {
-        console.warn('GCPは2点以上必要です');
-        return null;
-      }
+      if (pairs.length < 2) { console.warn('GCPは2点以上必要です'); return null; }
 
-
-// 1) CSS座標→自然ピクセル座標（y下向き）
+      // 1) 画像CSS座標 → 自然ピクセル（y下向き）
       const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-// 推定は y上向きで行う
+      // 推定は y上向き
       const srcUp = srcNat.map(([x, y]) => [x, -y]);
       const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
 
-
-// 2) 2点: Similarity / 3点以上: ロバストAffine
+      // 2) 推定
       let Mup;
       if (pairs.length === 2) {
-        Mup = fitSimilarity2P(srcUp, dstUp);
+        // 厳密（誤差ゼロ）Similarity
+        const p1 = srcUp[0], p2 = srcUp[1];
+        const q1 = dstUp[0], q2 = dstUp[1];
+        const M2 = this.fitSimilarity2PExact(p1, p2, q1, q2);
+        if (!M2) return null;
+        Mup = M2;
       } else {
+        // ロバストAffine
         Mup = fitAffineRobust(srcUp, dstUp, 4);
       }
 
-
-// y上向き→y下向き（ピクセル座標）へ戻す
+      // 3) y上向き → y下向き（ピクセル座標系）へ
       const FLIP_Y = [1, 0, 0, 0, -1, 0];
       let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
 
-
-// 3) 実保存サイズに合わせたスケール補正
-      const natW = img.naturalWidth;
-      const natH = img.naturalHeight;
-
-
-// 実際に書き出す予定のサイズ（1) .warp-canvas → 2) this.exportWidth/Height → 3) natural）
+      // 4) 実保存サイズに合わせて補正（縮小/拡大の異方も許容）
+      const natW = img.naturalWidth || 1;
+      const natH = img.naturalHeight || 1;
       let expW = 0, expH = 0;
       const canv = document.querySelector('.warp-canvas');
       if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
@@ -3362,32 +3421,115 @@ export default {
       }
       if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
       if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
-      if (!expW) expW = natW;
-      if (!expH) expH = natH;
+      if (!expW) expW = natW; if (!expH) expH = natH;
 
-
-// 異方縮小にも対応
       let sX = expW / natW;
       let sY = expH / natH;
-// 任意: 明示スケールがあれば優先
       if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
       if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
 
-
       if (sX !== 1 || sY !== 1) {
+        // 自然→実保存: [x_nat, y_nat]^T = [x_exp/sX, y_exp/sY]^T
+        // よって (x_exp,y_exp) 基準の行列は M ∘ S,  S = diag(1/sX, 1/sY)
         const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
         M = composeAffine(M, S);
       }
 
-
+      // 状態保持（プレビュー等で再利用）
       this._lastAffineM = M;
       this.affineM = M;
 
+      // 2点のとき、理論上ほぼ0の残差を確認（デバッグ）
+      if (pairs.length === 2) this._debugCheckTwoPointResiduals(M, srcNat, dstUp);
 
       const wld = this.worldFileFromAffine(M);
-      this.lastWorldFileText = wld; // 任意: UIデバッグ用に保持
+      this.lastWorldFileText = wld; // 任意：UIで確認
       return wld;
     },
+
+    /**
+     * ワールドファイル文字列を生成（PGW/JGW/WLD の6行テキスト）
+     * - 画像 natural サイズで推定した行列 M を、実際に保存するピクセル寸法に合わせて補正
+     * - 実保存サイズは .warp-canvas の width/height → this.exportWidth/Height → natural の順で採用
+     */
+//     generateWorldFile () {
+//       const img = document.getElementById('warp-image');
+//       if (!img) {
+//         console.warn('image not found');
+//         return null;
+//       }
+//
+//
+//       const pairs = (this.gcpList || []).filter(g =>
+//           (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+//       );
+//       if (pairs.length < 2) {
+//         console.warn('GCPは2点以上必要です');
+//         return null;
+//       }
+//
+//
+// // 1) CSS座標→自然ピクセル座標（y下向き）
+//       const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+// // 推定は y上向きで行う
+//       const srcUp = srcNat.map(([x, y]) => [x, -y]);
+//       const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
+//
+//
+// // 2) 2点: Similarity / 3点以上: ロバストAffine
+//       let Mup;
+//       if (pairs.length === 2) {
+//         Mup = fitSimilarity2P(srcUp, dstUp);
+//       } else {
+//         Mup = fitAffineRobust(srcUp, dstUp, 4);
+//       }
+//
+//
+// // y上向き→y下向き（ピクセル座標）へ戻す
+//       const FLIP_Y = [1, 0, 0, 0, -1, 0];
+//       let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
+//
+//
+// // 3) 実保存サイズに合わせたスケール補正
+//       const natW = img.naturalWidth;
+//       const natH = img.naturalHeight;
+//
+//
+// // 実際に書き出す予定のサイズ（1) .warp-canvas → 2) this.exportWidth/Height → 3) natural）
+//       let expW = 0, expH = 0;
+//       const canv = document.querySelector('.warp-canvas');
+//       if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
+//         expW = Number(canv.width);
+//         expH = Number(canv.height);
+//       }
+//       if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
+//       if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
+//       if (!expW) expW = natW;
+//       if (!expH) expH = natH;
+//
+//
+// // 異方縮小にも対応
+//       let sX = expW / natW;
+//       let sY = expH / natH;
+// // 任意: 明示スケールがあれば優先
+//       if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
+//       if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
+//
+//
+//       if (sX !== 1 || sY !== 1) {
+//         const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
+//         M = composeAffine(M, S);
+//       }
+//
+//
+//       this._lastAffineM = M;
+//       this.affineM = M;
+//
+//
+//       const wld = this.worldFileFromAffine(M);
+//       this.lastWorldFileText = wld; // 任意: UIデバッグ用に保持
+//       return wld;
+//     },
 
 
     /**
@@ -3395,18 +3537,18 @@ export default {
      * M = [a,b,c,d,e,f] : X = a*x + b*y + c, Y = d*x + e*y + f
      * ピクセル中心補正: C,F に +0.5px 相当を加味
      */
-    worldFileFromAffine (M) {
-      const [a, b, c, d, e, f] = M; // y下向きピクセル座標前提
-      const C = c + a * 0.5 + b * 0.5;
-      const F = f + d * 0.5 + e * 0.5;
-      const A = a; // x方向解像度（m/px等）
-      const D = d; // 回転（行方向）
-      const B = b; // 回転（列方向）
-      const E = e; // y方向解像度（通常は負）
-      // return [A, D, B, E, C, F].map(v => String(v)).join(','
-      const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
-      return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
-    },
+    // worldFileFromAffine (M) {
+    //   const [a, b, c, d, e, f] = M; // y下向きピクセル座標前提
+    //   const C = c + a * 0.5 + b * 0.5;
+    //   const F = f + d * 0.5 + e * 0.5;
+    //   const A = a; // x方向解像度（m/px等）
+    //   const D = d; // 回転（行方向）
+    //   const B = b; // 回転（列方向）
+    //   const E = e; // y方向解像度（通常は負）
+    //   // return [A, D, B, E, C, F].map(v => String(v)).join(','
+    //   const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
+    //   return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
+    // },
 
     onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
       // 安全チェック（宇宙行き防止）
@@ -8967,19 +9109,20 @@ export default {
                   return layer.id.indexOf('height') !== -1
                 }
             )) {
-              map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
+              /**
+               * ドローで高さのポリゴンがあるときは押し出しをしない。
+               */
+              const isHeight = map.getSource('click-circle-source')._data.features.find(f => f.properties?.height > 0)
+              if (!isHeight) {
+                map.setTerrain({'source': 'terrain', 'exaggeration': vm.s_terrainLevel})
+              }
             } else {
               map.setTerrain(null)
             }
           }, false);
 
 
-          // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('mouseover', function() {
-          //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
-          // }, false);
-          // document.querySelector('.terrain-btn-up,terrain-btn-down').addEventListener('pointerdown', function() {
-          //   map.setTerrain({ 'source': 'gsidem-terrain-rgb', 'exaggeration': vm.s_terrainLevel })
-          // }, false);
+
 
 
 
@@ -9196,7 +9339,13 @@ export default {
                   return layer.id.indexOf('height') !== -1
                 }
             )) {
-              this.$store.state[mapName].setTerrain({ 'source': 'terrain', 'exaggeration': this.s_terrainLevel })
+              /**
+               * ドローで高さのポリゴンがあるときは押し出しをしない。
+               */
+              const isHeight = map.getSource('click-circle-source')._data.features.find(f => f.properties?.height > 0)
+              if (!isHeight) {
+                this.$store.state[mapName].setTerrain({'source': 'terrain', 'exaggeration': this.s_terrainLevel})
+              }
             } else {
               map.setTerrain(null)
             }
@@ -10061,7 +10210,14 @@ export default {
     // },
     isDraw(value) {
       this.toggleLDraw()
-      if (!value) {
+      if (value) {
+        // if (this.map01.getLayers('click-circle-layer-ex')) {
+        //   this.map01.removeLayer('click-circle-layer-ex')
+        // }
+      } else {
+        // if (!this.map01.getLayers('click-circle-layer-ex')) {
+        //   this.map01.addLayer(clickCircleLayerEx)
+        // }
         const geojson = this.map01.getSource('click-circle-source')._data
         geojson.features.forEach(f => {
           delete f.properties.lassoSelected
