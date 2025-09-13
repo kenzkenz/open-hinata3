@@ -15,15 +15,15 @@
         <v-chip size="small" class="mr-1" label> {{ pairsCount }}</v-chip>
         <v-chip v-if="transformKind" :color="transformKindColor" size="small" class="mr-1" label>{{ transformKind }}</v-chip>
         <v-chip v-if="imgMeta" size="small" class="mr-1" label>{{ imgMeta }}</v-chip>
-<!--        <v-divider vertical class="mx-1"/>-->
+        <!--        <v-divider vertical class="mx-1"/>-->
         <!-- DL: 4点の挙動で固定化したワールドファイル（3857） -->
-<!--        <v-tooltip text="World File をダウンロード (EPSG:3857 / 4点相当のアフィン)" location="bottom">-->
-<!--          <template #activator="{ props }">-->
-<!--            <v-btn v-bind="props" icon variant="text" :disabled="!canDownloadWorldFile" @click="downloadWorldFile" :title="worldFileHint">-->
-<!--              <v-icon>mdi-download</v-icon>-->
-<!--            </v-btn>-->
-<!--          </template>-->
-<!--        </v-tooltip>-->
+        <!--        <v-tooltip text="World File をダウンロード (EPSG:3857 / 4点相当のアフィン)" location="bottom">-->
+        <!--          <template #activator="{ props }">-->
+        <!--            <v-btn v-bind="props" icon variant="text" :disabled="!canDownloadWorldFile" @click="downloadWorldFile" :title="worldFileHint">-->
+        <!--              <v-icon>mdi-download</v-icon>-->
+        <!--            </v-btn>-->
+        <!--          </template>-->
+        <!--        </v-tooltip>-->
       </div>
     </div>
 
@@ -81,12 +81,12 @@
           <p style="margin-left: 20px; margin-bottom: 10px;">最低2点、上記画像と地図をクリックしてください。 </p>
         </div>
 
-<!--        <div class="actions">-->
-<!--          <p>2〜4点、上記画像と地図をクリックしてください。 </p>-->
-<!--          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">-->
-<!--            <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード-->
-<!--          </v-btn>-->
-<!--        </div>-->
+        <!--        <div class="actions">-->
+        <!--          <p>2〜4点、上記画像と地図をクリックしてください。 </p>-->
+        <!--          <v-btn color="primary" :disabled="!(affineM || H)" @click="confirm">-->
+        <!--            <v-icon class="mr-1">mdi-cloud-upload</v-icon>アップロード-->
+        <!--          </v-btn>-->
+        <!--        </div>-->
       </div>
     </div>
   </div>
@@ -257,7 +257,7 @@ function estimateHomographyLinear(srcPts, dstPts, w){
     }
   }
   // ガウス消去
-  const N = m; const M = ATA.map(r=>r.slice()); const b = ATb.slice();
+  const N = m; const M=ATA.map(r=>r.slice()); const b=ATb.slice();
   for(let i=0;i<N;i++){
     let p=i; for(let r=i+1;r<N;r++) if(Math.abs(M[r][i])>Math.abs(M[p][i])) p=r;
     if(p!==i){ [M[i],M[p]]=[M[p],M[i]]; [b[i],b[p]]=[b[p],b[i]]; }
@@ -341,6 +341,150 @@ function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24){
   }
 }
 
+// ======== TPS utilities ========
+function fitTPS(srcPts, dstPts) {
+  const n = srcPts.length;
+  const m = n + 3;
+  function U(r) {
+    return r > 0 ? r * r * Math.log(r * r) : 0;
+  }
+  const L = Array.from({length: m}, () => Array(m).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const dx = srcPts[i][0] - srcPts[j][0];
+      const dy = srcPts[i][1] - srcPts[j][1];
+      const r = Math.hypot(dx, dy);
+      L[i][j] = U(r);
+    }
+    L[i][n] = 1;
+    L[i][n + 1] = srcPts[i][0];
+    L[i][n + 2] = srcPts[i][1];
+  }
+  for (let j = 0; j < n; j++) {
+    L[n][j] = 1;
+    L[n + 1][j] = srcPts[j][0];
+    L[n + 2][j] = srcPts[j][1];
+  }
+  const bx = dstPts.map((p) => p[0]).concat([0, 0, 0]);
+  const by = dstPts.map((p) => p[1]).concat([0, 0, 0]);
+  const wx = solveLinear(L, bx);
+  const wy = solveLinear(L, by);
+  return { wx, wy, srcPts };
+}
+function solveLinear(A, b) {
+  const N = A.length;
+  const M = A.map((r) => r.slice());
+  const x = b.slice();
+  for (let i = 0; i < N; i++) {
+    let p = i;
+    for (let r = i + 1; r < N; r++) {
+      if (Math.abs(M[r][i]) > Math.abs(M[p][i])) {
+        p = r;
+      }
+    }
+    if (p !== i) {
+      [M[i], M[p]] = [M[p], M[i]];
+      [x[i], x[p]] = [x[p], x[i]];
+    }
+    const diag = M[i][i] || 1e-12;
+    for (let j = i + 1; j < N; j++) {
+      const f = M[j][i] / diag;
+      for (let k = i; k < N; k++) {
+        M[j][k] -= f * M[i][k];
+      }
+      x[j] -= f * x[i];
+    }
+  }
+  for (let i = N - 1; i >= 0; i--) {
+    let s = 0;
+    for (let j = i + 1; j < N; j++) {
+      s += M[i][j] * x[j];
+    }
+    x[i] = (x[i] - s) / (M[i][i] || 1e-12);
+  }
+  return x;
+}
+function applyTPS(tps, [x, y]) {
+  const { wx, wy, srcPts } = tps;
+  const n = srcPts.length;
+  let X = wx[n] + wx[n + 1] * x + wx[n + 2] * y;
+  let Y = wy[n] + wy[n + 1] * x + wy[n + 2] * y;
+  for (let i = 0; i < n; i++) {
+    const dx = x - srcPts[i][0];
+    const dy = y - srcPts[i][1];
+    const r = Math.hypot(dx, dy);
+    const u = r > 0 ? r * r * Math.log(r * r) : 0;
+    X += wx[i] * u;
+    Y += wy[i] * u;
+  }
+  return [X, Y];
+}
+function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24) {
+  const ctx = canvas.getContext('2d');
+  const W = img.naturalWidth,
+      Himg = img.naturalHeight;
+  const corners = [
+    [0, 0],
+    [W, 0],
+    [W, Himg],
+    [0, Himg],
+  ].map((p) => applyTPS(tps, [p[0], -p[1]]));
+  const xs = corners.map((p) => p[0]),
+      ys = corners.map((p) => p[1]);
+  const minX = Math.min(...xs),
+      maxX = Math.max(...xs),
+      minY = Math.min(...ys),
+      maxY = Math.max(...ys);
+  const cw = Math.max(1, img.clientWidth || img.naturalWidth);
+  const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+  canvas.width = cw;
+  canvas.height = ch;
+  const spanX = Math.max(1, maxX - minX),
+      spanY = Math.max(1, maxY - minY);
+  const s = Math.min(cw / spanX, ch / spanY);
+  function applyViewTransform([X, Y]) {
+    return [s * (X - minX), s * (maxY - Y)];
+  }
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  const nx = mesh,
+      ny = mesh;
+  const sx = W / nx,
+      sy = Himg / ny;
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const x0 = i * sx,
+          y0 = j * sy;
+      const x1 = (i + 1) * sx,
+          y1 = (j + 1) * sy;
+      const s00 = [x0, y0],
+          s10 = [x1, y0],
+          s11 = [x1, y1],
+          s01 = [x0, y1];
+      const d00 = applyViewTransform(applyTPS(tps, [x0, -y0]));
+      const d10 = applyViewTransform(applyTPS(tps, [x1, -y0]));
+      const d11 = applyViewTransform(applyTPS(tps, [x1, -y1]));
+      const d01 = applyViewTransform(applyTPS(tps, [x0, -y1]));
+      drawTri(ctx, img, [s00, s10, s11], [d00, d10, d11]);
+      drawTri(ctx, img, [s00, s11, s01], [d00, d11, d01]);
+    }
+  }
+  function drawTri(ctx, img, srcTri, dstTri){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(dstTri[0][0], dstTri[0][1]);
+    ctx.lineTo(dstTri[1][0], dstTri[1][1]);
+    ctx.lineTo(dstTri[2][0], dstTri[2][1]);
+    ctx.closePath();
+    ctx.clip();
+    const [a,b,c,d,e,f] = affineFromTriangles(srcTri, dstTri);
+    ctx.setTransform(a,b,c,d,e,f);
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+  }
+}
+
 // ======== ここから SFC ========
 export default {
   name: 'WarpWizard',
@@ -360,6 +504,7 @@ export default {
       imgUrl: null,
       affineM: null,   // 2x3（相似/アフィン用；natural→3857）
       H: null,         // 3x3（ホモグラフィ；natural→3857）
+      tps: null,
       grid: true,
       objUrl: null,
       history: [],
@@ -408,16 +553,16 @@ export default {
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
     transformKind(){
-      if(!(this.affineM || this.H)) return '';
-      if (this.pairsCount >= 4) return 'Homography';
+      if(!(this.affineM || this.H || this.tps)) return '';
+      if (this.pairsCount >= 4) return 'TPS';
       return this.pairsCount >= 3 ? 'Affine' : 'Similarity';
     },
     transformKindColor(){
-      if (this.pairsCount >= 4) return 'pink';
+      if (this.pairsCount >= 4) return 'blue';
       return this.pairsCount >= 3 ? 'deep-purple' : 'teal';
     },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
-    hideBaseImage(){ return !!(this.affineM || this.H) },
+    hideBaseImage(){ return !!(this.affineM || this.H || this.tps) },
     canUndo(){ return this.histIndex > 0 },
     canRedo(){ return this.histIndex >= 0 && this.history && this.histIndex < this.history.length - 1 },
 
@@ -443,14 +588,14 @@ export default {
     },
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.H=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
-    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H) this.previewAffineWarp() },
+    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
+    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewAffineWarp() },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.pairsCount>=2) this.previewAffineWarp() },
 
-    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null } },
+    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null, tps: this.tps ? {wx: [...this.tps.wx], wy: [...this.tps.wy], srcPts: this.tps.srcPts.map(p=>[...p])} : null } },
     resetHistory(){ this.history=[]; this.histIndex=-1 },
     pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
+    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
     redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
     onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
@@ -473,7 +618,7 @@ export default {
       const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
       if(!img||!canvas) return;
       const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
-      if (pairs.length < 2){ this.affineM=null; this.H=null; this.clearCanvas(canvas); return; }
+      if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.clearCanvas(canvas); return; }
       const srcNat = pairs.map(g => toNaturalCoord(g, img));
       const srcUp  = srcNat.map(([x,y]) => [x, -y]);
       const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
@@ -481,24 +626,17 @@ export default {
         const Mup = fitSimilarity2P(srcUp, dstUp);
         const FLIP_Y_A = [1,0,0, 0,-1,0];
         const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
+        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
       }
       if (pairs.length === 3){
-        const Mup = fitAffineN(srcUp, dstUp);
+        const Mup = fitAffineRobust(srcUp, dstUp, 4);
         const FLIP_Y_A = [1,0,0, 0,-1,0];
         const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
+        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M); return;
       }
-      // 4点以上はロバストHでプレビュー
-      const Hup = (pairs.length === 4)
-          ? (function(){
-            // 最小二乗でもOKだが数値安定のため exact4 は使わず linear+robust で統一
-            return estimateHomographyRobust(srcUp, dstUp, 3);
-          })()
-          : estimateHomographyRobust(srcUp, dstUp, 3);
-      const FLIP_Y_H = [[1,0,0],[0,-1,0],[0,0,1]];
-      const H = mat33Mul(FLIP_Y_H, Hup); // 注意：向き適用の順序（既存ロジックのまま）
-      this.affineM = null; this.H = H; previewProjectiveOnCanvas(this, img, canvas, H, 28);
+      // 4点以上はTPSでプレビュー
+      const tps = fitTPS(srcUp, dstUp);
+      this.affineM = null; this.H = null; this.tps = tps; previewTPSOnCanvas(this, img, canvas, tps, 28);
     },
 
     buildWorldAffine(){
@@ -642,26 +780,48 @@ export default {
       URL.revokeObjectURL(a.href);
     },
     confirm(){
-      if(!(this.affineM || this.H)) return;
+      if(!(this.affineM || this.H || this.tps)) return;
       const f=this.$props.file||null;
       const canvas=this.$refs.warpCanvas;
       let cornersLngLat = null;
-      if (this.H && this.$refs.warpImage){
-        const img=this.$refs.warpImage;
+      let payload;
+      const img=this.$refs.warpImage;
+      if (this.tps && img){
+        const W=img.naturalWidth, Hh=img.naturalHeight;
+        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];  // TL, TR, BR, BL
+        const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]])); // 3857(m)
+        cornersLngLat = cornersWorld.map(mercToLngLat);
+        payload = {
+          file: f,
+          tps: this.tps,
+          kind: 'tps',
+          cornersLngLat,
+          srs: this.srs3857,
+        };
+      } else if (this.H && img){
         const W=img.naturalWidth, Hh=img.naturalHeight;
         const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];  // TL, TR, BR, BL
         const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p)); // 3857(m)
         cornersLngLat = cornersWorld.map(mercToLngLat);
+        payload = {
+          file: f,
+          affineM: null,
+          H: this.H,
+          kind: 'homography',
+          cornersLngLat,
+          srs: this.srs3857,
+        };
+      } else if (this.affineM){
+        payload = {
+          file: f,
+          affineM: this.affineM,
+          H: null,
+          kind: this.pairsCount>=3 ? 'affine' : 'similarity',
+          cornersLngLat,
+          srs: this.srs3857,
+        };
       }
       // OH3 の PHP 側は PRJ を見ない → 3857 前提で投げる
-      const payload = {
-        file: f,
-        affineM: this.affineM || null,
-        H: this.H || null,
-        kind: this.H ? 'homography' : (this.pairsCount>=3 ? 'affine' : 'similarity'),
-        cornersLngLat,
-        srs: this.srs3857,
-      };
       if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return }
       canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png')
     },
@@ -790,4 +950,3 @@ html, body, #app { height: 100%; }
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
 </style>
-

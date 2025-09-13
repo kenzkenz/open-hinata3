@@ -41,6 +41,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :stacked="true"
             @confirm="onWarpConfirm"
             @clear-map-markers="clearBlueDotsOnMap"
+            @mousedown.stop
+            @pointerdown.stop
+            @touchstart.stop
         />
       </FloatingWindow>
 
