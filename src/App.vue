@@ -3304,6 +3304,110 @@ export default {
     },
   },
   methods: {
+
+    /**
+     * ワールドファイル文字列を生成（PGW/JGW/WLD の6行テキスト）
+     * - 画像 natural サイズで推定した行列 M を、実際に保存するピクセル寸法に合わせて補正
+     * - 実保存サイズは .warp-canvas の width/height → this.exportWidth/Height → natural の順で採用
+     */
+    generateWorldFile () {
+      const img = document.getElementById('warp-image');
+      if (!img) {
+        console.warn('image not found');
+        return null;
+      }
+
+
+      const pairs = (this.gcpList || []).filter(g =>
+          (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+      );
+      if (pairs.length < 2) {
+        console.warn('GCPは2点以上必要です');
+        return null;
+      }
+
+
+// 1) CSS座標→自然ピクセル座標（y下向き）
+      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+// 推定は y上向きで行う
+      const srcUp = srcNat.map(([x, y]) => [x, -y]);
+      const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
+
+
+// 2) 2点: Similarity / 3点以上: ロバストAffine
+      let Mup;
+      if (pairs.length === 2) {
+        Mup = fitSimilarity2P(srcUp, dstUp);
+      } else {
+        Mup = fitAffineRobust(srcUp, dstUp, 4);
+      }
+
+
+// y上向き→y下向き（ピクセル座標）へ戻す
+      const FLIP_Y = [1, 0, 0, 0, -1, 0];
+      let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
+
+
+// 3) 実保存サイズに合わせたスケール補正
+      const natW = img.naturalWidth;
+      const natH = img.naturalHeight;
+
+
+// 実際に書き出す予定のサイズ（1) .warp-canvas → 2) this.exportWidth/Height → 3) natural）
+      let expW = 0, expH = 0;
+      const canv = document.querySelector('.warp-canvas');
+      if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
+        expW = Number(canv.width);
+        expH = Number(canv.height);
+      }
+      if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
+      if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
+      if (!expW) expW = natW;
+      if (!expH) expH = natH;
+
+
+// 異方縮小にも対応
+      let sX = expW / natW;
+      let sY = expH / natH;
+// 任意: 明示スケールがあれば優先
+      if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
+      if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
+
+
+      if (sX !== 1 || sY !== 1) {
+        const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
+        M = composeAffine(M, S);
+      }
+
+
+      this._lastAffineM = M;
+      this.affineM = M;
+
+
+      const wld = this.worldFileFromAffine(M);
+      this.lastWorldFileText = wld; // 任意: UIデバッグ用に保持
+      return wld;
+    },
+
+
+    /**
+     * 2x3 アフィン行列からワールドファイル（6行）を生成
+     * M = [a,b,c,d,e,f] : X = a*x + b*y + c, Y = d*x + e*y + f
+     * ピクセル中心補正: C,F に +0.5px 相当を加味
+     */
+    worldFileFromAffine (M) {
+      const [a, b, c, d, e, f] = M; // y下向きピクセル座標前提
+      const C = c + a * 0.5 + b * 0.5;
+      const F = f + d * 0.5 + e * 0.5;
+      const A = a; // x方向解像度（m/px等）
+      const D = d; // 回転（行方向）
+      const B = b; // 回転（列方向）
+      const E = e; // y方向解像度（通常は負）
+      // return [A, D, B, E, C, F].map(v => String(v)).join(','
+      const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
+      return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
+    },
+
     onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
       // 安全チェック（宇宙行き防止）
       if (cornersLngLat && !this._validCorners(cornersLngLat)) {
@@ -3348,7 +3452,7 @@ export default {
       this.mapCoordMarkers?.forEach(m => m.remove());
       this.mapCoordMarkers = [];
     },
-    generateWorldFile() {
+    generateWorldFileOLd() {
       const img = document.getElementById('warp-image');
       if (!img) {
         console.warn('image not found');
