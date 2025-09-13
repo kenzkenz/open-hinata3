@@ -4,7 +4,8 @@
     <div class="oh-toolbar">
       <div class="oh-title"></div>
       <div class="oh-tools">
-        <v-btn :disabled="!(affineM || H)" @click="confirm">アップロード</v-btn>
+        <v-btn :disabled="pairsCount < 2" @click="previewWarp">プレビュー</v-btn>
+        <v-btn :disabled="!(affineM || H || tps)" @click="confirm">アップロード</v-btn>
         <v-divider vertical class="mx-1"/>
         <v-btn style="width: 25px;" icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
         <v-btn style="width: 25px;" icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
@@ -532,7 +533,7 @@ export default {
       }
     },
     url(u){ if(!u) return; this.imgUrl=u; this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); this.resetHistory(); this.pushHistory('init:url') }) },
-    gcpList: { deep:true, handler(){ if(!this.isRestoring) this.pushHistory('gcp'); if(this.pairsCount>=2) this.previewAffineWarp(); this.$nextTick(this.redrawMarkers) } }
+    gcpList: { deep:true, handler(){ if(!this.isRestoring) this.pushHistory('gcp'); this.$nextTick(this.redrawMarkers) } }
   },
   beforeUnmount(){ this.onExternalClose(true) },
   mounted(){
@@ -554,12 +555,14 @@ export default {
     pairsCount(){ return this.pairs.length },
     transformKind(){
       if(!(this.affineM || this.H || this.tps)) return '';
-      if (this.pairsCount >= 4) return 'TPS';
-      return this.pairsCount >= 3 ? 'Affine' : 'Similarity';
+      if (this.tps) return 'TPS';
+      if (this.H) return 'Homography';
+      return this.affineM ? (this.pairsCount >= 3 ? 'Affine' : 'Similarity') : '';
     },
     transformKindColor(){
-      if (this.pairsCount >= 4) return 'blue';
-      return this.pairsCount >= 3 ? 'deep-purple' : 'teal';
+      if (this.tps) return 'blue';
+      if (this.H) return 'pink';
+      return this.affineM ? (this.pairsCount >= 3 ? 'deep-purple' : 'teal') : '';
     },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
     hideBaseImage(){ return !!(this.affineM || this.H || this.tps) },
@@ -589,13 +592,13 @@ export default {
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
     resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
-    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewAffineWarp() },
-    onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.pairsCount>=2) this.previewAffineWarp() },
+    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewWarp() },
+    onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); },
 
     snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null, tps: this.tps ? {wx: [...this.tps.wx], wy: [...this.tps.wy], srcPts: this.tps.srcPts.map(p=>[...p])} : null } },
     resetHistory(){ this.history=[]; this.histIndex=-1 },
     pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewAffineWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
+    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
     redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
     onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
@@ -609,7 +612,7 @@ export default {
     removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
 
     // ===== プレビュー生成 =====
-    previewAffineWarp(){
+    previewWarp(){
       function toNaturalCoord(g, img){
         if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
         if (Array.isArray(g.imageCoord))    return g.imageCoord;

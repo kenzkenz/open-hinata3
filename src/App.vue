@@ -26,7 +26,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :resizable="false"
           :default-top = "10"
           :default-left = "10"
-          :default-width = "505"
+          :default-width = "550"
           :default-height = "850"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
