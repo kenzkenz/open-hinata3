@@ -290,6 +290,9 @@ if (in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), ['jpg', 'jpeg'
     sendSSE(["log" => "JPEG処理完了"]);
 }
 
+
+//$transparent = 0;
+
 // 透過処理
 $transparentPath = null;
 if ($transparent === 1) {
@@ -348,6 +351,48 @@ if ($sourceEPSG !== '3857') {
         sendSSE(["log" => "RGB画像生成完了"]);
     }
 }
+
+function needsNorthUpWarp($filePath) {
+    global $gdalInfo;
+    checkCommand($gdalInfo, "gdalinfo");
+    exec("$gdalInfo -json " . escapeshellarg($filePath), $out, $ret);
+    if ($ret !== 0) return true;
+    $j = json_decode(implode("\n", $out), true);
+    if (!$j) return true;
+
+    // GCPベースなら焼き直し推奨
+    if (!empty($j['gcps'])) return true;
+
+    // GeoTransform の回転項（[2], [4]）をチェック
+    if (isset($j['geoTransform'])) {
+        $gt = $j['geoTransform'];
+        $rotX = isset($gt[2]) ? abs($gt[2]) : 0; // ピクセルX方向の回転/せん断
+        $rotY = isset($gt[4]) ? abs($gt[4]) : 0; // ピクセルY方向の回転/せん断
+        if ($rotX > 1e-9 || $rotY > 1e-9) return true;
+    }
+    return false;
+}
+// （JPEG処理やRGB展開などが終わった直後、gdalinfo 実行の前）
+if ($transparent === 0 && needsNorthUpWarp($outputFilePath)) {
+    $northUpPath = "/tmp/" . $fileName . "_northup.tif";
+    sendSSE(["log" => "回転/せん断を検出 → north-up へ焼き直し開始"]);
+//    $warpCmd = "$gdalWarp -t_srs EPSG:$sourceEPSG -r bilinear -overwrite "
+//        . "-co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS "
+//        . escapeshellarg($outputFilePath) . " " . escapeshellarg($northUpPath);
+    $warpCmd =
+        "$gdalWarp -t_srs EPSG:$sourceEPSG -dstalpha -r bilinear -overwrite " .
+        "-co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 -wo NUM_THREADS=ALL_CPUS " .
+        escapeshellarg($outputFilePath) . " " . escapeshellarg($northUpPath);
+    exec($warpCmd, $wOut, $wRet);
+    if ($wRet !== 0 || !file_exists($northUpPath)) {
+        logMessage("north-up warp failed: " . implode("\n", (array)$wOut));
+        sendSSE(["error" => "回転解消（gdalwarp）失敗", "details" => implode("\n", (array)$wOut)], "error");
+        exit;
+    }
+    $outputFilePath = $northUpPath;
+    sendSSE(["log" => "north-up 焼き直し完了: $outputFilePath"]);
+}
+
 
 // 座標取得
 sendSSE(["log" => "gdalinfo 実行"]);

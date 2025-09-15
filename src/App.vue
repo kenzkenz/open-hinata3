@@ -2509,6 +2509,7 @@ export default {
     stopSpin: null,
     stopPitch: null,
     showWarpWizard: false,
+    aaa: null,
   }),
   computed: {
     ...mapState([
@@ -3571,28 +3572,79 @@ export default {
     //   this.lastWorldFileText = wld; // 任意：UIで確認
     //   return wld;
     // },
-    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
+    // 受け取りに file を追加
+    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob, file }) {
       // 安全チェック（宇宙行き防止）
       if (cornersLngLat && !this._validCorners(cornersLngLat)) {
         console.warn('invalid corners, abort');
         alert('推定コーナーが不正です。別のGCP配置を試してください。');
         return;
       }
+
       if (kind === 'similarity' || kind === 'affine') {
-        // アフィンのみワールドファイルが正しく表現可能
-        const worldFile = this._worldFileFromAffine(affineM); // 下に実装例あり
-        this.openTileUploadDialog({ blob, worldFile, kind });
+        // ✅ アフィンは「元画像 + ワールドファイル」で登録が正道
+        const worldFile = this._worldFileFromAffine(affineM);
+        this.openTileUploadDialog({
+          kind,
+          fileOriginal: file,   // ← 元ファイルを使う
+          worldFile,
+          // previewBlob: blob, // （任意）プレビュー表示用に保持してもいい
+        });
+
       } else if (kind === 'homography') {
-        // ワールドファイルは使わない。四隅座標で画像ソースとして登録
-        // MapLibre/Mapbox の image source coordinates 順序は [TL, TR, BR, BL]
-        this.openTileUploadDialog({ blob, cornersLngLat, kind });
+        // ホモグラフィはワールドファイル不可
+        if (this.serverSupportsWarp) {
+          // ✅ サーバ側で再サンプリングできるなら「元画像 + H」で渡す
+          this.openTileUploadDialog({
+            kind,
+            fileOriginal: file,
+            H,
+            cornersLngLat, // 参考 or 事前プレビュー用
+          });
+        } else {
+          // フォールバック：クライアントで作ったワープ済み画像を使う
+          this.openTileUploadDialog({ kind, blob, cornersLngLat });
+        }
+
       } else if (kind === 'tps') {
-        // TPSはワールドファイル不可。サーバ側でワーピングするか、
-        // ここで受け取った blob（既にプレビューで変形済みPNG）を
-        // ひとまず四隅で近似配置（精密にはサーバ側ワーピングを推奨）
-        this.openTileUploadDialog({ blob, cornersLngLat, tps, kind });
+        // TPS もワールドファイル不可
+        if (this.serverSupportsWarp) {
+          // ✅ サーバ側で TPS ワープできるなら「元画像 + tps」
+          this.openTileUploadDialog({
+            kind,
+            fileOriginal: file,
+            tps,
+            cornersLngLat, // 表示位置の初期合わせに使える
+          });
+        } else {
+          // フォールバック：クライアント出力を使う
+          this.openTileUploadDialog({ kind, blob, cornersLngLat, tps });
+        }
       }
     },
+
+    // onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
+    //   // 安全チェック（宇宙行き防止）
+    //   if (cornersLngLat && !this._validCorners(cornersLngLat)) {
+    //     console.warn('invalid corners, abort');
+    //     alert('推定コーナーが不正です。別のGCP配置を試してください。');
+    //     return;
+    //   }
+    //   if (kind === 'similarity' || kind === 'affine') {
+    //     // アフィンのみワールドファイルが正しく表現可能
+    //     const worldFile = this._worldFileFromAffine(affineM); // 下に実装例あり
+    //     this.openTileUploadDialog({ blob, worldFile, kind });
+    //   } else if (kind === 'homography') {
+    //     // ワールドファイルは使わない。四隅座標で画像ソースとして登録
+    //     // MapLibre/Mapbox の image source coordinates 順序は [TL, TR, BR, BL]
+    //     this.openTileUploadDialog({ blob, cornersLngLat, kind });
+    //   } else if (kind === 'tps') {
+    //     // TPSはワールドファイル不可。サーバ側でワーピングするか、
+    //     // ここで受け取った blob（既にプレビューで変形済みPNG）を
+    //     // ひとまず四隅で近似配置（精密にはサーバ側ワーピングを推奨）
+    //     this.openTileUploadDialog({ blob, cornersLngLat, tps, kind });
+    //   }
+    // },
     _validCorners(c) {
       if (!Array.isArray(c) || c.length !== 4) return false;
       return c.every(([lng,lat]) =>
@@ -4669,45 +4721,170 @@ export default {
     },
     startTiling () {
       this.transparentType = '1'
-      tileGenerateForUser('png','pgw',true)
+
+      const isJpg = this.$store.state.tiffAndWorldFile.find(f => f.name.includes('jgw'))
+
+      if (isJpg) {
+        tileGenerateForUser('jpg','jgw',true)
+      } else {
+        tileGenerateForUser('png','pgw',true)
+      }
       this.showTileDialog = false
     },
     onImageLoad() {
       this.imageLoaded = true;
       console.log('Image loaded');
     },
-    openTileUploadDialog(affineM, blobFromChild = null) {
-      // 1) PNG Blob を決める（子が渡してきたものを最優先）
-      const makeFromCanvas = () => new Promise((resolve, reject) => {
-        const canvas = document.querySelector('#warp-canvas');
-        if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
-        if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
-      });
+    // 親コンポーネント methods 内に置く
+    openTileUploadDialog(payload) {
+      const {
+        kind,                 // 'similarity' | 'affine' | 'homography' | 'tps'
+        fileOriginal,         // File|Blob （元画像。相似/アフィンで必須）
+        worldFile,            // string     （ワールドファイル本文。相似/アフィンで必須）
+        worldFileName,        // string     （例: image.jgw/pgw/tfw）無ければ推定
+        previewBlob,          // Blob       （ホモ/TPSの高解像結果。あれば優先）
+        cornersLngLat,        // [[lng,lat]×4]  ホモ/ TPS で使用可
+        tps,                  // TPS係数（あればダイアログへ渡す）
+        srs = 3857,           // 既定3857
+        affineM               // 予備（worldFileが無い時だけ最終手段で使う）
+      } = payload || {};
 
-      const ensureBlob = blobFromChild
-          ? Promise.resolve(blobFromChild)
-          : makeFromCanvas(); // フォールバック（将来の互換用）
+      const baseName = this.gazoNameFromStore || this.s_gazoName || 'image';
 
-      ensureBlob.then((blob) => {
-        const baseName = this.gazoNameFromStore || this.s_gazoName || 'converted';
-        const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
+      // ヘルパ
+      const extFromMime = (mime) => {
+        if (!mime) return '.png';
+        if (mime.includes('jpeg')) return '.jpg';
+        if (mime.includes('png'))  return '.png';
+        if (mime.includes('tiff')) return '.tif';
+        return '.png';
+      };
+      const inferWorldExtByName = (name='') => {
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        if (ext === 'png') return 'pgw';
+        if (ext === 'tif' || ext === 'tiff') return 'tfw';
+        return 'jgw'; // jpgなど
+      };
 
-        // 2) ワールドファイルは affineM から生成（引数必須）
-        const worldFileContent = this.generateWorldFile(affineM);
-        if (!worldFileContent) throw new Error('World file generation failed');
-        const worldFile = new File([worldFileContent], `${baseName}.pgw`, { type: 'text/plain' });
+      // File の体裁を保証
+      const asFile = (blobOrFile, nameFallback) => {
+        if (!blobOrFile) return null;
+        if (blobOrFile instanceof File) return blobOrFile;
+        const ext = extFromMime(blobOrFile.type);
+        return new File([blobOrFile], `${nameFallback}${ext}`, { type: blobOrFile.type || 'application/octet-stream' });
+      };
 
-        // 3) store に保存してダイアログを開く
-        this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
+      // ========= 相似 / アフィン：元画像 + ワールドファイル =========
+      if (kind === 'similarity' || kind === 'affine') {
+        let imgFile = asFile(fileOriginal, baseName);
+        if (!imgFile) {
+          console.error('openTileUploadDialog: fileOriginal is required for affine/similarity');
+          return;
+        }
+
+        // ワールドファイル本文を優先的に使う（子で計算済みの値が最も厳密）
+        let wldText = worldFile;
+        if (!wldText && affineM && typeof this.generateWorldFile === 'function') {
+          // 予備：どうしても無い場合のみ再生成（精度は子計算品に劣る可能性）
+          wldText = this.generateWorldFile(affineM);
+        }
+        if (!wldText) {
+          console.error('openTileUploadDialog: worldFile (text) is required for affine/similarity');
+          return;
+        }
+
+        const wldName = worldFileName || `${baseName}.${inferWorldExtByName(imgFile.name)}`;
+        const wldFile = new File([wldText], wldName, { type: 'text/plain' });
+
+        // ストア/ダイアログへ（既存の受け口に合わせて）
+        this.$store.commit('setTiffAndWorldFile', [imgFile, wldFile]);
+
         this.showTileDialog = true;
-        // デバッグ
-        console.log('World File Content:', worldFileContent);
-        console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name });
-      }).catch(err => {
-        console.error('openTileUploadDialog failed:', err);
-      });
+        return;
+      }
+
+      // ========= ホモグラフィ / TPS =========
+      // 画像は「高解像の previewBlob を最優先」。無ければ元画像で近似（四隅表示）も可。
+      if (kind === 'homography' || kind === 'tps') {
+        // 1) 使う画像を決める
+        let chosen = previewBlob || fileOriginal;
+        const fallbackFromCanvas = () => new Promise((resolve, reject) => {
+          const canvas = document.querySelector('#warp-canvas');
+          if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
+          if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+        });
+
+        const ensure = chosen
+            ? Promise.resolve(chosen)
+            : fallbackFromCanvas(); // 最後の手段（ボケ得るので基本使わない）
+
+        ensure.then((blobOrFile) => {
+          const name = `${baseName}-${kind}.png`;
+          const imgFile = (blobOrFile instanceof File)
+              ? blobOrFile
+              : new File([blobOrFile], name, { type: 'image/png' });
+
+          // ストアへ「角座標/方式/SRS/オプション」をまとめて渡す（ダイアログが解釈）
+          this.$store.commit('setWarpPreviewAndCorners', {
+            imageFile: imgFile,
+            kind,
+            cornersLngLat: cornersLngLat || null,
+            srs,
+            tps: tps || null,
+          });
+          this.showTileDialog = true;
+        }).catch(err => {
+          console.error('openTileUploadDialog (homography/tps) failed:', err);
+        });
+
+        return;
+      }
+
+      console.warn('openTileUploadDialog: unknown kind', kind);
     },
+
+    // openTileUploadDialog(affineM, blobFromChild = null) {
+    //   // 1) PNG Blob を決める（子が渡してきたものを最優先）
+    //   const makeFromCanvas = () => new Promise((resolve, reject) => {
+    //     const canvas = document.querySelector('#warp-canvas');
+    //     if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
+    //     if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
+    //     canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+    //   });
+    //
+    //   const ensureBlob = blobFromChild
+    //       ? Promise.resolve(blobFromChild)
+    //       : makeFromCanvas(); // フォールバック（将来の互換用）
+    //
+    //   ensureBlob.then((blob) => {
+    //     const baseName = this.s_gazoName || 'converted';
+    //     /**
+    //      * blobから実ファイルに差し替え
+    //      */
+    //     // const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
+    //     const convertedImage = this.pendingFile
+    //     // 2) ワールドファイルは affineM から生成（引数必須）
+    //     const worldFileContent = this.generateWorldFile(affineM);
+    //     console.log(worldFileContent);
+    //     if (!worldFileContent) throw new Error('World file generation failed');
+    //     /**
+    //      * .pgwをjgwに変更
+    //      */
+    //     const worldFile = new File([worldFileContent], `${baseName}.jgw`, { type: 'text/plain' });
+    //
+    //     // 3) store に保存してダイアログを開く
+    //     this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
+    //     this.showTileDialog = true;
+    //     // デバッグ
+    //     console.log('World File Content:', worldFileContent);
+    //     console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name });
+    //   }).catch(err => {
+    //     console.error('openTileUploadDialog failed:', err);
+    //   });
+    // },
+
+
     clearWarp() {
       this.showOriginal = true;
       this.showWarpCanvas = false;
@@ -9467,6 +9644,7 @@ export default {
                         this.showWarpWizard = true;
                         this.s_gazoName = fileName.split('.')[0]
                         this.pendingFile = file;   // or this.pendingUrl = droppedUrl;
+                        this.aaa = file
                         this.wizardOpen  = true;
                         this.$store.dispatch('showFloatingWindow', 'warp-wizard');
                       };

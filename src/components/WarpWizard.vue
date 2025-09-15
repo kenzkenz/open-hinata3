@@ -13,10 +13,10 @@
           </v-btn>
         </MiniTooltip>
 
-        <!-- アイコン化: アップロード -->
+        <!-- アイコン化: アップロード（高解像で出力） -->
         <MiniTooltip text="アップロード" :offset-x="0" :offset-y="0">
           <v-btn icon variant="text"
-                 :disabled="!(affineM || H || tps)"
+                 :disabled="!(affineM || tps)"
                  @click="confirm" :title="'アップロード'">
             <v-icon>mdi-cloud-upload</v-icon>
           </v-btn>
@@ -61,7 +61,7 @@
           </v-btn>
         </MiniTooltip>
 
-        <!-- ※ この先（2点厳密ボタン／チップ類）は表示しない -->
+        <!-- ※ この先（2点厳密ボタン／各種チップ）は表示しない -->
       </div>
     </div>
 
@@ -118,7 +118,9 @@
               </div>
             </div>
           </div>
-          <p style="margin-left: 20px; margin-bottom: 10px;">最低2点、上記画像と地図をクリックしてください。 </p>
+          <p style="margin-left: 20px; margin-bottom: 10px;">
+            最低2点、上記画像と地図をクリックしてください。
+          </p>
         </div>
       </div>
     </div>
@@ -128,14 +130,14 @@
 <script>
 // ======== 幾何ユーティリティ ========
 function lngLatToMerc([lng, lat]){
-  const x = lng * 20037508.34 / 180;
-  const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
-  const yMeters = y * 20037508.34 / 180;
-  return [x, yMeters];
+  const x = (lng * 20037508.34) / 180;
+  const ydeg = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+  const y = (ydeg * 20037508.34) / 180;
+  return [x, y];
 }
 function mercToLngLat([X, Y]){
-  const lng = X * 180 / 20037508.34;
-  const ydeg = Y * 180 / 20037508.34;
+  const lng = (X * 180) / 20037508.34;
+  const ydeg = (Y * 180) / 20037508.34;
   const lat = (Math.atan(Math.exp(ydeg * Math.PI/180)) * 360/Math.PI) - 90;
   return [lng, lat];
 }
@@ -149,63 +151,84 @@ function naturalToCss([x, y], img){
   const sy = (img.clientHeight || img.naturalHeight) / img.naturalHeight;
   return [x * sx, y * sy];
 }
+// --- 2点相似（近似）
 function fitSimilarity2P(srcPts, dstPts){
   const [x1,y1] = srcPts[0], [x2,y2] = srcPts[1];
   const [X1,Y1] = dstPts[0], [X2,Y2] = dstPts[1];
-  const dxs = x2 - x1, dys = y2 - y1; const dxt = X2 - X1, dyt = Y2 - Y1;
-  const ds = Math.hypot(dxs, dys) || 1; const dt = Math.hypot(dxt, dyt) || 1;
-  const s  = dt / ds; const th = Math.atan2(dyt, dxt) - Math.atan2(dys, dxs);
-  const cos = Math.cos(th), sin = Math.sin(th);
-  const A = s *  cos, B = s * (-sin); const D = s *  sin, E = s *   cos;
-  const C = X1 - (A * x1 + B * y1);   const F = Y1 - (D * x1 + E * y1);
+  const dxs = x2 - x1, dys = y2 - y1;
+  const dxt = X2 - X1, dyt = Y2 - Y1;
+  const ds = Math.hypot(dxs, dys) || 1;
+  const dt = Math.hypot(dxt, dyt) || 1;
+  const s  = dt / ds;
+  const th = Math.atan2(dyt, dxt) - Math.atan2(dys, dxs);
+  const c = Math.cos(th), s_ = Math.sin(th);
+  const A = s *  c, B = s * (-s_);
+  const D = s *  s_, E = s *   c;
+  const C = X1 - (A * x1 + B * y1);
+  const F = Y1 - (D * x1 + E * y1);
   return [A,B,C,D,E,F];
 }
-// ★ 厳密2点（“ビシッ”）: 2点を完全一致させる相似
+// --- 2点相似（厳密 “ビシッ”）
 function fitSimilarity2PExact(srcPts, dstPts){
   const [x1,y1] = srcPts[0], [x2,y2] = srcPts[1];
   const [X1,Y1] = dstPts[0], [X2,Y2] = dstPts[1];
-  const vsx = x2 - x1, vsy = y2 - y1; const vdx = X2 - X1, vdy = Y2 - Y1;
-  const ds = Math.hypot(vsx, vsy) || 1e-12; const dt = Math.hypot(vdx, vdy) || 1e-12;
-  const s  = dt / ds; const th = Math.atan2(vdy, vdx) - Math.atan2(vsy, vsx);
-  const cos = Math.cos(th), sin = Math.sin(th);
-  const A = s*cos, B = -s*sin, D = s*sin, E = s*cos;
+  const vsx = x2 - x1, vsy = y2 - y1;
+  const vdx = X2 - X1, vdy = Y2 - Y1;
+  const ds = Math.hypot(vsx, vsy) || 1e-12;
+  const dt = Math.hypot(vdx, vdy) || 1e-12;
+  const s  = dt / ds;
+  const th = Math.atan2(vdy, vdx) - Math.atan2(vsy, vsx);
+  const c = Math.cos(th), s_ = Math.sin(th);
+  const A = s*c, B = -s*s_, D = s*s_, E = s*c;
   const C = X1 - (A*x1 + B*y1);
   const F = Y1 - (D*x1 + E*y1);
   return [A,B,C,D,E,F];
 }
+// --- アフィン（ロバスト最小二乗）
 function fitAffineN(srcPts, dstPts, w){
   const n = srcPts.length; const M = 6;
   const A = Array.from({length:M},()=>Array(M).fill(0));
   const b = Array(M).fill(0);
   for(let i=0;i<n;i++){
-    const wi = w? w[i] : 1; const [x,y] = srcPts[i]; const [X,Y] = dstPts[i];
+    const wi = w ? w[i] : 1;
+    const [x,y] = srcPts[i]; const [X,Y] = dstPts[i];
     const rowX = [x, y, 1, 0, 0, 0].map(v=>wi*v);
     const rowY = [0, 0, 0, x, y, 1].map(v=>wi*v);
     for(let j=0;j<M;j++){
-      for(let k=0;k<M;k++) A[j][k] += rowX[j]*rowX[k] + rowY[j]*rowY[k];
+      for(let k=0;k<M;k++){
+        A[j][k] += rowX[j]*rowX[k] + rowY[j]*rowY[k];
+      }
       b[j] += rowX[j]*X + rowY[j]*Y;
     }
   }
+  // ガウス消去
   const x = b.slice(); const N=A.length; const B=A.map(r=>r.slice());
   for(let i=0;i<N;i++){
-    let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r }
-    if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]] }
+    let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r; }
+    if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]]; }
     const diag = B[i][i] || 1e-12;
     for(let j=i+1;j<N;j++){
-      const f = B[j][i]/diag; for(let k=i;k<N;k++) B[j][k]-=f*B[i][k]; x[j]-=f*x[i];
+      const f = B[j][i]/diag;
+      for(let k=i;k<N;k++) B[j][k] -= f*B[i][k];
+      x[j] -= f*x[i];
     }
   }
-  for(let i=N-1;i>=0;i--){ let s=0; for(let j=i+1;j<N;j++) s+=B[i][j]*x[j]; x[i]=(x[i]-s)/(B[i][i]||1e-12); }
+  for(let i=N-1;i>=0;i--){
+    let s=0; for(let j=i+1;j<N;j++) s += B[i][j]*x[j];
+    x[i] = (x[i] - s)/(B[i][i] || 1e-12);
+  }
   return x; // [A,B,C,D,E,F]
 }
 function huberWeights(res, delta){ return res.map(r => { const a=Math.abs(r); return a<=delta ? 1 : (delta/a); }); }
-function median(arr){ const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2 }
+function median(arr){ const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
 function fitAffineRobust(srcPts, dstPts, iters=3){
   let w = Array(srcPts.length).fill(1);
   let coeff = fitAffineN(srcPts, dstPts, w);
   for(let t=0;t<iters;t++){
     const res = srcPts.map(([x,y],i)=>{
-      const [A,B,C,D,E,F] = coeff; const Xp=A*x+B*y+C, Yp=D*x+E*y+F; const [X,Y]=dstPts[i];
+      const [A,B,C,D,E,F] = coeff;
+      const Xp=A*x+B*y+C, Yp=D*x+E*y+F;
+      const [X,Y]=dstPts[i];
       return Math.hypot(Xp-X, Yp-Y);
     });
     w = huberWeights(res, Math.max(1, 1.4826*median(res)));
@@ -213,11 +236,26 @@ function fitAffineRobust(srcPts, dstPts, iters=3){
   }
   return coeff;
 }
-function applyAffine([A,B,C,D,E,F],[x,y]){ return [A*x+B*y+C, D*x+E*y+F] }
+function applyAffine([A,B,C,D,E,F],[x,y]){ return [A*x + B*y + C, D*x + E*y + F]; }
 function composeAffine([A1,B1,C1,D1,E1,F1],[A2,B2,C2,D2,E2,F2]){
-  const A = A1*A2 + B1*D2; const B = A1*B2 + B1*E2; const C = A1*C2 + B1*F2 + C1;
-  const D = D1*A2 + E1*D2; const E = D1*B2 + E1*E2; const F = D1*C2 + E1*F2 + F1; return [A,B,C,D,E,F];
+  const A = A1*A2 + B1*D2;
+  const B = A1*B2 + B1*E2;
+  const C = A1*C2 + B1*F2 + C1;
+  const D = D1*A2 + E1*D2;
+  const E = D1*B2 + E1*E2;
+  const F = D1*C2 + E1*F2 + F1;
+  return [A,B,C,D,E,F];
 }
+function worldFileFromAffine([A,B,C,D,E,F]){
+  return `${A}
+${D}
+${B}
+${E}
+${C}
+${F}`;
+}
+
+// ---- プレビュー（アフィン／相似）
 function previewOnCanvas(vm, img, canvas, M, clipNat=null){
   const ctx = canvas.getContext('2d');
   const w = img.naturalWidth, h = img.naturalHeight;
@@ -227,13 +265,14 @@ function previewOnCanvas(vm, img, canvas, M, clipNat=null){
   const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
   const ch = Math.max(1, img.clientHeight || img.naturalHeight);
   canvas.width  = cw; canvas.height = ch;
-  const W = Math.max(1, maxX - minX); const Hh = Math.max(1, maxY - minY);
+  const W = Math.max(1, maxX - minX);
+  const Hh = Math.max(1, maxY - minY);
   const s = Math.min(cw / W, ch / Hh);
   const T = [ s, 0, -minX * s, 0, -s,  maxY * s ]; // world -> canvas
   const Mv = composeAffine(T, M); // natural -> canvas
   const [A,B,C,D,E,F] = Mv;
 
-  // ▼ 可視化のためのクロージャを保存
+  // ▼ 可視化用クロージャ
   vm.viewImgToCanvas = (p) => applyAffine(Mv, p);
   vm.viewMapToCanvas = (XY) => applyAffine(T, XY);
 
@@ -259,213 +298,47 @@ function previewOnCanvas(vm, img, canvas, M, clipNat=null){
 
   if (clipped) ctx.restore();
 
-  // マーカーの再描画（残差が見えるように）
   vm.$nextTick(vm.redrawMarkers);
 }
-function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}
-${D}
-${B}
-${E}
-${C}
-${F}`; }
 
-/* ======== 射影（ホモグラフィ）ユーティリティ ======== */
-function mat33Mul(A,B){
-  return [
-    [A[0][0]*B[0][0]+A[0][1]*B[1][0]+A[0][2]*B[2][0],
-      A[0][0]*B[0][1]+A[0][1]*B[1][1]+A[0][2]*B[2][1],
-      A[0][0]*B[0][2]+A[0][1]*B[1][2]+A[0][2]*B[2][2]],
-    [A[1][0]*B[0][0]+A[1][1]*B[1][0]+A[1][2]*B[2][0],
-      A[1][0]*B[0][1]+A[1][1]*B[1][1]+A[1][2]*B[2][1],
-      A[1][0]*B[0][2]+A[1][1]*B[1][2]+A[1][2]*B[2][2]],
-    [A[2][0]*B[0][0]+A[2][1]*B[1][0]+A[2][2]*B[2][0],
-      A[2][0]*B[0][1]+A[2][1]*B[1][1]+A[2][2]*B[2][1],
-      A[2][0]*B[0][2]+A[2][1]*B[1][2]+A[2][2]*B[2][2]],
-  ];
-}
-function mat33InvAffine(M){
-  const a=M[0][0], b=M[0][1], c=M[0][2];
-  const d=M[1][0], e=M[1][1], f=M[1][2];
-  const det = a*e - b*d || 1e-12;
-  return [
-    [ e/det, -b/det, (b*f - e*c)/det ],
-    [ -d/det, a/det, (d*c - a*f)/det ],
-    [ 0, 0, 1 ],
-  ];
-}
-function triMatrix(p0,p1,p2){
-  return [
-    [p1[0]-p0[0], p2[0]-p0[0], p0[0]],
-    [p1[1]-p0[1], p2[1]-p0[1], p0[1]],
-    [0,0,1],
-  ];
-}
-function affineFromTriangles(srcTri, dstTri){
-  const Ms = triMatrix(srcTri[0], srcTri[1], srcTri[2]);
-  const Md = triMatrix(dstTri[0], dstTri[1], dstTri[2]);
-  const T = mat33Mul(Md, mat33InvAffine(Ms));
-  return [T[0][0], T[1][0], T[0][1], T[1][1], T[0][2], T[1][2]];
-}
-function applyHomography(H, [x,y]){
-  const X = H[0][0]*x + H[0][1]*y + H[0][2];
-  const Y = H[1][0]*x + H[1][1]*y + H[1][2];
-  const W = H[2][0]*x + H[2][1]*y + H[2][2];
-  const iw = W ? (1/W) : 1e-12;
-  return [X*iw, Y*iw];
-}
-function estimateHomographyLinear(srcPts, dstPts, w){
-  const n = srcPts.length;
-  const A = []; const B=[];
-  for(let i=0;i<n;i++){
-    const wi = w ? w[i] : 1;
-    const [x,y] = srcPts[i];
-    const [X,Y] = dstPts[i];
-    A.push([wi*x, wi*y, wi*1, 0,0,0, wi*(-x*X), wi*(-y*X)]); B.push(wi*X);
-    A.push([0,0,0, wi*x, wi*y, wi*1, wi*(-x*Y), wi*(-y*Y)]); B.push(wi*Y);
-  }
-  const m = 8;
-  const ATA = Array.from({length:m},()=>Array(m).fill(0));
-  const ATb = Array(m).fill(0);
-  for(let r=0;r<A.length;r++){
-    const row = A[r];
-    for(let i=0;i<m;i++){
-      ATb[i]+= row[i]*B[r];
-      for(let j=0;j<m;j++) ATA[i][j]+= row[i]*row[j];
-    }
-  }
-  const N = m; const M=ATA.map(r=>r.slice()); const b=ATb.slice();
-  for(let i=0;i<N;i++){
-    let p=i; for(let r=i+1;r<N;r++) if(Math.abs(M[r][i])>Math.abs(M[p][i])) p=r;
-    if(p!==i){ [M[i],M[p]]=[M[p],M[i]]; [b[i],b[p]]=[b[p],b[i]]; }
+// ======== TPS utilities（必要最小限） ========
+function solveLinear(A, b) {
+  const N = A.length;
+  const M = A.map((r) => r.slice());
+  const x = b.slice();
+  for (let i = 0; i < N; i++) {
+    let p = i;
+    for (let r = i + 1; r < N; r++) if (Math.abs(M[r][i]) > Math.abs(M[p][i])) p = r;
+    if (p !== i) { [M[i], M[p]] = [M[p], M[i]]; [x[i], x[p]] = [x[p], x[i]]; }
     const diag = M[i][i] || 1e-12;
-    for(let r=i+1;r<N;r++){
-      const f = M[r][i]/diag;
-      for(let c=i;c<N;c++) M[r][c]-=f*M[i][c];
-      b[r]-=f*b[i];
+    for (let j = i + 1; j < N; j++) {
+      const f = M[j][i] / diag;
+      for (let k = i; k < N; k++) M[j][k] -= f * M[i][k];
+      x[j] -= f * x[i];
     }
   }
-  const x = new Array(N).fill(0);
-  for(let i=N-1;i>=0;i--){
-    let s=0; for(let c=i+1;c<N;c++) s+=M[i][c]*x[c];
-    x[i] = (b[i]-s)/(M[i][i]||1e-12);
+  for (let i = N - 1; i >= 0; i--) {
+    let s = 0; for (let j = i + 1; j < N; j++) s += M[i][j] * x[j];
+    x[i] = (x[i] - s) / (M[i][i] || 1e-12);
   }
-  return [
-    [x[0], x[1], x[2]],
-    [x[3], x[4], x[5]],
-    [x[6], x[7], 1   ],
-  ];
+  return x;
 }
-function estimateHomographyRobust(srcPts, dstPts, iters=3){
-  let w = new Array(srcPts.length).fill(1);
-  let H = estimateHomographyLinear(srcPts, dstPts, w);
-  for(let t=0;t<iters;t++){
-    const res = srcPts.map((p,i)=>{
-      const q = applyHomography(H, p);
-      const d = dstPts[i];
-      return Math.hypot(q[0]-d[0], q[1]-d[1]);
-    });
-    const med = median(res);
-    const delta = Math.max(1, 1.4826*med);
-    w = res.map(r => { const a=Math.abs(r); return a<=delta ? 1 : (delta/a); });
-    H = estimateHomographyLinear(srcPts, dstPts, w);
-  }
-  return H;
-}
-function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24, clipNat=null){
-  const ctx = canvas.getContext('2d');
-  const W = img.naturalWidth, Himg = img.naturalHeight;
-  const corners = [[0,0],[W,0],[W,Himg],[0,Himg]].map(p => applyHomography(H, p));
-  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
-  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-  const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
-  const ch = Math.max(1, img.clientHeight || img.naturalHeight);
-  canvas.width=cw; canvas.height=ch;
-  const spanX = Math.max(1, maxX-minX), spanY = Math.max(1, maxY-minY);
-  const s = Math.min(cw/spanX, ch/spanY);
-  const Tfit = [ [ s, 0, -minX*s ], [ 0,-s,  maxY*s ], [ 0, 0, 1 ], ]; // world -> canvas
-  const Hc = mat33Mul(Tfit, H); // natural -> canvas
-
-  // ▼ 可視化用クロージャ
-  vm.viewImgToCanvas = (p) => applyHomography(Hc, p);
-  vm.viewMapToCanvas = (XY) => applyAffine([Tfit[0][0],Tfit[1][0],Tfit[0][2],Tfit[1][0],Tfit[1][1],Tfit[1][2]], XY); // applyAffine形式で
-  // 上の1行は applyAffine 形式に合わせて展開（A,B,C,D,E,F）
-  vm.viewMapToCanvas = (XY) => {
-    const A = Tfit[0][0], B = Tfit[0][1], C = Tfit[0][2];
-    const D = Tfit[1][0], E = Tfit[1][1], F = Tfit[1][2];
-    return applyAffine([A,B,C,D,E,F], XY);
-  };
-
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,cw,ch);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-
-  let clipped = false;
-  if (clipNat && clipNat.length >= 3){
-    ctx.save();
-    ctx.beginPath();
-    clipNat.forEach((p,i)=>{
-      const [cx,cy] = applyHomography(Hc, p);
-      if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
-    });
-    ctx.closePath();
-    ctx.clip();
-    clipped = true;
-  }
-
-  const nx = mesh, ny = mesh;
-  const sx = W/nx, sy = Himg/ny;
-  for(let j=0;j<ny;j++){
-    for(let i=0;i<nx;i++){
-      const x0 = i*sx,  y0 = j*sy;
-      const x1 = (i+1)*sx, y1 = (j+1)*sy;
-      const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
-      const d00=applyHomography(Hc, s00);
-      const d10=applyHomography(Hc, s10);
-      const d11=applyHomography(Hc, s11);
-      const d01=applyHomography(Hc, s01);
-      drawTri(ctx, img, [s00,s10,s11], [d00,d10,d11]);
-      drawTri(ctx, img, [s00,s11,s01], [d00,d11,d01]);
-    }
-  }
-  function drawTri(ctx, img, srcTri, dstTri){
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(dstTri[0][0], dstTri[0][1]);
-    ctx.lineTo(dstTri[1][0], dstTri[1][1]);
-    ctx.lineTo(dstTri[2][0], dstTri[2][1]);
-    ctx.closePath();
-    ctx.clip();
-    const [a,b,c,d,e,f] = affineFromTriangles(srcTri, dstTri);
-    ctx.setTransform(a,b,c,d,e,f);
-    ctx.drawImage(img, 0, 0);
-    ctx.restore();
-  }
-
-  if (clipped) ctx.restore();
-
-  vm.$nextTick(vm.redrawMarkers);
-}
-
-// ======== TPS utilities ========
 function fitTPS(srcPts, dstPts) {
-  const n = srcPts.length;
-  const m = n + 3;
-  function U(r) { return r > 0 ? r * r * Math.log(r * r) : 0; }
+  const n = srcPts.length, m = n + 3;
+  const U = (r) => (r > 0 ? r * r * Math.log(r * r) : 0);
   const L = Array.from({length: m}, () => Array(m).fill(0));
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
       const dx = srcPts[i][0] - srcPts[j][0];
       const dy = srcPts[i][1] - srcPts[j][1];
-      const r = Math.hypot(dx, dy);
-      L[i][j] = U(r);
+      L[i][j] = U(Math.hypot(dx, dy));
     }
     L[i][n] = 1;
     L[i][n + 1] = srcPts[i][0];
     L[i][n + 2] = srcPts[i][1];
   }
   for (let j = 0; j < n; j++) {
-    L[n][j] = 1;
+    L[n][j]     = 1;
     L[n + 1][j] = srcPts[j][0];
     L[n + 2][j] = srcPts[j][1];
   }
@@ -475,27 +348,6 @@ function fitTPS(srcPts, dstPts) {
   const wy = solveLinear(L, by);
   return { wx, wy, srcPts };
 }
-function solveLinear(A, b) {
-  const N = A.length;
-  const M = A.map((r) => r.slice());
-  const x = b.slice();
-  for (let i = 0; i < N; i++) {
-    let p = i;
-    for (let r = i + 1; r < N; r++) { if (Math.abs(M[r][i]) > Math.abs(M[p][i])) p = r; }
-    if (p !== i) { [M[i], M[p]] = [M[p], M[i]]; [x[i], x[p]] = [x[p], x[i]]; }
-    const diag = M[i][i] || 1e-12;
-    for (let j = i + 1; j < N; j++) {
-      const f = M[j][i] / diag;
-      for (let k = i; k < N; k++) { M[j][k] -= f * M[i][k]; }
-      x[j] -= f * x[i];
-    }
-  }
-  for (let i = N - 1; i >= 0; i--) {
-    let s = 0; for (let j = i + 1; j < N; j++) { s += M[i][j] * x[j]; }
-    x[i] = (x[i] - s) / (M[i][i] || 1e-12);
-  }
-  return x;
-}
 function applyTPS(tps, [x, y]) {
   const { wx, wy, srcPts } = tps;
   const n = srcPts.length;
@@ -504,8 +356,8 @@ function applyTPS(tps, [x, y]) {
   for (let i = 0; i < n; i++) {
     const dx = x - srcPts[i][0];
     const dy = y - srcPts[i][1];
-    const r = Math.hypot(dx, dy);
-    const u = r > 0 ? r * r * Math.log(r * r) : 0;
+    const r2 = dx*dx + dy*dy;
+    const u = r2 > 0 ? r2 * Math.log(r2) : 0;
     X += wx[i] * u; Y += wy[i] * u;
   }
   return [X, Y];
@@ -513,63 +365,77 @@ function applyTPS(tps, [x, y]) {
 function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
   const ctx = canvas.getContext('2d');
   const W = img.naturalWidth, Himg = img.naturalHeight;
-  const corners = [[0, 0], [W, 0], [W, Himg], [0, Himg]].map((p) => applyTPS(tps, [p[0], -p[1]]));
-  const xs = corners.map((p) => p[0]), ys = corners.map((p) => p[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-  const cw = Math.max(1, img.clientWidth || img.naturalWidth);
+
+  // world bounds
+  const corners = [[0,0],[W,0],[W,Himg],[0,Himg]].map((p)=>applyTPS(tps,[p[0],-p[1]]));
+  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+
+  const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
   const ch = Math.max(1, img.clientHeight || img.naturalHeight);
   canvas.width = cw; canvas.height = ch;
-  const spanX = Math.max(1, maxX - minX), spanY = Math.max(1, maxY - minY);
-  const s = Math.min(cw / spanX, ch / spanY);
-  function applyViewTransform([X, Y]) { return [s * (X - minX), s * (maxY - Y)]; }
 
-  // ▼ 可視化用クロージャ
-  vm.viewImgToCanvas = (p) => applyViewTransform(applyTPS(tps, [p[0], -p[1]]));
-  vm.viewMapToCanvas = (XY) => applyViewTransform(XY);
+  const spanX = Math.max(1, maxX-minX), spanY = Math.max(1, maxY-minY);
+  const s = Math.min(cw/spanX, ch/spanY);
+  const view = ([X,Y]) => [ s*(X-minX), s*(maxY-Y) ];
+
+  // プレビュー座標系クロージャ
+  vm.viewImgToCanvas = (p) => view(applyTPS(tps,[p[0],-p[1]]));
+  vm.viewMapToCanvas = (XY) => view(XY);
 
   ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0, 0, cw, ch);
+  ctx.clearRect(0,0,cw,ch);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
-  let clipped = false;
+  // クリップ
+  let clipped=false;
   if (clipNat && clipNat.length >= 3){
-    // TPS の境界は曲がるのでエッジを細分化して近似
-    const q = clipNat.length === 4 ? clipNat : [...clipNat];
-    const edges = [ [q[0],q[1]], [q[1],q[2]], [q[2],q[3]||q[0]], [q[3]||q[0],q[0]] ];
-    const pts = [];
-    const N = 24;
+    const q = clipNat.slice();
+    // TPSはエッジが曲がるので細分化
+    const edges = [[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]];
+    const pts=[]; const N=24;
     edges.forEach(([p0,p1])=>{
       if(!p0 || !p1) return;
       for(let i=0;i<=N;i++){
-        const t = i/N; const x = p0[0]*(1-t)+p1[0]*t; const y = p0[1]*(1-t)+p1[1]*t;
-        const [wx,wy] = applyTPS(tps, [x, -y]);
-        pts.push(applyViewTransform([wx,wy]));
+        const t=i/N;
+        const x=p0[0]*(1-t)+p1[0]*t, y=p0[1]*(1-t)+p1[1]*t;
+        pts.push(view(applyTPS(tps,[x,-y])));
       }
     });
-    ctx.save();
-    ctx.beginPath();
+    ctx.save(); ctx.beginPath();
     pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
-    ctx.closePath();
-    ctx.clip();
-    clipped = true;
+    ctx.closePath(); ctx.clip(); clipped=true;
   }
 
-  const nx = mesh, ny = mesh;
-  const sx = W / nx, sy = Himg / ny;
-  for (let j = 0; j < ny; j++) {
-    for (let i = 0; i < nx; i++) {
-      const x0 = i * sx, y0 = j * sy;
-      const x1 = (i + 1) * sx, y1 = (j + 1) * sy;
-      const s00 = [x0, y0], s10 = [x1, y0], s11 = [x1, y1], s01 = [x0, y1];
-      const d00 = applyViewTransform(applyTPS(tps, [x0, -y0]));
-      const d10 = applyViewTransform(applyTPS(tps, [x1, -y0]));
-      const d11 = applyViewTransform(applyTPS(tps, [x1, -y1]));
-      const d01 = applyViewTransform(applyTPS(tps, [x0, -y1]));
-      drawTri(ctx, img, [s00, s10, s11], [d00, d10, d11]);
-      drawTri(ctx, img, [s00, s11, s01], [d00, d11, d01]);
+  // メッシュスキャンで変形描画
+  const nx=mesh, ny=mesh;
+  const sx=W/nx, sy=Himg/ny;
+  for(let j=0;j<ny;j++){
+    for(let i=0;i<nx;i++){
+      const x0=i*sx, y0=j*sy, x1=(i+1)*sx, y1=(j+1)*sy;
+      const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
+      const d00=view(applyTPS(tps,[x0,-y0]));
+      const d10=view(applyTPS(tps,[x1,-y0]));
+      const d11=view(applyTPS(tps,[x1,-y1]));
+      const d01=view(applyTPS(tps,[x0,-y1]));
+      drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
+      drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
     }
   }
-  function drawTri(ctx, img, srcTri, dstTri){
+  function affineFromTriangles(srcTri, dstTri){
+    const p0=srcTri[0], p1=srcTri[1], p2=srcTri[2];
+    const q0=dstTri[0], q1=dstTri[1], q2=dstTri[2];
+    const a = p1[0]-p0[0], b = p2[0]-p0[0], c = p1[1]-p0[1], d = p2[1]-p0[1];
+    const det = a*d - b*c || 1e-12;
+    const A = ( (q1[0]-q0[0])*d - (q2[0]-q0[0])*c )/det;
+    const B = (-(q1[0]-q0[0])*b + (q2[0]-q0[0])*a )/det;
+    const D = ( (q1[1]-q0[1])*d - (q2[1]-q0[1])*c )/det;
+    const E = (-(q1[1]-q0[1])*b + (q2[1]-q0[1])*a )/det;
+    const C = q0[0] - A*p0[0] - B*p0[1];
+    const F = q0[1] - D*p0[0] - E*p0[1];
+    return [A,B,C,D,E,F];
+  }
+  function drawTri(ctx,img,srcTri,dstTri){
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(dstTri[0][0], dstTri[0][1]);
@@ -577,43 +443,38 @@ function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
     ctx.lineTo(dstTri[2][0], dstTri[2][1]);
     ctx.closePath();
     ctx.clip();
-    const [a,b,c,d,e,f] = affineFromTriangles(srcTri, dstTri);
-    ctx.setTransform(a,b,c,d,e,f);
+    const [a,b,c,d,e,f] = affineFromTriangles(srcTri,dstTri);
+    ctx.setTransform(a,d,b,e,c,f);
     ctx.drawImage(img, 0, 0);
     ctx.restore();
   }
 
   if (clipped) ctx.restore();
-
   vm.$nextTick(vm.redrawMarkers);
 }
 
-// ======== ここから SFC ========
-import MiniTooltip from '@/components/MiniTooltip'
+import MiniTooltip from '@/components/MiniTooltip';
 
 export default {
   name: 'WarpWizard',
-  components: {
-    MiniTooltip
-  },
+  components: { MiniTooltip },
   props: {
     modelValue: { type:Boolean, default: true },
     open:       { type:Boolean, default: undefined },
-    mapName: { type:String, default:'map01' },
-    item:    { type:Object, default: () => ({ id:'warp', label:'Warp Wizard' }) },
-    gcpList: { type:Array,  default: () => [] },
-    file:    { type:[File,Blob], default:null },
-    url:     { type:String, default:'' },
-    stacked: { type:Boolean, default:true },
+    mapName:    { type:String,  default:'map01' },
+    item:       { type:Object,  default: () => ({ id:'warp', label:'Warp Wizard' }) },
+    gcpList:    { type:Array,   default: () => [] },
+    file:       { type:[File,Blob], default:null },
+    url:        { type:String,  default:'' },
+    stacked:    { type:Boolean, default:true },
   },
   emits: ['update:gcpList','confirm','close','update:modelValue','update:open','clear-map-markers'],
   data(){
     return {
       imgUrl: null,
-      affineM: null,   // 2x3（相似/アフィン用；natural→3857）
-      H: null,         // 3x3（ホモグラフィ；natural→3857）
-      tps: null,
-      // ▼ プレビュー座標系へのヘルパ（可視化/残差表示用）
+      affineM: null,  // 2x3 natural(px up向き→3857)
+      tps: null,      // TPS
+      // ▼ プレビュー座標系ヘルパ
       viewImgToCanvas: null,
       viewMapToCanvas: null,
       grid: true,
@@ -627,148 +488,688 @@ export default {
       panning: false,
       panStart: { x: 0, y: 0 },
       panAtStart: { x: 0, y: 0 },
-      // ★ マスク（地図部の四隅: 画像ナチュラル座標）
+      // ★ マスク（画像ナチュラル座標）
       maskMode: false,
       maskQuadNat: [],
       // ★ 2点厳密モード（デフォルトON）
       strict2pt: true,
-    }
+    };
+  },
+  computed: {
+    zoomStyle(){ return { transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`, transformOrigin: 'top left' }; },
+    isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false; },
+    pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)); },
+    pairsCount(){ return this.pairs.length; },
+    transformKind(){ if(!(this.affineM || this.tps)) return ''; return this.tps ? 'TPS' : (this.pairsCount>=3 ? 'Affine' : 'Similarity'); },
+    imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}`; },
+    hideBaseImage(){ return !!(this.affineM || this.tps); },
+    canUndo(){ return this.histIndex > 0; },
+    canRedo(){ return this.histIndex >= 0 && this.history && this.histIndex < this.history.length - 1; },
+    canDownloadWorldFile(){ return !!this.affineM; },
+    srs3857(){ return 3857; },
   },
   watch: {
-    modelValue(v){ if(v===false) this.onExternalClose() },
-    open(v){ if(v===false) this.onExternalClose() },
+    modelValue(v){ if(v===false) this.onExternalClose(); },
+    open(v){ if(v===false) this.onExternalClose(); },
     file: {
       immediate: true,
       handler(f){
         if(!f) return;
-        if(this.objUrl) { try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null }
+        if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
         this.objUrl = URL.createObjectURL(f);
         this.imgUrl = this.objUrl;
-        this.$nextTick(() => { this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); this.resetHistory(); this.pushHistory('init:file') })
+        this.$nextTick(() => {
+          this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+          this.resetHistory(); this.pushHistory('init:file');
+        });
       }
     },
-    url(u){ if(!u) return; this.imgUrl=u; this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); this.resetHistory(); this.pushHistory('init:url') }) },
-    gcpList: { deep:true, handler(){ if(!this.isRestoring) this.pushHistory('gcp'); this.$nextTick(this.redrawMarkers) } }
+    url(u){
+      if(!u) return;
+      this.imgUrl=u;
+      this.$nextTick(()=>{
+        this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+        this.resetHistory(); this.pushHistory('init:url');
+      });
+    },
+    gcpList: { deep:true, handler(){
+        if(!this.isRestoring) this.pushHistory('gcp');
+        this.$nextTick(this.redrawMarkers);
+      } }
   },
-  beforeUnmount(){ this.onExternalClose(true) },
+  beforeUnmount(){ this.onExternalClose(true); },
   mounted(){
-    const h = document.querySelector('#handle-'+this.item?.id)
-    if(h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`
-    window.addEventListener('keydown', this.onKeydown)
-    window.addEventListener('resize', this.onResize)
-    this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers() })
-  },
-  computed: {
-    zoomStyle(){ return { transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`, transformOrigin: 'top left' } },
-    isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false },
-    pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
-    pairsCount(){ return this.pairs.length },
-    transformKind(){ if(!(this.affineM || this.H || this.tps)) return ''; if (this.tps) return 'TPS'; if (this.H) return 'Homography'; return this.affineM ? (this.pairsCount >= 3 ? 'Affine' : 'Similarity') : '' },
-    transformKindColor(){ if (this.tps) return 'blue'; if (this.H) return 'pink'; return this.affineM ? (this.pairsCount >= 3 ? 'deep-purple' : 'teal') : '' },
-    imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
-    hideBaseImage(){ return !!(this.affineM || this.H || this.tps) },
-    canUndo(){ return this.histIndex > 0 },
-    canRedo(){ return this.histIndex >= 0 && this.history && this.histIndex < this.history.length - 1 },
-    canDownloadWorldFile(){ return !!(this.affineM || this.H) },
-    worldFileHint(){ return 'EPSG:3857（PRJ不要／OH3-PHP前提）' },
-    srs3857(){ return 3857 },
+    const h = document.querySelector('#handle-'+this.item?.id);
+    if(h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`;
+    window.addEventListener('keydown', this.onKeydown);
+    window.addEventListener('resize', this.onResize);
+    this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
   },
   methods: {
-    fmtPx(p){ if(!Array.isArray(p) || p.length<2) return '-'; const x=Number(p[0]), y=Number(p[1]); if(!Number.isFinite(x)||!Number.isFinite(y)) return '-'; return `${Math.round(x)}, ${Math.round(y)}` },
-    fmtLL(ll){ if(!Array.isArray(ll) || ll.length<2) return '-'; const lng=Number(ll[0]), lat=Number(ll[1]); if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}` },
+    // ========== 共通ユーティリティ ==========
+    fmtPx(p){ if(!Array.isArray(p) || p.length<2) return '-'; const x=Number(p[0]), y=Number(p[1]); if(!Number.isFinite(x)||!Number.isFinite(y)) return '-'; return `${Math.round(x)}, ${Math.round(y)}`; },
+    fmtLL(ll){ if(!Array.isArray(ll) || ll.length<2) return '-'; const lng=Number(ll[0]), lat=Number(ll[1]); if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}`; },
 
     onExternalClose(fromUnmount=false){
-      try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize) } }catch(e){}
-      if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null }
-      this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas)
-      this.$emit('clear-map-markers')
+      try{
+        if(fromUnmount){
+          window.removeEventListener('keydown', this.onKeydown);
+          window.removeEventListener('resize', this.onResize);
+        }
+      }catch(e){}
+      if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
+      this.clearCanvas(this.$refs.warpCanvas);
+      this.clearCanvas(this.$refs.gridCanvas);
+      this.clearCanvas(this.$refs.markerCanvas);
+      this.$emit('clear-map-markers');
       this.viewImgToCanvas = null; this.viewMapToCanvas = null;
-      this.closedOnce = true
+      this.closedOnce = true;
     },
 
-    toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.$emit('update:gcpList', []); this.maskQuadNat = []; this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
-    onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewWarp() },
+    toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid); },
+    resetAll(){
+      this.affineM=null; this.tps=null;
+      this.viewImgToCanvas=null; this.viewMapToCanvas=null;
+      this.$emit('update:gcpList', []);
+      this.maskQuadNat = [];
+      this.pushHistory('reset');
+      this.clearCanvas(this.$refs.warpCanvas);
+      this.redrawMarkers();
+    },
+    onResize(){
+      this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+      if(this.affineM || this.tps) this.previewWarp();
+    },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); },
 
-    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null, tps: this.tps ? {wx: [...this.tps.wx], wy: [...this.tps.wy], srcPts: this.tps.srcPts.map(p=>[...p])} : null, maskQuadNat: this.maskQuadNat.map(p=>[...p]), strict2pt: this.strict2pt } },
-    resetHistory(){ this.history=[]; this.histIndex=-1 },
-    pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.maskQuadNat = (snap.maskQuadNat||[]).map(p=>[...p]); this.strict2pt = !!snap.strict2pt; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewWarp(); else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); } this.redrawMarkers() }) },
-    undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
-    redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
-    onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
+    snapshot(){
+      return {
+        gcpList: JSON.parse(JSON.stringify(this.gcpList||[])),
+        affineM: this.affineM ? [...this.affineM] : null,
+        tps: this.tps ? { wx:[...this.tps.wx], wy:[...this.tps.wy], srcPts:this.tps.srcPts.map(p=>[...p]) } : null,
+        maskQuadNat: this.maskQuadNat.map(p=>[...p]),
+        strict2pt: !!this.strict2pt,
+      };
+    },
+    resetHistory(){ this.history=[]; this.histIndex=-1; },
+    pushHistory(){
+      if(this.isRestoring) return;
+      const snap=this.snapshot();
+      const cur=this.history[this.histIndex];
+      if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return;
+      if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1); }
+      this.history.push(snap); this.histIndex=this.history.length-1;
+      if(this.history.length>50){ this.history.shift(); this.histIndex--; }
+    },
+    applySnapshot(snap){
+      this.isRestoring=true;
+      this.affineM=snap.affineM;
+      this.tps = snap.tps ? { wx:[...snap.tps.wx], wy:[...snap.tps.wy], srcPts:snap.tps.srcPts.map(p=>[...p]) } : null;
+      this.maskQuadNat = (snap.maskQuadNat||[]).map(p=>[...p]);
+      this.strict2pt = !!snap.strict2pt;
+      this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList)));
+      this.$nextTick(()=>{
+        this.isRestoring=false;
+        if(this.affineM || this.tps) this.previewWarp();
+        else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); }
+        this.redrawMarkers();
+      });
+    },
+    undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]); },
+    redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]); },
+    onKeydown(e){
+      const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform);
+      const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return;
+      if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); }
+    },
 
-    // --- ざっくりパン/ズーム
-    onWheel(e){ const img=this.$refs.warpImage; if(!img) return; const delta = e.deltaY < 0 ? 1.1 : 0.9; const rect = img.getBoundingClientRect(); const cx = e.clientX - rect.left - this.pan.x; const cy = e.clientY - rect.top  - this.pan.y; const nz = Math.max(0.1, Math.min(10, this.zoom * delta)); const k = nz / this.zoom; this.pan.x -= cx * (k - 1); this.pan.y -= cy * (k - 1); this.zoom = nz; },
-    onPanStart(e){ this.panning = true; this.panStart = { x: e.clientX, y: e.clientY }; this.panAtStart = { ...this.pan }; const onMove = (ev)=>{ if(!this.panning) return; this.pan.x = this.panAtStart.x + (ev.clientX - this.panStart.x); this.pan.y = this.panAtStart.y + (ev.clientY - this.panStart.y); }; const onUp = ()=>{ this.panning=false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); },
+    // --- パン/ズーム（プレビュー用）
+    onWheel(e){
+      const img=this.$refs.warpImage; if(!img) return;
+      const delta = e.deltaY < 0 ? 1.1 : 0.9;
+      const rect = img.getBoundingClientRect();
+      const cx = e.clientX - rect.left - this.pan.x;
+      const cy = e.clientY - rect.top  - this.pan.y;
+      const nz = Math.max(0.1, Math.min(10, this.zoom * delta));
+      const k = nz / this.zoom;
+      this.pan.x -= cx * (k - 1);
+      this.pan.y -= cy * (k - 1);
+      this.zoom = nz;
+    },
+    onPanStart(e){
+      this.panning = true;
+      this.panStart = { x: e.clientX, y: e.clientY };
+      this.panAtStart = { ...this.pan };
+      const onMove = (ev)=>{
+        if(!this.panning) return;
+        this.pan.x = this.panAtStart.x + (ev.clientX - this.panStart.x);
+        this.pan.y = this.panAtStart.y + (ev.clientY - this.panStart.y);
+      };
+      const onUp = ()=>{
+        this.panning=false;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    },
 
-    syncCanvasSize(){ const img=this.$refs.warpImage; if(!img) return; const cw=img.clientWidth||img.naturalWidth; const ch=img.clientHeight||img.naturalHeight; const cvs=[this.$refs.warpCanvas,this.$refs.gridCanvas,this.$refs.markerCanvas]; cvs.forEach(c=>{ if(!c) return; c.width=cw; c.height=ch; }) },
-    clearCanvas(c){ if(!c) return; const ctx=c.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,c.width,c.height) },
-    drawGrid(){ if(!this.grid) return; const img=this.$refs.warpImage; const canvas=this.$refs.gridCanvas; if(!img||!canvas) return; const cw=img.clientWidth||img.naturalWidth; const ch=img.clientHeight||img.naturalHeight; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,cw,ch); ctx.globalAlpha=.35; ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.6)'; const step=Math.max(32, Math.round(cw/20)); for(let x=0;x<cw;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke() } for(let y=0;y<ch;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke() } ctx.globalAlpha=1 },
+    syncCanvasSize(){
+      const img=this.$refs.warpImage; if(!img) return;
+      const cw=img.clientWidth||img.naturalWidth;
+      const ch=img.clientHeight||img.naturalHeight;
+      [this.$refs.warpCanvas, this.$refs.gridCanvas, this.$refs.markerCanvas]
+          .forEach(c=>{ if(!c) return; c.width=cw; c.height=ch; });
+    },
+    clearCanvas(c){ if(!c) return; const ctx=c.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,c.width,c.height); },
+    drawGrid(){
+      if(!this.grid) return;
+      const img=this.$refs.warpImage; const canvas=this.$refs.gridCanvas;
+      if(!img||!canvas) return;
+      const cw=img.clientWidth||img.naturalWidth;
+      const ch=img.clientHeight||img.naturalHeight;
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,cw,ch);
+      ctx.globalAlpha=.35; ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.6)';
+      const step=Math.max(32, Math.round(cw/20));
+      for(let x=0;x<cw;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke(); }
+      for(let y=0;y<ch;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
+      ctx.globalAlpha=1;
+    },
+
     redrawMarkers(){
-      const canvas=this.$refs.markerCanvas; const img=this.$refs.warpImage; if(!canvas||!img) return; const ctx=canvas.getContext('2d'); const cw=canvas.width, ch=canvas.height; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cw,ch);
+      const canvas=this.$refs.markerCanvas; const img=this.$refs.warpImage;
+      if(!canvas||!img) return;
+      const ctx=canvas.getContext('2d');
+      const cw=canvas.width, ch=canvas.height;
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,cw,ch);
 
-      // 変換プレビューがある場合は、赤=画像点(変換後の位置)、青=地図点 を同じキャンバス上に描き、残差を線で表示
-      if ((this.affineM || this.H || this.tps) && this.viewImgToCanvas && this.viewMapToCanvas){
+      if ((this.affineM || this.tps) && this.viewImgToCanvas && this.viewMapToCanvas){
         const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord));
         const toNat = (g)=> Array.isArray(g.imageCoord) ? g.imageCoord : imageCssToNatural(g.imageCoordCss, img);
-        pairs.forEach((g,i)=>{
+        pairs.forEach((g,idx)=>{
           const pNat = toNat(g);
           const pImgV = this.viewImgToCanvas(pNat);
           const pMapV = this.viewMapToCanvas(lngLatToMerc(g.mapCoord));
+
           // 残差線
-          ctx.beginPath(); ctx.moveTo(pImgV[0], pImgV[1]); ctx.lineTo(pMapV[0], pMapV[1]); ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pImgV[0], pImgV[1]); ctx.lineTo(pMapV[0], pMapV[1]);
+          ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+
           // 画像点（赤）
-          ctx.beginPath(); ctx.arc(pImgV[0], pImgV[1], 8, 0, Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+          ctx.beginPath(); ctx.arc(pImgV[0], pImgV[1], 8, 0, Math.PI*2);
+          ctx.fillStyle='#e53935'; ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+
           // 地図点（青）
-          ctx.beginPath(); ctx.arc(pMapV[0], pMapV[1], 8, 0, Math.PI*2); ctx.fillStyle='#1976d2'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+          ctx.beginPath(); ctx.arc(pMapV[0], pMapV[1], 8, 0, Math.PI*2);
+          ctx.fillStyle='#1976d2'; ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+
           // index
-          ctx.font='700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff'; ctx.fillText(String(i+1), pImgV[0], pImgV[1]);
+          ctx.font='700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillStyle='#fff'; ctx.fillText(String(idx+1), pImgV[0], pImgV[1]);
         });
-        // マスク四隅プレビュー（画像座標→キャンバス）
+
+        // マスク四隅プレビュー
         if (this.maskQuadNat && this.maskQuadNat.length){
           const qV = this.maskQuadNat.map(p=> this.viewImgToCanvas(p));
-          ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)'; ctx.fillStyle = 'rgba(56,142,60,0.12)';
-          ctx.beginPath(); qV.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); if(qV.length>=3){ ctx.closePath(); ctx.fill(); } ctx.stroke();
+          ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)';
+          ctx.fillStyle = 'rgba(56,142,60,0.12)';
+          ctx.beginPath();
+          qV.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+          if(qV.length>=3){ ctx.closePath(); ctx.fill(); }
+          ctx.stroke();
         }
         return;
       }
 
-      // 未プレビュー：従来の赤マーカー（画像CSS座標）とマスク（CSS）
-      const pts=(this.gcpList||[]).map((g,i)=>{ if(Array.isArray(g.imageCoordCss)) return {i,xy:g.imageCoordCss}; if(Array.isArray(g.imageCoord)) return {i,xy:naturalToCss(g.imageCoord, img)}; return null }).filter(Boolean);
-      const r=12; pts.forEach(p=>{ const [x,y]=p.xy; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle='#ffffff'; ctx.stroke(); ctx.font='700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff'; ctx.fillText(String(p.i+1), x, y); });
-      if (this.maskQuadNat && this.maskQuadNat.length){ const qCss = this.maskQuadNat.map(p=>naturalToCss(p, img)); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)'; ctx.fillStyle = 'rgba(56,142,60,0.12)'; ctx.beginPath(); qCss.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); if(qCss.length>=3) { ctx.closePath(); ctx.fill(); } ctx.stroke(); qCss.forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke(); }); }
+      // 未プレビュー
+      const pts=(this.gcpList||[]).map((g,idx)=>{
+        if(Array.isArray(g.imageCoordCss)) return {idx,xy:g.imageCoordCss};
+        if(Array.isArray(g.imageCoord))    return {idx,xy:naturalToCss(g.imageCoord, img)};
+        return null;
+      }).filter(Boolean);
+
+      const r=12;
+      pts.forEach(p=>{
+        const [x,y]=p.xy;
+        ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+        ctx.fillStyle='#e53935'; ctx.fill();
+        ctx.lineWidth=2.5; ctx.strokeStyle='#ffffff'; ctx.stroke();
+        ctx.font='700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle='#ffffff'; ctx.fillText(String(p.idx+1), x, y);
+      });
+
+      if (this.maskQuadNat && this.maskQuadNat.length){
+        const qCss = this.maskQuadNat.map(p=>naturalToCss(p, img));
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)';
+        ctx.fillStyle = 'rgba(56,142,60,0.12)';
+        ctx.beginPath();
+        qCss.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+        if(qCss.length>=3) { ctx.closePath(); ctx.fill(); }
+        ctx.stroke();
+        qCss.forEach(([x,y])=>{
+          ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2);
+          ctx.fillStyle='#2e7d32'; ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+        });
+      }
     },
 
-    onImageAreaClick(e){ const img=this.$refs.warpImage; if(!img) return; const rect=img.getBoundingClientRect(); const xCss=e.clientX-rect.left; const yCss=e.clientY-rect.top; const [xNat,yNat]=imageCssToNatural([xCss,yCss], img); if (this.maskMode){ const next = [...this.maskQuadNat, [xNat, yNat]].slice(0,4); this.maskQuadNat = next; this.pushHistory('mask-add'); this.$nextTick(()=>{ this.redrawMarkers(); if (this.maskQuadNat.length >= 3 && (this.affineM||this.H||this.tps)) this.previewWarp(); }); return; } const next=(this.gcpList||[]).slice(); next.push({ imageCoordCss:[xCss,yCss], imageCoord:[xNat,yNat], mapCoord:null }); this.$emit('update:gcpList', next); this.pushHistory('img-click'); this.$nextTick(this.redrawMarkers) },
-    clearMask(){ this.maskQuadNat = []; this.pushHistory('mask-clear'); this.$nextTick(()=>{ this.redrawMarkers(); if (this.affineM||this.H||this.tps) this.previewWarp(); }) },
-    removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
+    onImageAreaClick(e){
+      const img=this.$refs.warpImage; if(!img) return;
+      const rect=img.getBoundingClientRect();
+      const xCss=e.clientX-rect.left; const yCss=e.clientY-rect.top;
+      const [xNat,yNat]=imageCssToNatural([xCss,yCss], img);
+
+      if (this.maskMode){
+        const next = [...this.maskQuadNat, [xNat, yNat]].slice(0,4);
+        this.maskQuadNat = next;
+        this.pushHistory('mask-add');
+        this.$nextTick(()=>{
+          this.redrawMarkers();
+          if (this.maskQuadNat.length >= 3 && (this.affineM||this.tps)) this.previewWarp();
+        });
+        return;
+      }
+
+      const next=(this.gcpList||[]).slice();
+      next.push({ imageCoordCss:[xCss,yCss], imageCoord:[xNat,yNat], mapCoord:null });
+      this.$emit('update:gcpList', next);
+      this.pushHistory('img-click');
+      this.$nextTick(this.redrawMarkers);
+    },
+    clearMask(){
+      this.maskQuadNat = [];
+      this.pushHistory('mask-clear');
+      this.$nextTick(()=>{
+        this.redrawMarkers();
+        if (this.affineM||this.tps) this.previewWarp();
+      });
+    },
+    removeGcp(idx){
+      const next=(this.gcpList||[]).slice();
+      next.splice(idx,1);
+      this.$emit('update:gcpList', next);
+      this.pushHistory('remove');
+      this.$nextTick(this.redrawMarkers);
+    },
 
     // ===== プレビュー生成（マスク対応） =====
-    previewWarp(){ function toNaturalCoord(g, img){ if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); if (Array.isArray(g.imageCoord))    return g.imageCoord; return null; } const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(canvas); this.redrawMarkers(); return; } const srcNat = pairs.map(g => toNaturalCoord(g, img)); const srcUp  = srcNat.map(([x,y]) => [x, -y]); const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord)); const clipNat = this.maskQuadNat && this.maskQuadNat.length >= 3 ? this.maskQuadNat : null; if (pairs.length === 2){ const Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp); const FLIP_Y_A = [1,0,0, 0,-1,0]; const M = composeAffine(Mup, FLIP_Y_A); this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return; } if (pairs.length === 3){ const Mup = fitAffineRobust(srcUp, dstUp, 4); const FLIP_Y_A = [1,0,0, 0,-1,0]; const M = composeAffine(Mup, FLIP_Y_A); this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return; } const tps = fitTPS(srcUp, dstUp); this.affineM = null; this.H = null; this.tps = tps; previewTPSOnCanvas(this, img, canvas, tps, 28, clipNat); },
+    previewWarp(){
+      const toNaturalCoord = (g, img) => {
+        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
+        if (Array.isArray(g.imageCoord))    return g.imageCoord;
+        return null;
+      };
 
-    buildWorldAffine(){ const img = this.$refs.warpImage; if(!img) return null; const pairs = (this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord) ); if (pairs.length < 2) return null; const toNatural = (g)=>{ if (Array.isArray(g.imageCoord)) return g.imageCoord; if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); return null; }; const srcNat = pairs.map(toNatural); const srcUp  = srcNat.map(([x,y]) => [x, -y]); const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord)); let Mup; if (pairs.length === 2) Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp); else Mup = fitAffineRobust(srcUp, dstUp, 4); const FLIP_Y_A = [1,0,0, 0,-1,0]; let M = composeAffine(Mup, FLIP_Y_A); let [A,B,C,D,E,F] = M; const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E); const W = img.naturalWidth, Hh = img.naturalHeight; const worldW = scaleX * W, worldH = scaleY * Hh; const TOO_BIG = 6e7, TOO_FINE = 1e-3, TOO_COARSE = 1e4; const bad = !isFinite(worldW) || !isFinite(worldH) || worldW>TOO_BIG || worldH>TOO_BIG || scaleX<TOO_FINE || scaleY<TOO_FINE || scaleX>TOO_COARSE || scaleY>TOO_COARSE; if (bad && pairs.length>=2){ let i1=0,i2=1,maxd=-1; for(let i=0;i<srcUp.length;i++){ for(let j=i+1;j<srcUp.length;j++){ const d=Math.hypot(srcUp[j][0]-srcUp[i][0], srcUp[j][1]-srcUp[i][1]); if(d>maxd){maxd=d;i1=i;i2=j;} } } M = composeAffine(fitSimilarity2PExact([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A); } return M; },
+      const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas;
+      if(!img||!canvas) return;
 
-    getImgX(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[0]); if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[0]); return g?._editImgX ?? '' },
-    getImgY(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[1]); if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[1]); return g?._editImgY ?? '' },
-    setImgX(i, v){ const img=this.$refs.warpImage; const x=Number(v); const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const y = Array.isArray(g.imageCoord) ? Number(g.imageCoord[1]) : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[1] : NaN); if(Number.isFinite(x) && Number.isFinite(y)){ g.imageCoord=[x,y]; if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img); delete g._editImgX; delete g._editImgY; }else{ g._editImgX=v; } next[i]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers); },
-    setImgY(i, v){ const img=this.$refs.warpImage; const y=Number(v); const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const x = Array.isArray(g.imageCoord) ? Number(g.imageCoord[0]) : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[0] : NaN); if(Number.isFinite(x) && Number.isFinite(y)){ g.imageCoord=[x,y]; if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img); delete g._editImgX; delete g._editImgY; }else{ g._editImgY=v; } next[i]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers); },
-    getLng(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[0]); return g?._editLng ?? '' },
-    getLat(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[1]); return g?._editLat ?? '' },
-    setLng(i, v){ const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const lng = Number(v); const lat = (g._editLat!==undefined) ? Number(g._editLat) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[1]) : NaN); g._editLng = v; if(Number.isFinite(lng) && Number.isFinite(lat)){ g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat; } next[i]=g; this.$emit('update:gcpList', next); },
-    setLat(i, v){ const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const lat = Number(v); const lng = (g._editLng!==undefined) ? Number(g._editLng) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[0]) : NaN); g._editLat = v; if(Number.isFinite(lng) && Number.isFinite(lat)){ g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat; } next[i]=g; this.$emit('update:gcpList', next); },
+      const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
+      if (pairs.length < 2){
+        this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
+        this.clearCanvas(canvas); this.redrawMarkers(); return;
+      }
 
-    inferredWorldExt(){ const name = (this.$props.file && this.$props.file.name) ? this.$props.file.name : (this.url||'image.jpg'); const ext = (name.split('.').pop()||'').toLowerCase(); if (ext==='png') return 'pgw'; if (ext==='tif' || ext==='tiff') return 'tfw'; return 'jgw'; },
-    downloadWorldFile(){ const M = this.buildWorldAffine(); if(!M) return; const txt = worldFileFromAffine(M); const blob = new Blob([txt], { type:'text/plain;charset=utf-8' }); const base = (this.$props.file && this.$props.file.name) ? this.$props.file.name.replace(/\.[^.]+$/, '') : 'image'; const ext = this.inferredWorldExt(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${base}.${ext}`; a.click(); URL.revokeObjectURL(a.href); },
-    confirm(){ if(!(this.affineM || this.H || this.tps)) return; const f=this.$props.file||null; const canvas=this.$refs.warpCanvas; let cornersLngLat = null; let payload; const img=this.$refs.warpImage; if (this.tps && img){ const W=img.naturalWidth, Hh=img.naturalHeight; const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]]; const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]])); cornersLngLat = cornersWorld.map(mercToLngLat); payload = { file: f, tps: this.tps, kind: 'tps', cornersLngLat, srs: this.srs3857 }; } else if (this.H && img){ const W=img.naturalWidth, Hh=img.naturalHeight; const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]]; const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p)); cornersLngLat = cornersWorld.map(mercToLngLat); payload = { file: f, affineM: null, H: this.H, kind: 'homography', cornersLngLat, srs: this.srs3857 }; } else if (this.affineM){ payload = { file: f, affineM: this.affineM, H: null, kind: this.pairsCount>=3 ? 'affine' : 'similarity', cornersLngLat, srs: this.srs3857 }; } if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return } canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png') },
+      const srcNat = pairs.map(g => toNaturalCoord(g, img));
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]); // 上向き座標で推定
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+      const clipNat = (this.maskQuadNat && this.maskQuadNat.length >= 3) ? this.maskQuadNat : null;
+
+      if (pairs.length === 2){
+        const Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp);
+        const FLIP_Y_A = [1,0,0, 0,-1,0];
+        const M = composeAffine(Mup, FLIP_Y_A);
+        this.tps=null; this.affineM = M;
+        previewOnCanvas(this, img, canvas, M, clipNat);
+        return;
+      }
+
+      if (pairs.length === 3){
+        const Mup = fitAffineRobust(srcUp, dstUp, 4);
+        const FLIP_Y_A = [1,0,0, 0,-1,0];
+        const M = composeAffine(Mup, FLIP_Y_A);
+        this.tps=null; this.affineM = M;
+        previewOnCanvas(this, img, canvas, M, clipNat);
+        return;
+      }
+
+      // 4点以上 → TPS
+      const tps = fitTPS(srcUp, dstUp);
+      this.affineM = null;
+      this.tps = tps;
+      previewTPSOnCanvas(this, img, canvas, tps, 28, clipNat);
+    },
+
+    // ====== ワールドファイル（アフィンのみ） ======
+    buildWorldAffine(){
+      const img = this.$refs.warpImage; if(!img) return null;
+      const pairs = (this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord) );
+      if (pairs.length < 2) return null;
+
+      const toNatural = (g)=>{
+        if (Array.isArray(g.imageCoord)) return g.imageCoord;
+        if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img);
+        return null;
+      };
+
+      const srcNat = pairs.map(toNatural);
+      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
+      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+
+      let Mup;
+      if (pairs.length === 2) Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp);
+      else Mup = fitAffineRobust(srcUp, dstUp, 4);
+
+      const FLIP_Y_A = [1,0,0, 0,-1,0];
+      let M = composeAffine(Mup, FLIP_Y_A);
+
+      // スケール安全チェック
+      let [A,B,C,D,E,F] = M;
+      const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E);
+      const W = img.naturalWidth, Hh = img.naturalHeight;
+      const worldW = scaleX * W, worldH = scaleY * Hh;
+      const TOO_BIG = 6e7, TOO_FINE = 1e-3, TOO_COARSE = 1e4;
+      const bad = !isFinite(worldW) || !isFinite(worldH) ||
+          worldW>TOO_BIG || worldH>TOO_BIG ||
+          scaleX<TOO_FINE || scaleY<TOO_FINE ||
+          scaleX>TOO_COARSE || scaleY>TOO_COARSE;
+
+      if (bad && pairs.length>=2){
+        let i1=0,i2=1,maxd=-1;
+        for(let a=0;a<srcUp.length;a++){
+          for(let b=a+1;b<srcUp.length;b++){
+            const d=Math.hypot(srcUp[b][0]-srcUp[a][0], srcUp[b][1]-srcUp[a][1]);
+            if(d>maxd){maxd=d;i1=a;i2=b;}
+          }
+        }
+        M = composeAffine(fitSimilarity2PExact([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A);
+      }
+      return M;
+    },
+
+    // ====== 高解像エクスポート（元画像解像度で再描画） ======
+    _exportAffineHighRes(img, M, clipNat=null){
+      // プレビューと同じ見た目を、自然解像比でスケーリングして描画
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const corners = [[0,0],[w,0],[w,h],[0,h]].map(p=>applyAffine(M,p));
+      const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+      const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+      const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
+      const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+      const viewS = Math.min(cw/(maxX-minX), ch/(maxY-minY));
+      const ratio = (img.naturalWidth / cw); // 自然解像/表示解像
+      const s = viewS * ratio;
+
+      const outW = Math.max(1, Math.round((maxX-minX) * s));
+      const outH = Math.max(1, Math.round((maxY-minY) * s));
+      const canvas = document.createElement('canvas');
+      canvas.width = outW; canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+
+      const T = [ s, 0, -minX * s, 0, -s,  maxY * s ]; // world -> hi-res canvas
+      const Mv = composeAffine(T, M);
+      const [A,B,C,D,E,F] = Mv;
+
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,outW,outH);
+
+      let clipped=false;
+      if (clipNat && clipNat.length >= 3){
+        ctx.save();
+        ctx.beginPath();
+        clipNat.forEach(([x,y],i)=>{
+          const [cx,cy] = applyAffine(Mv,[x,y]);
+          if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+        });
+        ctx.closePath();
+        ctx.clip();
+        clipped=true;
+      }
+
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.setTransform(A,D,B,E,C,F);
+      ctx.drawImage(img, 0, 0);
+      if (clipped) ctx.restore();
+
+      return canvas;
+    },
+    _exportTPSHighRes(img, tps, clipNat=null, mesh=32){
+      // TPSも自然解像に近いスケールでオフスクリーン描画
+      const W = img.naturalWidth, Himg = img.naturalHeight;
+      const corners = [[0,0],[W,0],[W,Himg],[0,Himg]].map(p=>applyTPS(tps,[p[0],-p[1]]));
+      const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+      const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+
+      const cw = Math.max(1, img.clientWidth  || img.naturalWidth);
+      const ch = Math.max(1, img.clientHeight || img.naturalHeight);
+      const viewS = Math.min(cw/(maxX-minX), ch/(maxY-minY));
+      const ratio = (img.naturalWidth / cw);
+      const s = viewS * ratio;
+
+      const outW = Math.max(1, Math.round((maxX-minX) * s));
+      const outH = Math.max(1, Math.round((maxY-minY) * s));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outW; canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+
+      const view = ([X,Y]) => [ s*(X-minX), s*(maxY-Y) ];
+
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,outW,outH);
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+
+      // クリップ
+      let clipped=false;
+      if (clipNat && clipNat.length >= 3){
+        const q = clipNat.slice();
+        const edges=[[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]];
+        const pts=[]; const N=24;
+        edges.forEach(([p0,p1])=>{
+          if(!p0||!p1) return;
+          for(let i=0;i<=N;i++){
+            const t=i/N;
+            const x=p0[0]*(1-t)+p1[0]*t, y=p0[1]*(1-t)+p1[1]*t;
+            pts.push(view(applyTPS(tps,[x,-y])));
+          }
+        });
+        ctx.save(); ctx.beginPath();
+        pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
+        ctx.closePath(); ctx.clip(); clipped=true;
+      }
+
+      // メッシュ描画
+      const nx=mesh, ny=mesh;
+      const sx=W/nx, sy=Himg/ny;
+      function affineFromTriangles(srcTri, dstTri){
+        const p0=srcTri[0], p1=srcTri[1], p2=srcTri[2];
+        const q0=dstTri[0], q1=dstTri[1], q2=dstTri[2];
+        const a = p1[0]-p0[0], b = p2[0]-p0[0], c = p1[1]-p0[1], d = p2[1]-p0[1];
+        const det = a*d - b*c || 1e-12;
+        const A = ( (q1[0]-q0[0])*d - (q2[0]-q0[0])*c )/det;
+        const B = (-(q1[0]-q0[0])*b + (q2[0]-q0[0])*a )/det;
+        const D = ( (q1[1]-q0[1])*d - (q2[1]-q0[1])*c )/det;
+        const E = (-(q1[1]-q0[1])*b + (q2[1]-q0[1])*a )/det;
+        const C = q0[0] - A*p0[0] - B*p0[1];
+        const F = q0[1] - D*p0[0] - E*p0[1];
+        return [A,B,C,D,E,F];
+      }
+      function drawTri(ctx,img,srcTri,dstTri){
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(dstTri[0][0], dstTri[0][1]);
+        ctx.lineTo(dstTri[1][0], dstTri[1][1]);
+        ctx.lineTo(dstTri[2][0], dstTri[2][1]);
+        ctx.closePath();
+        ctx.clip();
+        const [a,b,c,d,e,f] = affineFromTriangles(srcTri,dstTri);
+        ctx.setTransform(a,d,b,e,c,f);
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+      }
+      for(let j=0;j<ny;j++){
+        for(let i=0;i<nx;i++){
+          const x0=i*sx, y0=j*sy, x1=(i+1)*sx, y1=(j+1)*sy;
+          const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
+          const d00=view(applyTPS(tps,[x0,-y0]));
+          const d10=view(applyTPS(tps,[x1,-y0]));
+          const d11=view(applyTPS(tps,[x1,-y1]));
+          const d01=view(applyTPS(tps,[x0,-y1]));
+          drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
+          drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
+        }
+      }
+      if (clipped) ctx.restore();
+      return canvas;
+    },
+
+    // ====== アップロード処理 ======
+    confirm(){
+      if(!(this.affineM || this.tps)) return;
+
+      const img=this.$refs.warpImage;
+      const clipNat = (this.maskQuadNat && this.maskQuadNat.length >= 3) ? this.maskQuadNat : null;
+
+      let payload = { file: this.$props.file || null, srs: this.srs3857 };
+      let cornersLngLat = null;
+      let outCanvas = null;
+
+      if (this.tps){
+        // TPS: 高解像メッシュで再描画 → 角はTPSで算出して送る
+        outCanvas = this._exportTPSHighRes(img, this.tps, clipNat, 32);
+        const W=img.naturalWidth, Hh=img.naturalHeight;
+        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];
+        const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]]));
+        cornersLngLat = cornersWorld.map(mercToLngLat);
+        payload = { ...payload, tps: this.tps, kind: 'tps', cornersLngLat };
+      } else if (this.affineM){
+        // アフィン/相似: 高解像アフィン描画 → ワールドファイルも付与可
+        outCanvas = this._exportAffineHighRes(img, this.affineM, clipNat);
+        payload = { ...payload, affineM: this.affineM, kind: (this.pairsCount>=3 ? 'affine' : 'similarity') };
+      }
+
+      if (!outCanvas) return;
+      outCanvas.toBlob((blob)=>{
+        if (!blob){
+          // 最低限のフォールバック（プレビューcanvas）
+          const preview = this.$refs.warpCanvas;
+          if (preview && preview.toBlob){
+            preview.toBlob((pb)=> this.$emit('confirm', { ...payload, blob: pb || null }), 'image/png');
+          } else {
+            this.$emit('confirm', { ...payload, blob: null });
+          }
+          return;
+        }
+
+        // アフィンならワールドファイルを添付（親側が使用する場合）
+        if (payload.kind === 'affine' || payload.kind === 'similarity'){
+          const wld = worldFileFromAffine(this.affineM);
+          this.$emit('confirm', { ...payload, worldFileText: wld, blob: blob });
+        } else {
+          this.$emit('confirm', { ...payload, blob: blob });
+        }
+      }, 'image/png');
+    },
+
+    // ====== GCPエディタ用ヘルパ ======
+    getImgX(g){
+      const img = this.$refs.warpImage;
+      if (Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[0]);
+      if (Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[0]);
+      return g?._editImgX ?? '';
+    },
+    getImgY(g){
+      const img = this.$refs.warpImage;
+      if (Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[1]);
+      if (Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[1]);
+      return g?._editImgY ?? '';
+    },
+    setImgX(index, v){
+      const img=this.$refs.warpImage;
+      const x=Number(v);
+      const next=(this.gcpList||[]).slice();
+      const g={ ...(next[index]||{}) };
+
+      const y = Array.isArray(g.imageCoord)
+          ? Number(g.imageCoord[1])
+          : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[1] : NaN);
+
+      if (Number.isFinite(x) && Number.isFinite(y)){
+        g.imageCoord=[x,y];
+        if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img);
+        delete g._editImgX; delete g._editImgY;
+      } else {
+        g._editImgX=v;
+      }
+      next[index]=g;
+      this.$emit('update:gcpList', next);
+      this.$nextTick(this.redrawMarkers);
+    },
+    setImgY(index, v){
+      const img=this.$refs.warpImage;
+      const y=Number(v);
+      const next=(this.gcpList||[]).slice();
+      const g={ ...(next[index]||{}) };
+
+      const x = Array.isArray(g.imageCoord)
+          ? Number(g.imageCoord[0])
+          : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[0] : NaN);
+
+      if (Number.isFinite(x) && Number.isFinite(y)){
+        g.imageCoord=[x,y];
+        if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img);
+        delete g._editImgX; delete g._editImgY;
+      } else {
+        g._editImgY=v;
+      }
+      next[index]=g;
+      this.$emit('update:gcpList', next);
+      this.$nextTick(this.redrawMarkers);
+    },
+    getLng(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[0]); return g?._editLng ?? ''; },
+    getLat(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[1]); return g?._editLat ?? ''; },
+    setLng(index, v){
+      const next=(this.gcpList||[]).slice();
+      const g={ ...(next[index]||{}) };
+      const lng = Number(v);
+      const lat = (g._editLat!==undefined) ? Number(g._editLat) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[1]) : NaN);
+      g._editLng = v;
+      if(Number.isFinite(lng) && Number.isFinite(lat)){
+        g.mapCoord=[lng, lat];
+        delete g._editLng; delete g._editLat;
+      }
+      next[index]=g;
+      this.$emit('update:gcpList', next);
+    },
+    setLat(index, v){
+      const next=(this.gcpList||[]).slice();
+      const g={ ...(next[index]||{}) };
+      const lat = Number(v);
+      const lng = (g._editLng!==undefined) ? Number(g._editLng) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[0]) : NaN);
+      g._editLat = v;
+      if(Number.isFinite(lng) && Number.isFinite(lat)){
+        g.mapCoord=[lng, lat];
+        delete g._editLng; delete g._editLat;
+      }
+      next[index]=g;
+      this.$emit('update:gcpList', next);
+    },
   }
-}
+};
 </script>
 
 <style scoped>
 /* ====== コンテナ ====== */
-.oh-warp-root{ width: 100%; max-width: none; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.oh-warp-root{
+  width: 100%; max-width: none; box-sizing: border-box; background: #fff;
+  overflow: hidden; display: flex; flex-direction: column; height: 100%; min-height: 0;
+}
 
 /* ====== ツールバー（コンパクト1段） ====== */
 .oh-toolbar{
@@ -779,11 +1180,11 @@ export default {
   min-height: 40px;
 }
 .oh-toolbar .v-btn.v-btn--icon{ width:32px; height:32px; }
-.oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06) }
+.oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06); }
 .oh-toolbar .mx-1{ margin: 0 6px !important; }
 .oh-title{ font-weight:600; display:flex; align-items:center; gap:8px; }
 
-/* 折り返しさせず、幅が足りない場合は末尾を切り詰め */
+/* 折り返さず横一列、足りなければ末尾切り */
 .oh-tools.compact{
   display:flex; align-items:center; gap:2px;
   flex-wrap: nowrap; overflow: hidden;
@@ -796,9 +1197,15 @@ export default {
 .oh-body.stacked .right-pane{ order:2; }
 
 /* ====== 左ペイン（画像） ====== */
-.left-pane{ display:flex; align-items:center; justify-content:center; min-height: 420px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; }
+.left-pane{
+  display:flex; align-items:center; justify-content:center; min-height: 420px;
+  background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px;
+}
 .img-wrap{ position: relative; display:inline-block; max-width:100%; cursor: crosshair; }
-#warp-image{ position:relative; z-index:0; display:block; max-width:100%; height:auto; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+#warp-image{
+  position:relative; z-index:0; display:block; max-width:100%; height:auto;
+  border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
 #warp-image.hidden{ visibility:hidden; }
 .warp-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; z-index:1; }
 .grid-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius: 8px; opacity:.45; z-index:2; }
@@ -817,12 +1224,9 @@ export default {
 .gcp-scroll{ flex: 1 1 auto; min-height: 0; overflow: auto; margin-top:4px; }
 .img-x, .img-y{ margin-left: 10px; width: 50px; }
 
+/* Vuetify field 調整 */
 :deep(.gcp-editor .v-input--density-compact){ --v-input-control-height: 24px; }
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
-
-.gcp-table{ font-variant-numeric: tabular-nums; background:#fff; border-radius:8px; overflow:hidden; }
-.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-.actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
 </style>

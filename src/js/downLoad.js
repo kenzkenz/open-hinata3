@@ -4596,6 +4596,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
     let srsCode = zahyokei.find(item => item.kei === store.state.zahyokei)?.code || "EPSG:3857";
     if (is3857) srsCode = 'EPSG:3857'
     const files = store.state.tiffAndWorldFile || [];
+    console.log(files)
     let imageFile = null, worldFile = null;
 
     // 拡張子を正規表現でマッチング
@@ -4609,16 +4610,9 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
         if (worldExtRegex.test(fileName)) worldFile = file;
     }
 
+    console.log(worldFile)
+
     if (!worldFile) imageFile = files[0]
-
-    // if (!imageFile || !worldFile) {
-    //     alert(`${imageExtension.toUpperCase()}ファイルと${worldFileExtension.toUpperCase()}ファイルの両方をアップロードしてください。`);
-    //     store.state.loading2 = false;
-    //     return;
-    // }
-
-    // let fileName = imageFile.name;
-    // fileName = fileName.slice(0, fileName.lastIndexOf('.'));
 
     const fileName = store.state.gazoName
 
