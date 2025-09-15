@@ -3421,10 +3421,9 @@ export default {
       if (kind === 'similarity' || kind === 'affine') {
         // ✅ アフィンは「元画像 + ワールドファイル」で登録が正道
         const worldFile = this._worldFileFromAffine(affineM);
-        alert(maskedPngFile.name)
         this.openTileUploadDialog({
           kind,
-          fileOriginal: file,   // ← 元ファイルを使う
+          fileOriginal: maskedPngFile,   // マスク画像を使う
           worldFile,
           // previewBlob: blob, // （任意）プレビュー表示用に保持してもいい
         });
@@ -3435,7 +3434,7 @@ export default {
           // ✅ サーバ側で再サンプリングできるなら「元画像 + H」で渡す
           this.openTileUploadDialog({
             kind,
-            fileOriginal: file,
+            fileOriginal: maskedPngFile,
             H,
             cornersLngLat, // 参考 or 事前プレビュー用
           });
@@ -3450,7 +3449,7 @@ export default {
           // ✅ サーバ側で TPS ワープできるなら「元画像 + tps」
           this.openTileUploadDialog({
             kind,
-            fileOriginal: file,
+            fileOriginal: maskedPngFile,
             tps,
             cornersLngLat, // 表示位置の初期合わせに使える
           });
@@ -3460,29 +3459,6 @@ export default {
         }
       }
     },
-
-    // onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
-    //   // 安全チェック（宇宙行き防止）
-    //   if (cornersLngLat && !this._validCorners(cornersLngLat)) {
-    //     console.warn('invalid corners, abort');
-    //     alert('推定コーナーが不正です。別のGCP配置を試してください。');
-    //     return;
-    //   }
-    //   if (kind === 'similarity' || kind === 'affine') {
-    //     // アフィンのみワールドファイルが正しく表現可能
-    //     const worldFile = this._worldFileFromAffine(affineM); // 下に実装例あり
-    //     this.openTileUploadDialog({ blob, worldFile, kind });
-    //   } else if (kind === 'homography') {
-    //     // ワールドファイルは使わない。四隅座標で画像ソースとして登録
-    //     // MapLibre/Mapbox の image source coordinates 順序は [TL, TR, BR, BL]
-    //     this.openTileUploadDialog({ blob, cornersLngLat, kind });
-    //   } else if (kind === 'tps') {
-    //     // TPSはワールドファイル不可。サーバ側でワーピングするか、
-    //     // ここで受け取った blob（既にプレビューで変形済みPNG）を
-    //     // ひとまず四隅で近似配置（精密にはサーバ側ワーピングを推奨）
-    //     this.openTileUploadDialog({ blob, cornersLngLat, tps, kind });
-    //   }
-    // },
     _validCorners(c) {
       if (!Array.isArray(c) || c.length !== 4) return false;
       return c.every(([lng,lat]) =>
