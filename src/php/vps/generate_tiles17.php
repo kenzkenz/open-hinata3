@@ -210,17 +210,21 @@ function forceNorthUp($pathIn, $sourceEPSG, $fileName) {
     if (!$needs) return $pathIn; // 既に north-up
 
     $pathOut = "/tmp/{$fileName}_northup.tif";
+
     // GCPベースなら -order 1（アフィン）か、非線形なら -tps を検討
     $order = $hasGCPs ? "-order 1" : "";
+
+    // ★ アルファ維持のため常に -dstalpha を付与（無くても自動生成される）
     $cmd =
         "$gdalWarp -t_srs EPSG:$sourceEPSG -r bilinear -overwrite " .
-        "-co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 -co BIGTIFF=IF_SAFER " .
+        "-dstalpha -co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 -co BIGTIFF=IF_SAFER " .
         "-wo NUM_THREADS=ALL_CPUS $order " .
         escapeshellarg($pathIn) . " " . escapeshellarg($pathOut);
 
     exec($cmd, $wOut, $wRet);
     if ($wRet !== 0 || !file_exists($pathOut)) {
-        sendSSE(["error" => "north-up 焼き直し失敗", "details" => implode("\n", (array)$wOut)], "error");
+        sendSSE(["error" => "north-up 焼き直し失敗", "details" => implode("
+", (array)$wOut)], "error");
         exit;
     }
 
@@ -238,7 +242,8 @@ function enforcePixelBudget($pathIn, $maxPixels, $fileName) {
     global $gdalInfo, $gdalWarp;
     exec("$gdalInfo -json " . escapeshellarg($pathIn), $out, $ret);
     if ($ret !== 0) return $pathIn;
-    $j = json_decode(implode("\n", $out), true);
+    $j = json_decode(implode("
+", $out), true);
     if (!isset($j['size'])) return $pathIn;
     $w = (int)$j['size'][0]; $h = (int)$j['size'][1];
     $px = (float)($w) * (float)($h);
@@ -260,13 +265,16 @@ function getBandInfo($path) {
     global $gdalInfo;
     exec("$gdalInfo -json " . escapeshellarg($path), $out, $ret);
     if ($ret !== 0) return [null, []];
-    $j = json_decode(implode("\n", $out), true);
+    $j = json_decode(implode("
+", $out), true);
     $bands = isset($j['bands']) ? $j['bands'] : [];
     $count = count($bands);
     $interps = [];
     foreach ($bands as $b) {
         $interps[] = isset($b['colorInterpretation']) ? $b['colorInterpretation'] : '';
     }
+    // ログ
+    sendSSE(["log" => "BandInfo: count=$count interps=" . implode(',', $interps)]);
     return [$count, $interps];
 }
 
@@ -312,6 +320,38 @@ function ensureWebpBandLayout($pathIn, $fileName) {
     return $pathIn;
 }
 
+// ===== WEBP 透過用：外縁の黒/白をアルファへ（nearblack 優先、fallback: gdalwarp -srcnodata） =====
+function applyEdgeAlpha($pathIn, $fileName, $edgeMode = 'black', $edgeNear = 16) {
+    global $nearblack, $gdalWarp;
+    $out = "/tmp/{$fileName}_edgealpha.tif";
+    $near = is_numeric($edgeNear) ? max(0, (int)$edgeNear) : 16;
+
+    // nearblack が使えるなら優先（黒/白の近似をアルファ0に）
+    if (file_exists($nearblack) && is_executable($nearblack)) {
+        $modeFlag = ($edgeMode === 'white') ? '-white' : '-black';
+        $cmd = "$nearblack -setalpha $modeFlag -near $near " . escapeshellarg($pathIn) . " -o " . escapeshellarg($out);
+        exec($cmd, $nbLog, $nbRet);
+        if ($nbRet === 0 && file_exists($out)) {
+            sendSSE(["log" => "nearblack により外縁（$edgeMode, near=$near）をアルファ化"]);
+            return $out;
+        }
+    }
+
+    // フォールバック: 完全黒/白を nodata としてアルファ化
+    $src = ($edgeMode === 'white') ? '255 255 255' : '0 0 0';
+    $cmd = "$gdalWarp -srcnodata \"$src\" -dstalpha -overwrite -co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 " .
+        escapeshellarg($pathIn) . " " . escapeshellarg($out);
+    exec($cmd, $wlog, $wret);
+    if ($wret === 0 && file_exists($out)) {
+        sendSSE(["log" => "gdalwarp により外縁（$edgeMode）をアルファ化"]);
+        return $out;
+    }
+
+    // 失敗時はそのまま返す
+    sendSSE(["log" => "外縁アルファ化に失敗（nearblack/gdalwarpとも不可）。元画像を継続"]);
+    return $pathIn;
+}
+
 // POSTリクエスト確認
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     sendSSE(["error" => "POSTリクエストのみ"], "error");
@@ -344,9 +384,11 @@ if (!in_array($transparent, ["0", "1"])) {
     logMessage("Invalid transparent value: $transparent");
     exit;
 }
-$transparent = (int)$transparent;
-logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, sourceEPSG=$sourceEPSG, transparent=$transparent");
-sendSSE(["log" => "パラメータ: fileName=$fileName, subDir=$subDir, transparent=$transparent"]);
+$transparent = (int)$transparent; // 文字列を整数に変換
+$edgeMode = (isset($_POST["edgeMode"]) && strtolower($_POST["edgeMode"]) === "white") ? "white" : "black"; // 外縁の色（black|white）
+$edgeNear = (isset($_POST["edgeNear"]) && is_numeric($_POST["edgeNear"])) ? intval($_POST["edgeNear"]) : 2; // 近似しきい値（0～）
+logMessage("Parameters: fileName=$fileName, subDir=$subDir, resolution=$resolution, sourceEPSG=$sourceEPSG, transparent=$transparent, edgeMode=$edgeMode, edgeNear=$edgeNear");
+sendSSE(["log" => "パラメータ: fileName=$fileName, subDir=$subDir, transparent=$transparent, edgeMode=$edgeMode, edgeNear=$edgeNear"]);
 
 // 処理中ファイルの作成
 $fileBaseName   = pathinfo($filePath, PATHINFO_FILENAME);
@@ -435,17 +477,9 @@ if ($transparent === 1) {
     $outputFilePath = $transparentPath;
     sendSSE(["log" => "透過処理完了"]);
 
-    // 任意: nearblack があれば縁だけをアルファに
-    if (file_exists($nearblack) && is_executable($nearblack)) {
-        $nbOut = "/tmp/{$fileName}_nearalpha.tif";
-        $nbCmd = "$nearblack -setalpha -near 2 " . escapeshellarg($outputFilePath) . " -o " . escapeshellarg($nbOut);
-        exec($nbCmd, $nbLog, $nbRet);
-        if ($nbRet === 0 && file_exists($nbOut)) {
-            $outputFilePath = $nbOut;
-            sendSSE(["log" => "nearblack により縁の透過化を適用"]);
-        }
-    }
-} else {
+    // 縁抜きは後段の applyEdgeAlpha() で一括実施（ここでは行わない）
+}
+else {
     sendSSE(["log" => "透過処理をスキップ（アルファなし）"]);
 }
 
@@ -459,6 +493,21 @@ $outputFilePath = enforcePixelBudget($outputFilePath, 200_000_000 /* 2億px */, 
 
 // ★ WEBP が受け付ける 3/4 バンドへ正規化（Gray+Alpha=2バンド対策）
 $outputFilePath = ensureWebpBandLayout($outputFilePath, $fileName);
+
+// ★ 外縁の黒/白を透過（transparent=1 のときのみ適用）
+if ($transparent === 1) {
+    $outputFilePath = applyEdgeAlpha($outputFilePath, $fileName, $edgeMode, $edgeNear);
+    list($bandCountAfter, $interpsAfter) = getBandInfo($outputFilePath);
+    sendSSE(["log" => "edgeAlpha 後バンド: $bandCountAfter (" . implode(',', $interpsAfter) . ")"]);
+    if ($bandCountAfter < 4) {
+        sendSSE(["log" => "注意: アルファが見つからないため RGBA へ昇格" ]);
+        // RGBAに昇格（Alpha=255を作成）
+        $tmpRGBA = "/tmp/{$fileName}_force_rgba.tif";
+        $cmdRGBA = "/usr/bin/gdal_translate -of GTiff -co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 -b 1 -b 2 -b 3 " . escapeshellarg($outputFilePath) . " " . escapeshellarg($tmpRGBA);
+        exec($cmdRGBA, $rlog, $rc);
+        if ($rc === 0 && file_exists($tmpRGBA)) { $outputFilePath = $tmpRGBA; }
+    }
+}
 
 // 座標取得
 sendSSE(["log" => "gdalinfo 実行"]);
