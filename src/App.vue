@@ -3409,84 +3409,8 @@ export default {
       this.lastWorldFileText = wld;
       return wld;
     },
-
-    //
-    // generateWorldFile () {
-    //   const img = document.getElementById('warp-image');
-    //   if (!img) { console.warn('image not found'); return null; }
-    //
-    //   // 有効なGCP（画像側/地図側の両方があるもの）
-    //   const pairs = (this.gcpList || []).filter(g =>
-    //       (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-    //   );
-    //   if (pairs.length < 2) { console.warn('GCPは2点以上必要です'); return null; }
-    //
-    //   // 1) 画像CSS座標 → 自然ピクセル（y下向き）
-    //   // const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-    //   const toNatural = (g) => Array.isArray(g.imageCoord)
-    //     ? g.imageCoord                          // すでに natural(px)
-    //          : imageCssToNatural(g.imageCoordCss, img); // CSS→natural
-    //   const srcNat = pairs.map(toNatural);
-    //   // 推定は y上向き
-    //   const srcUp = srcNat.map(([x, y]) => [x, -y]);
-    //   const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
-    //
-    //   // 2) 推定
-    //   let Mup;
-    //   if (pairs.length === 2) {
-    //     // 厳密（誤差ゼロ）Similarity
-    //     const p1 = srcUp[0], p2 = srcUp[1];
-    //     const q1 = dstUp[0], q2 = dstUp[1];
-    //     const M2 = this.fitSimilarity2PExact(p1, p2, q1, q2);
-    //     if (!M2) return null;
-    //     Mup = M2;
-    //   } else {
-    //     // ロバストAffine
-    //     Mup = fitAffineRobust(srcUp, dstUp, 4);
-    //   }
-    //
-    //   // 3) y上向き → y下向き（ピクセル座標系）へ
-    //   const FLIP_Y = [1, 0, 0, 0, -1, 0];
-    //   let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
-    //
-    //   // 4) 実保存サイズに合わせて補正（縮小/拡大の異方も許容）
-    //   const natW = img.naturalWidth || 1;
-    //   const natH = img.naturalHeight || 1;
-    //   let expW = 0, expH = 0;
-    //   const canv = document.querySelector('.warp-canvas');
-    //   if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
-    //     expW = Number(canv.width);
-    //     expH = Number(canv.height);
-    //   }
-    //   if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
-    //   if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
-    //   if (!expW) expW = natW; if (!expH) expH = natH;
-    //
-    //   let sX = expW / natW;
-    //   let sY = expH / natH;
-    //   if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
-    //   if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
-    //
-    //   if (sX !== 1 || sY !== 1) {
-    //     // 自然→実保存: [x_nat, y_nat]^T = [x_exp/sX, y_exp/sY]^T
-    //     // よって (x_exp,y_exp) 基準の行列は M ∘ S,  S = diag(1/sX, 1/sY)
-    //     const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
-    //     M = composeAffine(M, S);
-    //   }
-    //
-    //   // 状態保持（プレビュー等で再利用）
-    //   this._lastAffineM = M;
-    //   this.affineM = M;
-    //
-    //   // 2点のとき、理論上ほぼ0の残差を確認（デバッグ）
-    //   if (pairs.length === 2) this._debugCheckTwoPointResiduals(M, srcNat, dstUp);
-    //
-    //   const wld = this.worldFileFromAffine(M);
-    //   this.lastWorldFileText = wld; // 任意：UIで確認
-    //   return wld;
-    // },
     // 受け取りに file を追加
-    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob, file }) {
+    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob, file, maskedPngFile }) {
       // 安全チェック（宇宙行き防止）
       if (cornersLngLat && !this._validCorners(cornersLngLat)) {
         console.warn('invalid corners, abort');
@@ -3497,6 +3421,7 @@ export default {
       if (kind === 'similarity' || kind === 'affine') {
         // ✅ アフィンは「元画像 + ワールドファイル」で登録が正道
         const worldFile = this._worldFileFromAffine(affineM);
+        alert(maskedPngFile.name)
         this.openTileUploadDialog({
           kind,
           fileOriginal: file,   // ← 元ファイルを使う

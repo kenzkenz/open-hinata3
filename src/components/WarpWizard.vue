@@ -1060,22 +1060,32 @@ export default {
           // 最低限のフォールバック（プレビューcanvas）
           const preview = this.$refs.warpCanvas;
           if (preview && preview.toBlob){
-            preview.toBlob((pb)=> this.$emit('confirm', { ...payload, blob: pb || null }), 'image/png');
+            preview.toBlob((pb)=> this.$emit('confirm', { ...payload, blob: pb || null, maskedImage: pb || null }), 'image/png');
           } else {
-            this.$emit('confirm', { ...payload, blob: null });
+            this.$emit('confirm', { ...payload, blob: null, maskedImage: null });
           }
           return;
         }
 
+        // ← ここだけ追加：Blob → File
+        // 元ファイル名ベース（なければ 'image'）
+        const baseName = (this.$props.file && this.$props.file.name)
+            ? this.$props.file.name.replace(/\.[^.]+$/, '')
+            : 'image';
+        const maskedPngFile = (blob instanceof File)
+            ? blob
+            : new File([blob], `${baseName}.png`, { type:'image/png' });
+
         // アフィンならワールドファイルを添付（親側が使用する場合）
         if (payload.kind === 'affine' || payload.kind === 'similarity'){
           const wld = worldFileFromAffine(this.affineM);
-          this.$emit('confirm', { ...payload, worldFileText: wld, blob: blob });
+          this.$emit('confirm', { ...payload, worldFileText: wld, blob: blob, maskedPngFile });
         } else {
-          this.$emit('confirm', { ...payload, blob: blob });
+          this.$emit('confirm', { ...payload, blob: blob, maskedPngFile });
         }
       }, 'image/png');
     },
+
 
     // ====== GCPエディタ用ヘルパ ======
     getImgX(g){
