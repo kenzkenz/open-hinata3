@@ -357,15 +357,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
         {{ snackbarText }}
       </v-snackbar>
 
-      <v-snackbar v-model="loadingSnackbar"
+      <v-snackbar content-class="snack-max"
+                  v-model="loadingSnackbar"
                   :timeout="-1"
                   color="primary"
                   location="top"
                   class="my-snackbar"
       >
-        <p v-if="s_loading">処理中です。</p>
-        <p v-if="s_loading2"><span v-html="s_loadingMessage"></span></p>
-        <p v-if="s_loading3"><span v-html="s_loadingMessage3"></span></p>
+        <div class="snack-scroll" v-if="s_loading">処理中です。</div>
+        <div class="snack-scroll" v-if="s_loading2"><span v-html="s_loadingMessage"></span></div>
+        <div class="snack-scroll" v-if="s_loading3"><span v-html="s_loadingMessage3"></span></div>
       </v-snackbar>
 
 
@@ -11688,6 +11689,16 @@ select {
 .dialog-close:hover {
   color: red;
 }
+
+.snack-max{
+  max-height: 80vh;
+  align-items: stretch;
+}
+.snack-max .snack-scroll{
+  max-height: 100%;
+  overflow: auto;
+}
+
 /*.v-virtual-scroll__item:first-child {*/
 /*  height: 0 !important;*/
 /*  margin: 0 !important;*/
