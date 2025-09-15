@@ -70,9 +70,6 @@
         <div v-if="!imgUrl" class="empty">画像がありません</div>
         <div v-else
              class="img-wrap"
-             :style="zoomStyle"
-             @wheel.prevent="onWheel"
-             @mousedown.left="onPanStart"
              @click="onImageAreaClick">
           <img id="warp-image" ref="warpImage" :src="imgUrl" :class="{ hidden: hideBaseImage }" @load="onImageLoad">
           <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
@@ -483,11 +480,6 @@ export default {
       histIndex: -1,
       isRestoring: false,
       closedOnce: false,
-      zoom: 1,
-      pan: { x: 0, y: 0 },
-      panning: false,
-      panStart: { x: 0, y: 0 },
-      panAtStart: { x: 0, y: 0 },
       // ★ マスク（画像ナチュラル座標）
       maskMode: false,
       maskQuadNat: [],
@@ -496,7 +488,6 @@ export default {
     };
   },
   computed: {
-    zoomStyle(){ return { transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`, transformOrigin: 'top left' }; },
     isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false; },
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)); },
     pairsCount(){ return this.pairs.length; },
@@ -621,37 +612,6 @@ export default {
       const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform);
       const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return;
       if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); }
-    },
-
-    // --- パン/ズーム（プレビュー用）
-    onWheel(e){
-      const img=this.$refs.warpImage; if(!img) return;
-      const delta = e.deltaY < 0 ? 1.1 : 0.9;
-      const rect = img.getBoundingClientRect();
-      const cx = e.clientX - rect.left - this.pan.x;
-      const cy = e.clientY - rect.top  - this.pan.y;
-      const nz = Math.max(0.1, Math.min(10, this.zoom * delta));
-      const k = nz / this.zoom;
-      this.pan.x -= cx * (k - 1);
-      this.pan.y -= cy * (k - 1);
-      this.zoom = nz;
-    },
-    onPanStart(e){
-      this.panning = true;
-      this.panStart = { x: e.clientX, y: e.clientY };
-      this.panAtStart = { ...this.pan };
-      const onMove = (ev)=>{
-        if(!this.panning) return;
-        this.pan.x = this.panAtStart.x + (ev.clientX - this.panStart.x);
-        this.pan.y = this.panAtStart.y + (ev.clientY - this.panStart.y);
-      };
-      const onUp = ()=>{
-        this.panning=false;
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-      };
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
     },
 
     syncCanvasSize(){
@@ -883,12 +843,22 @@ export default {
       if (bad && pairs.length>=2){
         let i1=0,i2=1,maxd=-1;
         for(let a=0;a<srcUp.length;a++){
-          for(let b=a+1;b<srcUp.length;b++){
-            const d=Math.hypot(srcUp[b][0]-srcUp[a][0], srcUp[b][1]-srcUp[a][1]);
-            if(d>maxd){maxd=d;i1=a;i2=b;}
+          for(let b=a+1;b<srcUp.length>b;){
+            b++;
           }
         }
-        M = composeAffine(fitSimilarity2PExact([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A);
+        // いちばん長い2点で相似へフォールバック
+        let iLongest1=0, iLongest2=1, maxDist=-1;
+        for (let a=0;a<srcUp.length;a++){
+          for (let b=a+1;b<srcUp.length;b++){
+            const d=Math.hypot(srcUp[b][0]-srcUp[a][0], srcUp[b][1]-srcUp[a][1]);
+            if(d>maxDist){maxDist=d; iLongest1=a; iLongest2=b;}
+          }
+        }
+        M = composeAffine(
+            fitSimilarity2PExact([srcUp[iLongest1],srcUp[iLongest2]],[dstUp[iLongest1],dstUp[iLongest2]]),
+            FLIP_Y_A
+        );
       }
       return M;
     },
@@ -1108,7 +1078,7 @@ export default {
         });
       }
     },
-    
+
     // ====== GCPエディタ用ヘルパ ======
     getImgX(g){
       const img = this.$refs.warpImage;
