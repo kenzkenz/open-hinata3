@@ -3,33 +3,65 @@
   <div class="oh-warp-root" v-show="isOpen">
     <div class="oh-toolbar">
       <div class="oh-title"></div>
-      <div class="oh-tools">
-        <v-btn :disabled="pairsCount < 2" @click="previewWarp">プレビュー</v-btn>
-        <v-btn :disabled="!(affineM || H || tps)" @click="confirm">アップロード</v-btn>
-        <v-divider vertical class="mx-1"/>
-        <v-btn style="width: 25px;" icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
-        <v-btn style="width: 25px;" icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
-        <v-divider vertical class="mx-1"/>
-        <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'"><v-icon>mdi-grid</v-icon></v-btn>
-        <v-btn icon variant="text" @click="resetAll" :title="'全消去'"><v-icon>mdi-backspace</v-icon></v-btn>
-        <v-divider vertical class="mx-1"/>
-        <!-- ★ マスク（地図部四隅） -->
-        <v-btn icon variant="text" :class="{ 'is-active': maskMode }" @click="maskMode = !maskMode" :title="'マスク（地図部の四隅を指定）'">
-          <v-icon>mdi-crop</v-icon>
-        </v-btn>
-        <v-btn icon variant="text" :disabled="!maskQuadNat.length" @click="clearMask" :title="'マスクをクリア'">
-          <v-icon>mdi-selection-off</v-icon>
-        </v-btn>
-        <!-- ★ 2点厳密モード（青丸にピタッ） -->
-        <v-btn size="small" variant="tonal" :color="strict2pt ? 'primary' : undefined"
-               @click="strict2pt = !strict2pt" :title="'2点厳密モード（青丸にピタッ）'">
-          <v-icon start>mdi-crosshairs-gps</v-icon>2点厳密
-        </v-btn>
+      <div class="oh-tools compact">
+        <!-- アイコン化: プレビュー -->
+        <MiniTooltip text="プレビュー" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text"
+                 :disabled="pairsCount < 2"
+                 @click="previewWarp" :title="'プレビュー'">
+            <v-icon>mdi-eye</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- アイコン化: アップロード -->
+        <MiniTooltip text="アップロード" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text"
+                 :disabled="!(affineM || H || tps)"
+                 @click="confirm" :title="'アップロード'">
+            <v-icon>mdi-cloud-upload</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
         <v-divider vertical class="mx-1"/>
 
-        <v-chip size="small" class="mr-1" label> {{ pairsCount }}</v-chip>
-        <v-chip v-if="transformKind" :color="transformKindColor" size="small" class="mr-1" label>{{ transformKind }}</v-chip>
-        <v-chip v-if="imgMeta" size="small" class="mr-1" label>{{ imgMeta }}</v-chip>
+        <!-- Undo / Redo -->
+        <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'">
+          <v-icon>mdi-undo</v-icon>
+        </v-btn>
+        <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'">
+          <v-icon>mdi-redo</v-icon>
+        </v-btn>
+
+        <v-divider vertical class="mx-1"/>
+
+        <!-- グリッド トグル -->
+        <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'">
+          <v-icon>mdi-grid</v-icon>
+        </v-btn>
+
+        <!-- 全消去 -->
+        <v-btn icon variant="text" @click="resetAll" :title="'全消去'">
+          <v-icon>mdi-backspace</v-icon>
+        </v-btn>
+
+        <v-divider vertical class="mx-1"/>
+
+        <!-- ここで終端: マスキング -->
+        <MiniTooltip text="マスキング" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" :class="{ 'is-active': maskMode }"
+                 @click="maskMode = !maskMode" :title="'マスク（地図部の四隅を指定）'">
+            <v-icon>mdi-crop</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
+        <MiniTooltip text="マスクを解除" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" :disabled="!maskQuadNat.length"
+                 @click="clearMask" :title="'マスクをクリア'">
+            <v-icon>mdi-selection-off</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- ※ この先（2点厳密ボタン／チップ類）は表示しない -->
       </div>
     </div>
 
@@ -557,8 +589,13 @@ function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
 }
 
 // ======== ここから SFC ========
+import MiniTooltip from '@/components/MiniTooltip'
+
 export default {
   name: 'WarpWizard',
+  components: {
+    MiniTooltip
+  },
   props: {
     modelValue: { type:Boolean, default: true },
     open:       { type:Boolean, default: undefined },
@@ -733,12 +770,24 @@ export default {
 /* ====== コンテナ ====== */
 .oh-warp-root{ width: 100%; max-width: none; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%; min-height: 0; }
 
-/* ====== ツールバー ====== */
-.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom: 1px solid rgba(0,0,0,0.08); flex: 0 0 auto; min-height: 44px; }
+/* ====== ツールバー（コンパクト1段） ====== */
+.oh-toolbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0));
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  min-height: 40px;
+}
+.oh-toolbar .v-btn.v-btn--icon{ width:32px; height:32px; }
 .oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06) }
+.oh-toolbar .mx-1{ margin: 0 6px !important; }
 .oh-title{ font-weight:600; display:flex; align-items:center; gap:8px; }
-.oh-tools{ display:flex; align-items:center; gap:4px; flex-wrap: wrap; }
-.oh-icon{ font-size: 16px; }
+
+/* 折り返しさせず、幅が足りない場合は末尾を切り詰め */
+.oh-tools.compact{
+  display:flex; align-items:center; gap:2px;
+  flex-wrap: nowrap; overflow: hidden;
+}
 
 /* ====== 本体（左右レイアウト） ====== */
 .oh-body{ flex: 1 1 auto; min-height: 0; display:grid; grid-template-columns: 1fr auto; gap:10px; padding:10px; }
