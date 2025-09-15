@@ -2194,6 +2194,22 @@ function convertLngLatToImageXY(lngLat, map, imageElement) {
 
   return [clampedX, clampedY];
 }
+
+
+function fitSimilarity2PExactDown(p1d, p2d, q1, q2){
+  // 画像は y 下向き → いったん y 上向きにして厳密相似を解く
+  const p1=[p1d[0], -p1d[1]], p2=[p2d[0], -p2d[1]];
+  const [x1,y1]=p1, [x2,y2]=p2; const [X1,Y1]=q1, [X2,Y2]=q2;
+  const ds=Math.hypot(x2-x1,y2-y1)||1e-12, dt=Math.hypot(X2-X1,Y2-Y1)||1e-12;
+  const s=dt/ds, th=Math.atan2(Y2-Y1,X2-X1)-Math.atan2(y2-y1,x2-x1);
+  const c=Math.cos(th), sn=Math.sin(th);
+  const Au=s*c, Bu=-s*sn, Du=s*sn, Eu=s*c;
+  const Cu = X1 - (Au*x1 + Bu*y1);
+  const Fu = Y1 - (Du*x1 + Eu*y1);
+  const FLIP_Y=[1,0,0, 0,-1,0];  // y_down → y_up
+  return composeAffine([Au,Bu,Cu,Du,Eu,Fu], FLIP_Y); // y_down → 世界
+}
+
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogMyroom from '@/components/Dialog-myroom'
@@ -3304,6 +3320,32 @@ export default {
     },
   },
   methods: {
+// ▼ y下向きの画像座標（px）→ 世界座標（m）を 2点厳密で求める
+    fitSimilarity2PExactDown(p1d, p2d, q1, q2) {
+      // 画像は y 下向きを y 上向きに反転してから通常の厳密相似を求める
+      const p1 = [p1d[0], -p1d[1]];
+      const p2 = [p2d[0], -p2d[1]];
+      // 厳密（p1→q1, p2→q2 を完全一致）相似
+      const [x1,y1] = p1, [x2,y2] = p2;
+      const [X1,Y1] = q1, [X2,Y2] = q2;
+      const ds = Math.hypot(x2 - x1, y2 - y1) || 1e-12;
+      const dt = Math.hypot(X2 - X1, Y2 - Y1) || 1e-12;
+      const s  = dt / ds;
+      const th = Math.atan2(Y2 - Y1, X2 - X1) - Math.atan2(y2 - y1, x2 - x1);
+      const c = Math.cos(th), sn = Math.sin(th);
+      // ここまでで「y上→世界」の相似 M_up が得られる
+      const A = s*c, B = -s*sn, D = s*sn, E = s*c;
+      const C = X1 - (A*x1 + B*y1);
+      const F = Y1 - (D*x1 + E*y1);
+      // 画像は y下向きなので、右合成で FLIP_Y を掛け直す（y_down → y_up）
+      // M = M_up ∘ FLIP_Y
+      const FLIP_Y = [1,0,0, 0,-1,0];
+      return this.composeAffine([A,B,C,D,E,F], FLIP_Y);
+    },
+
+
+
+
 
     /** 単純 2x3 アフィン適用 */
     _applyAffine (M, pt) {
@@ -3376,180 +3418,159 @@ export default {
      * - 自然サイズで推定した M を、実保存ピクセル寸法に合わせて補正
      * - 2点: 厳密Similarity、3点以上: ロバストAffine
      */
-    generateWorldFile () {
-      const img = document.getElementById('warp-image');
+    generateWorldFile ({
+                         mode = 'canvas',     // 'original'（原画像に対するTFW/JGW）か 'canvas'（プレビューで描いた画像に対するTFW/JGW）か
+                         srs  = 'EPSG:3857',    // 'EPSG:3857'（メートル） or 'EPSG:4326'（度）
+                         useExportScale = false // true にすると exportWidth/Height 等の異方スケール補正を掛けます
+                       } = {}) {
+
+      const img = this.$refs?.warpImage || document.getElementById('warp-image');
       if (!img) { console.warn('image not found'); return null; }
 
-      // 有効なGCP（画像側/地図側の両方があるもの）
+      // 1) GCP を取得
       const pairs = (this.gcpList || []).filter(g =>
           (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
       );
       if (pairs.length < 2) { console.warn('GCPは2点以上必要です'); return null; }
 
-      // 1) 画像CSS座標 → 自然ピクセル（y下向き）
-      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-      // 推定は y上向き
-      const srcUp = srcNat.map(([x, y]) => [x, -y]);
-      const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
+      // 2) 画像座標（natural px, y下向き）に統一
+      const toNatural = (g) => Array.isArray(g.imageCoord) ? g.imageCoord
+          : imageCssToNatural(g.imageCoordCss, img);
+      const srcNat = pairs.map(toNatural);
 
-      // 2) 推定
-      let Mup;
+      // 3) 地図側を SRS に合わせて数値化
+      const dstWorld = (srs === 'EPSG:4326')
+          ? pairs.map(g => [Number(g.mapCoord[0]), Number(g.mapCoord[1])])  // (lng,lat) 度
+          : pairs.map(g => lngLatToMerc(g.mapCoord));                        // 3857 m
+
+      // 4) 原画像 → 世界の行列 M（y下→世界）
+      let M;
       if (pairs.length === 2) {
-        // 厳密（誤差ゼロ）Similarity
-        const p1 = srcUp[0], p2 = srcUp[1];
-        const q1 = dstUp[0], q2 = dstUp[1];
-        const M2 = this.fitSimilarity2PExact(p1, p2, q1, q2);
-        if (!M2) return null;
-        Mup = M2;
+        M = fitSimilarity2PExactDown(srcNat[0], srcNat[1], dstWorld[0], dstWorld[1]); // 完全一致
       } else {
-        // ロバストAffine
-        Mup = fitAffineRobust(srcUp, dstUp, 4);
+        const srcUp = srcNat.map(([x,y]) => [x, -y]);      // y上にして推定
+        const Mup = fitAffineRobust(srcUp, dstWorld, 4);   // y上→世界
+        const FLIP_Y=[1,0,0, 0,-1,0];
+        M = composeAffine(Mup, FLIP_Y);                    // y下→世界
       }
 
-      // 3) y上向き → y下向き（ピクセル座標系）へ
-      const FLIP_Y = [1, 0, 0, 0, -1, 0];
-      let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
-
-      // 4) 実保存サイズに合わせて補正（縮小/拡大の異方も許容）
-      const natW = img.naturalWidth || 1;
-      const natH = img.naturalHeight || 1;
-      let expW = 0, expH = 0;
-      const canv = document.querySelector('.warp-canvas');
-      if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
-        expW = Number(canv.width);
-        expH = Number(canv.height);
-      }
-      if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
-      if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
-      if (!expW) expW = natW; if (!expH) expH = natH;
-
-      let sX = expW / natW;
-      let sY = expH / natH;
-      if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
-      if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
-
-      if (sX !== 1 || sY !== 1) {
-        // 自然→実保存: [x_nat, y_nat]^T = [x_exp/sX, y_exp/sY]^T
-        // よって (x_exp,y_exp) 基準の行列は M ∘ S,  S = diag(1/sX, 1/sY)
-        const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
-        M = composeAffine(M, S);
+      // 5) （必要時のみ）エクスポート異方スケール補正
+      if (useExportScale) {
+        const natW = img.naturalWidth || 1, natH = img.naturalHeight || 1;
+        let sX = (Number(this.exportWidth)  > 0 ? Number(this.exportWidth)  : natW) / natW;
+        let sY = (Number(this.exportHeight) > 0 ? Number(this.exportHeight) : natH) / natH;
+        if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
+        if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
+        if (sX !== 1 || sY !== 1) M = composeAffine(M, [1/sX,0,0, 0,1/sY,0]); // 出力px→naturalpx
       }
 
-      // 状態保持（プレビュー等で再利用）
+      // 6) プレビュー画像（キャンバス画像）に対するワールドファイルが欲しい場合:
+      //    previewOnCanvas で world→canvas に使った T を再計算し、T^{-1} を書き出す
+      if (mode === 'canvas') {
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyAffine(M, p)); // 世界座標
+        const xs = corners.map(p=>p[0]), ys=corners.map(p=>p[1]);
+        const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+        // エクスポートするキャンバスの実サイズ（プレビューと同じが無難）
+        const cw = img.clientWidth || W, ch = img.clientHeight || H;
+        const spanX=Math.max(1,maxX-minX), spanY=Math.max(1,maxY-minY);
+        const s = Math.min(cw/spanX, ch/spanY);
+        // T: world → canvas
+        const T = [ s, 0, -minX*s,  0, -s,  maxY*s ];
+        // T^{-1}: canvas → world
+        const det = T[0]*T[4] - T[1]*T[3] || 1e-12;
+        const inv = [  T[4]/det, -T[1]/det, (T[1]*T[5]-T[4]*T[2])/det,
+          -T[3]/det,  T[0]/det, (T[3]*T[2]-T[0]*T[5])/det ];
+        // キャンバス画像ピクセル→世界 の行列が最終出力
+        M = inv;
+      }
+
+      // 7) デバッグ（角度・スケール確認）
+      // const theta = Math.atan2(M[3], M[0]) * 180/Math.PI; console.log('deg=', theta, 'A=', M[0], 'E=', M[4]);
+
       this._lastAffineM = M;
       this.affineM = M;
 
-      // 2点のとき、理論上ほぼ0の残差を確認（デバッグ）
-      if (pairs.length === 2) this._debugCheckTwoPointResiduals(M, srcNat, dstUp);
-
-      const wld = this.worldFileFromAffine(M);
-      this.lastWorldFileText = wld; // 任意：UIで確認
+      const wld = worldFileFromAffine(M); // 6行（A,D,B,E,C,F）
+      this.lastWorldFileText = wld;
       return wld;
     },
 
-    /**
-     * ワールドファイル文字列を生成（PGW/JGW/WLD の6行テキスト）
-     * - 画像 natural サイズで推定した行列 M を、実際に保存するピクセル寸法に合わせて補正
-     * - 実保存サイズは .warp-canvas の width/height → this.exportWidth/Height → natural の順で採用
-     */
-//     generateWorldFile () {
-//       const img = document.getElementById('warp-image');
-//       if (!img) {
-//         console.warn('image not found');
-//         return null;
-//       }
-//
-//
-//       const pairs = (this.gcpList || []).filter(g =>
-//           (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-//       );
-//       if (pairs.length < 2) {
-//         console.warn('GCPは2点以上必要です');
-//         return null;
-//       }
-//
-//
-// // 1) CSS座標→自然ピクセル座標（y下向き）
-//       const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-// // 推定は y上向きで行う
-//       const srcUp = srcNat.map(([x, y]) => [x, -y]);
-//       const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
-//
-//
-// // 2) 2点: Similarity / 3点以上: ロバストAffine
-//       let Mup;
-//       if (pairs.length === 2) {
-//         Mup = fitSimilarity2P(srcUp, dstUp);
-//       } else {
-//         Mup = fitAffineRobust(srcUp, dstUp, 4);
-//       }
-//
-//
-// // y上向き→y下向き（ピクセル座標）へ戻す
-//       const FLIP_Y = [1, 0, 0, 0, -1, 0];
-//       let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
-//
-//
-// // 3) 実保存サイズに合わせたスケール補正
-//       const natW = img.naturalWidth;
-//       const natH = img.naturalHeight;
-//
-//
-// // 実際に書き出す予定のサイズ（1) .warp-canvas → 2) this.exportWidth/Height → 3) natural）
-//       let expW = 0, expH = 0;
-//       const canv = document.querySelector('.warp-canvas');
-//       if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
-//         expW = Number(canv.width);
-//         expH = Number(canv.height);
-//       }
-//       if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
-//       if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
-//       if (!expW) expW = natW;
-//       if (!expH) expH = natH;
-//
-//
-// // 異方縮小にも対応
-//       let sX = expW / natW;
-//       let sY = expH / natH;
-// // 任意: 明示スケールがあれば優先
-//       if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
-//       if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
-//
-//
-//       if (sX !== 1 || sY !== 1) {
-//         const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
-//         M = composeAffine(M, S);
-//       }
-//
-//
-//       this._lastAffineM = M;
-//       this.affineM = M;
-//
-//
-//       const wld = this.worldFileFromAffine(M);
-//       this.lastWorldFileText = wld; // 任意: UIデバッグ用に保持
-//       return wld;
-//     },
-
-
-    /**
-     * 2x3 アフィン行列からワールドファイル（6行）を生成
-     * M = [a,b,c,d,e,f] : X = a*x + b*y + c, Y = d*x + e*y + f
-     * ピクセル中心補正: C,F に +0.5px 相当を加味
-     */
-    // worldFileFromAffine (M) {
-    //   const [a, b, c, d, e, f] = M; // y下向きピクセル座標前提
-    //   const C = c + a * 0.5 + b * 0.5;
-    //   const F = f + d * 0.5 + e * 0.5;
-    //   const A = a; // x方向解像度（m/px等）
-    //   const D = d; // 回転（行方向）
-    //   const B = b; // 回転（列方向）
-    //   const E = e; // y方向解像度（通常は負）
-    //   // return [A, D, B, E, C, F].map(v => String(v)).join(','
-    //   const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
-    //   return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
+    //
+    // generateWorldFile () {
+    //   const img = document.getElementById('warp-image');
+    //   if (!img) { console.warn('image not found'); return null; }
+    //
+    //   // 有効なGCP（画像側/地図側の両方があるもの）
+    //   const pairs = (this.gcpList || []).filter(g =>
+    //       (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
+    //   );
+    //   if (pairs.length < 2) { console.warn('GCPは2点以上必要です'); return null; }
+    //
+    //   // 1) 画像CSS座標 → 自然ピクセル（y下向き）
+    //   // const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
+    //   const toNatural = (g) => Array.isArray(g.imageCoord)
+    //     ? g.imageCoord                          // すでに natural(px)
+    //          : imageCssToNatural(g.imageCoordCss, img); // CSS→natural
+    //   const srcNat = pairs.map(toNatural);
+    //   // 推定は y上向き
+    //   const srcUp = srcNat.map(([x, y]) => [x, -y]);
+    //   const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord)); // Webメルカトル[m]
+    //
+    //   // 2) 推定
+    //   let Mup;
+    //   if (pairs.length === 2) {
+    //     // 厳密（誤差ゼロ）Similarity
+    //     const p1 = srcUp[0], p2 = srcUp[1];
+    //     const q1 = dstUp[0], q2 = dstUp[1];
+    //     const M2 = this.fitSimilarity2PExact(p1, p2, q1, q2);
+    //     if (!M2) return null;
+    //     Mup = M2;
+    //   } else {
+    //     // ロバストAffine
+    //     Mup = fitAffineRobust(srcUp, dstUp, 4);
+    //   }
+    //
+    //   // 3) y上向き → y下向き（ピクセル座標系）へ
+    //   const FLIP_Y = [1, 0, 0, 0, -1, 0];
+    //   let M = composeAffine(Mup, FLIP_Y); // (x_down, y_down) → (X[m], Y[m])
+    //
+    //   // 4) 実保存サイズに合わせて補正（縮小/拡大の異方も許容）
+    //   const natW = img.naturalWidth || 1;
+    //   const natH = img.naturalHeight || 1;
+    //   let expW = 0, expH = 0;
+    //   const canv = document.querySelector('.warp-canvas');
+    //   if (canv && Number(canv.width) > 0 && Number(canv.height) > 0) {
+    //     expW = Number(canv.width);
+    //     expH = Number(canv.height);
+    //   }
+    //   if (!expW && Number(this.exportWidth) > 0) expW = Number(this.exportWidth);
+    //   if (!expH && Number(this.exportHeight) > 0) expH = Number(this.exportHeight);
+    //   if (!expW) expW = natW; if (!expH) expH = natH;
+    //
+    //   let sX = expW / natW;
+    //   let sY = expH / natH;
+    //   if (Number.isFinite(this.pixelScaleX)) sX = Number(this.pixelScaleX);
+    //   if (Number.isFinite(this.pixelScaleY)) sY = Number(this.pixelScaleY);
+    //
+    //   if (sX !== 1 || sY !== 1) {
+    //     // 自然→実保存: [x_nat, y_nat]^T = [x_exp/sX, y_exp/sY]^T
+    //     // よって (x_exp,y_exp) 基準の行列は M ∘ S,  S = diag(1/sX, 1/sY)
+    //     const S = [1 / sX, 0, 0, 0, 1 / sY, 0];
+    //     M = composeAffine(M, S);
+    //   }
+    //
+    //   // 状態保持（プレビュー等で再利用）
+    //   this._lastAffineM = M;
+    //   this.affineM = M;
+    //
+    //   // 2点のとき、理論上ほぼ0の残差を確認（デバッグ）
+    //   if (pairs.length === 2) this._debugCheckTwoPointResiduals(M, srcNat, dstUp);
+    //
+    //   const wld = this.worldFileFromAffine(M);
+    //   this.lastWorldFileText = wld; // 任意：UIで確認
+    //   return wld;
     // },
-
     onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob }) {
       // 安全チェック（宇宙行き防止）
       if (cornersLngLat && !this._validCorners(cornersLngLat)) {
@@ -3674,22 +3695,6 @@ export default {
         }
       }, 60); // できるだけ短く
     },
-
-    // fullscreenForIframe() {
-    //   this.$store.state.isFromIframe = true
-    //   this.updatePermalink()
-    //   setTimeout(() => {
-    //     const oh3Url = location.href
-    //     const a = document.createElement('a');
-    //     a.href = oh3Url;
-    //     a.target = '_blank';
-    //     a.rel = 'noopener noreferrer';
-    //     // 一部ブラウザはDOM上にある必要がある
-    //     document.body.appendChild(a);
-    //     a.click();
-    //     a.remove();
-    //   },1000)
-    // },
     waitForMap(mapKey = 'map01', { loaded = true, interval = 50, timeout = 10000 } = {}) {
       return new Promise((resolve, reject) => {
         const t0 = Date.now();

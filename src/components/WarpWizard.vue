@@ -20,6 +20,11 @@
         <v-btn icon variant="text" :disabled="!maskQuadNat.length" @click="clearMask" :title="'マスクをクリア'">
           <v-icon>mdi-selection-off</v-icon>
         </v-btn>
+        <!-- ★ 2点厳密モード（青丸にピタッ） -->
+        <v-btn size="small" variant="tonal" :color="strict2pt ? 'primary' : undefined"
+               @click="strict2pt = !strict2pt" :title="'2点厳密モード（青丸にピタッ）'">
+          <v-icon start>mdi-crosshairs-gps</v-icon>2点厳密
+        </v-btn>
         <v-divider vertical class="mx-1"/>
 
         <v-chip size="small" class="mr-1" label> {{ pairsCount }}</v-chip>
@@ -123,6 +128,19 @@ function fitSimilarity2P(srcPts, dstPts){
   const C = X1 - (A * x1 + B * y1);   const F = Y1 - (D * x1 + E * y1);
   return [A,B,C,D,E,F];
 }
+// ★ 厳密2点（“ビシッ”）: 2点を完全一致させる相似
+function fitSimilarity2PExact(srcPts, dstPts){
+  const [x1,y1] = srcPts[0], [x2,y2] = srcPts[1];
+  const [X1,Y1] = dstPts[0], [X2,Y2] = dstPts[1];
+  const vsx = x2 - x1, vsy = y2 - y1; const vdx = X2 - X1, vdy = Y2 - Y1;
+  const ds = Math.hypot(vsx, vsy) || 1e-12; const dt = Math.hypot(vdx, vdy) || 1e-12;
+  const s  = dt / ds; const th = Math.atan2(vdy, vdx) - Math.atan2(vsy, vsx);
+  const cos = Math.cos(th), sin = Math.sin(th);
+  const A = s*cos, B = -s*sin, D = s*sin, E = s*cos;
+  const C = X1 - (A*x1 + B*y1);
+  const F = Y1 - (D*x1 + E*y1);
+  return [A,B,C,D,E,F];
+}
 function fitAffineN(srcPts, dstPts, w){
   const n = srcPts.length; const M = 6;
   const A = Array.from({length:M},()=>Array(M).fill(0));
@@ -168,7 +186,6 @@ function composeAffine([A1,B1,C1,D1,E1,F1],[A2,B2,C2,D2,E2,F2]){
   const A = A1*A2 + B1*D2; const B = A1*B2 + B1*E2; const C = A1*C2 + B1*F2 + C1;
   const D = D1*A2 + E1*D2; const E = D1*B2 + E1*E2; const F = D1*C2 + E1*F2 + F1; return [A,B,C,D,E,F];
 }
-// ---- クリップ付プレビュー（Affine）
 function previewOnCanvas(vm, img, canvas, M, clipNat=null){
   const ctx = canvas.getContext('2d');
   const w = img.naturalWidth, h = img.naturalHeight;
@@ -180,15 +197,17 @@ function previewOnCanvas(vm, img, canvas, M, clipNat=null){
   canvas.width  = cw; canvas.height = ch;
   const W = Math.max(1, maxX - minX); const Hh = Math.max(1, maxY - minY);
   const s = Math.min(cw / W, ch / Hh);
-  const T = [ s, 0, -minX * s, 0, -s,  maxY * s ];
+  const T = [ s, 0, -minX * s, 0, -s,  maxY * s ]; // world -> canvas
   const Mv = composeAffine(T, M); // natural -> canvas
   const [A,B,C,D,E,F] = Mv;
 
-  // クリア
+  // ▼ 可視化のためのクロージャを保存
+  vm.viewImgToCanvas = (p) => applyAffine(Mv, p);
+  vm.viewMapToCanvas = (XY) => applyAffine(T, XY);
+
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // クリップ（任意）
   let clipped = false;
   if (clipNat && clipNat.length >= 3){
     ctx.save();
@@ -202,14 +221,21 @@ function previewOnCanvas(vm, img, canvas, M, clipNat=null){
     clipped = true;
   }
 
-  // 描画
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   ctx.setTransform(A,D,B,E,C,F);
   ctx.drawImage(img, 0, 0);
 
   if (clipped) ctx.restore();
+
+  // マーカーの再描画（残差が見えるように）
+  vm.$nextTick(vm.redrawMarkers);
 }
-function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}`; }
+function worldFileFromAffine([A,B,C,D,E,F]){ return `${A}
+${D}
+${B}
+${E}
+${C}
+${F}`; }
 
 /* ======== 射影（ホモグラフィ）ユーティリティ ======== */
 function mat33Mul(A,B){
@@ -313,7 +339,6 @@ function estimateHomographyRobust(srcPts, dstPts, iters=3){
   }
   return H;
 }
-// ---- クリップ付プレビュー（Homography）
 function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24, clipNat=null){
   const ctx = canvas.getContext('2d');
   const W = img.naturalWidth, Himg = img.naturalHeight;
@@ -325,8 +350,18 @@ function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24, clipNat=null){
   canvas.width=cw; canvas.height=ch;
   const spanX = Math.max(1, maxX-minX), spanY = Math.max(1, maxY-minY);
   const s = Math.min(cw/spanX, ch/spanY);
-  const Tfit = [ [ s, 0, -minX*s ], [ 0,-s,  maxY*s ], [ 0, 0, 1 ], ];
+  const Tfit = [ [ s, 0, -minX*s ], [ 0,-s,  maxY*s ], [ 0, 0, 1 ], ]; // world -> canvas
   const Hc = mat33Mul(Tfit, H); // natural -> canvas
+
+  // ▼ 可視化用クロージャ
+  vm.viewImgToCanvas = (p) => applyHomography(Hc, p);
+  vm.viewMapToCanvas = (XY) => applyAffine([Tfit[0][0],Tfit[1][0],Tfit[0][2],Tfit[1][0],Tfit[1][1],Tfit[1][2]], XY); // applyAffine形式で
+  // 上の1行は applyAffine 形式に合わせて展開（A,B,C,D,E,F）
+  vm.viewMapToCanvas = (XY) => {
+    const A = Tfit[0][0], B = Tfit[0][1], C = Tfit[0][2];
+    const D = Tfit[1][0], E = Tfit[1][1], F = Tfit[1][2];
+    return applyAffine([A,B,C,D,E,F], XY);
+  };
 
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,cw,ch);
@@ -376,6 +411,8 @@ function previewProjectiveOnCanvas(vm, img, canvas, H, mesh=24, clipNat=null){
   }
 
   if (clipped) ctx.restore();
+
+  vm.$nextTick(vm.redrawMarkers);
 }
 
 // ======== TPS utilities ========
@@ -412,9 +449,7 @@ function solveLinear(A, b) {
   const x = b.slice();
   for (let i = 0; i < N; i++) {
     let p = i;
-    for (let r = i + 1; r < N; r++) {
-      if (Math.abs(M[r][i]) > Math.abs(M[p][i])) { p = r; }
-    }
+    for (let r = i + 1; r < N; r++) { if (Math.abs(M[r][i]) > Math.abs(M[p][i])) p = r; }
     if (p !== i) { [M[i], M[p]] = [M[p], M[i]]; [x[i], x[p]] = [x[p], x[i]]; }
     const diag = M[i][i] || 1e-12;
     for (let j = i + 1; j < N; j++) {
@@ -446,7 +481,7 @@ function applyTPS(tps, [x, y]) {
 function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
   const ctx = canvas.getContext('2d');
   const W = img.naturalWidth, Himg = img.naturalHeight;
-  const corners = [[0,0],[W,0],[W,Himg],[0,Himg]].map((p) => applyTPS(tps, [p[0], -p[1]]));
+  const corners = [[0, 0], [W, 0], [W, Himg], [0, Himg]].map((p) => applyTPS(tps, [p[0], -p[1]]));
   const xs = corners.map((p) => p[0]), ys = corners.map((p) => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const cw = Math.max(1, img.clientWidth || img.naturalWidth);
@@ -456,18 +491,22 @@ function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
   const s = Math.min(cw / spanX, ch / spanY);
   function applyViewTransform([X, Y]) { return [s * (X - minX), s * (maxY - Y)]; }
 
+  // ▼ 可視化用クロージャ
+  vm.viewImgToCanvas = (p) => applyViewTransform(applyTPS(tps, [p[0], -p[1]]));
+  vm.viewMapToCanvas = (XY) => applyViewTransform(XY);
+
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0, 0, cw, ch);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
-  // クリップ（TPSは辺が曲がるので稠密サンプル）
   let clipped = false;
   if (clipNat && clipNat.length >= 3){
+    // TPS の境界は曲がるのでエッジを細分化して近似
     const q = clipNat.length === 4 ? clipNat : [...clipNat];
     const edges = [ [q[0],q[1]], [q[1],q[2]], [q[2],q[3]||q[0]], [q[3]||q[0],q[0]] ];
     const pts = [];
-    const N = 24; // サンプル密度
-    edges.forEach(([p0,p1],ei)=>{
+    const N = 24;
+    edges.forEach(([p0,p1])=>{
       if(!p0 || !p1) return;
       for(let i=0;i<=N;i++){
         const t = i/N; const x = p0[0]*(1-t)+p1[0]*t; const y = p0[1]*(1-t)+p1[1]*t;
@@ -513,6 +552,8 @@ function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
   }
 
   if (clipped) ctx.restore();
+
+  vm.$nextTick(vm.redrawMarkers);
 }
 
 // ======== ここから SFC ========
@@ -535,6 +576,9 @@ export default {
       affineM: null,   // 2x3（相似/アフィン用；natural→3857）
       H: null,         // 3x3（ホモグラフィ；natural→3857）
       tps: null,
+      // ▼ プレビュー座標系へのヘルパ（可視化/残差表示用）
+      viewImgToCanvas: null,
+      viewMapToCanvas: null,
       grid: true,
       objUrl: null,
       history: [],
@@ -549,6 +593,8 @@ export default {
       // ★ マスク（地図部の四隅: 画像ナチュラル座標）
       maskMode: false,
       maskQuadNat: [],
+      // ★ 2点厳密モード（デフォルトON）
+      strict2pt: true,
     }
   },
   watch: {
@@ -576,23 +622,12 @@ export default {
     this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers() })
   },
   computed: {
-    zoomStyle(){
-      return { transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`, transformOrigin: 'top left' }
-    },
+    zoomStyle(){ return { transform: `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`, transformOrigin: 'top left' } },
     isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false },
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)) },
     pairsCount(){ return this.pairs.length },
-    transformKind(){
-      if(!(this.affineM || this.H || this.tps)) return '';
-      if (this.tps) return 'TPS';
-      if (this.H) return 'Homography';
-      return this.affineM ? (this.pairsCount >= 3 ? 'Affine' : 'Similarity') : '';
-    },
-    transformKindColor(){
-      if (this.tps) return 'blue';
-      if (this.H) return 'pink';
-      return this.affineM ? (this.pairsCount >= 3 ? 'deep-purple' : 'teal') : '';
-    },
+    transformKind(){ if(!(this.affineM || this.H || this.tps)) return ''; if (this.tps) return 'TPS'; if (this.H) return 'Homography'; return this.affineM ? (this.pairsCount >= 3 ? 'Affine' : 'Similarity') : '' },
+    transformKindColor(){ if (this.tps) return 'blue'; if (this.H) return 'pink'; return this.affineM ? (this.pairsCount >= 3 ? 'deep-purple' : 'teal') : '' },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}` },
     hideBaseImage(){ return !!(this.affineM || this.H || this.tps) },
     canUndo(){ return this.histIndex > 0 },
@@ -606,168 +641,78 @@ export default {
     fmtLL(ll){ if(!Array.isArray(ll) || ll.length<2) return '-'; const lng=Number(ll[0]), lat=Number(ll[1]); if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}` },
 
     onExternalClose(fromUnmount=false){
-      try{
-        if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize) }
-      }catch(e){}
+      try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize) } }catch(e){}
       if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null }
       this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas)
       this.$emit('clear-map-markers')
+      this.viewImgToCanvas = null; this.viewMapToCanvas = null;
       this.closedOnce = true
     },
 
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid) },
-    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.$emit('update:gcpList', []); this.maskQuadNat = []; this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
+    resetAll(){ this.affineM=null; this.H=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.$emit('update:gcpList', []); this.maskQuadNat = []; this.pushHistory('reset'); this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() },
     onResize(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); if(this.affineM || this.H || this.tps) this.previewWarp() },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); },
 
-    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null, tps: this.tps ? {wx: [...this.tps.wx], wy: [...this.tps.wy], srcPts: this.tps.srcPts.map(p=>[...p])} : null, maskQuadNat: this.maskQuadNat.map(p=>[...p]) } },
+    snapshot(){ return { gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), affineM: this.affineM ? [...this.affineM] : null, H: this.H ? this.H.map(r=>[...r]) : null, tps: this.tps ? {wx: [...this.tps.wx], wy: [...this.tps.wy], srcPts: this.tps.srcPts.map(p=>[...p])} : null, maskQuadNat: this.maskQuadNat.map(p=>[...p]), strict2pt: this.strict2pt } },
     resetHistory(){ this.history=[]; this.histIndex=-1 },
     pushHistory(){ if(this.isRestoring) return; const snap=this.snapshot(); const cur=this.history[this.histIndex]; if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return; if(this.histIndex < this.history.length-1){ this.history.splice(this.histIndex+1) } this.history.push(snap); this.histIndex=this.history.length-1; if(this.history.length>50){ this.history.shift(); this.histIndex-- } },
-    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.maskQuadNat = (snap.maskQuadNat||[]).map(p=>[...p]); this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewWarp(); else this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers() }) },
+    applySnapshot(snap){ this.isRestoring=true; this.affineM=snap.affineM; this.H=snap.H; this.tps = snap.tps ? {wx: [...snap.tps.wx], wy: [...snap.tps.wy], srcPts: snap.tps.srcPts.map(p=>[...p])} : null; this.maskQuadNat = (snap.maskQuadNat||[]).map(p=>[...p]); this.strict2pt = !!snap.strict2pt; this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList))); this.$nextTick(()=>{ this.isRestoring=false; if(this.affineM || this.H || this.tps) this.previewWarp(); else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); } this.redrawMarkers() }) },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]) },
     redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]) },
     onKeydown(e){ const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform); const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return; if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); } },
 
     // --- ざっくりパン/ズーム
-    onWheel(e){
-      const img=this.$refs.warpImage; if(!img) return;
-      const delta = e.deltaY < 0 ? 1.1 : 0.9;
-      const rect = img.getBoundingClientRect();
-      const cx = e.clientX - rect.left - this.pan.x;
-      const cy = e.clientY - rect.top  - this.pan.y;
-      const nz = Math.max(0.1, Math.min(10, this.zoom * delta));
-      const k = nz / this.zoom;
-      this.pan.x -= cx * (k - 1);
-      this.pan.y -= cy * (k - 1);
-      this.zoom = nz;
-    },
-    onPanStart(e){
-      this.panning = true;
-      this.panStart = { x: e.clientX, y: e.clientY };
-      this.panAtStart = { ...this.pan };
-      const onMove = (ev)=>{ if(!this.panning) return; this.pan.x = this.panAtStart.x + (ev.clientX - this.panStart.x); this.pan.y = this.panAtStart.y + (ev.clientY - this.panStart.y); };
-      const onUp = ()=>{ this.panning=false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-      window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
-    },
+    onWheel(e){ const img=this.$refs.warpImage; if(!img) return; const delta = e.deltaY < 0 ? 1.1 : 0.9; const rect = img.getBoundingClientRect(); const cx = e.clientX - rect.left - this.pan.x; const cy = e.clientY - rect.top  - this.pan.y; const nz = Math.max(0.1, Math.min(10, this.zoom * delta)); const k = nz / this.zoom; this.pan.x -= cx * (k - 1); this.pan.y -= cy * (k - 1); this.zoom = nz; },
+    onPanStart(e){ this.panning = true; this.panStart = { x: e.clientX, y: e.clientY }; this.panAtStart = { ...this.pan }; const onMove = (ev)=>{ if(!this.panning) return; this.pan.x = this.panAtStart.x + (ev.clientX - this.panStart.x); this.pan.y = this.panAtStart.y + (ev.clientY - this.panStart.y); }; const onUp = ()=>{ this.panning=false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); },
 
     syncCanvasSize(){ const img=this.$refs.warpImage; if(!img) return; const cw=img.clientWidth||img.naturalWidth; const ch=img.clientHeight||img.naturalHeight; const cvs=[this.$refs.warpCanvas,this.$refs.gridCanvas,this.$refs.markerCanvas]; cvs.forEach(c=>{ if(!c) return; c.width=cw; c.height=ch; }) },
     clearCanvas(c){ if(!c) return; const ctx=c.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,c.width,c.height) },
     drawGrid(){ if(!this.grid) return; const img=this.$refs.warpImage; const canvas=this.$refs.gridCanvas; if(!img||!canvas) return; const cw=img.clientWidth||img.naturalWidth; const ch=img.clientHeight||img.naturalHeight; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,cw,ch); ctx.globalAlpha=.35; ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.6)'; const step=Math.max(32, Math.round(cw/20)); for(let x=0;x<cw;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke() } for(let y=0;y<ch;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke() } ctx.globalAlpha=1 },
     redrawMarkers(){
-      const canvas=this.$refs.markerCanvas; const img=this.$refs.warpImage; if(!canvas||!img) return; const ctx=canvas.getContext('2d'); const cw=canvas.width, ch=canvas.height; ctx.clearRect(0,0,cw,ch);
+      const canvas=this.$refs.markerCanvas; const img=this.$refs.warpImage; if(!canvas||!img) return; const ctx=canvas.getContext('2d'); const cw=canvas.width, ch=canvas.height; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cw,ch);
 
-      // --- 既存：赤いGCP ---
-      const pts=(this.gcpList||[]).map((g,i)=>{ if(Array.isArray(g.imageCoordCss)) return {i,xy:g.imageCoordCss}; if(Array.isArray(g.imageCoord)) return {i,xy:naturalToCss(g.imageCoord, img)}; return null }).filter(Boolean);
-      const r=12;
-      pts.forEach(p=>{ const [x,y]=p.xy; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle='#ffffff'; ctx.stroke(); ctx.font='700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff'; ctx.fillText(String(p.i+1), x, y); });
-
-      // --- マスク用：緑の四隅＋輪郭 ---
-      if (this.maskQuadNat && this.maskQuadNat.length){
-        const qCss = this.maskQuadNat.map(p=>naturalToCss(p, img));
-        // 線
-        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)';
-        ctx.fillStyle = 'rgba(56,142,60,0.12)';
-        ctx.beginPath();
-        qCss.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
-        if(qCss.length>=3) { ctx.closePath(); ctx.fill(); }
-        ctx.stroke();
-        // 点
-        qCss.forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke(); });
-      }
-    },
-
-    onImageAreaClick(e){
-      const img=this.$refs.warpImage; if(!img) return; const rect=img.getBoundingClientRect(); const xCss=e.clientX-rect.left; const yCss=e.clientY-rect.top; const [xNat,yNat]=imageCssToNatural([xCss,yCss], img);
-
-      // ★ マスクモード：四隅を追加
-      if (this.maskMode){
-        const next = [...this.maskQuadNat, [xNat, yNat]].slice(0,4);
-        this.maskQuadNat = next;
-        this.pushHistory('mask-add');
-        this.$nextTick(()=>{ this.redrawMarkers(); if (this.maskQuadNat.length >= 3 && (this.affineM||this.H||this.tps)) this.previewWarp(); });
+      // 変換プレビューがある場合は、赤=画像点(変換後の位置)、青=地図点 を同じキャンバス上に描き、残差を線で表示
+      if ((this.affineM || this.H || this.tps) && this.viewImgToCanvas && this.viewMapToCanvas){
+        const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord));
+        const toNat = (g)=> Array.isArray(g.imageCoord) ? g.imageCoord : imageCssToNatural(g.imageCoordCss, img);
+        pairs.forEach((g,i)=>{
+          const pNat = toNat(g);
+          const pImgV = this.viewImgToCanvas(pNat);
+          const pMapV = this.viewMapToCanvas(lngLatToMerc(g.mapCoord));
+          // 残差線
+          ctx.beginPath(); ctx.moveTo(pImgV[0], pImgV[1]); ctx.lineTo(pMapV[0], pMapV[1]); ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+          // 画像点（赤）
+          ctx.beginPath(); ctx.arc(pImgV[0], pImgV[1], 8, 0, Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+          // 地図点（青）
+          ctx.beginPath(); ctx.arc(pMapV[0], pMapV[1], 8, 0, Math.PI*2); ctx.fillStyle='#1976d2'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
+          // index
+          ctx.font='700 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff'; ctx.fillText(String(i+1), pImgV[0], pImgV[1]);
+        });
+        // マスク四隅プレビュー（画像座標→キャンバス）
+        if (this.maskQuadNat && this.maskQuadNat.length){
+          const qV = this.maskQuadNat.map(p=> this.viewImgToCanvas(p));
+          ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)'; ctx.fillStyle = 'rgba(56,142,60,0.12)';
+          ctx.beginPath(); qV.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); if(qV.length>=3){ ctx.closePath(); ctx.fill(); } ctx.stroke();
+        }
         return;
       }
 
-      // 既存：GCP追加
-      const next=(this.gcpList||[]).slice();
-      next.push({ imageCoordCss:[xCss,yCss], imageCoord:[xNat,yNat], mapCoord:null });
-      this.$emit('update:gcpList', next);
-      this.pushHistory('img-click');
-      this.$nextTick(this.redrawMarkers)
+      // 未プレビュー：従来の赤マーカー（画像CSS座標）とマスク（CSS）
+      const pts=(this.gcpList||[]).map((g,i)=>{ if(Array.isArray(g.imageCoordCss)) return {i,xy:g.imageCoordCss}; if(Array.isArray(g.imageCoord)) return {i,xy:naturalToCss(g.imageCoord, img)}; return null }).filter(Boolean);
+      const r=12; pts.forEach(p=>{ const [x,y]=p.xy; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle='#ffffff'; ctx.stroke(); ctx.font='700 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff'; ctx.fillText(String(p.i+1), x, y); });
+      if (this.maskQuadNat && this.maskQuadNat.length){ const qCss = this.maskQuadNat.map(p=>naturalToCss(p, img)); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(56,142,60,0.95)'; ctx.fillStyle = 'rgba(56,142,60,0.12)'; ctx.beginPath(); qCss.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); if(qCss.length>=3) { ctx.closePath(); ctx.fill(); } ctx.stroke(); qCss.forEach(([x,y])=>{ ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle='#2e7d32'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke(); }); }
     },
+
+    onImageAreaClick(e){ const img=this.$refs.warpImage; if(!img) return; const rect=img.getBoundingClientRect(); const xCss=e.clientX-rect.left; const yCss=e.clientY-rect.top; const [xNat,yNat]=imageCssToNatural([xCss,yCss], img); if (this.maskMode){ const next = [...this.maskQuadNat, [xNat, yNat]].slice(0,4); this.maskQuadNat = next; this.pushHistory('mask-add'); this.$nextTick(()=>{ this.redrawMarkers(); if (this.maskQuadNat.length >= 3 && (this.affineM||this.H||this.tps)) this.previewWarp(); }); return; } const next=(this.gcpList||[]).slice(); next.push({ imageCoordCss:[xCss,yCss], imageCoord:[xNat,yNat], mapCoord:null }); this.$emit('update:gcpList', next); this.pushHistory('img-click'); this.$nextTick(this.redrawMarkers) },
     clearMask(){ this.maskQuadNat = []; this.pushHistory('mask-clear'); this.$nextTick(()=>{ this.redrawMarkers(); if (this.affineM||this.H||this.tps) this.previewWarp(); }) },
     removeGcp(i){ const next=(this.gcpList||[]).slice(); next.splice(i,1); this.$emit('update:gcpList', next); this.pushHistory('remove'); this.$nextTick(this.redrawMarkers) },
 
     // ===== プレビュー生成（マスク対応） =====
-    previewWarp(){
-      function toNaturalCoord(g, img){ if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); if (Array.isArray(g.imageCoord))    return g.imageCoord; return null; }
-      const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas; if(!img||!canvas) return;
-      const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
-      if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.clearCanvas(canvas); return; }
-      const srcNat = pairs.map(g => toNaturalCoord(g, img));
-      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
+    previewWarp(){ function toNaturalCoord(g, img){ if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); if (Array.isArray(g.imageCoord))    return g.imageCoord; return null; } const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas; if(!img||!canvas) return; const pairs=(this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)); if (pairs.length < 2){ this.affineM=null; this.H=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(canvas); this.redrawMarkers(); return; } const srcNat = pairs.map(g => toNaturalCoord(g, img)); const srcUp  = srcNat.map(([x,y]) => [x, -y]); const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord)); const clipNat = this.maskQuadNat && this.maskQuadNat.length >= 3 ? this.maskQuadNat : null; if (pairs.length === 2){ const Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp); const FLIP_Y_A = [1,0,0, 0,-1,0]; const M = composeAffine(Mup, FLIP_Y_A); this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return; } if (pairs.length === 3){ const Mup = fitAffineRobust(srcUp, dstUp, 4); const FLIP_Y_A = [1,0,0, 0,-1,0]; const M = composeAffine(Mup, FLIP_Y_A); this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return; } const tps = fitTPS(srcUp, dstUp); this.affineM = null; this.H = null; this.tps = tps; previewTPSOnCanvas(this, img, canvas, tps, 28, clipNat); },
 
-      const clipNat = this.maskQuadNat && this.maskQuadNat.length >= 3 ? this.maskQuadNat : null;
+    buildWorldAffine(){ const img = this.$refs.warpImage; if(!img) return null; const pairs = (this.gcpList||[]).filter(g => (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord) ); if (pairs.length < 2) return null; const toNatural = (g)=>{ if (Array.isArray(g.imageCoord)) return g.imageCoord; if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); return null; }; const srcNat = pairs.map(toNatural); const srcUp  = srcNat.map(([x,y]) => [x, -y]); const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord)); let Mup; if (pairs.length === 2) Mup = this.strict2pt ? fitSimilarity2PExact(srcUp, dstUp) : fitSimilarity2P(srcUp, dstUp); else Mup = fitAffineRobust(srcUp, dstUp, 4); const FLIP_Y_A = [1,0,0, 0,-1,0]; let M = composeAffine(Mup, FLIP_Y_A); let [A,B,C,D,E,F] = M; const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E); const W = img.naturalWidth, Hh = img.naturalHeight; const worldW = scaleX * W, worldH = scaleY * Hh; const TOO_BIG = 6e7, TOO_FINE = 1e-3, TOO_COARSE = 1e4; const bad = !isFinite(worldW) || !isFinite(worldH) || worldW>TOO_BIG || worldH>TOO_BIG || scaleX<TOO_FINE || scaleY<TOO_FINE || scaleX>TOO_COARSE || scaleY>TOO_COARSE; if (bad && pairs.length>=2){ let i1=0,i2=1,maxd=-1; for(let i=0;i<srcUp.length;i++){ for(let j=i+1;j<srcUp.length;j++){ const d=Math.hypot(srcUp[j][0]-srcUp[i][0], srcUp[j][1]-srcUp[i][1]); if(d>maxd){maxd=d;i1=i;i2=j;} } } M = composeAffine(fitSimilarity2PExact([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A); } return M; },
 
-      if (pairs.length === 2){
-        const Mup = fitSimilarity2P(srcUp, dstUp);
-        const FLIP_Y_A = [1,0,0, 0,-1,0];
-        const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return;
-      }
-      if (pairs.length === 3){
-        const Mup = fitAffineRobust(srcUp, dstUp, 4);
-        const FLIP_Y_A = [1,0,0, 0,-1,0];
-        const M = composeAffine(Mup, FLIP_Y_A);
-        this.H = null; this.tps=null; this.affineM = M; previewOnCanvas(this, img, canvas, M, clipNat); return;
-      }
-      // 4点以上はTPSでプレビュー
-      const tps = fitTPS(srcUp, dstUp);
-      this.affineM = null; this.H = null; this.tps = tps; previewTPSOnCanvas(this, img, canvas, tps, 28, clipNat);
-    },
-
-    buildWorldAffine(){
-      const img = this.$refs.warpImage; if(!img) return null;
-      const pairs = (this.gcpList||[]).filter(g =>
-          (Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-      );
-      if (pairs.length < 2) return null;
-
-      const toNatural = (g)=>{ if (Array.isArray(g.imageCoord)) return g.imageCoord; if (Array.isArray(g.imageCoordCss)) return imageCssToNatural(g.imageCoordCss, img); return null; };
-      const srcNat = pairs.map(toNatural);
-      const srcUp  = srcNat.map(([x,y]) => [x, -y]);
-      const dstUp  = pairs.map(g => lngLatToMerc(g.mapCoord));
-
-      let Mup; if (pairs.length === 2) Mup = fitSimilarity2P(srcUp, dstUp); else Mup = fitAffineRobust(srcUp, dstUp, 4);
-      const FLIP_Y_A = [1,0,0, 0,-1,0];
-      let M = composeAffine(Mup, FLIP_Y_A);
-
-      // 健全性チェック（既存ロジックのまま）
-      let [A,B,C,D,E,F] = M;
-      const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E);
-      const W = img.naturalWidth, Hh = img.naturalHeight;
-      const worldW = scaleX * W, worldH = scaleY * Hh;
-      const TOO_BIG = 6e7, TOO_FINE = 1e-3, TOO_COARSE = 1e4;
-      const bad = !isFinite(worldW) || !isFinite(worldH) ||
-          worldW>TOO_BIG || worldH>TOO_BIG ||
-          scaleX<TOO_FINE || scaleY<TOO_FINE ||
-          scaleX>TOO_COARSE || scaleY>TOO_COARSE;
-
-      if (bad && pairs.length>=2){
-        let i1=0,i2=1,maxd=-1;
-        for(let i=0;i<srcUp.length;i++){
-          for(let j=i+1;j<srcUp.length;j++){
-            const d=Math.hypot(srcUp[j][0]-srcUp[i][0], srcUp[j][1]-srcUp[i][1]);
-            if(d>maxd){maxd=d;i1=i;i2=j;}
-          }
-        }
-        M = composeAffine(fitSimilarity2P([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP_Y_A);
-      }
-      return M;
-    },
-
-    // ===== GCPテーブルの編集ロジック（最小限） =====
     getImgX(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[0]); if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[0]); return g?._editImgX ?? '' },
     getImgY(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[1]); if(Array.isArray(g?.imageCoordCss) && img) return Math.round(imageCssToNatural(g.imageCoordCss, img)[1]); return g?._editImgY ?? '' },
     setImgX(i, v){ const img=this.$refs.warpImage; const x=Number(v); const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const y = Array.isArray(g.imageCoord) ? Number(g.imageCoord[1]) : (Array.isArray(g.imageCoordCss)&&img ? imageCssToNatural(g.imageCoordCss, img)[1] : NaN); if(Number.isFinite(x) && Number.isFinite(y)){ g.imageCoord=[x,y]; if(img) g.imageCoordCss = naturalToCss(g.imageCoord, img); delete g._editImgX; delete g._editImgY; }else{ g._editImgX=v; } next[i]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers); },
@@ -777,72 +722,26 @@ export default {
     setLng(i, v){ const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const lng = Number(v); const lat = (g._editLat!==undefined) ? Number(g._editLat) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[1]) : NaN); g._editLng = v; if(Number.isFinite(lng) && Number.isFinite(lat)){ g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat; } next[i]=g; this.$emit('update:gcpList', next); },
     setLat(i, v){ const next=(this.gcpList||[]).slice(); const g={ ...(next[i]||{}) }; const lat = Number(v); const lng = (g._editLng!==undefined) ? Number(g._editLng) : (Array.isArray(g.mapCoord) ? Number(g.mapCoord[0]) : NaN); g._editLat = v; if(Number.isFinite(lng) && Number.isFinite(lat)){ g.mapCoord=[lng, lat]; delete g._editLng; delete g._editLat; } next[i]=g; this.$emit('update:gcpList', next); },
 
-    // ===== ダウンロード (.jgw/.pgw/.tfw) =====
-    inferredWorldExt(){
-      const name = (this.$props.file && this.$props.file.name) ? this.$props.file.name : (this.url||'image.jpg');
-      const ext = (name.split('.').pop()||'').toLowerCase();
-      if (ext==='png') return 'pgw';
-      if (ext==='tif' || ext==='tiff') return 'tfw';
-      return 'jgw';
-    },
-    downloadWorldFile(){
-      const M = this.buildWorldAffine();   // ★ ここが肝：H/TPSを使わない
-      if(!M) return;
-      const txt = worldFileFromAffine(M);
-      const blob = new Blob([txt], { type:'text/plain;charset=utf-8' });
-      const base = (this.$props.file && this.$props.file.name)
-          ? this.$props.file.name.replace(/\.[^.]+$/, '')
-          : 'image';
-      const ext = this.inferredWorldExt(); // jgw/pgw/tfw
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${base}.${ext}`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    },
-    confirm(){
-      if(!(this.affineM || this.H || this.tps)) return;
-      const f=this.$props.file||null;
-      const canvas=this.$refs.warpCanvas;
-      let cornersLngLat = null; let payload; const img=this.$refs.warpImage;
-
-      if (this.tps && img){
-        const W=img.naturalWidth, Hh=img.naturalHeight;
-        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];  // TL, TR, BR, BL
-        const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]])); // 3857(m)
-        cornersLngLat = cornersWorld.map(mercToLngLat);
-        payload = { file: f, tps: this.tps, kind: 'tps', cornersLngLat, srs: this.srs3857 };
-      } else if (this.H && img){
-        const W=img.naturalWidth, Hh=img.naturalHeight;
-        const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];
-        const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p));
-        cornersLngLat = cornersWorld.map(mercToLngLat);
-        payload = { file: f, affineM: null, H: this.H, kind: 'homography', cornersLngLat, srs: this.srs3857 };
-      } else if (this.affineM){
-        payload = { file: f, affineM: this.affineM, H: null, kind: this.pairsCount>=3 ? 'affine' : 'similarity', cornersLngLat, srs: this.srs3857 };
-      }
-      // OH3 の PHP 側は PRJ を見ない → 3857 前提で投げる（PNGは既に透明マスク済み）
-      if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return }
-      canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png')
-    },
+    inferredWorldExt(){ const name = (this.$props.file && this.$props.file.name) ? this.$props.file.name : (this.url||'image.jpg'); const ext = (name.split('.').pop()||'').toLowerCase(); if (ext==='png') return 'pgw'; if (ext==='tif' || ext==='tiff') return 'tfw'; return 'jgw'; },
+    downloadWorldFile(){ const M = this.buildWorldAffine(); if(!M) return; const txt = worldFileFromAffine(M); const blob = new Blob([txt], { type:'text/plain;charset=utf-8' }); const base = (this.$props.file && this.$props.file.name) ? this.$props.file.name.replace(/\.[^.]+$/, '') : 'image'; const ext = this.inferredWorldExt(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${base}.${ext}`; a.click(); URL.revokeObjectURL(a.href); },
+    confirm(){ if(!(this.affineM || this.H || this.tps)) return; const f=this.$props.file||null; const canvas=this.$refs.warpCanvas; let cornersLngLat = null; let payload; const img=this.$refs.warpImage; if (this.tps && img){ const W=img.naturalWidth, Hh=img.naturalHeight; const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]]; const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]])); cornersLngLat = cornersWorld.map(mercToLngLat); payload = { file: f, tps: this.tps, kind: 'tps', cornersLngLat, srs: this.srs3857 }; } else if (this.H && img){ const W=img.naturalWidth, Hh=img.naturalHeight; const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]]; const cornersWorld=cornersImg.map(p=> applyHomography(this.H, p)); cornersLngLat = cornersWorld.map(mercToLngLat); payload = { file: f, affineM: null, H: this.H, kind: 'homography', cornersLngLat, srs: this.srs3857 }; } else if (this.affineM){ payload = { file: f, affineM: this.affineM, H: null, kind: this.pairsCount>=3 ? 'affine' : 'similarity', cornersLngLat, srs: this.srs3857 }; } if(!canvas || !canvas.toBlob){ this.$emit('confirm',{ ...payload, blob:null }); return } canvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob }) }, 'image/png') },
   }
 }
 </script>
 
 <style scoped>
 /* ====== コンテナ ====== */
-.oh-warp-root{ width: 100%; max-width: none; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%;   /* 親が100%を持つ前提（↑の非scopedで付与） */ min-height: 0; }
+.oh-warp-root{ width: 100%; max-width: none; box-sizing: border-box; background: #fff; overflow: hidden; display: flex; flex-direction: column; height: 100%; min-height: 0; }
 
 /* ====== ツールバー ====== */
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom: 1px solid rgba(0,0,0,0.08); flex: 0 0 auto; min-height: 44px; }
 .oh-toolbar .v-btn.is-active{ background: rgba(0,0,0,0.06) }
 .oh-title{ font-weight:600; display:flex; align-items:center; gap:8px; }
-.oh-tools{ display:flex; align-items:center; gap:4px; }
+.oh-tools{ display:flex; align-items:center; gap:4px; flex-wrap: wrap; }
 .oh-icon{ font-size: 16px; }
 
 /* ====== 本体（左右レイアウト） ====== */
 .oh-body{ flex: 1 1 auto; min-height: 0; display:grid; grid-template-columns: 1fr auto; gap:10px; padding:10px; }
-/* stacked時は右ペインを残り高さで伸ばす（左=auto / 右=1fr） */
 .oh-body.stacked{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
 .oh-body.stacked .left-pane{ order:1; }
 .oh-body.stacked .right-pane{ order:2; }
@@ -869,13 +768,11 @@ export default {
 .gcp-scroll{ flex: 1 1 auto; min-height: 0; overflow: auto; margin-top:4px; }
 .img-x, .img-y{ margin-left: 10px; width: 50px; }
 
-/* Vuetify のテキストフィールド微調整 */
 :deep(.gcp-editor .v-input--density-compact){ --v-input-control-height: 24px; }
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
 
-/* 任意：その他 */
 .gcp-table{ font-variant-numeric: tabular-nums; background:#fff; border-radius:8px; overflow:hidden; }
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 .actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
