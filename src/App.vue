@@ -1172,7 +1172,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-if="user1"
               ></v-select>
             </div>
-            <v-btn @click="geoTiffLoad0">geotiff読込開始</v-btn>
+            <v-btn @click="geoTiffLoad0">geotiff読込開始！</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -3321,99 +3321,11 @@ export default {
     },
   },
   methods: {
-// ▼ y下向きの画像座標（px）→ 世界座標（m）を 2点厳密で求める
-    fitSimilarity2PExactDown(p1d, p2d, q1, q2) {
-      // 画像は y 下向きを y 上向きに反転してから通常の厳密相似を求める
-      const p1 = [p1d[0], -p1d[1]];
-      const p2 = [p2d[0], -p2d[1]];
-      // 厳密（p1→q1, p2→q2 を完全一致）相似
-      const [x1,y1] = p1, [x2,y2] = p2;
-      const [X1,Y1] = q1, [X2,Y2] = q2;
-      const ds = Math.hypot(x2 - x1, y2 - y1) || 1e-12;
-      const dt = Math.hypot(X2 - X1, Y2 - Y1) || 1e-12;
-      const s  = dt / ds;
-      const th = Math.atan2(Y2 - Y1, X2 - X1) - Math.atan2(y2 - y1, x2 - x1);
-      const c = Math.cos(th), sn = Math.sin(th);
-      // ここまでで「y上→世界」の相似 M_up が得られる
-      const A = s*c, B = -s*sn, D = s*sn, E = s*c;
-      const C = X1 - (A*x1 + B*y1);
-      const F = Y1 - (D*x1 + E*y1);
-      // 画像は y下向きなので、右合成で FLIP_Y を掛け直す（y_down → y_up）
-      // M = M_up ∘ FLIP_Y
-      const FLIP_Y = [1,0,0, 0,-1,0];
-      return this.composeAffine([A,B,C,D,E,F], FLIP_Y);
-    },
-
-
-
-
-
     /** 単純 2x3 アフィン適用 */
     _applyAffine (M, pt) {
       const [a,b,c,d,e,f] = M; const [x,y] = pt;
       return [a*x + b*y + c, d*x + e*y + f];
     },
-
-    /**
-     * 2点厳密Similarity（Helmert 2D）
-     * p1,p2 → q1,q2 を誤差ゼロで一致させる 2x3 行列 [a,b,c,d,e,f] を返す。
-     * 入力は y上向き座標（srcUp/dstUp）。
-     */
-    fitSimilarity2PExact (p1, p2, q1, q2) {
-      const dxs = p2[0] - p1[0];
-      const dys = p2[1] - p1[1];
-      const dxd = q2[0] - q1[0];
-      const dyd = q2[1] - q1[1];
-      const ns = Math.hypot(dxs, dys);
-      const nd = Math.hypot(dxd, dyd);
-      if (!(ns > 0) || !(nd > 0)) {
-        console.warn('fitSimilarity2PExact: 無効な2点（距離0）');
-        return null;
-      }
-      const angS = Math.atan2(dys, dxs);
-      const angD = Math.atan2(dyd, dxd);
-      const theta = angD - angS;
-      const cosT = Math.cos(theta);
-      const sinT = Math.sin(theta);
-      const s = nd / ns; // 一様スケール
-      // 回転+スケール
-      const a =  s * cosT;
-      const b = -s * sinT;
-      const d =  s * sinT;
-      const e =  s * cosT;
-      // 並進（q1 を厳密一致）
-      const c = q1[0] - (a * p1[0] + b * p1[1]);
-      const f = q1[1] - (d * p1[0] + e * p1[1]);
-      return [a, b, c, d, e, f];
-    },
-
-    /** 2点時の残差（m）をデバッグ表示 */
-    _debugCheckTwoPointResiduals (M, srcNat, dstMerc) {
-      if (srcNat.length !== 2 || dstMerc.length !== 2) return;
-      const r0 = this._applyAffine(M, srcNat[0]);
-      const r1 = this._applyAffine(M, srcNat[1]);
-      const e0 = Math.hypot(r0[0]-dstMerc[0][0], r0[1]-dstMerc[0][1]);
-      const e1 = Math.hypot(r1[0]-dstMerc[1][0], r1[1]-dstMerc[1][1]);
-      console.info('[2点厳密チェック] 残差(m):', { e0, e1 });
-    },
-
-    /**
-     * 2x3 アフィンからワールドファイル（6行）を生成
-     * 入力 M は「y下向きピクセル座標」前提。
-     * C,F に +0.5px の中心補正を入れる（左上ピクセルの中心）。
-     */
-    worldFileFromAffine (M) {
-      const [a, b, c, d, e, f] = M;
-      const C = c + a * 0.5 + b * 0.5;
-      const F = f + d * 0.5 + e * 0.5;
-      // const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
-      // return lines.map(v => String(v)).join('
-      // ') + '
-      // ';
-      const lines = [a, d, b, e, C, F]; // [A, D, B, E, C, F]
-      return lines.map(v => String(v)).join('\n') + '\n'; // ← 必ず '\n'
-    },
-
     /**
      * メイン：ワールドファイルを生成
      * - 自然サイズで推定した M を、実保存ピクセル寸法に合わせて補正
@@ -4720,7 +4632,7 @@ export default {
       reader.readAsText(this.s_geojsonFile);
     },
     startTiling () {
-      this.transparentType = '1'
+      this.$store.state.transparent = '0'
 
       const isJpg = this.$store.state.tiffAndWorldFile.find(f => f.name.includes('jgw'))
 
