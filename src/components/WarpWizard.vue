@@ -1108,64 +1108,7 @@ export default {
         });
       }
     },
-
-    // confirm(){
-    //   if(!(this.affineM || this.tps)) return;
-    //
-    //   const img=this.$refs.warpImage;
-    //   const clipNat = (this.maskQuadNat && this.maskQuadNat.length >= 3) ? this.maskQuadNat : null;
-    //
-    //   let payload = { file: this.$props.file || null, srs: this.srs3857 };
-    //   let cornersLngLat = null;
-    //   let outCanvas = null;
-    //
-    //   if (this.tps){
-    //     // TPS: 高解像メッシュで再描画 → 角はTPSで算出して送る
-    //     outCanvas = this._exportTPSHighRes(img, this.tps, clipNat, 32);
-    //     const W=img.naturalWidth, Hh=img.naturalHeight;
-    //     const cornersImg=[[0,0],[W,0],[W,Hh],[0,Hh]];
-    //     const cornersWorld=cornersImg.map(p=> applyTPS(this.tps, [p[0], -p[1]]));
-    //     cornersLngLat = cornersWorld.map(mercToLngLat);
-    //     payload = { ...payload, tps: this.tps, kind: 'tps', cornersLngLat };
-    //   } else if (this.affineM){
-    //     // アフィン/相似: 高解像アフィン描画 → ワールドファイルも付与可
-    //     outCanvas = this._exportAffineHighRes(img, this.affineM, clipNat);
-    //     payload = { ...payload, affineM: this.affineM, kind: (this.pairsCount>=3 ? 'affine' : 'similarity') };
-    //   }
-    //
-    //   if (!outCanvas) return;
-    //   outCanvas.toBlob((blob)=>{
-    //     if (!blob){
-    //       // 最低限のフォールバック（プレビューcanvas）
-    //       const preview = this.$refs.warpCanvas;
-    //       if (preview && preview.toBlob){
-    //         preview.toBlob((pb)=> this.$emit('confirm', { ...payload, blob: pb || null, maskedImage: pb || null }), 'image/png');
-    //       } else {
-    //         this.$emit('confirm', { ...payload, blob: null, maskedImage: null });
-    //       }
-    //       return;
-    //     }
-    //
-    //     // ← ここだけ追加：Blob → File
-    //     // 元ファイル名ベース（なければ 'image'）
-    //     const baseName = (this.$props.file && this.$props.file.name)
-    //         ? this.$props.file.name.replace(/\.[^.]+$/, '')
-    //         : 'image';
-    //     const maskedPngFile = (blob instanceof File)
-    //         ? blob
-    //         : new File([blob], `${baseName}.png`, { type:'image/png' });
-    //
-    //     // アフィンならワールドファイルを添付（親側が使用する場合）
-    //     if (payload.kind === 'affine' || payload.kind === 'similarity'){
-    //       const wld = worldFileFromAffine(this.affineM);
-    //       this.$emit('confirm', { ...payload, worldFileText: wld, blob: blob, maskedPngFile });
-    //     } else {
-    //       this.$emit('confirm', { ...payload, blob: blob, maskedPngFile });
-    //     }
-    //   }, 'image/png');
-    // },
-
-
+    
     // ====== GCPエディタ用ヘルパ ======
     getImgX(g){
       const img = this.$refs.warpImage;
