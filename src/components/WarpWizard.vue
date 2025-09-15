@@ -66,17 +66,32 @@
     </div>
 
     <div class="oh-body" :class="{ stacked }">
+      <!-- 左ペイン -->
+      <!-- 左ペインだけ置き換え -->
       <div class="left-pane">
         <div v-if="!imgUrl" class="empty">画像がありません</div>
-        <div v-else
-             class="img-wrap"
-             @click="onImageAreaClick">
-          <img id="warp-image" ref="warpImage" :src="imgUrl" :class="{ hidden: hideBaseImage }" @load="onImageLoad">
-          <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
-          <canvas v-show="grid" ref="gridCanvas" class="grid-canvas"></canvas>
-          <canvas ref="markerCanvas" class="marker-canvas"></canvas>
+
+        <div v-else class="ml-wrap">
+          <!-- MapLibre 本体 -->
+          <div ref="mlMap" class="ml-map"></div>
+
+          <!-- 地図の上に画像を重ねる（クリックはこの画像で拾う） -->
+          <div class="ml-overlay">
+            <img id="warp-image" ref="warpImage"
+                 :src="imgUrl"
+                 :class="{ hidden: hideBaseImage }"
+                 @load="onImageLoad"
+                 @click="onImageAreaClick">
+          </div>
+
+          <!-- キャンバスは残すが非表示（既存処理の互換のため） -->
+          <canvas v-show="false" id="warp-canvas"   ref="warpCanvas"   class="warp-canvas"></canvas>
+          <canvas v-show="false"                    ref="gridCanvas"   class="grid-canvas"></canvas>
+          <canvas v-show="false"                    ref="markerCanvas" class="marker-canvas"></canvas>
         </div>
       </div>
+
+
 
       <div class="right-pane">
         <!-- ▼▼▼ GCP編集テーブル（アップロードの上） ▼▼▼ -->
@@ -450,6 +465,8 @@ function previewTPSOnCanvas(vm, img, canvas, tps, mesh = 24, clipNat=null) {
   vm.$nextTick(vm.redrawMarkers);
 }
 
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import MiniTooltip from '@/components/MiniTooltip';
 
 export default {
@@ -485,6 +502,9 @@ export default {
       maskQuadNat: [],
       // ★ 2点厳密モード（デフォルトON）
       strict2pt: true,
+      // ▼ MapLibre
+      ml: null,          // maplibre のインスタンス
+      mlInited: false,   // 二重初期化防止
     };
   },
   computed: {
@@ -528,13 +548,18 @@ export default {
         this.$nextTick(this.redrawMarkers);
       } }
   },
-  beforeUnmount(){ this.onExternalClose(true); },
+  beforeUnmount(){
+    this.onExternalClose(true);
+    // 既存の onExternalClose(true) 呼び出しのままでOK。MapLibre を明示破棄
+    try{ if(this.ml){ this.ml.remove(); this.ml=null; } }catch(e){}
+  },
   mounted(){
     const h = document.querySelector('#handle-'+this.item?.id);
     if(h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`;
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
     this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
+    this.$nextTick(this.initMapLibre);
   },
   methods: {
     // ========== 共通ユーティリティ ==========
@@ -567,11 +592,11 @@ export default {
       this.clearCanvas(this.$refs.warpCanvas);
       this.redrawMarkers();
     },
-    onResize(){
-      this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
-      if(this.affineM || this.tps) this.previewWarp();
-    },
-    onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); },
+    // onResize(){
+    //   this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+    //   if(this.affineM || this.tps) this.previewWarp();
+    // },
+    // onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); },
 
     snapshot(){
       return {
@@ -1162,6 +1187,40 @@ export default {
       next[index]=g;
       this.$emit('update:gcpList', next);
     },
+
+    // 既存 onResize に追記（地図のサイズ更新）
+    onResize(){
+      this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+      if (this.ml) { try{ this.ml.resize(); }catch(e){} }
+      if(this.affineM || this.tps) this.previewWarp();
+    },
+
+    // 画像ロード時に“必ず”初期化＆地図リサイズ
+    onImageLoad(){
+      this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+      this.initMapLibre();      // ← ここが肝
+      if (this.ml) this.ml.resize();
+    },
+
+    // ▼ MapLibre 初期化（1回だけ）
+    initMapLibre(){
+      if (this.mlInited) return;
+      if (!this.$refs?.mlMap) return;   // DOM まだなら後で再試行（onImageLoadが呼ぶ）
+
+      this.mlInited = true;
+      this.ml = new maplibregl.Map({
+        container: this.$refs.mlMap,
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: [139.767, 35.681],
+        zoom: 12,
+        pitch: 0,
+        bearing: 0
+      });
+      this.ml.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
+
+      // クリックは画像オーバーレイで拾う運用なので、地図側では何もしない
+    },
+
   }
 };
 </script>
@@ -1231,4 +1290,37 @@ export default {
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
+
+/* ===== MapLibre ===== */
+/* MapLibre のレイアウト */
+.ml-wrap{
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;         /* ←高さが無いと地図が見えない */
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+.ml-map{
+  position: absolute;
+  inset: 0;                  /* ←地図を全面に広げる */
+}
+.ml-overlay{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;      /* 地図の操作は通す */
+}
+.ml-overlay > img{
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  pointer-events: auto;      /* ただし画像クリックは通す（onImageAreaClick用） */
+  cursor: crosshair;
+}
+
+
 </style>
