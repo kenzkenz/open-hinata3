@@ -463,6 +463,34 @@ export default {
         if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId, this.gcpLabelId);
       }catch(e){}
     },
+// 画像四隅（TL,TR,BR,BL）を WebMercator(XY) で返す
+    getCurrentImageQuadMerc(){
+      const quadLL = this.computeImageQuadLngLat && this.computeImageQuadLngLat();
+      if (!quadLL || quadLL.length < 4) return null;
+      return quadLL.map(lngLatToMerc); // [[X,Y], ...] TL,TR,BR,BL
+    },
+
+// 凸四辺形の内外判定（全エッジの外積の符号が同じなら内側）
+    _pointInQuadMerc(quadXY, P){
+      if (!quadXY || quadXY.length !== 4) return false;
+      const sign = (a,b,p) => {
+        const abx = b[0]-a[0], aby = b[1]-a[1];
+        const apx = p[0]-a[0], apy = p[1]-a[1];
+        const cross = abx*apy - aby*apx;
+        return Math.sign(cross) || 0; // エッジ上は 0 とする
+      };
+      const s0 = sign(quadXY[0], quadXY[1], P);
+      const s1 = sign(quadXY[1], quadXY[2], P);
+      const s2 = sign(quadXY[2], quadXY[3], P);
+      const s3 = sign(quadXY[3], quadXY[0], P);
+
+      // 0（辺上）を許容しつつ、正/負が混在していないことを確認
+      const signs = [s0,s1,s2,s3].filter(s => s !== 0);
+      if (signs.length === 0) return true; // ちょうど辺上/頂点
+      const allPos = signs.every(s => s > 0);
+      const allNeg = signs.every(s => s < 0);
+      return allPos || allNeg;
+    },
 
     // 画像四隅の地理座標を一元化（TL, TR, BR, BL）
     computeImageQuadLngLat(){
@@ -548,6 +576,15 @@ export default {
       this._gcpClickBound = true;
       this.map.on('click', (e)=>{
         const {lng,lat}=e.lngLat||{}; if(!Number.isFinite(lng)||!Number.isFinite(lat)) return;
+
+        // ▼ 画像の四隅（Mercator）を取得して内外判定
+        const quadM = this.getCurrentImageQuadMerc && this.getCurrentImageQuadMerc();
+        if (!quadM) return; // まだ画像が載っていない等
+        const pM = lngLatToMerc([lng, lat]);
+
+        // 画像外なら何もしない（赤丸もGCPも追加しない）
+        if (!this._pointInQuadMerc(quadM, pM)) return;
+
 
         // 1) 赤丸（MapLibre）
         this.addGcpMarker([lng,lat]);
