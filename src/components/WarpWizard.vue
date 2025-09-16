@@ -704,7 +704,7 @@ export default {
       }
     },
 
-    
+
 
     bindMapClickForMarkers(){
       if (!this.map) return;
@@ -736,42 +736,6 @@ export default {
         src.setData(this.gcpFC)
       }
     },
-
-
-    // initMapLibre(){
-    //   if (this.map) return;
-    //   this.map = new maplibregl.Map({
-    //     container: this.$refs.mlMap,
-    //     style: 'https://demotiles.maplibre.org/style.json',
-    //     center: [139.767, 35.681], // 東京駅あたり
-    //     zoom: 12,
-    //     attributionControl: true
-    //   });
-    //   this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    //   this.map.on('load', () => {
-    //     this.mlReady = true;
-    //     this.tryShowImageOnMap();
-    //   });
-    //
-    //   // 地図クリック → 画像 px を拾う仕様ではないので、ここでは何もしない。
-    //   // （クリックは既存の onImageAreaClick を使うキャンバス側に残し、将来的に同等 UX を map 側で再現予定）
-    // },
-
-    // 画像を地図に載せる（初回 or 更新）
-    // tryShowImageOnMap(){
-    //   if (!this.mlReady || !this.imgUrl) return;
-    //   const img = this.$refs.warpImage;
-    //   if (!img || !img.naturalWidth) return; // 読み込み前は待つ
-    //   this.addOrUpdateImageSource();
-    //   // 画像の外接矩形に合わせて view を調整
-    //   const coords = this.computeImageQuadLngLat();
-    //   if (coords){
-    //     const lons = coords.map(c=>c[0]), lats = coords.map(c=>c[1]);
-    //     const minLng=Math.min(...lons), maxLng=Math.max(...lons);
-    //     const minLat=Math.min(...lats), maxLat=Math.max(...lats);
-    //     this.map.fitBounds([[minLng,minLat],[maxLng,maxLat]], { padding: 40, duration: 0 });
-    //   }
-    // },
     updateImageOnMap(){
       if (!this.mlReady) return;
       if (this.map && this.map.getSource(this.imageSourceId)){
