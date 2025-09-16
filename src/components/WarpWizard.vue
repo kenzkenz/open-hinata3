@@ -83,7 +83,6 @@
         </div>
       </div>
 
-
       <div class="right-pane">
         <!-- ▼▼▼ GCP編集テーブル ▼▼▼ -->
         <div class="gcp-editor">
@@ -447,7 +446,6 @@ export default {
       histIndex: -1,
       isRestoring: false,
       closedOnce: false,
-      // ズーム系は撤去（要件通り）
       // マスク
       maskMode: false,
       maskQuadNat: [],
@@ -462,6 +460,10 @@ export default {
       gcpCircleId: 'gcp-circle',
       gcpLabelId: 'gcp-label',
       gcpFC: { type:'FeatureCollection', features:[] },
+
+      // 画像(px) ↔ 地図(3857) のホモグラフィ
+      HImgToMap: null,
+      HMapToImg: null,
     };
   },
   computed: {
@@ -487,7 +489,6 @@ export default {
         this.objUrl = URL.createObjectURL(f);
         this.imgUrl = this.objUrl;
         this.$nextTick(() => {
-          // 地図初期化がまだなら実行
           if (!this.map) this.initMapLibre();
           this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
           this.resetHistory(); this.pushHistory('init:file');
@@ -516,30 +517,21 @@ export default {
   },
   beforeUnmount(){ this.onExternalClose(true); },
   mounted(){
-
     const h = document.querySelector('#handle-'+this.item?.id);
     if(h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`;
-
-    // ← 地図コンテナは常に DOM にあるので nextTick 後に初期化
     this.$nextTick(() => { this.initMapLibre(); });
-
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
     this.$nextTick(()=>{ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
-
   },
   methods: {
     // ========== MapLibre ==========
     initMapLibre(){
       if (this.map) return;
       const el = this.$refs.mlMap;
-      if (!el) {
-        // まだ ref が張られてない → 次フレームで再試行
-        this.$nextTick(this.initMapLibre);
-        return;
-      }
+      if (!el) { this.$nextTick(this.initMapLibre); return; }
       this.map = new maplibregl.Map({
-        container: el, // ← 必ず HTMLElement
+        container: el,
         style: 'https://demotiles.maplibre.org/style.json',
         center: [139.767, 35.681],
         zoom: 12,
@@ -555,7 +547,7 @@ export default {
           this.map.addSource(this.gcpSrcId, { type: 'geojson', data: this.gcpFC });
         }
 
-// ---- circle layer (赤丸)
+        // ---- circle layer (赤丸)
         if (!this.map.getLayer(this.gcpCircleId)) {
           this.map.addLayer({
             id: this.gcpCircleId,
@@ -570,7 +562,7 @@ export default {
           });
         }
 
-// ---- label layer（白文字）
+        // ---- label layer（白文字）
         if (!this.map.getLayer(this.gcpLabelId)) {
           this.map.addLayer({
             id: this.gcpLabelId,
@@ -589,27 +581,26 @@ export default {
             }
           });
         }
-        // ▼ クリックでマーカー（手順③）
+
+        // クリックでマーカー + GCP（画像pxへ逆写像）
         this.bindMapClickForMarkers();
       });
     },
-// 画像のアスペクトを保って、地図中心の周囲に四隅(経緯度)を返す
+
+    // 画像のアスペクトを保って、地図中心の周囲に四隅(経緯度)を返す
     _computeImageQuadLLA(imgW, imgH){
       if (!this.map) return null;
-      const center = this.map.getCenter(); // {lng, lat}
+      const center = this.map.getCenter();
       const cM = lngLatToMerc([center.lng, center.lat]);
-
-      // ビューポートの幅を WebMercator(メートル)で取得し、その25%を画像幅に採用
       const b = this.map.getBounds();
       const swM = lngLatToMerc([b.getWest(), b.getSouth()]);
       const neM = lngLatToMerc([b.getEast(), b.getNorth()]);
       const viewWm = Math.max(1, neM[0] - swM[0]);
 
-      const halfWm = viewWm * 0.25;                 // 画面幅の 1/4 を画像の半幅に
-      const aspect = imgH / imgW;                   // 画像アスペクト（高さ/幅）
-      const halfHm = halfWm * aspect;               // 縦はアスペクトで決定（メートル）
+      const halfWm = viewWm * 0.25;
+      const aspect = imgH / imgW;
+      const halfHm = halfWm * aspect;
 
-      // TL, TR, BR, BL（MapLibreの順序）
       const TLm = [cM[0] - halfWm, cM[1] + halfHm];
       const TRm = [cM[0] + halfWm, cM[1] + halfHm];
       const BRm = [cM[0] + halfWm, cM[1] - halfHm];
@@ -617,29 +608,25 @@ export default {
 
       return [TLm, TRm, BRm, BLm].map(mercToLngLat);
     },
-    // 追加：常に GCP マーカーを一番上に移動（存在しないときは何もしない）
+
+    // レイヤ順：常に GCP を最上位へ
     ensureGcpLayersOnTop(){
       if (!this.map) return;
       const hasLabel  = !!this.map.getLayer(this.gcpLabelId);
       const hasCircle = !!this.map.getLayer(this.gcpCircleId);
       try {
-        // ラベルを最上位へ
         if (hasLabel) this.map.moveLayer(this.gcpLabelId);
-        // サークルはラベルの直下へ（第二引数=beforeId）
         if (hasCircle) this.map.moveLayer(this.gcpCircleId, hasLabel ? this.gcpLabelId : undefined);
       } catch(e) {
-        // まだ style 構築中などで失敗しても無視（次回呼びで整う）
         console.warn('ensureGcpLayersOnTop:', e);
       }
     },
 
     tryShowImageOnMap(){
-      // 条件未成立なら黙って戻る
       if (!this.imgUrl || !this.map || !this.mlReady) return;
 
       const img = this.$refs.warpImage;
       if (!img || !img.naturalWidth){
-        // 画像 onload 後に再試行
         if (!this._imgRetryTimer) {
           this._imgRetryTimer = setTimeout(() => {
             this._imgRetryTimer = null;
@@ -655,11 +642,9 @@ export default {
 
         const sid = 'warp-image';
         const lid = 'warp-image-layer';
-
         const existing = this.map.getSource(sid);
 
         if (!existing){
-          // 画像レイヤは可能なら “マーカーより下” に挿入
           const beforeId =
               this.map.getLayer(this.gcpCircleId) ? this.gcpCircleId :
                   (this.map.getLayer(this.gcpLabelId) ? this.gcpLabelId : undefined);
@@ -676,15 +661,11 @@ export default {
             paint: { 'raster-opacity': 1.0 }
           }, beforeId);
 
-          // ★ ここで必ずマーカーを最上位へ
           this.ensureGcpLayersOnTop();
-
         } else {
-          // 既存を更新
           if (typeof existing.setCoordinates === 'function'){
             existing.setCoordinates(coordsLLA);
           } else {
-            // フォールバック：作り直し（マーカーより下に差し込み直す）
             if (this.map.getLayer(lid)) this.map.removeLayer(lid);
             this.map.removeSource(sid);
 
@@ -695,53 +676,141 @@ export default {
             this.map.addSource(sid, { type:'image', url:this.imgUrl, coordinates: coordsLLA });
             this.map.addLayer({ id: lid, type:'raster', source: sid, paint:{'raster-opacity':1.0} }, beforeId);
           }
-
-          // ★ 更新時も毎回順序を保証
           this.ensureGcpLayersOnTop();
         }
+
+        // ★ 画像を載せた／更新した直後に H/H^-1 を更新
+        this._updateImageHomography();
+
       }catch(e){
         console.error('tryShowImageOnMap failed:', e);
       }
     },
 
+    // --- 3x3 ホモグラフィ関連 ---
+    _applyH(H, [x, y]){
+      const X = H[0]*x + H[1]*y + H[2];
+      const Y = H[3]*x + H[4]*y + H[5];
+      const W = H[6]*x + H[7]*y + H[8];
+      if (!W) return [NaN, NaN];
+      return [X/W, Y/W];
+    },
+    _inv3x3(M){
+      const [a,b,c,d,e,f,g,h,i]=M;
+      const A =  e*i - f*h;
+      const B =-(d*i - f*g);
+      const C =  d*h - e*g;
+      const D =-(b*i - c*h);
+      const E =  a*i - c*g;
+      const F =-(a*h - b*g);
+      const G =  b*f - c*e;
+      const Hh=-(a*f - c*d);
+      const I =  a*e - b*d;
+      const det = a*A + b*B + c*C;
+      if (Math.abs(det) < 1e-12) return null;
+      const s = 1/det;
+      return [A*s, D*s, G*s, B*s, E*s, Hh*s, C*s, F*s, I*s];
+    },
+    _homographyFrom4(src, dst){
+      // src/dst: [[x1,y1],...[x4,y4]]
+      const A = [];
+      for (let k=0;k<4;k++){
+        const [x,y] = src[k], [X,Y] = dst[k];
+        A.push([-x,-y,-1, 0, 0, 0, x*X, y*X, X]);
+        A.push([ 0, 0, 0,-x,-y,-1, x*Y, y*Y, Y]);
+      }
+      const At = (m)=> m[0].map((_,j)=> m.map(r=>r[j]));
+      const mul = (m,n)=> m.map(r=> n[0].map((_,j)=> r.reduce((s,v,ii)=> s+v*n[ii][j],0)));
+      const AtA = mul(At(A), A);
+      let v = Array(9).fill(0).map((_,i)=> i===8?1:0);
+      for(let t=0;t<32;t++){
+        const w = AtA.map(row => row.reduce((s, val, j)=> s + val*v[j], 0));
+        const n = Math.hypot(...w);
+        if (!n) break;
+        v = w.map(x=> x/n);
+      }
+      return v;
+    },
+    _updateImageHomography(){
+      const img = this.$refs.warpImage;
+      if (!img || !img.naturalWidth || !this.map) return;
 
+      const W = img.naturalWidth, H = img.naturalHeight;
+      const cornersImg = [[0,0],[W,0],[W,H],[0,H]];
 
+      // 地図に載せた四隅を 3857 に
+      const sid = 'warp-image';
+      const src = this.map.getSource(sid);
+      if (!src || !src.coordinates) {
+        // coordinates API がないビルドでも、直近で使った値を計算で再現
+        const coordsLLA = this._computeImageQuadLLA(W, H);
+        if (!coordsLLA) return;
+        const cornersXY = coordsLLA.map(lla => lngLatToMerc(lla));
+        const H9 = this._homographyFrom4(cornersImg, cornersXY);
+        this.HImgToMap = H9;
+        this.HMapToImg = H9 ? this._inv3x3(H9) : null;
+        return;
+      }
+      // MapLibre v3では getSource('image').coordinates は直接は持たないので上の分岐で十分
+    },
+
+    // --- 地図クリック：赤丸 + GCPテーブルに (画像px, 緯度経度) を追加 ---
     bindMapClickForMarkers(){
       if (!this.map) return;
-      // 既にバインド済みなら2重登録しない
       if (this._gcpClickBound) return;
       this._gcpClickBound = true;
 
       this.map.on('click', (e) => {
         const { lng, lat } = e.lngLat || {};
         if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
+        // まず赤丸（MapLibre上）
         this.addGcpMarker([lng, lat]);
+
+        // つぎに画像pxへ逆写像して GCP テーブルに追加
+        const img = this.$refs.warpImage;
+        if (!img || !img.naturalWidth) return;
+
+        // H が未準備なら更新を試みる
+        if (!this.HMapToImg) this._updateImageHomography();
+        if (!this.HMapToImg) return;
+
+        const XY = lngLatToMerc([lng, lat]);
+        const [xImg, yImg] = this._applyH(this.HMapToImg, XY);
+        if (!Number.isFinite(xImg) || !Number.isFinite(yImg)) return;
+
+        // 画像範囲外は無視（画面外クリック対策）
+        const W = img.naturalWidth, H = img.naturalHeight;
+        if (xImg < 0 || yImg < 0 || xImg > W || yImg > H) return;
+
+        const next = (this.gcpList || []).slice();
+        next.push({
+          imageCoord: [xImg, yImg],   // 画像自然px
+          mapCoord:   [lng, lat],     // 緯度経度
+        });
+        this.$emit('update:gcpList', next);
+        this.pushHistory('map-click');
+        this.$nextTick(this.redrawMarkers);
       });
     },
 
     addGcpMarker(lnglat){
-      // 次の連番
       const nextIdx = this.gcpFC.features.length + 1;
       const feat = {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: lnglat },
         properties: { label: String(nextIdx) }
       };
-      this.gcpFC = {
-        type: 'FeatureCollection',
-        features: [...this.gcpFC.features, feat]
-      };
+      this.gcpFC = { type: 'FeatureCollection', features: [...this.gcpFC.features, feat] };
       const src = this.map.getSource(this.gcpSrcId);
-      if (src && src.setData) {
-        src.setData(this.gcpFC)
-      }
+      if (src && src.setData) src.setData(this.gcpFC);
     },
+
     updateImageOnMap(){
       if (!this.mlReady) return;
       if (this.map && this.map.getSource(this.imageSourceId)){
         const coords = this.computeImageQuadLngLat();
         if (coords){
-          // MapLibre の image ソースは TL, TR, BR, BL
           const ordered = [coords[0], coords[1], coords[2], coords[3]];
           this.map.getSource(this.imageSourceId).setCoordinates(ordered);
         }
@@ -755,14 +824,13 @@ export default {
       if (!coords) return;
       const ordered = [coords[0], coords[1], coords[2], coords[3]]; // TL, TR, BR, BL
 
-      // 既にあれば更新、なければ追加
       if (this.map.getSource(this.imageSourceId)){
         this.map.getSource(this.imageSourceId).updateImage({ url: this.imgUrl, coordinates: ordered });
       } else {
         this.map.addSource(this.imageSourceId, {
           type: 'image',
           url: this.imgUrl,
-          coordinates: ordered, // [TL, TR, BR, BL]
+          coordinates: ordered,
         });
         if (!this.map.getLayer(this.imageLayerId)){
           this.map.addLayer({
@@ -774,6 +842,7 @@ export default {
         }
       }
     },
+
     // 画像四隅の地理座標（TL, TR, BR, BL の順で返す）
     computeImageQuadLngLat(){
       const img = this.$refs.warpImage;
@@ -782,29 +851,25 @@ export default {
       const W=img.naturalWidth, H=img.naturalHeight;
       const cornersImg = [[0,0],[W,0],[W,H],[0,H]];
 
-      // GCP が 2点未満 → 仮置き（現在の中心付近に 500m 四方）
       if (this.pairsCount < 2){
         const c = this.map ? this.map.getCenter().toArray() : [139.767,35.681];
-        const dx = 0.005, dy = 0.005; // 適当なサイズ
+        const dx = 0.005, dy = 0.005;
         return [
-          [c[0]-dx, c[1]+dy], // TL
-          [c[0]+dx, c[1]+dy], // TR
-          [c[0]+dx, c[1]-dy], // BR
-          [c[0]-dx, c[1]-dy], // BL
+          [c[0]-dx, c[1]+dy],
+          [c[0]+dx, c[1]+dy],
+          [c[0]+dx, c[1]-dy],
+          [c[0]-dx, c[1]-dy],
         ];
       }
 
-      // アフィン／TPS が出ていればそれでワールド座標へ
       if (this.affineM){
         const world = cornersImg.map(p => applyAffine(this.affineM, [p[0], p[1]]));
-        return world.map(mercToLngLat); // TL, TR, BR, BL の順を守るため cornersImg 同順
+        return world.map(mercToLngLat);
       }
       if (this.tps){
         const world = cornersImg.map(p => applyTPS(this.tps, [p[0], -p[1]]));
         return world.map(mercToLngLat);
       }
-
-      // 2点相似しかない場合はプレビュー確定後に affineM が入るので、ここでは null
       return null;
     },
 
@@ -837,12 +902,12 @@ export default {
       this.pushHistory('reset');
       this.clearCanvas(this.$refs.warpCanvas);
       this.redrawMarkers();
-      this.updateImageOnMap(); // 地図側も反映
+      this.updateImageOnMap();
     },
     onResize(){
       this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
       if(this.affineM || this.tps) this.previewWarp();
-      this.map && this.map.resize();
+      if (this.map) this.map.resize();
     },
     onImageLoad(){ this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); this.tryShowImageOnMap(); },
 
@@ -878,6 +943,7 @@ export default {
         else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); }
         this.redrawMarkers();
         this.updateImageOnMap();
+        // H は画像レイヤ更新タイミングで再計算
       });
     },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]); },
@@ -1052,7 +1118,6 @@ export default {
       const FLIP_Y_A = [1,0,0, 0,-1,0];
       let M = composeAffine(Mup, FLIP_Y_A);
 
-      // スケール安全チェック
       let [A,B,C,D,E,F] = M;
       const scaleX = Math.hypot(A, D), scaleY = Math.hypot(B, E);
       const W = img.naturalWidth, Hh = img.naturalHeight;
@@ -1108,7 +1173,6 @@ export default {
       return canvas;
     },
     _exportTPSHighRes(img, tps, clipNat=null, mesh=32){
-      // 省略せず維持（上の util 参照）
       return previewTPSOnCanvas(this, img, document.createElement('canvas'), tps, mesh, clipNat);
     },
 
@@ -1146,10 +1210,10 @@ export default {
               : (() => {
                 const c=document.createElement('canvas');
                 c.width=img.naturalWidth; c.height=img.naturalHeight;
-                const cx=c.getContext('2d');
-                cx.save(); cx.beginPath();
-                clipNat.forEach(([x,y],i)=>{ if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y); });
-                cx.closePath(); cx.clip(); cx.drawImage(img,0,0); cx.restore();
+                const ctx = c.getContext('2d');
+                ctx.save(); ctx.beginPath();
+                clipNat.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+                ctx.closePath(); ctx.clip(); ctx.drawImage(img,0,0); ctx.restore();
                 return c;
               })();
 
@@ -1328,7 +1392,6 @@ export default {
   color:#6b7280; font-weight:600; pointer-events:none;
   z-index: 20; /* 地図の上に薄く表示 */
 }
-
 
 /* ====== GCPエディタ ====== */
 .gcp-editor{ padding:0; margin-bottom:8px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; }
