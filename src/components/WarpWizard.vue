@@ -18,7 +18,12 @@
         <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
         <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'"><v-icon>mdi-grid</v-icon></v-btn>
-        <v-btn icon variant="text" @click="resetAll" :title="'全消去'"><v-icon>mdi-backspace</v-icon></v-btn>
+        <v-btn icon variant="text" @click="resetAll" :title="'全消去（画像・GCP）'"><v-icon>mdi-backspace</v-icon></v-btn>
+        <MiniTooltip text="マーカー全消去（赤丸だけ）" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" @click="clearAllMapMarkers" :title="'赤丸をすべて削除'">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </MiniTooltip>
         <v-divider vertical class="mx-1"/>
         <MiniTooltip text="マスキング" :offset-x="0" :offset-y="0">
           <v-btn icon variant="text" :class="{ 'is-active': maskMode }" @click="maskMode = !maskMode" :title="'マスク（地図部の四隅を指定）'">
@@ -50,7 +55,7 @@
       <div class="right-pane">
         <div class="gcp-editor">
           <div class="gcp-row header">
-            <span></span><span>Image (px)</span><span>Map (lng, lat)</span><span></span>
+            <span></span><span>Image (px)</span><span></span>
           </div>
           <div class="gcp-scroll">
             <div class="gcp-row" v-for="(g,i) in gcpList" :key="i">
@@ -61,20 +66,14 @@
                 <v-text-field class="img-y" type="number" density="compact" variant="plain" hide-details="auto"
                               :model-value="getImgY(g)" @update:modelValue="setImgY(i, $event)" />
               </div>
-              <div class="map">
-                <v-text-field type="number" step="0.000001" density="compact" variant="plain" hide-details="auto"
-                              :model-value="getLng(g)" @update:modelValue="setLng(i, $event)" />
-                <v-text-field type="number" step="0.000001" density="compact" variant="plain" hide-details="auto"
-                              :model-value="getLat(g)" @update:modelValue="setLat(i, $event)" />
-              </div>
               <div class="tools">
-                <v-btn icon size="small" variant="text" class="del-btn" @click="removeGcp(i)">
+                <v-btn icon size="small" variant="text" class="del-btn" @click="removeGcp(i)" :title="'この行を削除'">
                   <v-icon size="26">mdi-delete</v-icon>
                 </v-btn>
               </div>
             </div>
           </div>
-          <p style="margin-left: 20px; margin-bottom: 10px;">最低2点、上記画像と地図をクリックしてください。</p>
+          <p style="margin-left: 20px; margin-bottom: 10px;">最低2点、上記画像と地図をクリックしてください。（テーブルには Image(px) のみ反映）</p>
         </div>
       </div>
     </div>
@@ -186,7 +185,7 @@ function previewOnCanvas(vm,img,canvas,M,clipNat=null){
   if(clipped) ctx.restore();
   vm.$nextTick(vm.redrawMarkers);
 }
-// --- TPS（省略せず既存） ---
+// --- TPS（既存） ---
 function solveLinear(A, b) {
   const N=A.length, M=A.map(r=>r.slice()), x=b.slice();
   for(let i=0;i<N;i++){
@@ -299,8 +298,7 @@ export default {
       gcpSrcId:'gcp-src', gcpCircleId:'gcp-circle', gcpLabelId:'gcp-label',
       gcpFC:{ type:'FeatureCollection', features:[] },
 
-      // 画像（MapLibre image source）
-      imageCoordsLLA:null, // 互換：使わない
+      imageCoordsLLA:null,
 
       mlReady: false,
       imgReady: false,
@@ -308,16 +306,17 @@ export default {
       imageSourceId: 'warp-image-src',
       imageLayerId:  'warp-image-lyr',
 
-      // 追加：固定化するための状態（初回だけ確定・以後は不変）
-      fixedImageCoordsLLA: null, // TL,TR,BR,BL (LngLat)
-      fixedQuadMerc: null,       // 上の WebMercator 版
-      fixedHinv: null,           // 画像→世界のホモグラフィの逆行列
-      fixedImgSizeNat: null,     // [W,H] natural
+      // 固定化（初回のみ確定）
+      fixedImageCoordsLLA: null,
+      fixedQuadMerc: null,
+      fixedHinv: null,
+      fixedImgSizeNat: null,
     };
   },
   computed:{
     isOpen(){ return (this.open===undefined ? this.modelValue : this.open) !== false; },
-    pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord)); },
+    // 内部的には mapCoord も保持するが、テーブルは Image(px) だけ表示する
+    pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord)); },
     pairsCount(){ return this.pairs.length; },
     transformKind(){ if(!(this.affineM||this.tps)) return ''; return this.tps?'TPS':(this.pairsCount>=3?'Affine':'Similarity'); },
     imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}`; },
@@ -354,26 +353,20 @@ export default {
         this.upsertImageOnMap();
       });
     },
+    // GCPテーブル（Image px のみ表示だが、内部は mapCoord も持つ）変更時は履歴に積む
     gcpList:{ deep:true, handler(){
         if(!this.isRestoring) this.pushHistory('gcp');
         this.$nextTick(()=>{ this.redrawMarkers(); this.upsertImageOnMap(); });
-        this.redrawMarkers(); this.upsertImageOnMap();
       }}
   },
   beforeUnmount(){ this.onExternalClose(true); },
   mounted() {
     const h = document.querySelector('#handle-' + this.item?.id);
     if (h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`;
-    this.$nextTick(() => {
-      this.initMapLibre();
-    });
+    this.$nextTick(() => { this.initMapLibre(); });
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
-    this.$nextTick(() => {
-      this.syncCanvasSize();
-      this.drawGrid();
-      this.redrawMarkers();
-    });
+    this.$nextTick(() => { this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
   },
   methods:{
     // ---------- MapLibre ----------
@@ -394,7 +387,6 @@ export default {
       this.map.on('load', () => {
         this.mlReady = true;
 
-        // 1) GCP source/layer 先に
         if (!this.map.getSource(this.gcpSrcId)) {
           this.map.addSource(this.gcpSrcId, { type: 'geojson', data: this.gcpFC });
         }
@@ -430,15 +422,10 @@ export default {
           });
         }
 
-        // 2) クリックバインド（赤丸は WarpWizard 側）
         this.bindMapClickForMarkers();
-
-        // 3) 画像を追加（初回のみ）。以後は絶対に触らない
         this.upsertImageOnMap();
       });
     },
-
-    // 画面幅の 1/4 サイズで中心に仮置き（最初の一回だけの見せ方）
     _computeImageQuadLLA(imgW,imgH){
       if(!this.map) return null;
       const center=this.map.getCenter(); const cM=lngLatToMerc([center.lng, center.lat]);
@@ -450,7 +437,6 @@ export default {
       const BRm=[cM[0]+halfWm, cM[1]-halfHm], BLm=[cM[0]-halfWm, cM[1]-halfHm];
       return [TLm,TRm,BRm,BLm].map(mercToLngLat);
     },
-    // 常にカメラを維持
     preserveCamera(fn){
       if(!this.map) return fn();
       const c=this.map.getCenter(), z=this.map.getZoom(), b=this.map.getBearing(), p=this.map.getPitch();
@@ -465,21 +451,20 @@ export default {
         if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId, this.gcpLabelId);
       }catch(e){}
     },
-    // 画像四隅（TL,TR,BR,BL）を WebMercator(XY) で返す（固定）
+
+    // 固定配置取得
     getCurrentImageQuadMerc(){
       return (this.fixedQuadMerc && this.fixedQuadMerc.length===4)
           ? this.fixedQuadMerc
           : null;
     },
-
-    // 凸四辺形の内外判定（全エッジの外積の符号が同じなら内側）
     _pointInQuadMerc(quadXY, P){
       if (!quadXY || quadXY.length !== 4) return false;
       const sign = (a,b,p) => {
         const abx = b[0]-a[0], aby = b[1]-a[1];
         const apx = p[0]-a[0], apy = p[1]-a[1];
         const cross = abx*apy - aby*apx;
-        return Math.sign(cross) || 0; // エッジ上は 0 とする
+        return Math.sign(cross) || 0;
       };
       const s0 = sign(quadXY[0], quadXY[1], P);
       const s1 = sign(quadXY[1], quadXY[2], P);
@@ -492,7 +477,6 @@ export default {
       return allPos || allNeg;
     },
 
-    // 画像四隅の地理座標（固定のみ返す）
     computeImageQuadLngLat(){
       return (this.fixedImageCoordsLLA && this.fixedImageCoordsLLA.length===4)
           ? this.fixedImageCoordsLLA
@@ -502,7 +486,6 @@ export default {
     upsertImageOnMap(){
       if (!this.mlReady || !this.map || !this.imgReady || !this.imgUrl) return;
 
-      // 初回のみ固定値を確定
       if (!this.fixedImageCoordsLLA) {
         const img=this.$refs.warpImage;
         if (!img || !img.naturalWidth) return;
@@ -512,7 +495,6 @@ export default {
         this.fixedImageCoordsLLA = first.slice(0,4);
         this.fixedQuadMerc = this.fixedImageCoordsLLA.map(lngLatToMerc);
 
-        // 逆写像用 Hinv を固定
         const W=img.naturalWidth, H=img.naturalHeight;
         const cornersImg=[[0,0],[W,0],[W,H],[0,H]];
         const cornersXY=this.fixedQuadMerc;
@@ -522,7 +504,6 @@ export default {
 
       const sid = this.imageSourceId;
       const lid = this.imageLayerId;
-
       const beforeId = this.map.getLayer(this.gcpCircleId)
           ? this.gcpCircleId
           : (this.map.getLayer(this.gcpLabelId) ? this.gcpLabelId : undefined);
@@ -530,10 +511,7 @@ export default {
       if (!this.map.getSource(sid)) {
         this.map.addSource(sid, { type: 'image', url: this.imgUrl, coordinates: this.fixedImageCoordsLLA });
         this.map.addLayer({ id: lid, type: 'raster', source: sid, paint: { 'raster-opacity': 1.0 } }, beforeId);
-      } else {
-        // 以後は絶対に触らない（ズームやGCPで画像が動かない）
-        return;
-      }
+      } // 以後は触らない（固定）
     },
 
     onImageLoad(){
@@ -548,7 +526,7 @@ export default {
       this.upsertImageOnMap();
     },
 
-    // クリック → 赤丸 + GCPテーブル（画像ピクセルは固定Hinvで逆変換）
+    // クリック：赤丸追加 + GCP（テーブルには Image(px) のみ追加）
     bindMapClickForMarkers(){
       if(!this.map || this._gcpClickBound) return;
       this._gcpClickBound = true;
@@ -558,42 +536,28 @@ export default {
         const quadM = this.getCurrentImageQuadMerc && this.getCurrentImageQuadMerc();
         if (!quadM) return;
         const pM = lngLatToMerc([lng, lat]);
-
         if (!this._pointInQuadMerc(quadM, pM)) return;
 
-        // 1) 赤丸（MapLibre）
+        // 赤丸（MapLibre）
         this.addGcpMarker([lng,lat]);
 
-        // 2) 画像ピクセル（固定四隅からの逆写像）
+        // 画像ピクセルへ逆変換（固定 Hinv）
         const img=this.$refs.warpImage;
-        if(!img || !img.naturalWidth || !this.fixedImageCoordsLLA) return;
-
-        const W=img.naturalWidth, H=img.naturalHeight;
-
-        if (!this.fixedHinv){
-          const cornersImg=[[0,0],[W,0],[W,H],[0,H]];
-          const cornersXY=this.fixedImageCoordsLLA.map(ll=>lngLatToMerc(ll));
-          const Hmat = this._homographyFrom4(cornersImg, cornersXY);
-          this.fixedHinv = this._invertH(Hmat);
-        }
+        if(!img || !img.naturalWidth || !this.fixedHinv) return;
 
         const worldXY = lngLatToMerc([lng,lat]);
-        const imgXY   = this._applyH(this.fixedHinv, worldXY); // [xNat, yNat]
-
-        const [xNat,yNat]=imgXY;
+        const [xNat,yNat] = this._applyH(this.fixedHinv, worldXY);
+        const W=img.naturalWidth, H=img.naturalHeight;
         if(!Number.isFinite(xNat)||!Number.isFinite(yNat)) return;
+        if(xNat<-10 || yNat<-10 || xNat>W+10 || yNat>H+10) return;
 
-        if(xNat<-10 || yNat<-10 || xNat>W+10 || yNat>H+10) {
-          return;
-        }
-
-        // 3) GCPテーブルに push（imageCoord のみ保存）
+        // ▼ GCPテーブルには Image(px) だけ渡す（内部的には mapCoord も保持しておく）
         const next=(this.gcpList||[]).slice();
-        next.push({ imageCoord:[xNat,yNat], mapCoord:[lng,lat] });
+        next.push({ imageCoord:[xNat,yNat], mapCoord:[lng,lat] }); // mapCoord は内部用（テーブル非表示）
         this.$emit('update:gcpList', next);
+        this.pushHistory('add:gcp'); // 追加後に履歴
       });
     },
-
     addGcpMarker(lnglat){
       const nextIdx=this.gcpFC.features.length+1;
       const feat={ type:'Feature', geometry:{type:'Point',coordinates:lnglat}, properties:{label:String(nextIdx)} };
@@ -601,6 +565,14 @@ export default {
       const src=this.map.getSource(this.gcpSrcId);
       if(src && src.setData){ src.setData(this.gcpFC); }
       this.ensureGcpLayersOnTop();
+      this.pushHistory('add:marker'); // マーカーも履歴対象
+    },
+    clearAllMapMarkers(){
+      // 赤丸だけ全削除（テーブルは維持）
+      this.gcpFC={ type:'FeatureCollection', features:[] };
+      const src=this.map?.getSource(this.gcpSrcId);
+      if(src && src.setData){ src.setData(this.gcpFC); }
+      this.pushHistory('clear:markers');
     },
 
     // ---- ホモグラフィ（4点） ----
@@ -667,10 +639,11 @@ export default {
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid); },
     resetAll(){
       this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
-      this.$emit('update:gcpList', []); this.maskQuadNat=[]; this.pushHistory('reset');
+      this.$emit('update:gcpList', []); // テーブルも消去
+      this.maskQuadNat=[]; this.pushHistory('reset');
       this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers();
 
-      // 画像レイヤを消して初期化（固定情報もクリア）
+      // 画像レイヤ初期化（固定情報もクリア）
       if(this.map && this.map.getSource(this.imageSourceId)){
         this.preserveCamera(()=>{
           if(this.map.getLayer(this.imageLayerId)) this.map.removeLayer(this.imageLayerId);
@@ -682,17 +655,23 @@ export default {
       this.fixedQuadMerc=null;
       this.fixedHinv=null;
       this.fixedImgSizeNat=null;
+
+      // 赤丸も消す
+      this.clearAllMapMarkers();
+
       this.upsertImageOnMap();
     },
     onResize(){
       this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
       if(this.affineM||this.tps) this.previewWarp();
       if(this.map) this.map.resize();
-      // 重要：画像ソースは不変なので upsertImageOnMap は呼ばない
     },
+
+    // ---- 履歴（Undo/Redo） ----
     snapshot(){
       return {
         gcpList: JSON.parse(JSON.stringify(this.gcpList||[])),
+        gcpFC: JSON.parse(JSON.stringify(this.gcpFC||{type:'FeatureCollection',features:[]})), // 赤丸の状態も保存
         affineM: this.affineM? [...this.affineM]:null,
         tps: this.tps? { wx:[...this.tps.wx], wy:[...this.tps.wy], srcPts:this.tps.srcPts.map(p=>[...p]) }:null,
         maskQuadNat: this.maskQuadNat.map(p=>[...p]),
@@ -706,18 +685,25 @@ export default {
       if(cur && JSON.stringify(cur)===JSON.stringify(snap)) return;
       if(this.histIndex<this.history.length-1){ this.history.splice(this.histIndex+1); }
       this.history.push(snap); this.histIndex=this.history.length-1;
-      if(this.history.length>50){ this.history.shift(); this.histIndex--; }
+      if(this.history.length>100){ this.history.shift(); this.histIndex--; }
     },
     applySnapshot(snap){
       this.isRestoring=true;
       this.affineM=snap.affineM;
       this.tps = snap.tps? { wx:[...snap.tps.wx], wy:[...snap.tps.wy], srcPts:snap.tps.srcPts.map(p=>[...p]) }:null;
       this.maskQuadNat=(snap.maskQuadNat||[]).map(p=>[...p]); this.strict2pt=!!snap.strict2pt;
+
+      // GCP・マーカー復元
       this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList)));
+      this.gcpFC = JSON.parse(JSON.stringify(snap.gcpFC||{type:'FeatureCollection',features:[]}));
+      const src=this.map?.getSource(this.gcpSrcId);
+      if(src && src.setData){ src.setData(this.gcpFC); }
+
       this.$nextTick(()=>{
         this.isRestoring=false;
         if(this.affineM||this.tps) this.previewWarp(); else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); }
-        this.redrawMarkers(); this.upsertImageOnMap();
+        this.redrawMarkers();
+        this.upsertImageOnMap();
       });
     },
     undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]); },
@@ -728,7 +714,7 @@ export default {
       if(e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) this.redo(); else this.undo(); }
     },
 
-    // ---- canvas (zoom/pan 無) ----
+    // ---- canvas ----
     syncCanvasSize(){
       const img=this.$refs.warpImage; if(!img) return;
       const cw=img.clientWidth||img.naturalWidth, ch=img.clientHeight||img.naturalHeight;
@@ -753,10 +739,10 @@ export default {
       ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cw,ch);
 
       if((this.affineM||this.tps) && this.viewImgToCanvas && this.viewMapToCanvas){
-        const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord||g.imageCoordCss) && Array.isArray(g.mapCoord));
-        const toNat=g=> Array.isArray(g.imageCoord)? g.imageCoord: imageCssToNatural(g.imageCoordCss, img);
+        const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
         pairs.forEach((g,idx)=>{
-          const pNat=toNat(g), pImgV=this.viewImgToCanvas(pNat), pMapV=this.viewMapToCanvas(lngLatToMerc(g.mapCoord));
+          const pImgV=this.viewImgToCanvas(g.imageCoord);
+          const pMapV=this.viewMapToCanvas(lngLatToMerc(g.mapCoord));
           ctx.beginPath(); ctx.moveTo(pImgV[0],pImgV[1]); ctx.lineTo(pMapV[0],pMapV[1]); ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
           ctx.beginPath(); ctx.arc(pImgV[0],pImgV[1],8,0,Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
           ctx.beginPath(); ctx.arc(pMapV[0],pMapV[1],8,0,Math.PI*2); ctx.fillStyle='#1976d2'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.stroke();
@@ -770,11 +756,7 @@ export default {
         }
         return;
       }
-      const pts=(this.gcpList||[]).map((g,idx)=>{
-        if(Array.isArray(g.imageCoordCss)) return {idx,xy:g.imageCoordCss};
-        if(Array.isArray(g.imageCoord))    return {idx,xy:naturalToCss(g.imageCoord, img)};
-        return null;
-      }).filter(Boolean);
+      const pts=(this.gcpList||[]).map((g,idx)=>({idx,xy:naturalToCss(g.imageCoord, img)}));
       const r=12;
       pts.forEach(p=>{
         const [x,y]=p.xy; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#e53935'; ctx.fill();
@@ -790,32 +772,28 @@ export default {
       }
     },
 
-    // ---- preview / export / confirm（既存） ----
+    // ---- preview / export / confirm ----
     previewWarp(){
-      const toNatural=(g,img)=> Array.isArray(g.imageCoordCss)? imageCssToNatural(g.imageCoordCss,img): (Array.isArray(g.imageCoord)? g.imageCoord: null);
       const img=this.$refs.warpImage, canvas=this.$refs.warpCanvas; if(!img||!canvas) return;
-      const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
-      if(pairs.length<2){ this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(canvas); this.redrawMarkers(); this.upsertImageOnMap(); return; }
-      const srcNat=pairs.map(g=>toNatural(g,img)), srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
+      const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
+      if(pairs.length<2){ this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(canvas); this.redrawMarkers(); return; }
+      const srcNat=pairs.map(g=>g.imageCoord), srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
       const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
       if(pairs.length===2){
         const Mup=this.strict2pt? fitSimilarity2PExact(srcUp, dstUp): fitSimilarity2P(srcUp, dstUp);
-        const FLIP=[1,0,0, 0,-1,0]; const M=composeAffine(Mup, FLIP); this.tps=null; this.affineM=M; previewOnCanvas(this,img,canvas,M,clipNat); this.upsertImageOnMap(); return;
+        const FLIP=[1,0,0, 0,-1,0]; const M=composeAffine(Mup, FLIP); this.tps=null; this.affineM=M; previewOnCanvas(this,img,canvas,M,clipNat); return;
       }
       if(pairs.length===3){
         const Mup=fitAffineRobust(srcUp,dstUp,4); const FLIP=[1,0,0, 0,-1,0]; const M=composeAffine(Mup, FLIP);
-        this.tps=null; this.affineM=M; previewOnCanvas(this,img,canvas,M,clipNat); this.upsertImageOnMap(); return;
+        this.tps=null; this.affineM=M; previewOnCanvas(this,img,canvas,M,clipNat); return;
       }
-      const tps=fitTPS(srcUp,dstUp); this.affineM=null; this.tps=tps; previewTPSOnCanvas(this,img,canvas,tps,28,clipNat); this.upsertImageOnMap();
-      this.upsertImageOnMap();
-
+      const tps=fitTPS(srcUp,dstUp); this.affineM=null; this.tps=tps; previewTPSOnCanvas(this,img,canvas,tps,28,clipNat);
     },
     buildWorldAffine(){
       const img=this.$refs.warpImage; if(!img) return null;
-      const pairs=(this.gcpList||[]).filter(g=>(Array.isArray(g.imageCoord)||Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord));
+      const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
       if(pairs.length<2) return null;
-      const toNatural=g=> Array.isArray(g.imageCoord)? g.imageCoord: (Array.isArray(g.imageCoordCss)? imageCssToNatural(g.imageCoordCss,img): null);
-      const srcNat=pairs.map(toNatural), srcUp=srcNat.map(([x,y])=>[x,-y]), dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
+      const srcNat=pairs.map(g=>g.imageCoord), srcUp=srcNat.map(([x,y])=>[x,-y]), dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
       let Mup = (pairs.length===2)? (this.strict2pt? fitSimilarity2PExact(srcUp,dstUp):fitSimilarity2P(srcUp,dstUp)) : fitAffineRobust(srcUp,dstUp,4);
       const FLIP=[1,0,0, 0,-1,0]; let M=composeAffine(Mup, FLIP);
       let [A,B,C,D,E,F]=M; const scaleX=Math.hypot(A,D), scaleY=Math.hypot(B,E); const W=img.naturalWidth, H=img.naturalHeight;
@@ -876,10 +854,12 @@ export default {
       }
     },
 
-    // ---- GCP エディタ ----
+    // ---- GCP エディタ（Image px のみ）----
     removeGcp(idx){
-      const next=(this.gcpList||[]).slice(); next.splice(idx,1); this.$emit('update:gcpList', next);
-      this.pushHistory('remove'); this.$nextTick(this.redrawMarkers);
+      const next=(this.gcpList||[]).slice(); next.splice(idx,1);
+      this.$emit('update:gcpList', next);
+      this.pushHistory('remove:gcp');
+      this.$nextTick(this.redrawMarkers);
     },
     getImgX(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[0]); if(Array.isArray(g?.imageCoordCss)&&img) return Math.round(imageCssToNatural(g.imageCoordCss,img)[0]); return g?._editImgX ?? ''; },
     getImgY(g){ const img=this.$refs.warpImage; if(Array.isArray(g?.imageCoord)) return Math.round(g.imageCoord[1]); if(Array.isArray(g?.imageCoordCss)&&img) return Math.round(imageCssToNatural(g.imageCoordCss,img)[1]); return g?._editImgY ?? ''; },
@@ -887,34 +867,23 @@ export default {
       const img=this.$refs.warpImage; const x=Number(v); const next=(this.gcpList||[]).slice(); const g={ ...(next[index]||{}) };
       const y=Array.isArray(g.imageCoord)? Number(g.imageCoord[1]) : (Array.isArray(g.imageCoordCss)&&img? imageCssToNatural(g.imageCoordCss,img)[1] : NaN);
       if(Number.isFinite(x)&&Number.isFinite(y)){ g.imageCoord=[x,y]; if(img) g.imageCoordCss=naturalToCss(g.imageCoord,img); delete g._editImgX; delete g._editImgY; } else { g._editImgX=v; }
-      next[index]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers);
+      next[index]=g; this.$emit('update:gcpList', next); this.pushHistory('edit:gcp'); this.$nextTick(this.redrawMarkers);
     },
     setImgY(index,v){
       const img=this.$refs.warpImage; const y=Number(v); const next=(this.gcpList||[]).slice(); const g={ ...(next[index]||{}) };
       const x=Array.isArray(g.imageCoord)? Number(g.imageCoord[0]) : (Array.isArray(g.imageCoordCss)&&img? imageCssToNatural(g.imageCoordCss,img)[0] : NaN);
       if(Number.isFinite(x)&&Number.isFinite(y)){ g.imageCoord=[x,y]; if(img) g.imageCoordCss=naturalToCss(g.imageCoord,img); delete g._editImgX; delete g._editImgY; } else { g._editImgY=v; }
-      next[index]=g; this.$emit('update:gcpList', next); this.$nextTick(this.redrawMarkers);
+      next[index]=g; this.$emit('update:gcpList', next); this.pushHistory('edit:gcp'); this.$nextTick(this.redrawMarkers);
     },
-    getLng(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[0]); return g?._editLng ?? ''; },
-    getLat(g){ if(Array.isArray(g?.mapCoord)) return Number(g.mapCoord[1]); return g?._editLat ?? ''; },
-    setLng(index,v){
-      const next=(this.gcpList||[]).slice(); const g={ ...(next[index]||{}) }; const lng=Number(v);
-      const lat=(g._editLat!==undefined)? Number(g._editLat): (Array.isArray(g.mapCoord)? Number(g.mapCoord[1]) : NaN);
-      g._editLng=v; if(Number.isFinite(lng)&&Number.isFinite(lat)){ g.mapCoord=[lng,lat]; delete g._editLng; delete g._editLat; }
-      next[index]=g; this.$emit('update:gcpList', next);
-    },
-    setLat(index,v){
-      const next=(this.gcpList||[]).slice(); const g={ ...(next[index]||{}) }; const lat=Number(v);
-      const lng=(g._editLng!==undefined)? Number(g._editLng): (Array.isArray(g.mapCoord)? Number(g.mapCoord[0]) : NaN);
-      g._editLat=v; if(Number.isFinite(lng)&&Number.isFinite(lat)){ g.mapCoord=[lng,lat]; delete g._editLng; delete g._editLat; }
-      next[index]=g; this.$emit('update:gcpList', next);
-    },
+
+    // 既存の clearMask がどこかにある想定ならそのまま利用
+    clearMask(){ this.maskQuadNat=[]; this.redrawMarkers(); this.pushHistory('mask:clear'); },
   }
 };
 </script>
 
 <style scoped>
-.oh-warp-root{ width:100%; max-width:none; box-sizing:border-box; background:#fff; overflow:hidden; display:flex; flex-direction:column; height:100%; min高さ:0; }
+.oh-warp-root{ width:100%; max-width:none; box-sizing:border-box; background:#fff; overflow:hidden; display:flex; flex-direction:column; height:100%; min-height:0; }
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
 .oh-toolbar .v-btn.v-btn--icon{ width:32px; height:32px; }
 .oh-toolbar .v-btn.is-active{ background:rgba(0,0,0,0.06); }
@@ -943,13 +912,14 @@ export default {
 .empty-on-map{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#6b7280; font-weight:600; pointer-events:none; z-index:20; }
 
 .gcp-editor{ padding:0; margin-bottom:8px; background:rgba(0,0,0,0.03); border:1px dashed rgba(0,0,0,0.2); border-radius:10px; }
-.gcp-row{ display:grid; grid-template-columns:auto auto auto auto; align-items:center; gap:4px; padding:0; height:38px; }
+/* テーブルは [#, Image(px), tools] の3カラム構成に変更 */
+.gcp-row{ display:grid; grid-template-columns:auto auto auto; align-items:center; gap:4px; padding:0; height:38px; }
 .gcp-row.header{ font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase; padding:0 0 4px; }
 .gcp-row:not(.header):not(:last-child){ border-bottom:1px solid rgba(0,0,0,0.05); }
-.gcp-row .img, .gcp-row .map{ display:grid; grid-template-columns:auto auto; gap:6px; }
+.gcp-row .img{ display:grid; grid-template-columns:auto auto; gap:6px; }
 .gcp-row .idx{ margin-left:10px; text-align:center; }
 .gcp-scroll{ flex:1 1 auto; min-height:0; overflow:auto; margin-top:4px; }
-.img-x, .img-y{ margin-left:10px; width:50px; }
+.img-x, .img-y{ margin-left:10px; width:70px; }
 
 :deep(.gcp-editor .v-input--density-compact){ --v-input-control-height:24px; }
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
