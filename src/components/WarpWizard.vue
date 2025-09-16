@@ -617,14 +617,29 @@ export default {
 
       return [TLm, TRm, BRm, BLm].map(mercToLngLat);
     },
+    // 追加：常に GCP マーカーを一番上に移動（存在しないときは何もしない）
+    ensureGcpLayersOnTop(){
+      if (!this.map) return;
+      const hasLabel  = !!this.map.getLayer(this.gcpLabelId);
+      const hasCircle = !!this.map.getLayer(this.gcpCircleId);
+      try {
+        // ラベルを最上位へ
+        if (hasLabel) this.map.moveLayer(this.gcpLabelId);
+        // サークルはラベルの直下へ（第二引数=beforeId）
+        if (hasCircle) this.map.moveLayer(this.gcpCircleId, hasLabel ? this.gcpLabelId : undefined);
+      } catch(e) {
+        // まだ style 構築中などで失敗しても無視（次回呼びで整う）
+        console.warn('ensureGcpLayersOnTop:', e);
+      }
+    },
+
     tryShowImageOnMap(){
-      // まだ条件が揃ってなければ何もしない（例外を出さない）
-      if (!this.imgUrl) return;
-      if (!this.map || !this.mlReady) return;
+      // 条件未成立なら黙って戻る
+      if (!this.imgUrl || !this.map || !this.mlReady) return;
 
       const img = this.$refs.warpImage;
       if (!img || !img.naturalWidth){
-        // 画像の onload 後に再試行
+        // 画像 onload 後に再試行
         if (!this._imgRetryTimer) {
           this._imgRetryTimer = setTimeout(() => {
             this._imgRetryTimer = null;
@@ -641,11 +656,14 @@ export default {
         const sid = 'warp-image';
         const lid = 'warp-image-layer';
 
-        // 既存があるか
         const existing = this.map.getSource(sid);
 
         if (!existing){
-          // まず source → layer の順で追加
+          // 画像レイヤは可能なら “マーカーより下” に挿入
+          const beforeId =
+              this.map.getLayer(this.gcpCircleId) ? this.gcpCircleId :
+                  (this.map.getLayer(this.gcpLabelId) ? this.gcpLabelId : undefined);
+
           this.map.addSource(sid, {
             type: 'image',
             url: this.imgUrl,
@@ -656,25 +674,37 @@ export default {
             type: 'raster',
             source: sid,
             paint: { 'raster-opacity': 1.0 }
-          });
-          this.map.moveLayer(this.gcpLabelId);
-          this.map.moveLayer(this.gcpCircleId, this.gcpLabelId);
+          }, beforeId);
+
+          // ★ ここで必ずマーカーを最上位へ
+          this.ensureGcpLayersOnTop();
+
         } else {
-          // URL変えず、座標だけ更新（APIがあれば）
+          // 既存を更新
           if (typeof existing.setCoordinates === 'function'){
             existing.setCoordinates(coordsLLA);
           } else {
-            // フォールバック：作り直し
+            // フォールバック：作り直し（マーカーより下に差し込み直す）
             if (this.map.getLayer(lid)) this.map.removeLayer(lid);
             this.map.removeSource(sid);
+
+            const beforeId =
+                this.map.getLayer(this.gcpCircleId) ? this.gcpCircleId :
+                    (this.map.getLayer(this.gcpLabelId) ? this.gcpLabelId : undefined);
+
             this.map.addSource(sid, { type:'image', url:this.imgUrl, coordinates: coordsLLA });
-            this.map.addLayer({ id: lid, type:'raster', source: sid, paint:{'raster-opacity':1.0} });
+            this.map.addLayer({ id: lid, type:'raster', source: sid, paint:{'raster-opacity':1.0} }, beforeId);
           }
+
+          // ★ 更新時も毎回順序を保証
+          this.ensureGcpLayersOnTop();
         }
       }catch(e){
         console.error('tryShowImageOnMap failed:', e);
       }
     },
+
+    
 
     bindMapClickForMarkers(){
       if (!this.map) return;
