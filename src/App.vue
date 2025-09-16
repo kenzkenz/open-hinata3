@@ -4422,6 +4422,8 @@ export default {
     startTiling () {
       this.$store.state.transparent = '0'
 
+      console.log(this.$store.state.tiffAndWorldFile)
+
       const isJpg = this.$store.state.tiffAndWorldFile.find(f => f.name.includes('jgw'))
 
       if (isJpg) {
