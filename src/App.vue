@@ -4955,6 +4955,7 @@ export default {
       if (!this.gcpList.length) {
         return;
       }
+      console.log(this.gcpList)
       const last = this.gcpList.find(gcp => gcp.mapCoord === null);
       if (!last) {
         alert("先に画像側で対応点をクリックしてください");
