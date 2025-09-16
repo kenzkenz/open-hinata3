@@ -458,6 +458,10 @@ export default {
       mlReady: false,
       imageSourceId: 'warp-image-src',
       imageLayerId:  'warp-image-lyr',
+      gcpSrcId: 'gcp-src',
+      gcpCircleId: 'gcp-circle',
+      gcpLabelId: 'gcp-label',
+      gcpFC: { type:'FeatureCollection', features:[] },
     };
   },
   computed: {
@@ -545,6 +549,48 @@ export default {
       this.map.on('load', () => {
         this.mlReady = true;
         this.tryShowImageOnMap();
+
+        // ---- GCP markers: source
+        if (!this.map.getSource(this.gcpSrcId)) {
+          this.map.addSource(this.gcpSrcId, { type: 'geojson', data: this.gcpFC });
+        }
+
+// ---- circle layer (赤丸)
+        if (!this.map.getLayer(this.gcpCircleId)) {
+          this.map.addLayer({
+            id: this.gcpCircleId,
+            type: 'circle',
+            source: this.gcpSrcId,
+            paint: {
+              'circle-radius': 10,
+              'circle-color': '#e53935',
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2
+            }
+          });
+        }
+
+// ---- label layer（白文字）
+        if (!this.map.getLayer(this.gcpLabelId)) {
+          this.map.addLayer({
+            id: this.gcpLabelId,
+            type: 'symbol',
+            source: this.gcpSrcId,
+            layout: {
+              'text-field': ['get', 'label'],
+              'text-size': 12,
+              'text-allow-overlap': true,
+              'text-ignore-placement': true
+            },
+            paint: {
+              'text-color': '#ffffff',
+              'text-halo-color': '#000000',
+              'text-halo-width': 0.5
+            }
+          });
+        }
+        // ▼ クリックでマーカー（手順③）
+        this.bindMapClickForMarkers();
       });
     },
 // 画像のアスペクトを保って、地図中心の周囲に四隅(経緯度)を返す
@@ -611,6 +657,8 @@ export default {
             source: sid,
             paint: { 'raster-opacity': 1.0 }
           });
+          this.map.moveLayer(this.gcpLabelId);
+          this.map.moveLayer(this.gcpCircleId, this.gcpLabelId);
         } else {
           // URL変えず、座標だけ更新（APIがあれば）
           if (typeof existing.setCoordinates === 'function'){
@@ -628,6 +676,36 @@ export default {
       }
     },
 
+    bindMapClickForMarkers(){
+      if (!this.map) return;
+      // 既にバインド済みなら2重登録しない
+      if (this._gcpClickBound) return;
+      this._gcpClickBound = true;
+
+      this.map.on('click', (e) => {
+        const { lng, lat } = e.lngLat || {};
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+        this.addGcpMarker([lng, lat]);
+      });
+    },
+
+    addGcpMarker(lnglat){
+      // 次の連番
+      const nextIdx = this.gcpFC.features.length + 1;
+      const feat = {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: lnglat },
+        properties: { label: String(nextIdx) }
+      };
+      this.gcpFC = {
+        type: 'FeatureCollection',
+        features: [...this.gcpFC.features, feat]
+      };
+      const src = this.map.getSource(this.gcpSrcId);
+      if (src && src.setData) {
+        src.setData(this.gcpFC)
+      }
+    },
 
 
     // initMapLibre(){
