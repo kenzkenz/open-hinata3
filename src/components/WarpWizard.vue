@@ -18,7 +18,7 @@
         <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
         <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'"><v-icon>mdi-grid</v-icon></v-btn>
-        <v-btn icon variant="text" @click="resetAll" :title="'全消去（画像・GCP）'"><v-icon>mdi-backspace</v-icon></v-btn>
+        <v-btn icon variant="text" @click="resetAll" :title="'全消去（画像・GCP・マスク）'"><v-icon>mdi-backspace</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
         <MiniTooltip text="マスキング" :offset-x="0" :offset-y="0">
           <v-btn icon variant="text" :class="{ 'is-active': maskMode }" @click="maskMode = !maskMode" :title="'マスク（地図部の四隅を指定）'">
@@ -26,7 +26,7 @@
           </v-btn>
         </MiniTooltip>
         <MiniTooltip text="マスクを解除" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :disabled="!maskQuadNat.length" @click="clearMask" :title="'マスクをクリア'">
+          <v-btn icon variant="text" :disabled="!maskVertsLngLat.length" @click="clearMask" :title="'マスクをクリア'">
             <v-icon>mdi-selection-off</v-icon>
           </v-btn>
         </MiniTooltip>
@@ -38,7 +38,7 @@
         <div class="ml-wrap">
           <div ref="mlMap" class="ml-map"></div>
           <div class="ml-overlay">
-            <!-- キャンバスは非表示でOK（地図の GeoJSON 赤丸を使う） -->
+            <!-- キャンバスは非表示でOK（地図の GeoJSON レイヤで表示） -->
             <img id="warp-image" ref="warpImage" :src="imgUrl" class="hidden" @load="onImageLoad">
             <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
             <canvas v-show="grid" ref="gridCanvas" class="grid-canvas"></canvas>
@@ -120,10 +120,9 @@ function fitSimilarity2P(srcPts, dstPts){
 }
 function fitSimilarity2PExact(srcPts, dstPts){ return fitSimilarity2P(srcPts, dstPts); }
 function fitAffineN(srcPts, dstPts, w){
-  const n = srcPts.length, M6 = 6;                 // ← M を M6 に
+  const n = srcPts.length, M6 = 6;
   const A = Array.from({length:M6}, ()=>Array(M6).fill(0));
   const b = Array(M6).fill(0);
-
   for (let i=0;i<n;i++){
     const wi = w ? w[i] : 1;
     const [x,y] = srcPts[i];
@@ -137,28 +136,22 @@ function fitAffineN(srcPts, dstPts, w){
       b[j] += rowX[j]*X + rowY[j]*Y;
     }
   }
-
   const B = A.map(r => r.slice());
   const x = b.slice();
   const N = B.length;
-
-  // 前進消去（部分ピボット）
   for (let i=0;i<N;i++){
     let p = i;
     for (let r=i+1;r<N;r++){
       if (Math.abs(B[r][i]) > Math.abs(B[p][i])) p = r;
     }
     if (p !== i){ [B[i],B[p]] = [B[p],B[i]]; [x[i],x[p]] = [x[p],x[i]]; }
-
     const diag = B[i][i] || 1e-12;
     for (let j=i+1;j<N;j++){
       const f = B[j][i] / diag;
-      for (let k=i;k<N;k++) B[j][k] -= f * B[i][k];   // ← ここを修正（B に対して更新）
+      for (let k=i;k<N;k++) B[j][k] -= f * B[i][k];
       x[j] -= f * x[i];
     }
   }
-
-  // 後退代入
   for (let i=N-1;i>=0;i--){
     let s = 0;
     for (let j=i+1;j<N;j++) s += B[i][j]*x[j];
@@ -270,7 +263,7 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
     const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
     const a=p1[0]-p0[0], b=p2[0]-p0[0], c=p1[1]-p0[1], d=p2[1]-p0[1], det=a*d-b*c||1e-12;
     const A=((q1[0]-q0[0])*d-(q2[0]-q0[0])*c)/det, B=(-(q1[0]-q0[0])*b+(q2[0]-q0[0])*a)/det;
-    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[1])*a)/det;
+    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[0])*a)/det;
     const C=q0[0]-A*p0[0]-B*p0[1], F=q0[1]-D*p0[0]-E*p0[1]; return [A,B,C,D,E,F];
   }
   function drawTri(ctx,img,srcTri,dstTri){
@@ -290,21 +283,16 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
   if(clipped) ctx.restore();
   return canvas;
 }
-// 画像を TPS で 3857 平面に焼き込み、キャンバスと world file パラメータ(A..F)を返す
+// TPS を 3857 平面に焼き込み、PNG とその worldfile パラメータを返す
 function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   const W = img.naturalWidth, H = img.naturalHeight;
-  // ワールド側のバウンディングボックス
   const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyTPS(tps, [p[0], -p[1]]));
   const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-
-  // 出力解像度（px/m）を決める：元画像の幅に概ね合わせる
-  const worldW = Math.max(1, maxX - minX), worldH = Math.max(1, maxY - minY);
-  const scale = pxPerMeter || (W / worldW); // 幅基準
+  const worldW = Math.max(1, maxX - minX);
+  const scale = pxPerMeter || (W / worldW);
   const outW = Math.max(1, Math.round(worldW * scale));
-  const outH = Math.max(1, Math.round(worldH * scale));
-
-  // 出力キャンバス
+  const outH = Math.max(1, Math.round((maxY - minY) * scale));
   const canvas = document.createElement('canvas');
   canvas.width = outW; canvas.height = outH;
   const ctx = canvas.getContext('2d');
@@ -312,11 +300,7 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   ctx.clearRect(0,0,outW,outH);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-
-  // ワールド→出力ピクセルの写像（余白なし）
   const view = ([X,Y]) => [ scale*(X - minX), scale*(maxY - Y) ];
-
-  // クリップ（任意）
   let clipped=false;
   if (clipNat && clipNat.length>=3){
     const q=clipNat.slice(), edges=[[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]], pts=[], N=24;
@@ -331,8 +315,6 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
     pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
     ctx.closePath(); ctx.clip(); clipped=true;
   }
-
-  // 三角形分割で描画（previewTPSOnCanvas と同等のメッシュ）
   const nx = mesh, ny = mesh, sx = W/nx, sy = H/ny;
   function aff(srcTri,dstTri){
     const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
@@ -363,10 +345,8 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
     }
   }
   if (clipped) ctx.restore();
-
-  // ← この出力キャンバスは 3857 の（minX,maxY）を原点、ピクセルサイズ 1/scale[m/px] のアフィンで置ける
   const A = 1/scale, D = 0, B = 0, E = -1/scale, C = minX, F = maxY;
-  return { canvas, world: {A,B,C,D,E,F}, bbox:{minX,maxX,minY,maxY}, out:{w:outW,h:outH} };
+  return { canvas, world: {A,B,C,D,E,F} };
 }
 
 import MiniTooltip from '@/components/MiniTooltip';
@@ -393,11 +373,20 @@ export default {
       viewImgToCanvas: null, viewMapToCanvas: null,
       grid: true, objUrl: null,
       history: [], histIndex: -1, isRestoring:false, closedOnce:false,
-      maskMode:false, maskQuadNat:[], strict2pt:true,
 
+      // --- マスク ---
+      maskMode:false,
+      maskQuadNat:[],            // 画像ナチュラル座標（クリップ用）
+      maskVertsLngLat:[],        // 地図の緑丸（順序つき）
+
+      // MapLibre
       map:null,
       gcpSrcId:'gcp-src', gcpCircleId:'gcp-circle', gcpLabelId:'gcp-label',
       gcpFC:{ type:'FeatureCollection', features:[] },
+
+      // マスク表示用 GeoJSON
+      maskSrcId:'mask-src', maskPointLayerId:'mask-point', maskPolyLayerId:'mask-poly', maskOutlineLayerId:'mask-outline',
+      maskFC:{ type:'FeatureCollection', features:[] },
 
       imageCoordsLLA:null,
 
@@ -460,8 +449,8 @@ export default {
       deep:true,
       handler(){
         if(this.isRestoring) return;
-        this.syncGeoJsonMarkersFromGcpList(); // まず地図の赤丸をテーブルに同期
-        this.pushHistory('gcp');              // 1回だけ履歴化
+        this.syncGeoJsonMarkersFromGcpList();
+        this.pushHistory('gcp');
         this.$nextTick(()=>{ this.redrawMarkers(); this.upsertImageOnMap(); });
       }
     }
@@ -494,7 +483,7 @@ export default {
       this.map.on('load', () => {
         this.mlReady = true;
 
-        // GCP source / layers
+        // --- GCP（赤丸） ---
         if (!this.map.getSource(this.gcpSrcId)) {
           this.map.addSource(this.gcpSrcId, { type: 'geojson', data: this.gcpFC });
         }
@@ -530,10 +519,69 @@ export default {
           });
         }
 
-        // カーソル位置クリックで、対応点を（優先）未確定行へ mapCoord として埋める
+        // --- Mask（緑丸・薄緑ポリゴン） ---
+        if (!this.map.getSource(this.maskSrcId)) {
+          this.map.addSource(this.maskSrcId, { type: 'geojson', data: this.maskFC });
+        }
+        if (!this.map.getLayer(this.maskPolyLayerId)) {
+          this.map.addLayer({
+            id: this.maskPolyLayerId,
+            type: 'fill',
+            source: this.maskSrcId,
+            filter: ['==', ['geometry-type'], 'Polygon'],
+            paint: {
+              'fill-color': '#2e7d32',
+              'fill-opacity': 0.18
+            }
+          });
+        }
+        if (!this.map.getLayer(this.maskOutlineLayerId)) {
+          this.map.addLayer({
+            id: this.maskOutlineLayerId,
+            type: 'line',
+            source: this.maskSrcId,
+            filter: ['==', ['geometry-type'], 'Polygon'],
+            paint: {
+              'line-color': '#2e7d32',
+              'line-width': 2
+            }
+          });
+        }
+        if (!this.map.getLayer(this.maskPointLayerId)) {
+          this.map.addLayer({
+            id: this.maskPointLayerId,
+            type: 'circle',
+            source: this.maskSrcId,
+            filter: ['==', ['geometry-type'], 'Point'],
+            paint: {
+              'circle-radius': 8,
+              'circle-color': '#2e7d32',
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2
+            }
+          });
+        }
+
+        // 既存状態を反映
+        this.syncMaskGeoJsonFromVerts();
+        this.syncGeoJsonMarkersFromGcpList();
+        this.ensureOverlayOrder();
         this.bindMapClickForMarkers();
         this.upsertImageOnMap();
       });
+    },
+    ensureOverlayOrder(){
+      if(!this.map) return;
+      try{
+        // マスク→赤丸の順で最前面へ
+        if(this.map.getLayer(this.maskPolyLayerId))    this.map.moveLayer(this.maskPolyLayerId);
+        if(this.map.getLayer(this.maskOutlineLayerId)) this.map.moveLayer(this.maskOutlineLayerId);
+        if(this.map.getLayer(this.maskPointLayerId))   this.map.moveLayer(this.maskPointLayerId);
+
+        if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId);
+        if(this.map.getLayer(this.gcpLabelId))  this.map.moveLayer(this.gcpLabelId);
+
+      }catch(e){}
     },
 
     _computeImageQuadLLA(imgW,imgH){
@@ -553,13 +601,6 @@ export default {
       const res=fn();
       this.map.jumpTo({center:[c.lng,c.lat], zoom:z, bearing:b, pitch:p});
       return res;
-    },
-    ensureGcpLayersOnTop(){
-      if(!this.map) return;
-      try{
-        if(this.map.getLayer(this.gcpLabelId))  this.map.moveLayer(this.gcpLabelId);
-        if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId, this.gcpLabelId);
-      }catch(e){}
     },
 
     getCurrentImageQuadMerc(){
@@ -633,10 +674,10 @@ export default {
       this.upsertImageOnMap();
     },
 
-    // 地図クリック：未確定行（mapCoord:null）を優先して埋める／なければ新規行（Image(px) も算出）
+    // 地図クリック
     bindMapClickForMarkers(){
-      if(!this.map || this._gcpClickBound) return;
-      this._gcpClickBound = true;
+      if(!this.map || this.gcpClickBound) return;
+      this.gcpClickBound = true;
       this.map.on('click', (e)=>{
         const {lng,lat}=e.lngLat||{}; if(!Number.isFinite(lng)||!Number.isFinite(lat)) return;
 
@@ -646,17 +687,32 @@ export default {
         const pM = lngLatToMerc([lng, lat]);
         if (!this._pointInQuadMerc(quadM, pM)) return;
 
+        // --- マスクモード：緑丸を追加（最大4点）。4点で薄緑ポリゴン表示＆maskQuadNatを更新 ---
+        if (this.maskMode) {
+          let nextVerts = this.maskVertsLngLat.slice();
+          if (nextVerts.length >= 4) nextVerts = [];  // 5点目でリセットして新規
+          nextVerts.push([lng,lat]);
+          this.maskVertsLngLat = nextVerts;
+
+          // 画像ナチュラル座標へ逆写像（fixedHinv）
+          if (this.fixedHinv) {
+            this.maskQuadNat = nextVerts.map(ll => {
+              const XY = lngLatToMerc(ll);
+              return this._applyH(this.fixedHinv, XY);
+            });
+          } else {
+            this.maskQuadNat = [];
+          }
+          this.syncMaskGeoJsonFromVerts();
+          this.pushHistory('mask:add');
+          this.redrawMarkers();
+          return;
+        }
+
+        // --- 通常モード：赤丸（GCP） ---
         const next=(this.gcpList||[]).slice();
 
-        // 1) 未確定行に mapCoord を埋める（親の青丸フローと同じ）
-        // const openIdx = next.findIndex(g=>!Array.isArray(g.mapCoord));
-        // if (openIdx >= 0) {
-        //   next[openIdx] = { ...(next[openIdx]||{}), mapCoord:[lng,lat] };
-        //   this.$emit('update:gcpList', next);
-        //   return; // gcpList watcher で GeoJSON 再構築＆履歴1回
-        // }
-
-        // 2) 未確定行が無い場合は、画像側座標を求めて新規行追加
+        // 未確定行が無い場合：画像座標を逆算して新規行
         const img=this.$refs.warpImage;
         if(!img || !img.naturalWidth || !this.fixedHinv) return;
         const worldXY = lngLatToMerc([lng,lat]);
@@ -670,32 +726,44 @@ export default {
       });
     },
 
-    // ★ gcpList → GeoJSON へ一括同期（行番号に合わせて label を詰め直し）
+    // ★ gcpList → GeoJSON（赤丸）へ一括同期
     syncGeoJsonMarkersFromGcpList(){
       const features=[];
-      // (this.gcpList||[]).forEach((g,i)=>{
-      //   if(Array.isArray(g.mapCoord) && Number.isFinite(g.mapCoord[0]) && Number.isFinite(g.mapCoord[1])){
-      //     features.push({
-      //       type:'Feature',
-      //       geometry:{ type:'Point', coordinates:[g.mapCoord[0], g.mapCoord[1]] },
-      //       properties:{ label:String(i+1) } // 行番号に追随
-      //     });
-      //   }
-      // });
       (this.gcpList||[]).forEach((g,i)=>{
         if(Array.isArray(g.redCircleCoord) && Number.isFinite(g.redCircleCoord[0]) && Number.isFinite(g.redCircleCoord[1])){
           features.push({
             type:'Feature',
             geometry:{ type:'Point', coordinates:[g.redCircleCoord[0], g.redCircleCoord[1]] },
-            properties:{ label:String(i+1) } // 行番号に追随
+            properties:{ label:String(i+1) }
           });
         }
       });
-      console.log(features)
       this.gcpFC = { type:'FeatureCollection', features };
       const src=this.map?.getSource(this.gcpSrcId);
       if(src && src.setData){ src.setData(this.gcpFC); }
-      this.ensureGcpLayersOnTop();
+      this.ensureOverlayOrder();
+    },
+
+    // ★ maskVertsLngLat → GeoJSON（緑丸＋ポリゴン）
+    syncMaskGeoJsonFromVerts(){
+      const feats=[];
+      // points
+      (this.maskVertsLngLat||[]).forEach((ll)=>feats.push({
+        type:'Feature',
+        geometry:{ type:'Point', coordinates: ll }
+      }));
+      // polygon（4点揃ったら）
+      if ((this.maskVertsLngLat||[]).length === 4){
+        const ring = [...this.maskVertsLngLat, this.maskVertsLngLat[0]];
+        feats.push({
+          type:'Feature',
+          geometry:{ type:'Polygon', coordinates: [ring] }
+        });
+      }
+      this.maskFC = { type:'FeatureCollection', features:feats };
+      const src=this.map?.getSource(this.maskSrcId);
+      if(src && src.setData){ src.setData(this.maskFC); }
+      this.ensureOverlayOrder();
     },
 
     // ---- ホモグラフィ（4点） ----
@@ -762,8 +830,9 @@ export default {
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid); },
     resetAll(){
       this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
-      this.$emit('update:gcpList', []); // テーブル消去（→ watcher が赤丸も消す & 履歴化）
-      this.maskQuadNat=[]; this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers();
+      this.$emit('update:gcpList', []); // gcpList→watcherで赤丸クリア＆履歴
+      this.maskQuadNat=[]; this.maskVertsLngLat=[]; this.syncMaskGeoJsonFromVerts();
+      this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers();
 
       // 画像レイヤ初期化（固定情報もクリア）
       if(this.map && this.map.getSource(this.imageSourceId)){
@@ -778,7 +847,6 @@ export default {
       this.fixedHinv=null;
       this.fixedImgSizeNat=null;
 
-      // GeoJSON は gcpList 側の空で再構築される
       this.upsertImageOnMap();
       this.resetHistory(); this.pushHistory('reset');
     },
@@ -788,13 +856,14 @@ export default {
       if(this.map) this.map.resize();
     },
 
-    // ---- 履歴（Undo/Redo は gcpList 基準で 1 回だけ） ----
+    // ---- 履歴（Undo/Redo） ----
     snapshot(){
       return {
-        gcpList: JSON.parse(JSON.stringify(this.gcpList||[])), // ←唯一の真実
+        gcpList: JSON.parse(JSON.stringify(this.gcpList||[])),
         affineM: this.affineM? [...this.affineM]:null,
         tps: this.tps? { wx:[...this.tps.wx], wy:[...this.tps.wy], srcPts:this.tps.srcPts.map(p=>[...p]) }:null,
         maskQuadNat: this.maskQuadNat.map(p=>[...p]),
+        maskVertsLngLat: (this.maskVertsLngLat||[]).map(p=>[...p]),
         strict2pt: !!this.strict2pt,
       };
     },
@@ -811,13 +880,16 @@ export default {
       this.isRestoring=true;
       this.affineM=snap.affineM;
       this.tps = snap.tps? { wx:[...snap.tps.wx], wy:[...snap.tps.wy], srcPts:snap.tps.srcPts.map(p=>[...p]) }:null;
-      this.maskQuadNat=(snap.maskQuadNat||[]).map(p=>[...p]); this.strict2pt=!!snap.strict2pt;
+      this.maskQuadNat=(snap.maskQuadNat||[]).map(p=>[...p]);
+      this.maskVertsLngLat=(snap.maskVertsLngLat||[]).map(p=>[...p]);
+      this.strict2pt=!!snap.strict2pt;
 
-      // gcpList を復元 → 直後に GeoJSON を再構築
+      // gcpList を復元
       this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList)));
 
       this.$nextTick(()=>{
         this.syncGeoJsonMarkersFromGcpList();
+        this.syncMaskGeoJsonFromVerts();
         this.isRestoring=false;
         if(this.affineM||this.tps) this.previewWarp(); else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); }
         this.redrawMarkers();
@@ -859,7 +931,7 @@ export default {
 
       if((this.affineM||this.tps) && this.viewImgToCanvas && this.viewMapToCanvas){
         const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
-        pairs.forEach((g,idx)=>{
+        pairs.forEach((g)=>{
           const pImgV=this.viewImgToCanvas(g.imageCoord);
           const pMapV=this.viewMapToCanvas(lngLatToMerc(g.mapCoord));
           ctx.beginPath(); ctx.moveTo(pImgV[0],pImgV[1]); ctx.lineTo(pMapV[0],pMapV[1]); ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
@@ -930,8 +1002,6 @@ export default {
       return previewTPSOnCanvas(this,img,document.createElement('canvas'),tps,mesh,clipNat);
     },
 
-
-
     confirm(){
       if(!(this.affineM||this.tps)) return;
       const img=this.$refs.warpImage;
@@ -940,12 +1010,10 @@ export default {
       let payload={ file:this.$props.file||null, srs:this.srs3857 }, cornersLngLat=null;
 
       if(this.tps){
-        // 角の緯度経度（プレビュー初期位置用）
         const W=img.naturalWidth,H=img.naturalHeight, cornersImg=[[0,0],[W,0],[W,H],[0,H]];
         const cornersWorld=cornersImg.map(p=>applyTPS(this.tps,[p[0],-p[1]]));
         cornersLngLat=cornersWorld.map(mercToLngLat);
 
-        // ★ TPS を 3857 平面に焼き込んだ PNG と、その PNG 用 world file を生成
         const {canvas, world} = exportTPSWithWorld(img, this.tps, clipNat, 32);
         if(!canvas) return;
 
@@ -955,22 +1023,18 @@ export default {
           const baseName=(this.$props.file && this.$props.file.name)? this.$props.file.name.replace(/\.[^.]+$/,''):'image';
           const warpedPng = blob ? new File([blob], `${baseName}-tps.png`, {type:'image/png'}) : null;
 
-          // 親へ：TPS でも「PNG + world file」で渡す（＝タイル化の通常経路が使える）
-          // alert('子のconfirm//' + worldFileText)
-          // console.log(warpedPng)
           this.$emit('confirm',{
             ...payload,
             kind:'tps',
-            fileOriginal: warpedPng,          // ← ワープ済みPNG
-            worldFile: worldFileText,         // ← その PNG を置くための WorldFile
+            fileOriginal: warpedPng,
+            worldFile: worldFileText,
             cornersLngLat,
-            tps: this.tps,                     // 参考：係数も同送（サーバが使えるなら）
+            tps: this.tps,
           });
         }, 'image/png');
         return;
       }
 
-      // …従来の相似/アフィン分岐はそのまま…
       if(this.affineM){
         const kind=(this.pairsCount>=3?'affine':'similarity');
         const wld=worldFileFromAffine(this.affineM);
@@ -987,37 +1051,10 @@ export default {
       }
     },
 
-
-    // confirm(){
-    //   if(!(this.affineM||this.tps)) return;
-    //   const img=this.$refs.warpImage; const clipNat=(this.maskQuadNat&&this.maskQuadNat.length>=3)? this.maskQuadNat: null;
-    //   let payload={ file:this.$props.file||null, srs:this.srs3857 }, cornersLngLat=null;
-    //   if(this.tps){
-    //     const outCanvas=this._exportTPSHighRes(img,this.tps,clipNat,32);
-    //     const W=img.naturalWidth,H=img.naturalHeight, cornersImg=[[0,0],[W,0],[W,H],[0,H]];
-    //     const cornersWorld=cornersImg.map(p=>applyTPS(this.tps,[p[0],-p[1]])); cornersLngLat=cornersWorld.map(mercToLngLat);
-    //     payload={ ...payload, tps:this.tps, kind:'tps', cornersLngLat };
-    //     if(!outCanvas) return; outCanvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob, maskedPngFile:null }); }, 'image/png'); return;
-    //   }
-    //   if(this.affineM){
-    //     const kind=(this.pairsCount>=3?'affine':'similarity'); const wld=worldFileFromAffine(this.affineM);
-    //     if(clipNat){
-    //       const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; const cx=c.getContext('2d');
-    //       cx.save(); cx.beginPath(); clipNat.forEach(([x,y],i)=>{ if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y); }); cx.closePath(); cx.clip(); cx.drawImage(img,0,0); cx.restore();
-    //       const baseName=(this.$props.file && this.$props.file.name)? this.$props.file.name.replace(/\.[^.]+$/,''):'image';
-    //       c.toBlob((blob)=>{ const maskedPngFile=blob? new File([blob], `${baseName}.png`, {type:'image/png'}):null;
-    //         this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile });
-    //       }, 'image/png'); return;
-    //     }
-    //     this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile:this.$props.file||null });
-    //   }
-    // },
-
     // ---- GCP エディタ ----
     removeGcp(idx){
       const next=(this.gcpList||[]).slice();
       next.splice(idx,1);
-      // gcpList を更新すれば watcher が GeoJSON を再構築＆履歴を 1 回だけ積む
       this.$emit('update:gcpList', next);
       this.$nextTick(this.redrawMarkers);
     },
@@ -1050,7 +1087,12 @@ export default {
       next[index]=g; this.$emit('update:gcpList', next);
     },
 
-    clearMask(){ this.maskQuadNat=[]; this.redrawMarkers(); this.pushHistory('mask:clear'); },
+    clearMask(){
+      this.maskQuadNat=[]; this.maskVertsLngLat=[];
+      this.syncMaskGeoJsonFromVerts();
+      this.redrawMarkers();
+      this.pushHistory('mask:clear');
+    },
   }
 };
 </script>
@@ -1073,7 +1115,7 @@ export default {
 .ml-wrap{ position:relative; width:100%; height:100%; min-height:420px; }
 .ml-map{ position:relative; z-index:10 !important; width:100%; height:100%; border-radius:8px; overflow:hidden; }
 
-/* キャンバスは背面・ヒット無効・非表示でOK（GeoJSON 赤丸を前面に出す）*/
+/* キャンバスは背面・ヒット無効・非表示（GeoJSON 赤丸を前面に） */
 .ml-overlay{ position:absolute; inset:0; z-index:0 !important; pointer-events:none !important; opacity:0; }
 
 #warp-image.hidden{ visibility:hidden; }
@@ -1090,7 +1132,7 @@ export default {
 .gcp-row:not(.header):not(:last-child){ border-bottom:1px solid rgba(0,0,0,0.05); }
 .gcp-row .img, .gcp-row .map{ display:grid; grid-template-columns:auto auto; gap:6px; }
 .gcp-row .idx{ margin-left:10px; text-align:center; }
-.gcp-scroll{ flex:1 1 auto; min高さ:0; overflow:auto; margin-top:4px; }
+.gcp-scroll{ flex:1 1 auto; min-height:0; overflow:auto; margin-top:4px; }
 .img-x, .img-y{ margin-left:10px; width:70px; }
 
 :deep(.gcp-editor .v-input--density-compact){ --v-input-control-height:24px; }
@@ -1098,3 +1140,4 @@ export default {
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
 </style>
+
