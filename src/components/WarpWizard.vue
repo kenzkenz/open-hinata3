@@ -577,6 +577,10 @@ export default {
           this.syncCanvasSize(); this.redrawMarkers();
           this.resetHistory(); this.pushHistory('init:file');
           this.upsertImageOnMap();
+          /**
+           * 親から新画像が送られたのに反映しない現象を下記の１行で回避
+           */
+          this.resetAll()
         });
       }
     },
@@ -1044,7 +1048,11 @@ export default {
       this.exitPreview(); // プレビュー撤収
       this.clearCanvas(this.$refs.warpCanvas);
       this.clearCanvas(this.$refs.markerCanvas);
-      this.$emit('clear-map-markers'); this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.closedOnce=true;
+
+      this.$emit('clear-map-markers');
+      this.viewImgToCanvas=null;
+      this.viewMapToCanvas=null;
+      this.closedOnce=true;
     },
     resetAll(){
       this.maskMode = false;
