@@ -52,14 +52,14 @@
                   label="色を選択してください"
                   @update:modelValue="configChange('fill-color',s_titleColor)"
               />
-<!--              <v-select-->
-<!--                  v-model="titleScale"-->
-<!--                  :items="titleScales"-->
-<!--                  item-title="label"-->
-<!--                  item-value="zoom"-->
-<!--                  label="縮尺率固定"-->
-<!--                  @update:modelValue="setZoom()"-->
-<!--              />-->
+              <v-select
+                  v-model="titleScale"
+                  :items="titleScales"
+                  item-title="label"
+                  item-value="zoom"
+                  label="縮尺率固定--注！現在検証中"
+                  @update:modelValue="setZoom()"
+              />
               <v-select
                   v-if="s_isPrint"
                   v-model="s_titleDirection"
@@ -168,18 +168,31 @@ export default {
     //   {zoom: 15.0, label: '1/50000で固定'},
     //   {zoom: 13.0, label: '1/200000で固定'},
     // ],
-    titleScales: [//gptの回答
-      { zoom: 0.0,  label: '固定なし'            },
-      { zoom: 20.9, label: '1/250で固定'        },
-      { zoom: 19.9, label: '1/500で固定'        },
-      { zoom: 18.9, label: '1/1000で固定'       },
-      { zoom: 17.9, label: '1/2000で固定'       },
-      { zoom: 17.6, label: '1/2500で固定'       },
-      { zoom: 16.6, label: '1/5000で固定'       },
-      { zoom: 14.2, label: '1/25000で固定'      },
-      { zoom: 13.2, label: '1/50000で固定'      },
-      { zoom: 11.2, label: '1/200000で固定'     },
+    // titleScales: [//gptの回答
+    //   { zoom: 0.0,  label: '固定なし'            },
+    //   { zoom: 20.9, label: '1/250で固定'        },
+    //   { zoom: 19.9, label: '1/500で固定'        },
+    //   { zoom: 18.9, label: '1/1000で固定'       },
+    //   { zoom: 17.9, label: '1/2000で固定'       },
+    //   { zoom: 17.6, label: '1/2500で固定'       },
+    //   { zoom: 16.6, label: '1/5000で固定'       },
+    //   { zoom: 14.2, label: '1/25000で固定'      },
+    //   { zoom: 13.2, label: '1/50000で固定'      },
+    //   { zoom: 11.2, label: '1/200000で固定'     },
+    // ],
+    titleScales: [//gptによる新回答
+      { zoom: 0.0,  label: '固定なし' },
+      { zoom: 19.9, label: '1/250で固定'   },
+      { zoom: 18.9, label: '1/500で固定'   },
+      { zoom: 17.9, label: '1/1000で固定'  },
+      { zoom: 16.9, label: '1/2000で固定'  },
+      { zoom: 16.6, label: '1/2500で固定'  },
+      { zoom: 15.6, label: '1/5000で固定'  },
+      { zoom: 13.2, label: '1/25000で固定' },
+      { zoom: 12.2, label: '1/50000で固定' },
+      { zoom: 10.2, label: '1/200000で固定'},
     ],
+    zoomLockHandler: null,
     configFeatureFlg: false,
   }),
   computed: {
@@ -531,17 +544,26 @@ export default {
     },
     setZoom () {
       const map01 = this.$store.state.map01
-      if (this.titleScale !== 0) {
-        map01.setZoom(this.titleScale)
-        this.scaleText = '縮尺：' + this.titleScales.find(t => t.zoom === this.titleScale).label.replace('で固定', '')
-        map01.on('zoom', () => {
-          if (map01.getZoom() !== this.titleScale && this.titleScale !== 0 && this.isPrint) {
-            map01.setZoom(this.titleScale);
-          }
-        })
-      } else {
-        this.scaleText = ''
+      // まず、過去のリスナーがあれば必ず外す
+      if (this.zoomLockHandler) {
+        try { map01.off('zoom', this.zoomLockHandler) } catch (e) {}
+        this.zoomLockHandler = null
       }
+      // 解除系（titleScale=0 または 印刷モードでない）
+      if (this.titleScale === 0 || !this.s_isPrint) {
+        this.scaleText = ''
+        return
+      }
+      // ここから固定 ON
+      const target = this.titleScale
+      map01.setZoom(target);
+      this.zoomLockHandler = () => {
+        map01.setZoom(target);
+      };
+      map01.on('zoom', this.zoomLockHandler);
+      // ラベル
+      const t = this.titleScales.find(t => t.zoom === target)
+      this.scaleText = '縮尺：' + (t ? t.label.replace('で固定', '') : '')
     },
     directionChange() {
       changePrintMap03(this.s_titleDirection)
@@ -552,6 +574,9 @@ export default {
     document.querySelector('#drag-handle-drawConfigDialog-map01').innerHTML = '<span style="font-size: large;">各種設定</span>'
   },
   watch: {
+    s_isPrint(value) {
+      this.setZoom ()
+    },
     s_drawFire () {
       this.onDrawVisibleChange()
       this.drawOpacityInput()
