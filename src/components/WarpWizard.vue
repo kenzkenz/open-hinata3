@@ -4,7 +4,8 @@
       <div class="oh-title"></div>
       <div class="oh-tools compact">
         <MiniTooltip text="プレビュー" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :disabled="pairsCount < 2" @click="previewWarp" :title="'プレビュー'">
+          <!-- プレビューは MapLibre 上に貼る -->
+          <v-btn icon variant="text" :disabled="pairsCount < 2" @click="previewOnMap" :title="'プレビュー'">
             <v-icon>mdi-eye</v-icon>
           </v-btn>
         </MiniTooltip>
@@ -125,6 +126,7 @@ function fitAffineN(srcPts, dstPts, w){
   const b = Array(M6).fill(0);
   for (let i=0;i<n;i++){
     const wi = w ? w[i] : 1;
+    // ダミーの空ループは残さない
     const [x,y] = srcPts[i];
     const [X,Y] = dstPts[i];
     const rowX = [x,y,1, 0,0,0].map(v => wi*v);
@@ -201,7 +203,8 @@ function previewOnCanvas(vm,img,canvas,M,clipNat=null){
   if(clipped) ctx.restore();
   vm.$nextTick(vm.redrawMarkers);
 }
-// --- TPS（既存） ---
+
+// --- 汎用線形ソルバ（既存） ---
 function solveLinear(A, b) {
   const N=A.length, M=A.map(r=>r.slice()), x=b.slice();
   for(let i=0;i<N;i++){
@@ -220,6 +223,23 @@ function solveLinear(A, b) {
   }
   return x;
 }
+
+// 3点対応からアフィンを厳密に解く（タイル歪み対策）
+function affineFromTriangles(srcTri, dstTri){
+  const [p0,p1,p2] = srcTri, [q0,q1,q2] = dstTri;
+  const A = [
+    [p0[0], p0[1], 1, 0,     0,     0],
+    [p1[0], p1[1], 1, 0,     0,     0],
+    [p2[0], p2[1], 1, 0,     0,     0],
+    [0,     0,     0, p0[0], p0[1], 1],
+    [0,     0,     0, p1[0], p1[1], 1],
+    [0,     0,     0, p2[0], p2[1], 1],
+  ];
+  const b = [q0[0], q1[0], q2[0], q0[1], q1[1], q2[1]];
+  return solveLinear(A, b); // [A,B,C,D,E,F]
+}
+
+// --- TPS ---
 function fitTPS(srcPts, dstPts){
   const n=srcPts.length, m=n+3;
   const U=r=> (r>0? r*r*Math.log(r*r):0);
@@ -259,17 +279,13 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
     ctx.save(); ctx.beginPath(); pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); }); ctx.closePath(); ctx.clip(); clipped=true;
   }
   const nx=mesh, ny=mesh, sx=W/nx, sy=H/ny;
-  function aff(srcTri,dstTri){
-    const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
-    const a=p1[0]-p0[0], b=p2[0]-p0[0], c=p1[1]-p0[1], d=p2[1]-p0[1], det=a*d-b*c||1e-12;
-    const A=((q1[0]-q0[0])*d-(q2[0]-q0[0])*c)/det, B=(-(q1[0]-q0[0])*b+(q2[0]-q0[0])*a)/det;
-    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[0])*a)/det;
-    const C=q0[0]-A*p0[0]-B*p0[1], F=q0[1]-D*p0[0]-E*p0[1]; return [A,B,C,D,E,F];
-  }
+  const aff = (srcTri, dstTri) => affineFromTriangles(srcTri, dstTri);
   function drawTri(ctx,img,srcTri,dstTri){
     ctx.save(); ctx.beginPath();
     ctx.moveTo(dstTri[0][0],dstTri[0][1]); ctx.lineTo(dstTri[1][0],dstTri[1][1]); ctx.lineTo(dstTri[2][0],dstTri[2][1]);
-    ctx.closePath(); ctx.clip(); const [a,b,c,d,e,f]=aff(srcTri,dstTri); ctx.setTransform(a,d,b,e,c,f); ctx.drawImage(img,0,0); ctx.restore();
+    ctx.closePath(); ctx.clip(); const [a,b,c,d,e,f]=aff(srcTri,dstTri);
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+    ctx.setTransform(a,d,b,e,c,f); ctx.drawImage(img,0,0); ctx.restore();
   }
   for(let j=0;j<ny;j++){
     for(let i=0;i<nx;i++){
@@ -316,20 +332,15 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
     ctx.closePath(); ctx.clip(); clipped=true;
   }
   const nx = mesh, ny = mesh, sx = W/nx, sy = H/ny;
-  function aff(srcTri,dstTri){
-    const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
-    const a=p1[0]-p0[0], b=p2[0]-p0[0], c=p1[1]-p0[1], d=p2[1]-p0[1], det=a*d-b*c||1e-12;
-    const A=((q1[0]-q0[0])*d-(q2[0]-q0[0])*c)/det, B=(-(q1[0]-q0[0])*b+(q2[0]-q0[0])*a)/det;
-    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[1])*a)/det;
-    const C=q0[0]-A*p0[0]-B*p0[1], F=q0[1]-D*p0[0]-E*p0[1];
-    return [A,B,C,D,E,F];
-  }
+  const aff = (srcTri, dstTri) => affineFromTriangles(srcTri, dstTri);
   function drawTri(ctx,img,srcTri,dstTri){
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(dstTri[0][0],dstTri[0][1]); ctx.lineTo(dstTri[1][0],dstTri[1][1]); ctx.lineTo(dstTri[2][0],dstTri[2][1]);
     ctx.closePath(); ctx.clip();
     const [a,b,c,d,e,f]=aff(srcTri,dstTri);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.setTransform(a,d,b,e,c,f);
     ctx.drawImage(img,0,0);
     ctx.restore();
@@ -403,6 +414,17 @@ export default {
       fixedImgSizeNat: null,
 
       clonedGcpList: null,
+
+      // --- プレビュー（MapLibre上） ---
+      previewMode:false,
+      previewSourceId:'warp-preview-src',
+      previewLayerId:'warp-preview-lyr',
+      previewObjUrl:null,
+      baseLayerVisCache:null,
+      gcpClickBound:false,
+
+      // カメラ復元用
+      cameraBeforePreview: null,
     };
   },
   computed:{
@@ -568,12 +590,15 @@ export default {
         this.ensureOverlayOrder();
         this.bindMapClickForMarkers();
         this.upsertImageOnMap();
+
+        // ★ 初期は無背景
+        this.setBaseVisibility(false);
       });
     },
     ensureOverlayOrder(){
       if(!this.map) return;
       try{
-        // マスク→赤丸の順で最前面へ
+        // マスク→赤丸→（プレビュー） の順
         if(this.map.getLayer(this.maskPolyLayerId))    this.map.moveLayer(this.maskPolyLayerId);
         if(this.map.getLayer(this.maskOutlineLayerId)) this.map.moveLayer(this.maskOutlineLayerId);
         if(this.map.getLayer(this.maskPointLayerId))   this.map.moveLayer(this.maskPointLayerId);
@@ -581,7 +606,44 @@ export default {
         if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId);
         if(this.map.getLayer(this.gcpLabelId))  this.map.moveLayer(this.gcpLabelId);
 
+        if(this.map.getLayer(this.previewLayerId)) this.map.moveLayer(this.previewLayerId);
       }catch(e){}
+    },
+
+    // 背景の可視切替（無背景⇔背景あり）
+    getOverlayLayerIds(){
+      return [
+        this.imageLayerId, this.gcpCircleId, this.gcpLabelId,
+        this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId,
+        this.previewLayerId,
+      ].filter(Boolean);
+    },
+    setBaseVisibility(show){
+      if(!this.map || !this.map.getStyle) return;
+      const st = this.map.getStyle(); if(!st || !Array.isArray(st.layers)) return;
+      const keep = new Set(this.getOverlayLayerIds());
+      if(show){
+        if(Array.isArray(this.baseLayerVisCache)){
+          this.baseLayerVisCache.forEach(({id,vis})=>{
+            try{ this.map.setLayoutProperty(id,'visibility',vis); }catch(e){}
+          });
+        }
+        this.baseLayerVisCache = null;
+      }else{
+        if(!this.baseLayerVisCache){
+          this.baseLayerVisCache = [];
+          st.layers.forEach(l=>{
+            if(keep.has(l.id)) return;
+            const vis = (l.layout && l.layout.visibility) || 'visible';
+            this.baseLayerVisCache.push({id:l.id, vis});
+            try{ this.map.setLayoutProperty(l.id,'visibility','none'); }catch(e){}
+          });
+        }else{
+          this.baseLayerVisCache.forEach(({id})=>{
+            try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){}
+          });
+        }
+      }
     },
 
     _computeImageQuadLLA(imgW,imgH){
@@ -601,6 +663,15 @@ export default {
       const res=fn();
       this.map.jumpTo({center:[c.lng,c.lat], zoom:z, bearing:b, pitch:p});
       return res;
+    },
+    _getCamera(){
+      if(!this.map) return null;
+      const c=this.map.getCenter();
+      return { center:[c.lng,c.lat], zoom:this.map.getZoom(), bearing:this.map.getBearing(), pitch:this.map.getPitch() };
+    },
+    _restoreCamera(cam){
+      if(!this.map || !cam) return;
+      this.map.jumpTo({ center: cam.center, zoom: cam.zoom, bearing: cam.bearing, pitch: cam.pitch });
     },
 
     getCurrentImageQuadMerc(){
@@ -658,7 +729,9 @@ export default {
 
       if (!this.map.getSource(sid)) {
         this.map.addSource(sid, { type: 'image', url: this.imgUrl, coordinates: this.fixedImageCoordsLLA });
-        this.map.addLayer({ id: lid, type: 'raster', source: sid, paint: { 'raster-opacity': 1.0 } }, beforeId);
+        this.map.addLayer({ id: lid, type: 'raster', source: sid, paint: { 'raster-opacity': 1.0, 'raster-resampling': 'linear' } }, beforeId);
+      }else{
+        try{ this.map.setLayoutProperty(lid,'visibility','visible'); }catch(e){}
       }
     },
 
@@ -687,10 +760,10 @@ export default {
         const pM = lngLatToMerc([lng, lat]);
         if (!this._pointInQuadMerc(quadM, pM)) return;
 
-        // --- マスクモード：緑丸を追加（最大4点）。4点で薄緑ポリゴン表示＆maskQuadNatを更新 ---
+        // --- マスクモード：緑丸を追加（最大4点） ---
         if (this.maskMode) {
           let nextVerts = this.maskVertsLngLat.slice();
-          if (nextVerts.length >= 4) nextVerts = [];  // 5点目でリセットして新規
+          if (nextVerts.length >= 4) nextVerts = [];  // 5点目でリセット
           nextVerts.push([lng,lat]);
           this.maskVertsLngLat = nextVerts;
 
@@ -712,7 +785,6 @@ export default {
         // --- 通常モード：赤丸（GCP） ---
         const next=(this.gcpList||[]).slice();
 
-        // 未確定行が無い場合：画像座標を逆算して新規行
         const img=this.$refs.warpImage;
         if(!img || !img.naturalWidth || !this.fixedHinv) return;
         const worldXY = lngLatToMerc([lng,lat]);
@@ -780,7 +852,8 @@ export default {
         for(let rr=r+1; rr<8; rr++){ const v=Math.abs(M[rr][r]); if(v>maxv){ maxv=v; p=rr; } }
         if(p!==r){ const tmp=M[r]; M[r]=M[p]; M[p]=tmp; }
         const diag=M[r][r]||1e-12;
-        for(let rr=r+1; rr<8; rr++){
+        for(let rr=0; rr<8; rr++){
+          if(rr<=r) continue;
           const f=M[rr][r]/diag;
           for(let c=r;c<9;c++){ M[rr][c]-=f*M[r][c]; }
         }
@@ -824,11 +897,16 @@ export default {
     onExternalClose(fromUnmount=false){
       try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize); } }catch(e){}
       if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
+      // ★ プレビュー撤収
+      this.exitPreview(true);
       this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas);
       this.$emit('clear-map-markers'); this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.closedOnce=true;
     },
     toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid); },
     resetAll(){
+      // ★ プレビュー撤収
+      this.exitPreview(true);
+
       this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
       this.$emit('update:gcpList', []); // gcpList→watcherで赤丸クリア＆履歴
       this.maskQuadNat=[]; this.maskVertsLngLat=[]; this.syncMaskGeoJsonFromVerts();
@@ -848,6 +926,9 @@ export default {
       this.fixedImgSizeNat=null;
 
       this.upsertImageOnMap();
+      // 無背景へ
+      this.setBaseVisibility(false);
+
       this.resetHistory(); this.pushHistory('reset');
     },
     onResize(){
@@ -896,8 +977,17 @@ export default {
         this.upsertImageOnMap();
       });
     },
-    undo(){ if(!this.canUndo) return; this.histIndex--; this.applySnapshot(this.history[this.histIndex]); },
-    redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]); },
+    undo(){
+      if(!this.canUndo) return;
+      // プレビュー中ならカメラを元に戻してから撤収
+      this.exitPreview(true);
+      this.histIndex--; this.applySnapshot(this.history[this.histIndex]);
+    },
+    redo(){
+      if(!this.canRedo) return;
+      this.exitPreview(true);
+      this.histIndex++; this.applySnapshot(this.history[this.histIndex]);
+    },
     onKeydown(e){
       const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform);
       const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return;
@@ -961,6 +1051,111 @@ export default {
       }
       const tps=fitTPS(srcUp,dstUp); this.affineM=null; this.tps=tps; previewTPSOnCanvas(this,img,canvas,tps,28,clipNat);
     },
+
+    // ★ MapLibre 上にプレビューを貼り、背景を ON・現実位置へ瞬時にパン
+    previewOnMap(){
+      if(!(this.affineM || this.tps)) this.previewWarp();
+      if(!(this.affineM || this.tps) || !this.map) return;
+
+      // いまのカメラを保存（Undo/終了で戻す）
+      if(!this.cameraBeforePreview) this.cameraBeforePreview = this._getCamera();
+
+      // 元の固定画像レイヤは隠す（重なり防止）
+      if(this.map.getLayer(this.imageLayerId)){
+        try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','none'); }catch(e){}
+      }
+      // 既存プレビュー撤収
+      this._removePreviewLayerAndSource();
+
+      const beforeId = (this.gcpCircleId && this.map.getLayer(this.gcpCircleId)) ? this.gcpCircleId : undefined;
+
+      // 追加後にフィットする関数
+      const fitToCoordsInstant = (coords)=>{
+        const lons = coords.map(c=>c[0]);
+        const lats = coords.map(c=>c[1]);
+        const sw = [Math.min(...lons), Math.min(...lats)];
+        const ne = [Math.max(...lons), Math.max(...lats)];
+        try{
+          this.map.fitBounds([sw, ne], { padding: 40, duration: 0, animate: false, maxZoom: 21 });
+        }catch(e){}
+      };
+
+      if(this.affineM && !this.tps){
+        // ---- 相似/アフィン：元画像を4隅座標で射影貼付 ----
+        const img = this.$refs.warpImage;
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const cornersXY = [[0,0],[W,0],[W,H],[0,H]].map(p=>applyAffine(this.affineM, p)); // 3857
+        const coords = cornersXY.map(mercToLngLat); // TL,TR,BR,BL
+        this.map.addSource(this.previewSourceId, { type:'image', url:this.imgUrl, coordinates:coords });
+        this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear'} }, beforeId);
+        this.previewMode = true;
+        this.setBaseVisibility(true); // 背景ON
+        this._setGcpVisibility(false);
+        fitToCoordsInstant(coords);
+
+      }else{
+        // ---- TPS：3857に焼いてBlob URLをimageソースで貼付 ----
+        const img = this.$refs.warpImage;
+        const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
+        const {canvas, world} = exportTPSWithWorld(img, this.tps, clipNat, 32);
+        canvas.toBlob((blob)=>{
+          if(!blob) return;
+          if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
+          this.previewObjUrl = URL.createObjectURL(blob);
+
+          const outW = canvas.width, outH = canvas.height;
+          const C = world.C, F = world.F, A = world.A, E = world.E; // E<0
+          const TL = [C, F];
+          const TR = [C + A*outW, F];
+          const BR = [C + A*outW, F + E*outH];
+          const BL = [C, F + E*outH];
+          const coords = [TL,TR,BR,BL].map(mercToLngLat);
+
+          try{
+            this.map.addSource(this.previewSourceId, { type:'image', url:this.previewObjUrl, coordinates:coords });
+            this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear'} }, beforeId);
+            this.previewMode = true;
+            this.setBaseVisibility(true); // 背景ON
+            this._setGcpVisibility(false);
+            fitToCoordsInstant(coords);
+          }catch(e){
+            try{ URL.revokeObjectURL(this.previewObjUrl) }catch(_){} this.previewObjUrl=null;
+          }
+        }, 'image/png');
+      }
+    },
+    _removePreviewLayerAndSource(){
+      if(!this.map) return;
+      this.preserveCamera(()=>{
+        if(this.map.getLayer(this.previewLayerId))  { try{ this.map.removeLayer(this.previewLayerId) }catch(e){} }
+        if(this.map.getSource(this.previewSourceId)) { try{ this.map.removeSource(this.previewSourceId) }catch(e){} }
+      });
+      if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} this.previewObjUrl=null; }
+    },
+    // ★ プレビュー解除：背景OFF・元画像レイヤ再表示・カメラ復元（瞬時）
+    exitPreview(restoreCam){
+      if(!this.map) return;
+      if(this.previewMode){
+        this._removePreviewLayerAndSource();
+        if(this.map.getLayer(this.imageLayerId)){
+          try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','visible'); }catch(e){}
+        }
+        this.setBaseVisibility(false);
+        this._setGcpVisibility(true);
+        this.previewMode=false;
+      }
+      if(restoreCam && this.cameraBeforePreview){
+        this._restoreCamera(this.cameraBeforePreview); // jumpTo で瞬時
+      }
+      if(restoreCam) this.cameraBeforePreview = null;
+    },
+    _setGcpVisibility(visible){
+      if(!this.map) return;
+      const vis = visible ? 'visible' : 'none';
+      try{ if(this.map.getLayer(this.gcpCircleId)) this.map.setLayoutProperty(this.gcpCircleId,'visibility',vis); }catch(e){}
+      try{ if(this.map.getLayer(this.gcpLabelId))  this.map.setLayoutProperty(this.gcpLabelId,'visibility',vis); }catch(e){}
+    },
+
     buildWorldAffine(){
       const img=this.$refs.warpImage; if(!img) return null;
       const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
@@ -1140,4 +1335,3 @@ export default {
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
 </style>
-
