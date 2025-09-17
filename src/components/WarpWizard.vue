@@ -17,7 +17,6 @@
         <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
         <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
         <v-divider vertical class="mx-1"/>
-        <v-btn icon variant="text" :class="{ 'is-active': grid }" @click="toggleGrid" :title="'グリッド'"><v-icon>mdi-grid</v-icon></v-btn>
 
         <!-- GCPテーブル表示/非表示 -->
         <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">
@@ -55,14 +54,7 @@
               @update:model-value="onChangeBase"
               class="chip-group"
           >
-            <v-chip
-                v-for="b in baseDefs" :key="b.id"
-                :value="b.id"
-                size="small"
-                density="comfortable"
-                variant="outlined"
-                class="chip"
-            >
+            <v-chip v-for="b in baseDefs" :key="b.id" :value="b.id" size="small" density="comfortable" variant="outlined" class="chip">
               {{ b.label }}
             </v-chip>
           </v-chip-group>
@@ -75,7 +67,7 @@
         <div class="ml-wrap">
           <div ref="mlMap" class="ml-map"></div>
           <div class="ml-overlay">
-            <!-- キャンバスは非表示でOK（地図の GeoJSON レイヤで表示） -->
+            <!-- キャンバスは背面（赤丸はGeoJSONで前面） -->
             <img id="warp-image" ref="warpImage" :src="imgUrl" class="hidden" @load="onImageLoad">
             <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
             <canvas v-show="grid" ref="gridCanvas" class="grid-canvas"></canvas>
@@ -122,7 +114,7 @@
 </template>
 
 <script>
-// ------- math utils（既存） -------
+// ------- math utils -------
 function lngLatToMerc([lng, lat]){
   const x = (lng * 20037508.34) / 180;
   const ydeg = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
@@ -238,7 +230,7 @@ function previewOnCanvas(vm,img,canvas,M,clipNat=null){
   if(clipped) ctx.restore();
   vm.$nextTick(vm.redrawMarkers);
 }
-// --- TPS（既存） ---
+// --- TPS ---
 function solveLinear(A, b) {
   const N=A.length, M=A.map(r=>r.slice()), x=b.slice();
   for(let i=0;i<N;i++){
@@ -247,7 +239,7 @@ function solveLinear(A, b) {
     const diag=M[i][i]||1e-12;
     for(let j=i+1;j<N;j++){
       const f=M[j][i]/diag;
-      for(let k=i;k<N;k++) M[j][k]-=f*M[i][k];
+      for (let k=i;k<N;k++) M[j][k]-=f*M[i][k];
       x[j]-=f*x[i];
     }
   }
@@ -320,7 +312,7 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
   if(clipped) ctx.restore();
   return canvas;
 }
-// TPS を 3857 平面に焼き込み、PNG とその worldfile パラメータを返す
+// TPS を 3857 に焼き込み（PNG）＋ worldfile パラメータ
 function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   const W = img.naturalWidth, H = img.naturalHeight;
   const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyTPS(tps, [p[0], -p[1]]));
@@ -389,7 +381,8 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
 import MiniTooltip from '@/components/MiniTooltip';
 import maplibregl from 'maplibre-gl';
 
-const DEFAULT_PREVIEW_BASE_ID = 'gsi-photo'; // ← 初期レイヤーをここで簡単に変更可（'gsi-pale' | 'gsi-std' | 'gsi-photo'）
+// 初期プレビュー用ベースレイヤ（'gsi-pale' | 'gsi-std' | 'gsi-photo'）
+const DEFAULT_PREVIEW_BASE_ID = 'gsi-photo';
 
 export default {
   name: 'WarpWizard',
@@ -410,7 +403,8 @@ export default {
       imgUrl: null,
       affineM: null, tps: null,
       viewImgToCanvas: null, viewMapToCanvas: null,
-      grid: true, objUrl: null,
+      grid: false, // ← グリッドは使わない（初期オフ＆ボタン削除）
+      objUrl: null,
       history: [], histIndex: -1, isRestoring:false, closedOnce:false,
 
       // --- マスク ---
@@ -427,8 +421,6 @@ export default {
       maskSrcId:'mask-src', maskPointLayerId:'mask-point', maskPolyLayerId:'mask-poly', maskOutlineLayerId:'mask-outline',
       maskFC:{ type:'FeatureCollection', features:[] },
 
-      imageCoordsLLA:null,
-
       mlReady: false,
       imgReady: false,
 
@@ -440,8 +432,6 @@ export default {
       fixedQuadMerc: null,
       fixedHinv: null,
       fixedImgSizeNat: null,
-
-      clonedGcpList: null,
 
       // --- プレビュー（MapLibre上） ---
       previewMode:false,
@@ -471,11 +461,8 @@ export default {
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord)); },
     pairsCount(){ return this.pairs.length; },
     transformKind(){ if(!(this.affineM||this.tps)) return ''; return this.tps?'TPS':(this.pairsCount>=3?'Affine':'Similarity'); },
-    imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}`; },
-    hideBaseImage(){ return true; },
     canUndo(){ return this.histIndex>0; },
     canRedo(){ return this.histIndex>=0 && this.histIndex<this.history.length-1; },
-    canDownloadWorldFile(){ return !!this.affineM; },
     srs3857(){ return 3857; },
   },
   watch:{
@@ -505,7 +492,6 @@ export default {
         this.upsertImageOnMap();
       });
     },
-    // gcpList 変更で GeoJSON 再構築 → 履歴
     gcpList:{
       deep:true,
       handler(){
@@ -532,7 +518,6 @@ export default {
       const el = this.$refs.mlMap;
       if (!el) { this.$nextTick(this.initMapLibre); return; }
 
-      // 空スタイル（ベース無し）＋ glyphs 指定（ラベル用）
       const emptyStyle = {
         version: 8,
         sources: {},
@@ -547,7 +532,7 @@ export default {
         zoom: 12,
         attributionControl: false // 右下アトリビューション非表示
       });
-      // ズーム/回転コントローラは追加しない（非表示）
+      // ズーム/ナビコントロールは追加しない
 
       this.map.on('load', () => {
         this.mlReady = true;
@@ -645,7 +630,6 @@ export default {
     ensureOverlayOrder(){
       if(!this.map) return;
       try{
-        // ベース（gsi-*）は最下層 → マスク → 赤丸 → プレビュー
         if(this.map.getLayer(this.maskPolyLayerId))    this.map.moveLayer(this.maskPolyLayerId);
         if(this.map.getLayer(this.maskOutlineLayerId)) this.map.moveLayer(this.maskOutlineLayerId);
         if(this.map.getLayer(this.maskPointLayerId))   this.map.moveLayer(this.maskPointLayerId);
@@ -657,14 +641,11 @@ export default {
 
     // 背景の可視切替（無背景⇔背景あり）
     getOverlayLayerIds(){
-      // ベース以外（消さないもの）
-      const keep = [
+      return [
         this.imageLayerId, this.gcpCircleId, this.gcpLabelId,
         this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId,
         this.previewLayerId,
       ].filter(Boolean);
-      // ベースレイヤもここでは keep しない（プレビュー時だけ個別に可視化）
-      return keep;
     },
     setBaseVisibility(show){
       if(!this.map || !this.map.getStyle) return;
@@ -713,12 +694,9 @@ export default {
           id: lid,
           type:'raster',
           source: sid,
-          paint: {
-            'raster-opacity': 1,
-            'raster-resampling': 'linear'
-          },
-          layout: { visibility: 'none' } // 初期は隠す（プレビューで表示）
-        }, this.maskPolyLayerId /* できるだけ下に */);
+          paint: { 'raster-opacity': 1, 'raster-resampling': 'linear' },
+          layout: { visibility: 'none' }
+        }, this.maskPolyLayerId);
       }
     },
     setBase(id){
@@ -732,9 +710,7 @@ export default {
       });
       this.currentBaseId = id;
     },
-    onChangeBase(id){
-      this.setBase(id);
-    },
+    onChangeBase(id){ this.setBase(id); },
 
     preserveCamera(fn){
       if(!this.map) return fn();
@@ -766,10 +742,16 @@ export default {
       return allPos || allNeg;
     },
 
-    computeImageQuadLngLat(){
-      return (this.fixedImageCoordsLLA && this.fixedImageCoordsLLA.length===4)
-          ? this.fixedImageCoordsLLA
-          : null;
+    _computeImageQuadLLA(imgW,imgH){
+      if(!this.map) return null;
+      const center=this.map.getCenter(); const cM=lngLatToMerc([center.lng, center.lat]);
+      const b=this.map.getBounds();
+      const swM=lngLatToMerc([b.getWest(), b.getSouth()]); const neM=lngLatToMerc([b.getEast(), b.getNorth()]);
+      const viewWm=Math.max(1, neM[0]-swM[0]);
+      const halfWm=viewWm*0.25; const aspect=imgH/imgW; const halfHm=halfWm*aspect;
+      const TLm=[cM[0]-halfWm, cM[1]+halfHm], TRm=[cM[0]+halfWm, cM[1]+halfHm];
+      const BRm=[cM[0]+halfWm, cM[1]-halfHm], BLm=[cM[0]-halfWm, cM[1]-halfHm];
+      return [TLm,TRm,BRm,BLm].map(mercToLngLat);
     },
 
     upsertImageOnMap(){
@@ -800,18 +782,6 @@ export default {
       }else{
         try{ this.map.setLayoutProperty(lid,'visibility','visible'); }catch(e){}
       }
-    },
-
-    _computeImageQuadLLA(imgW,imgH){
-      if(!this.map) return null;
-      const center=this.map.getCenter(); const cM=lngLatToMerc([center.lng, center.lat]);
-      const b=this.map.getBounds();
-      const swM=lngLatToMerc([b.getWest(), b.getSouth()]); const neM=lngLatToMerc([b.getEast(), b.getNorth()]);
-      const viewWm=Math.max(1, neM[0]-swM[0]);
-      const halfWm=viewWm*0.25; const aspect=imgH/imgW; const halfHm=halfWm*aspect;
-      const TLm=[cM[0]-halfWm, cM[1]+halfHm], TRm=[cM[0]+halfWm, cM[1]+halfHm];
-      const BRm=[cM[0]+halfWm, cM[1]-halfHm], BLm=[cM[0]-halfWm, cM[1]-halfHm];
-      return [TLm,TRm,BRm,BLm].map(mercToLngLat);
     },
 
     onImageLoad(){
@@ -898,18 +868,10 @@ export default {
     // ★ maskVertsLngLat → GeoJSON（緑丸＋ポリゴン）
     syncMaskGeoJsonFromVerts(){
       const feats=[];
-      // points
-      (this.maskVertsLngLat||[]).forEach((ll)=>feats.push({
-        type:'Feature',
-        geometry:{ type:'Point', coordinates: ll }
-      }));
-      // polygon（4点揃ったら）
+      (this.maskVertsLngLat||[]).forEach((ll)=>feats.push({ type:'Feature', geometry:{ type:'Point', coordinates: ll } }));
       if ((this.maskVertsLngLat||[]).length === 4){
         const ring = [...this.maskVertsLngLat, this.maskVertsLngLat[0]];
-        feats.push({
-          type:'Feature',
-          geometry:{ type:'Polygon', coordinates: [ring] }
-        });
+        feats.push({ type:'Feature', geometry:{ type:'Polygon', coordinates: [ring] } });
       }
       this.maskFC = { type:'FeatureCollection', features:feats };
       const src=this.map?.getSource(this.maskSrcId);
@@ -968,10 +930,6 @@ export default {
       return [x,y];
     },
 
-    // ---------- 共通 ----------
-    fmtPx(p){ if(!Array.isArray(p)||p.length<2) return '-'; const x=+p[0], y=+p[1]; if(!Number.isFinite(x)||!Number.isFinite(y)) return '-'; return `${Math.round(x)}, ${Math.round(y)}`; },
-    fmtLL(ll){ if(!Array.isArray(ll)||ll.length<2) return '-'; const lng=+ll[0], lat=+ll[1]; if(!Number.isFinite(lng)||!Number.isFinite(lat)) return '-'; return `${lng.toFixed(6)}, ${lat.toFixed(6)}`; },
-
     onExternalClose(fromUnmount=false){
       try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize); } }catch(e){}
       if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
@@ -980,7 +938,6 @@ export default {
       this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas);
       this.$emit('clear-map-markers'); this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.closedOnce=true;
     },
-    toggleGrid(){ this.grid=!this.grid; this.$nextTick(this.drawGrid); },
     toggleGcpPanel(){
       this.showGcpPanel = !this.showGcpPanel;
       this.$nextTick(() => { try{ this.map && this.map.resize(); }catch(e){} });
@@ -1001,7 +958,6 @@ export default {
           this.map.removeSource(this.imageSourceId);
         });
       }
-      this.imageCoordsLLA=null;
       this.fixedImageCoordsLLA=null;
       this.fixedQuadMerc=null;
       this.fixedHinv=null;
@@ -1098,7 +1054,6 @@ export default {
       ctx.globalAlpha=1;
     },
     redrawMarkers(){
-      // 画面上キャンバス用（見えなくてもOK）
       const canvas=this.$refs.markerCanvas, img=this.$refs.warpImage;
       if(!canvas||!img) return;
       const ctx=canvas.getContext('2d'), cw=canvas.width, ch=canvas.height;
@@ -1137,7 +1092,7 @@ export default {
       const tps=fitTPS(srcUp,dstUp); this.affineM=null; this.tps=tps; previewTPSOnCanvas(this,img,canvas,tps,28,clipNat);
     },
 
-    // ★ MapLibre 上にプレビューを貼り、背景を ON にする（赤丸/マスクは隠す）
+    // ★ MapLibre 上にプレビューを貼り、背景を ON に（赤丸/マスクは隠す）
     previewOnMap(){
       if(!(this.affineM || this.tps)) this.previewWarp();
       if(!(this.affineM || this.tps) || !this.map) return;
@@ -1145,7 +1100,7 @@ export default {
       // プレビュー前のカメラ保存
       this.cameraBeforePreview = this._getCamera();
 
-      // 元の固定画像レイヤは隠す（重なり防止）
+      // 元の固定画像レイヤは隠す
       if(this.map.getLayer(this.imageLayerId)){
         try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','none'); }catch(e){}
       }
@@ -1153,10 +1108,10 @@ export default {
       this._removePreviewLayerAndSource();
 
       // 赤丸/マスクはプレビュー中は隠す
-      const hideDuringPreview = [this.gcpCircleId, this.gcpLabelId, this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId];
-      hideDuringPreview.forEach(id=>{ if(this.map.getLayer(id)) try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){} });
+      [this.gcpCircleId, this.gcpLabelId, this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId]
+          .forEach(id=>{ if(this.map.getLayer(id)) try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){} });
 
-      // ベースをON & 初期ベース（航空）を選択
+      // ベースをON & 初期ベース選択
       this.baseDefs.forEach(b=>this.ensureBase(b.id));
       this.setBaseVisibility(true);
       this.setBase(this.currentBaseId || DEFAULT_PREVIEW_BASE_ID);
@@ -1164,7 +1119,6 @@ export default {
       const beforeId = (this.gcpCircleId && this.map.getLayer(this.gcpCircleId)) ? this.gcpCircleId : undefined;
 
       if(this.affineM && !this.tps){
-        // ---- 相似/アフィン：元画像を4隅座標で射影貼付 ----
         const img = this.$refs.warpImage;
         const W = img.naturalWidth, H = img.naturalHeight;
         const cornersXY = [[0,0],[W,0],[W,H],[0,H]].map(p=>applyAffine(this.affineM, p)); // 3857
@@ -1175,14 +1129,13 @@ export default {
           this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1,'raster-resampling':'linear'} }, beforeId);
           this.previewMode = true;
 
-          // 画像の外接矩形にフィット（無アニメ）
+          // 外接矩形にフィット（無アニメ）
           const xs=cornersXY.map(p=>p[0]), ys=cornersXY.map(p=>p[1]);
           const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
           const sw=mercToLngLat([minX, minY]), ne=mercToLngLat([maxX, maxY]);
           this.map.fitBounds([sw, ne], { padding: 40, duration: 0 });
         }catch(e){}
       }else{
-        // ---- TPS：3857に焼いてBlob URLをimageソースで貼付 ----
         const img = this.$refs.warpImage;
         const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
         const {canvas, world} = exportTPSWithWorld(img, this.tps, clipNat, 32);
@@ -1193,11 +1146,10 @@ export default {
           if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
           this.previewObjUrl = URL.createObjectURL(blob);
 
-          // ワールド座標矩形の4隅（TL,TR,BR,BL）
-          const C = world.C, F = world.F, A = world.A, E = world.E; // E<0
+          const C = world.C, F = world.F, A = world.A, E = world.E;
           const TL = [C, F];
           const TR = [C + A*outW, F];
-          const BR = [C + A*outW, F + E*outH]; // = (maxX, minY)
+          const BR = [C + A*outW, F + E*outH];
           const BL = [C, F + E*outH];
           const coords = [TL,TR,BR,BL].map(mercToLngLat);
 
@@ -1232,62 +1184,17 @@ export default {
 
       this._removePreviewLayerAndSource();
 
-      // 元画像レイヤを再表示
       if(this.map?.getLayer(this.imageLayerId)){
         try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','visible'); }catch(e){}
       }
-      // 赤丸/マスクを戻す
       [this.gcpCircleId, this.gcpLabelId, this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId]
           .forEach(id=>{ if(this.map.getLayer(id)) try{ this.map.setLayoutProperty(id,'visibility','visible'); }catch(e){} });
 
-      // 無背景へ戻す（通常モード）
       this.setBaseVisibility(false);
       this.previewMode=false;
 
-      // カメラを元へ（無アニメ）
       if(cam) this._restoreCamera(cam);
       this.cameraBeforePreview = null;
-    },
-
-    buildWorldAffine(){
-      const img=this.$refs.warpImage; if(!img) return null;
-      const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
-      if(pairs.length<2) return null;
-      const srcNat=pairs.map(g=>g.imageCoord), srcUp=srcNat.map(([x,y])=>[x,-y]), dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
-      let Mup = (pairs.length===2)? (this.strict2pt? fitSimilarity2PExact(srcUp,dstUp):fitSimilarity2P(srcUp,dstUp)) : fitAffineRobust(srcUp,dstUp,4);
-      const FLIP=[1,0,0, 0,-1,0]; let M=composeAffine(Mup, FLIP);
-      let [A,B,C,D,E,F]=M; const scaleX=Math.hypot(A,D), scaleY=Math.hypot(B,E); const W=img.naturalWidth, H=img.naturalHeight;
-      const worldW=scaleX*W, worldH=scaleY*H; const TOO_BIG=6e7, TOO_FINE=1e-3, TOO_COARSE=1e4;
-      const bad=!isFinite(worldW)||!isFinite(worldH)||worldW>TOO_BIG||worldH>TOO_BIG||scaleX<TOO_FINE||scaleY<TOO_FINE||scaleX>TOO_COARSE||scaleY>TOO_COARSE;
-      if(bad && pairs.length>=2){
-        let i1=0,i2=1,maxd=-1; for(let a=0;a<srcUp.length;a++){ for(let b=a+1;b<srcUp.length;b++){ const d=Math.hypot(srcUp[b][0]-srcUp[a][0], srcUp[b][1]-srcUp[a][1]); if(d>maxd){maxd=d;i1=a;i2=b;} } }
-        M=composeAffine(fitSimilarity2PExact([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP);
-      }
-      return M;
-    },
-    _exportAffineHighRes(img,M,clipNat=null){
-      const w=img.naturalWidth,h=img.naturalHeight;
-      const corners=[[0,0],[w,0],[w,h],[0,h]].map(p=>applyAffine(M,p));
-      const xs=corners.map(p=>p[0]), ys=corners.map(p=>p[1]);
-      const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-      const cw=Math.max(1,img.clientWidth||img.naturalWidth), ch=Math.max(1,img.clientHeight||img.naturalHeight);
-      const s=Math.min(cw/(maxX-minX), ch/(maxY-minY));
-      const ratio=(img.naturalWidth/cw); const S=s*ratio;
-      const outW=Math.max(1, Math.round((maxX-minX)*S)), outH=Math.max(1, Math.round((maxY-minY)*S));
-      const canvas=document.createElement('canvas'); canvas.width=outW; canvas.height=outH; const ctx=canvas.getContext('2d');
-      const T=[ S,0,-minX*S, 0,-S,maxY*S ]; const Mv=composeAffine(T,M); const [A,B,C,D,E,F]=Mv;
-      ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,outW,outH);
-      let clipped=false;
-      if(clipNat && clipNat.length>=3){
-        ctx.save(); ctx.beginPath();
-        clipNat.forEach(([x,y],i)=>{ const [cx,cy]=applyAffine(Mv,[x,y]); if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
-        ctx.closePath(); ctx.clip(); clipped=true;
-      }
-      ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
-      ctx.setTransform(A,D,B,E,C,F); ctx.drawImage(img,0,0); if(clipped) ctx.restore(); return canvas;
-    },
-    _exportTPSHighRes(img,tps,clipNat=null,mesh=32){
-      return previewTPSOnCanvas(this,img,document.createElement('canvas'),tps,mesh,clipNat);
     },
 
     confirm(){
@@ -1435,5 +1342,4 @@ export default {
 .chip-group{ display:flex; gap:4px; }
 .chip{ font-size:11px; height:24px; }
 .chip-selected{ background:#111; color:#fff; }
-
 </style>
