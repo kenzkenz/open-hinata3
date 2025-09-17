@@ -12,6 +12,47 @@ import Haptics from '@/js/utils/haptics'
 
 loadFonts()
 
+// ディレクティブ
+const stickBottomV3 = {
+    mounted(el, binding) {
+        const getOpts = (b) => ({
+            threshold: (b && b.value && typeof b.value.threshold === 'number') ? b.value.threshold : 40,
+            useSmooth: !!(b && b.modifiers && b.modifiers.smooth),
+        });
+        let opts = getOpts(binding);
+        const isNearBottom = () => (el.scrollHeight - el.clientHeight - el.scrollTop) <= opts.threshold;
+        const scrollToBottom = () => {
+            el.scrollTo({ top: el.scrollHeight, behavior: opts.useSmooth ? 'smooth' : 'auto' });
+        };
+        const state = { stick: true };
+        const onScroll = () => { state.stick = isNearBottom(); };
+        el.addEventListener('scroll', onScroll, { passive: true });
+        const mo = new MutationObserver(() => { if (state.stick) scrollToBottom(); });
+        mo.observe(el, { childList: true, subtree: true });
+        let ro;
+        if ('ResizeObserver' in window) {
+            ro = new ResizeObserver(() => { if (state.stick) scrollToBottom(); });
+            ro.observe(el);
+        }
+        requestAnimationFrame(scrollToBottom);
+        el._stickBottomCleanup = () => {
+            el.removeEventListener('scroll', onScroll);
+            mo.disconnect();
+            ro?.disconnect();
+        };
+    },
+    updated(el, binding) {
+        const threshold = (binding.value && typeof binding.value.threshold === 'number') ? binding.value.threshold : 40;
+        const useSmooth = !!(binding.modifiers && binding.modifiers.smooth);
+        const atBottom = (el.scrollHeight - el.clientHeight - el.scrollTop) <= threshold;
+        if (atBottom) el.scrollTo({ top: el.scrollHeight, behavior: useSmooth ? 'smooth' : 'auto' });
+    },
+    unmounted(el) {
+        el._stickBottomCleanup?.();
+    }
+};
+
+
 const app = createApp(App)
 app.use(Haptics)
 app.use(store)
@@ -19,6 +60,7 @@ app.use(vuetify)
 app.component('Dialog', Dialog)
 app.component('Dialog2', Dialog2)
 app.component(VueQrcode.name, VueQrcode)
+app.directive('stick-bottom', stickBottomV3); // ディレクティブをセット
 
 app.mount('#app')
 

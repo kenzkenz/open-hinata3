@@ -364,9 +364,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   location="top"
                   class="my-snackbar"
       >
-        <div class="snack-scroll" v-if="s_loading">処理中です。</div>
-        <div class="snack-scroll" v-if="s_loading2"><span v-html="s_loadingMessage"></span></div>
-        <div class="snack-scroll" v-if="s_loading3"><span v-html="s_loadingMessage3"></span></div>
+        <div v-stick-bottom.smooth="{ threshold: 40 }" class="snack-scroll" v-if="s_loading">処理中です。</div>
+        <div v-stick-bottom.smooth="{ threshold: 40 }" class="snack-scroll" v-if="s_loading2"><span v-html="s_loadingMessage"></span></div>
+        <div v-stick-bottom.smooth="{ threshold: 40 }" class="snack-scroll" v-if="s_loading3"><span v-html="s_loadingMessage3"></span></div>
       </v-snackbar>
 
 
@@ -1627,7 +1627,6 @@ import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
 import WarpWizard from '@/components/WarpWizard.vue'
-
 
 import {
   addDraw,
@@ -9833,6 +9832,8 @@ export default {
 
 
     const vm = this
+
+
 
     // if (this.$store.state.isIframe) {
     //   document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
