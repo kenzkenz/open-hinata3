@@ -166,35 +166,6 @@ function fitAffineN(srcPts, dstPts, w){
   }
   return x; // [A,B,C,D,E,F]
 }
-
-// function fitAffineN(srcPts, dstPts, w){
-//   const n=srcPts.length, M=6;
-//   const A=Array.from({length:M},()=>Array(M).fill(0)), b=Array(M).fill(0);
-//   for(let i=0;i<n;i++){
-//     const wi=w?w[i]:1; const [x,y]=srcPts[i]; const [X,Y]=dstPts[i];
-//     const rowX=[x,y,1,0,0,0].map(v=>wi*v), rowY=[0,0,0,x,y,1].map(v=>wi*v);
-//     for(let j=0;j<M;j++){
-//       for(let k=0;k<M;k++){ A[j][k]+=rowX[j]*rowX[k]+rowY[j]*rowY[k]; }
-//       b[j]+=rowX[j]*X+rowY[j]*Y;
-//     }
-//   }
-//   const x=b.slice(), B=A.map(r=>r.slice()), N=B.length;
-//   for(let i=0;i<N;i++){
-//     let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r; }
-//     if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]]; }
-//     const diag=B[i][i]||1e-12;
-//     for(let j=i+1;j<N;j++){
-//       const f=B[j][i]/diag;
-//       for(let k=i;k<N;k++) B[j][k]-=f*M[i][k];
-//       x[j]-=f*x[i];
-//     }
-//   }
-//   for(let i=N-1;i>=0;i--){
-//     let s=0; for(let j=i+1;j<N;j++) s+=B[i][j]*x[j];
-//     x[i]=(x[i]-s)/(B[i][i]||1e-12);
-//   }
-//   return x;
-// }
 function huberWeights(res, delta){ return res.map(r=>{ const a=Math.abs(r); return a<=delta?1:(delta/a); }); }
 function median(arr){ const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
 function fitAffineRobust(srcPts, dstPts, iters=3){
@@ -318,6 +289,84 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
   }
   if(clipped) ctx.restore();
   return canvas;
+}
+// 画像を TPS で 3857 平面に焼き込み、キャンバスと world file パラメータ(A..F)を返す
+function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
+  const W = img.naturalWidth, H = img.naturalHeight;
+  // ワールド側のバウンディングボックス
+  const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyTPS(tps, [p[0], -p[1]]));
+  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+
+  // 出力解像度（px/m）を決める：元画像の幅に概ね合わせる
+  const worldW = Math.max(1, maxX - minX), worldH = Math.max(1, maxY - minY);
+  const scale = pxPerMeter || (W / worldW); // 幅基準
+  const outW = Math.max(1, Math.round(worldW * scale));
+  const outH = Math.max(1, Math.round(worldH * scale));
+
+  // 出力キャンバス
+  const canvas = document.createElement('canvas');
+  canvas.width = outW; canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,outW,outH);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  // ワールド→出力ピクセルの写像（余白なし）
+  const view = ([X,Y]) => [ scale*(X - minX), scale*(maxY - Y) ];
+
+  // クリップ（任意）
+  let clipped=false;
+  if (clipNat && clipNat.length>=3){
+    const q=clipNat.slice(), edges=[[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]], pts=[], N=24;
+    edges.forEach(([p0,p1])=>{
+      if(!p0||!p1) return;
+      for(let i=0;i<=N;i++){
+        const t=i/N, x=p0[0]*(1-t)+p1[0]*t, y=p0[1]*(1-t)+p1[1]*t;
+        pts.push(view(applyTPS(tps,[x,-y])));
+      }
+    });
+    ctx.save(); ctx.beginPath();
+    pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
+    ctx.closePath(); ctx.clip(); clipped=true;
+  }
+
+  // 三角形分割で描画（previewTPSOnCanvas と同等のメッシュ）
+  const nx = mesh, ny = mesh, sx = W/nx, sy = H/ny;
+  function aff(srcTri,dstTri){
+    const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
+    const a=p1[0]-p0[0], b=p2[0]-p0[0], c=p1[1]-p0[1], d=p2[1]-p0[1], det=a*d-b*c||1e-12;
+    const A=((q1[0]-q0[0])*d-(q2[0]-q0[0])*c)/det, B=(-(q1[0]-q0[0])*b+(q2[0]-q0[0])*a)/det;
+    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[1])*a)/det;
+    const C=q0[0]-A*p0[0]-B*p0[1], F=q0[1]-D*p0[0]-E*p0[1];
+    return [A,B,C,D,E,F];
+  }
+  function drawTri(ctx,img,srcTri,dstTri){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(dstTri[0][0],dstTri[0][1]); ctx.lineTo(dstTri[1][0],dstTri[1][1]); ctx.lineTo(dstTri[2][0],dstTri[2][1]);
+    ctx.closePath(); ctx.clip();
+    const [a,b,c,d,e,f]=aff(srcTri,dstTri);
+    ctx.setTransform(a,d,b,e,c,f);
+    ctx.drawImage(img,0,0);
+    ctx.restore();
+  }
+  for(let j=0;j<ny;j++){
+    for(let i=0;i<nx;i++){
+      const x0=i*sx,y0=j*sy,x1=(i+1)*sx,y1=(j+1)*sy;
+      const s00=[x0,y0],s10=[x1,y0],s11=[x1,y1],s01=[x0,y1];
+      const d00=view(applyTPS(tps,[x0,-y0])), d10=view(applyTPS(tps,[x1,-y0]));
+      const d11=view(applyTPS(tps,[x1,-y1])), d01=view(applyTPS(tps,[x0,-y1]));
+      drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
+      drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
+    }
+  }
+  if (clipped) ctx.restore();
+
+  // ← この出力キャンバスは 3857 の（minX,maxY）を原点、ピクセルサイズ 1/scale[m/px] のアフィンで置ける
+  const A = 1/scale, D = 0, B = 0, E = -1/scale, C = minX, F = maxY;
+  return { canvas, world: {A,B,C,D,E,F}, bbox:{minX,maxX,minY,maxY}, out:{w:outW,h:outH} };
 }
 
 import MiniTooltip from '@/components/MiniTooltip';
@@ -880,30 +929,89 @@ export default {
     _exportTPSHighRes(img,tps,clipNat=null,mesh=32){
       return previewTPSOnCanvas(this,img,document.createElement('canvas'),tps,mesh,clipNat);
     },
+
+
+
     confirm(){
       if(!(this.affineM||this.tps)) return;
-      const img=this.$refs.warpImage; const clipNat=(this.maskQuadNat&&this.maskQuadNat.length>=3)? this.maskQuadNat: null;
+      const img=this.$refs.warpImage;
+      const clipNat=(this.maskQuadNat&&this.maskQuadNat.length>=3)? this.maskQuadNat: null;
+
       let payload={ file:this.$props.file||null, srs:this.srs3857 }, cornersLngLat=null;
+
       if(this.tps){
-        const outCanvas=this._exportTPSHighRes(img,this.tps,clipNat,32);
+        // 角の緯度経度（プレビュー初期位置用）
         const W=img.naturalWidth,H=img.naturalHeight, cornersImg=[[0,0],[W,0],[W,H],[0,H]];
-        const cornersWorld=cornersImg.map(p=>applyTPS(this.tps,[p[0],-p[1]])); cornersLngLat=cornersWorld.map(mercToLngLat);
-        payload={ ...payload, tps:this.tps, kind:'tps', cornersLngLat };
-        if(!outCanvas) return; outCanvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob, maskedPngFile:null }); }, 'image/png'); return;
+        const cornersWorld=cornersImg.map(p=>applyTPS(this.tps,[p[0],-p[1]]));
+        cornersLngLat=cornersWorld.map(mercToLngLat);
+
+        // ★ TPS を 3857 平面に焼き込んだ PNG と、その PNG 用 world file を生成
+        const {canvas, world} = exportTPSWithWorld(img, this.tps, clipNat, 32);
+        if(!canvas) return;
+
+        const worldFileText = `${world.A}\n${world.D}\n${world.B}\n${world.E}\n${world.C}\n${world.F}`;
+
+        canvas.toBlob((blob)=>{
+          const baseName=(this.$props.file && this.$props.file.name)? this.$props.file.name.replace(/\.[^.]+$/,''):'image';
+          const warpedPng = blob ? new File([blob], `${baseName}-tps.png`, {type:'image/png'}) : null;
+
+          // 親へ：TPS でも「PNG + world file」で渡す（＝タイル化の通常経路が使える）
+          alert('子のconfirm//' + worldFileText)
+          console.log(warpedPng)
+          this.$emit('confirm',{
+            ...payload,
+            kind:'tps',
+            fileOriginal: warpedPng,          // ← ワープ済みPNG
+            worldFile: worldFileText,         // ← その PNG を置くための WorldFile
+            cornersLngLat,
+            tps: this.tps,                     // 参考：係数も同送（サーバが使えるなら）
+          });
+        }, 'image/png');
+        return;
       }
+
+      // …従来の相似/アフィン分岐はそのまま…
       if(this.affineM){
-        const kind=(this.pairsCount>=3?'affine':'similarity'); const wld=worldFileFromAffine(this.affineM);
+        const kind=(this.pairsCount>=3?'affine':'similarity');
+        const wld=worldFileFromAffine(this.affineM);
         if(clipNat){
           const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; const cx=c.getContext('2d');
           cx.save(); cx.beginPath(); clipNat.forEach(([x,y],i)=>{ if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y); }); cx.closePath(); cx.clip(); cx.drawImage(img,0,0); cx.restore();
           const baseName=(this.$props.file && this.$props.file.name)? this.$props.file.name.replace(/\.[^.]+$/,''):'image';
           c.toBlob((blob)=>{ const maskedPngFile=blob? new File([blob], `${baseName}.png`, {type:'image/png'}):null;
-            this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile });
-          }, 'image/png'); return;
+            this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFile:wld, fileOriginal:maskedPngFile });
+          }, 'image/png');
+          return;
         }
-        this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile:this.$props.file||null });
+        this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFile:wld, fileOriginal:this.$props.file||null });
       }
     },
+
+
+    // confirm(){
+    //   if(!(this.affineM||this.tps)) return;
+    //   const img=this.$refs.warpImage; const clipNat=(this.maskQuadNat&&this.maskQuadNat.length>=3)? this.maskQuadNat: null;
+    //   let payload={ file:this.$props.file||null, srs:this.srs3857 }, cornersLngLat=null;
+    //   if(this.tps){
+    //     const outCanvas=this._exportTPSHighRes(img,this.tps,clipNat,32);
+    //     const W=img.naturalWidth,H=img.naturalHeight, cornersImg=[[0,0],[W,0],[W,H],[0,H]];
+    //     const cornersWorld=cornersImg.map(p=>applyTPS(this.tps,[p[0],-p[1]])); cornersLngLat=cornersWorld.map(mercToLngLat);
+    //     payload={ ...payload, tps:this.tps, kind:'tps', cornersLngLat };
+    //     if(!outCanvas) return; outCanvas.toBlob((blob)=>{ this.$emit('confirm',{ ...payload, blob, maskedPngFile:null }); }, 'image/png'); return;
+    //   }
+    //   if(this.affineM){
+    //     const kind=(this.pairsCount>=3?'affine':'similarity'); const wld=worldFileFromAffine(this.affineM);
+    //     if(clipNat){
+    //       const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; const cx=c.getContext('2d');
+    //       cx.save(); cx.beginPath(); clipNat.forEach(([x,y],i)=>{ if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y); }); cx.closePath(); cx.clip(); cx.drawImage(img,0,0); cx.restore();
+    //       const baseName=(this.$props.file && this.$props.file.name)? this.$props.file.name.replace(/\.[^.]+$/,''):'image';
+    //       c.toBlob((blob)=>{ const maskedPngFile=blob? new File([blob], `${baseName}.png`, {type:'image/png'}):null;
+    //         this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile });
+    //       }, 'image/png'); return;
+    //     }
+    //     this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFileText:wld, blob:null, maskedPngFile:this.$props.file||null });
+    //   }
+    // },
 
     // ---- GCP エディタ ----
     removeGcp(idx){

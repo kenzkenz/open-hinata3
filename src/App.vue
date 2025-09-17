@@ -3337,6 +3337,7 @@ export default {
                          srs  = 'EPSG:3857',    // 'EPSG:3857'（メートル） or 'EPSG:4326'（度）
                          useExportScale = false // true にすると exportWidth/Height 等の異方スケール補正を掛けます
                        } = {}) {
+      alert(888)
 
       const img = this.$refs?.warpImage || document.getElementById('warp-image');
       if (!img) { console.warn('image not found'); return null; }
@@ -3410,7 +3411,7 @@ export default {
       return wld;
     },
     // 受け取りに file を追加
-    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob, file, maskedPngFile }) {
+    onWarpConfirm({ kind, affineM, H, cornersLngLat, tps, blob, file, fileOriginal, maskedPngFile, worldFile }) {
       // 安全チェック（宇宙行き防止）
       if (cornersLngLat && !this._validCorners(cornersLngLat)) {
         console.warn('invalid corners, abort');
@@ -3423,7 +3424,8 @@ export default {
         const worldFile = this._worldFileFromAffine(affineM);
         this.openTileUploadDialog({
           kind,
-          fileOriginal: maskedPngFile,   // マスク画像を使う
+          // fileOriginal: maskedPngFile,   // マスク画像を使う
+          fileOriginal,
           worldFile,
           // previewBlob: blob, // （任意）プレビュー表示用に保持してもいい
         });
@@ -3444,19 +3446,22 @@ export default {
         }
 
       } else if (kind === 'tps') {
+        alert('App.vue-onWarpConfirm//' + worldFile)
+        alert(fileOriginal)
         // TPS もワールドファイル不可
-        if (this.serverSupportsWarp) {
+        // if (this.serverSupportsWarp) {
           // ✅ サーバ側で TPS ワープできるなら「元画像 + tps」
           this.openTileUploadDialog({
             kind,
-            fileOriginal: maskedPngFile,
+            fileOriginal,
             tps,
             cornersLngLat, // 表示位置の初期合わせに使える
+            worldFile
           });
-        } else {
-          // フォールバック：クライアント出力を使う
-          this.openTileUploadDialog({ kind, blob, cornersLngLat, tps });
-        }
+        // } else {
+        //   // フォールバック：クライアント出力を使う
+        //   this.openTileUploadDialog({ kind, blob, cornersLngLat, tps });
+        // }
       }
     },
     _validCorners(c) {
@@ -4451,7 +4456,8 @@ export default {
         affineM               // 予備（worldFileが無い時だけ最終手段で使う）
       } = payload || {};
 
-      const baseName = this.gazoNameFromStore || this.s_gazoName || 'image';
+
+      const baseName = this.s_gazoName || 'image';
 
       // ヘルパ
       const extFromMime = (mime) => {
@@ -4507,6 +4513,25 @@ export default {
 
       // ========= ホモグラフィ / TPS =========
       // 画像は「高解像の previewBlob を最優先」。無ければ元画像で近似（四隅表示）も可。
+
+      // alert('App.vue-openTileUploadDialog//' + worldFile)
+
+      // ========= ホモグラフィ / TPS =========
+      alert('fileOriginal' + fileOriginal)
+      if ((kind === 'tps' || kind === 'homography') && worldFile && fileOriginal) {
+        alert('App.vue-openTileUploadDialog//' + worldFile)
+
+        // 子が「ワープ済み画像＋world file」を作ってくれたケース → そのまま通常経路へ
+        const imgFile = asFile(fileOriginal, baseName);
+        const wldName = worldFileName || `${baseName}.${inferWorldExtByName(imgFile.name)}`;
+        const wldFile = new File([worldFile], wldName, { type: 'text/plain' });
+        console.log(imgFile)
+        console.log(wldFile);
+        this.$store.commit('setTiffAndWorldFile', [imgFile, wldFile]);
+        this.showTileDialog = true;
+        return;
+      }
+
       if (kind === 'homography' || kind === 'tps') {
         // 1) 使う画像を決める
         let chosen = previewBlob || fileOriginal;
