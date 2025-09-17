@@ -161,7 +161,7 @@
         "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]}
       },
       "paint": {
-        "text-color": "hsl(30, 23%, 62%)",
+        "text-color": "#111",
         "text-halo-color": "#f8f4f0",
         "text-halo-width": 0.5
       }
@@ -181,7 +181,7 @@
         "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]}
       },
       "paint": {
-        "text-color": "#765",
+        "text-color": "#111",
         "text-halo-blur": 0.5,
         "text-halo-width": 1
       }
@@ -201,7 +201,7 @@
         "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]}
       },
       "paint": {
-        "text-color": "#765",
+        "text-color": "#111",
         "text-halo-blur": 0.5,
         "text-halo-width": 1
       }
@@ -308,12 +308,12 @@
         "text-font": ["migu2m-bold"],
         "text-letter-spacing": 0.1,
         "text-max-width": 9,
-        "text-size": {"base": 1.2, "stops": [[12, 10], [15, 14]]},
+        "text-size": {"base": 1.2, "stops": [[12, 12], [15, 16]]},
         "text-transform": "uppercase",
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#633",
+        "text-color": "#111",
         "text-halo-color": "rgba(255,255,255,0.8)",
         "text-halo-width": 1.2
       }
