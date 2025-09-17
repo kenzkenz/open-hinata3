@@ -3,19 +3,62 @@
     <div class="oh-toolbar">
       <div class="oh-title"></div>
       <div class="oh-tools compact">
-        <MiniTooltip text="プレビュー" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :disabled="pairsCount < 2" @click="previewOnMap" :title="'プレビュー'">
-            <v-icon>mdi-eye</v-icon>
+        <!-- プレビュー：トグル（入/出） -->
+        <MiniTooltip :text="previewMode ? 'プレビュー終了' : 'プレビュー'" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon variant="text"
+              :disabled="(pairsCount < 2) && !previewMode"
+              @click="togglePreview"
+              :title="previewMode ? 'プレビュー終了' : 'プレビュー'">
+            <v-icon>{{ previewMode ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
           </v-btn>
         </MiniTooltip>
+
+        <!-- アップロード -->
         <MiniTooltip text="アップロード" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :disabled="!(affineM || tps)" @click="confirm" :title="'アップロード'">
+          <v-btn icon variant="text" :disabled="!(affineM || tps)" @click="confirm" title="アップロード">
             <v-icon>mdi-cloud-upload</v-icon>
           </v-btn>
         </MiniTooltip>
+
         <v-divider vertical class="mx-1"/>
-        <v-btn icon variant="text" :disabled="!canUndo" @click="undo" :title="'元に戻す (Ctrl/Cmd+Z)'"><v-icon>mdi-undo</v-icon></v-btn>
-        <v-btn icon variant="text" :disabled="!canRedo" @click="redo" :title="'やり直す (Shift+Ctrl/Cmd+Z)'"><v-icon>mdi-redo</v-icon></v-btn>
+
+        <!-- Undo/Redo（プレビュー中のUndoはプレビュー解除だけ） -->
+        <v-btn icon variant="text" :disabled="!canUndo && !previewMode" @click="undo" title="元に戻す (Ctrl/Cmd+Z)">
+          <v-icon>mdi-undo</v-icon>
+        </v-btn>
+        <v-btn icon variant="text" :disabled="!canRedo" @click="redo" title="やり直す (Shift+Ctrl/Cmd+Z)">
+          <v-icon>mdi-redo</v-icon>
+        </v-btn>
+
+        <v-divider vertical class="mx-1"/>
+
+        <!-- 全消去 -->
+        <v-btn icon variant="text" @click="resetAll" title="全消去（画像・GCP・マスク）">
+          <v-icon>mdi-backspace</v-icon>
+        </v-btn>
+
+        <v-divider vertical class="mx-1"/>
+
+        <!-- マスキング -->
+        <MiniTooltip text="マスキング" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" :class="{ 'is-active': maskMode }" @click="maskMode = !maskMode" title="マスク（地図部の四隅を指定）">
+            <v-icon>mdi-crop</v-icon>
+          </v-btn>
+        </MiniTooltip>
+        <MiniTooltip text="マスクを解除" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" :disabled="!maskVertsLngLat.length" @click="clearMask" title="マスクをクリア">
+            <v-icon>mdi-selection-off</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- ヘルプ -->
+        <MiniTooltip text="ヘルプ" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" @click="onHelpClick" title="ヘルプ">
+            <v-icon>mdi-help-circle-outline</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
         <v-divider vertical class="mx-1"/>
 
         <!-- GCPテーブル表示/非表示 -->
@@ -25,61 +68,36 @@
               variant="text"
               :class="{ 'is-active': showGcpPanel }"
               @click="toggleGcpPanel"
-              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'"
-          >
-            <v-icon>mdi-table</v-icon>
+              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'">
+            <v-icon>{{ showGcpPanel ? 'mdi-table-eye' : 'mdi-table' }}</v-icon>
           </v-btn>
         </MiniTooltip>
-
-        <v-btn icon variant="text" @click="resetAll" :title="'全消去（画像・GCP・マスク）'"><v-icon>mdi-backspace</v-icon></v-btn>
-        <v-divider vertical class="mx-1"/>
-
-        <!-- マスク -->
-        <MiniTooltip text="マスキング" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :class="{ 'is-active': maskMode }" @click="maskMode = !maskMode" :title="'マスク（地図部の四隅を指定）'">
-            <v-icon>mdi-crop</v-icon>
-          </v-btn>
-        </MiniTooltip>
-        <MiniTooltip text="マスクを解除" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" :disabled="!maskVertsLngLat.length" @click="clearMask" :title="'マスクをクリア'">
-            <v-icon>mdi-selection-off</v-icon>
-          </v-btn>
-        </MiniTooltip>
-
-        <!-- ★ ヘルプ（からメソッド openHelp を呼ぶ） -->
-        <MiniTooltip text="ヘルプ" :offset-x="0" :offset-y="0">
-          <v-btn icon variant="text" @click="openHelp" :title="'ヘルプ'">
-            <v-icon>mdi-help-circle-outline</v-icon>
-          </v-btn>
-        </MiniTooltip>
-
-        <!-- ▼ プレビュー時のみ表示：ベースマップ選択（小さめ） -->
-        <div v-if="previewMode" class="basemap-chips">
-          <v-chip-group
-              v-model="currentBaseId"
-              selected-class="chip-selected"
-              @update:model-value="onChangeBase"
-              class="chip-group"
-          >
-            <v-chip v-for="b in baseDefs" :key="b.id" :value="b.id" size="small" density="comfortable" variant="outlined" class="chip">
-              {{ b.label }}
-            </v-chip>
-          </v-chip-group>
-        </div>
       </div>
     </div>
 
-    <div class="oh-body" :class="{ stacked, 'no-right': !showGcpPanel }">
+    <div class="oh-body" :class="{ stacked }">
       <div class="left-pane">
         <div class="ml-wrap">
+          <!-- プレビュー時だけ表示するベースレイヤ選択 UI（小さめ） -->
+          <div v-if="previewMode" class="base-ui">
+            <button
+                v-for="opt in baseOptions"
+                :key="opt.key"
+                class="chip"
+                :class="{ active: selectedBase === opt.key }"
+                @click="selectBase(opt.key)"
+            >{{ opt.label }}</button>
+          </div>
+
           <div ref="mlMap" class="ml-map"></div>
+
           <div class="ml-overlay">
-            <!-- キャンバスは背面（赤丸はGeoJSONで前面） -->
+            <!-- 画像タグは読み込み & サイズ基準用。キャンバスは内部計算用。 -->
             <img id="warp-image" ref="warpImage" :src="imgUrl" class="hidden" @load="onImageLoad">
             <canvas id="warp-canvas" ref="warpCanvas" class="warp-canvas"></canvas>
-            <canvas v-show="grid" ref="gridCanvas" class="grid-canvas"></canvas>
             <canvas ref="markerCanvas" class="marker-canvas"></canvas>
           </div>
+
           <div v-if="!imgUrl" class="empty-on-map">画像がありません</div>
         </div>
       </div>
@@ -105,7 +123,7 @@
                               :model-value="getLat(g)" @update:modelValue="setLat(i, $event)" />
               </div>
               <div class="tools">
-                <v-btn icon size="small" variant="text" class="del-btn" @click="removeGcp(i)" :title="'この行を削除'">
+                <v-btn icon size="small" variant="text" class="del-btn" @click="removeGcp(i)" title="この行を削除">
                   <v-icon size="26">mdi-delete</v-icon>
                 </v-btn>
               </div>
@@ -154,7 +172,6 @@ function fitSimilarity2P(srcPts, dstPts){
   const C=X1-(A*x1+B*y1), F=Y1-(D*x1+E*y1);
   return [A,B,C,D,E,F];
 }
-function fitSimilarity2PExact(srcPts, dstPts){ return fitSimilarity2P(srcPts, dstPts); }
 function fitAffineN(srcPts, dstPts, w){
   const n = srcPts.length, M6 = 6;
   const A = Array.from({length:M6}, ()=>Array(M6).fill(0));
@@ -246,7 +263,7 @@ function solveLinear(A, b) {
     const diag=M[i][i]||1e-12;
     for(let j=i+1;j<N;j++){
       const f=M[j][i]/diag;
-      for (let k=i;k<N;k++) M[j][k]-=f*M[i][k];
+      for(let k=i;k<N;k++) M[j][k]-=f*M[i][k];
       x[j]-=f*x[i];
     }
   }
@@ -319,7 +336,7 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
   if(clipped) ctx.restore();
   return canvas;
 }
-// TPS を 3857 に焼き込み（PNG）＋ worldfile パラメータ
+// TPS を 3857 平面に焼き込み
 function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   const W = img.naturalWidth, H = img.naturalHeight;
   const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyTPS(tps, [p[0], -p[1]]));
@@ -385,11 +402,11 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   return { canvas, world: {A,B,C,D,E,F} };
 }
 
+// ===== 設定：プレビュー時の初期ベースレイヤ（'photo' | 'pale' | 'standard'） =====
+const DEFAULT_PREVIEW_BASE = 'photo';
+
 import MiniTooltip from '@/components/MiniTooltip';
 import maplibregl from 'maplibre-gl';
-
-// 初期プレビュー用ベースレイヤ（'gsi-pale' | 'gsi-std' | 'gsi-photo'）
-const DEFAULT_PREVIEW_BASE_ID = 'gsi-photo';
 
 export default {
   name: 'WarpWizard',
@@ -410,11 +427,10 @@ export default {
       imgUrl: null,
       affineM: null, tps: null,
       viewImgToCanvas: null, viewMapToCanvas: null,
-      grid: false,
       objUrl: null,
       history: [], histIndex: -1, isRestoring:false, closedOnce:false,
 
-      // --- マスク ---
+      // マスク
       maskMode:false,
       maskQuadNat:[],
       maskVertsLngLat:[],
@@ -424,9 +440,11 @@ export default {
       gcpSrcId:'gcp-src', gcpCircleId:'gcp-circle', gcpLabelId:'gcp-label',
       gcpFC:{ type:'FeatureCollection', features:[] },
 
-      // マスク表示用 GeoJSON
+      // マスクGeoJSON
       maskSrcId:'mask-src', maskPointLayerId:'mask-point', maskPolyLayerId:'mask-poly', maskOutlineLayerId:'mask-outline',
       maskFC:{ type:'FeatureCollection', features:[] },
+
+      imageCoordsLLA:null,
 
       mlReady: false,
       imgReady: false,
@@ -440,27 +458,30 @@ export default {
       fixedHinv: null,
       fixedImgSizeNat: null,
 
-      // --- プレビュー（MapLibre上） ---
+      // プレビュー
       previewMode:false,
       previewSourceId:'warp-preview-src',
       previewLayerId:'warp-preview-lyr',
       previewObjUrl:null,
-      baseLayerVisCache:null,
+      previewPrevCam:null, // プレビュー前のカメラ
+
+      // ベースレイヤ（GSI）
+      baseAdded:false,
+      selectedBase: DEFAULT_PREVIEW_BASE,
+      baseSources:{
+        pale:     { id:'gsi-pale',     tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],    minzoom:0, maxzoom:18, tileSize:256 },
+        photo:    { id:'gsi-photo',    tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'], minzoom:2, maxzoom:18, tileSize:256 },
+        standard: { id:'gsi-standard', tiles:['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],     minzoom:0, maxzoom:18, tileSize:256 },
+      },
+      baseLayers:{
+        pale:     'base-pale',
+        photo:    'base-photo',
+        standard: 'base-standard',
+      },
+
+      // UI
+      showGcpPanel:false, // 起動時は非表示
       gcpClickBound:false,
-
-      // ベースマップ（GSI）
-      baseDefs: [
-        { id:'gsi-pale',  label:'淡色',   tiles:['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'], maxzoom:18 },
-        { id:'gsi-std',   label:'標準',   tiles:['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],  maxzoom:18 },
-        { id:'gsi-photo', label:'航空',   tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'], maxzoom:18 },
-      ],
-      currentBaseId: DEFAULT_PREVIEW_BASE_ID,
-
-      // カメラ保存（プレビュー前/履歴用）
-      cameraBeforePreview: null,
-
-      // GCPテーブル
-      showGcpPanel: false, // 起動時は非表示
     };
   },
   computed:{
@@ -468,9 +489,17 @@ export default {
     pairs(){ return (this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord)); },
     pairsCount(){ return this.pairs.length; },
     transformKind(){ if(!(this.affineM||this.tps)) return ''; return this.tps?'TPS':(this.pairsCount>=3?'Affine':'Similarity'); },
+    imgMeta(){ const img=this.$refs.warpImage; if(!img) return ''; return `${img.naturalWidth}×${img.naturalHeight}`; },
     canUndo(){ return this.histIndex>0; },
     canRedo(){ return this.histIndex>=0 && this.histIndex<this.history.length-1; },
     srs3857(){ return 3857; },
+    baseOptions(){
+      return [
+        { key:'photo',    label:'航空写真' },
+        { key:'pale',     label:'淡色地図' },
+        { key:'standard', label:'標準地図' },
+      ];
+    },
   },
   watch:{
     modelValue(v){ if(v===false) this.onExternalClose(); },
@@ -483,7 +512,7 @@ export default {
         this.objUrl=URL.createObjectURL(f); this.imgUrl=this.objUrl;
         this.$nextTick(()=>{
           if(!this.map) this.initMapLibre();
-          this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+          this.syncCanvasSize(); this.redrawMarkers();
           this.resetHistory(); this.pushHistory('init:file');
           this.upsertImageOnMap();
         });
@@ -494,7 +523,7 @@ export default {
       this.imgUrl=u;
       this.$nextTick(()=>{
         if(!this.map) this.initMapLibre();
-        this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
+        this.syncCanvasSize(); this.redrawMarkers();
         this.resetHistory(); this.pushHistory('init:url');
         this.upsertImageOnMap();
       });
@@ -516,41 +545,37 @@ export default {
     this.$nextTick(() => { this.initMapLibre(); });
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
-    this.$nextTick(() => { this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
+    this.$nextTick(() => { this.syncCanvasSize(); this.redrawMarkers(); });
   },
   methods:{
-    // ---------- ここが「ヘルプ」クリック時のフック ----------
-    openHelp(){
-      // TODO: 外部のヘルプウインドウを表示する処理をここに実装してください
-      // 例）this.$emit('open-help') などに差し替えてもOK
-    },
-
     // ---------- MapLibre ----------
     initMapLibre(){
       if (this.map) return;
       const el = this.$refs.mlMap;
       if (!el) { this.$nextTick(this.initMapLibre); return; }
 
-      const emptyStyle = {
+      // 無背景スタイル（フォントPBFを必ず指定：シンボル描画に必要）
+      const blankStyle = {
         version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {},
-        layers: [],
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+        layers: []
       };
 
       this.map = new maplibregl.Map({
         container: el,
-        style: emptyStyle,
+        style: blankStyle,
         center: [139.767, 35.681],
         zoom: 12,
-        attributionControl: false // 右下アトリビューション非表示
+        attributionControl: false,     // 表示しない
+        dragRotate: false
       });
-      // ズーム/ナビコントロールは追加しない
+      // ナビゲーションコントローラは追加しない（右上のズームUIを出さない）
 
       this.map.on('load', () => {
         this.mlReady = true;
 
-        // --- GCP（赤丸） ---
+        // GCP（赤丸）
         if (!this.map.getSource(this.gcpSrcId)) {
           this.map.addSource(this.gcpSrcId, { type: 'geojson', data: this.gcpFC });
         }
@@ -581,12 +606,12 @@ export default {
             paint: {
               'text-color': '#ffffff',
               'text-halo-color': '#000000',
-              'text-halo-width': 0.5
+              'text-halo-width': 1.25
             }
           });
         }
 
-        // --- Mask（緑丸・薄緑ポリゴン） ---
+        // マスク
         if (!this.map.getSource(this.maskSrcId)) {
           this.map.addSource(this.maskSrcId, { type: 'geojson', data: this.maskFC });
         }
@@ -596,10 +621,7 @@ export default {
             type: 'fill',
             source: this.maskSrcId,
             filter: ['==', ['geometry-type'], 'Polygon'],
-            paint: {
-              'fill-color': '#2e7d32',
-              'fill-opacity': 0.18
-            }
+            paint: { 'fill-color': '#2e7d32', 'fill-opacity': 0.18 }
           });
         }
         if (!this.map.getLayer(this.maskOutlineLayerId)) {
@@ -608,10 +630,7 @@ export default {
             type: 'line',
             source: this.maskSrcId,
             filter: ['==', ['geometry-type'], 'Polygon'],
-            paint: {
-              'line-color': '#2e7d32',
-              'line-width': 2
-            }
+            paint: { 'line-color': '#2e7d32', 'line-width': 2 }
           });
         }
         if (!this.map.getLayer(this.maskPointLayerId)) {
@@ -628,16 +647,15 @@ export default {
             }
           });
         }
-
-        // 既存状態を反映
+        // 状態反映
         this.syncMaskGeoJsonFromVerts();
         this.syncGeoJsonMarkersFromGcpList();
         this.ensureOverlayOrder();
         this.bindMapClickForMarkers();
         this.upsertImageOnMap();
 
-        // ★ 初期は無背景（通常モード）
-        this.setBaseVisibility(false);
+        // 初期は無背景
+        this.hideAllBaseLayers();
       });
     },
     ensureOverlayOrder(){
@@ -646,93 +664,79 @@ export default {
         if(this.map.getLayer(this.maskPolyLayerId))    this.map.moveLayer(this.maskPolyLayerId);
         if(this.map.getLayer(this.maskOutlineLayerId)) this.map.moveLayer(this.maskOutlineLayerId);
         if(this.map.getLayer(this.maskPointLayerId))   this.map.moveLayer(this.maskPointLayerId);
-        if(this.map.getLayer(this.gcpCircleId)) this.map.moveLayer(this.gcpCircleId);
-        if(this.map.getLayer(this.gcpLabelId))  this.map.moveLayer(this.gcpLabelId);
-        if(this.map.getLayer(this.previewLayerId)) this.map.moveLayer(this.previewLayerId);
+        if(this.map.getLayer(this.gcpCircleId))        this.map.moveLayer(this.gcpCircleId);
+        if(this.map.getLayer(this.gcpLabelId))         this.map.moveLayer(this.gcpLabelId);
+        if(this.map.getLayer(this.previewLayerId))     this.map.moveLayer(this.previewLayerId); // 最前面へ
       }catch(e){}
     },
 
-    // 背景の可視切替（無背景⇔背景あり）
-    getOverlayLayerIds(){
-      return [
-        this.imageLayerId, this.gcpCircleId, this.gcpLabelId,
-        this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId,
-        this.previewLayerId,
-      ].filter(Boolean);
-    },
-    setBaseVisibility(show){
-      if(!this.map || !this.map.getStyle) return;
-      const st = this.map.getStyle(); if(!st || !Array.isArray(st.layers)) return;
-      const keep = new Set(this.getOverlayLayerIds());
-      if(show){
-        if(Array.isArray(this.baseLayerVisCache)){
-          this.baseLayerVisCache.forEach(({id,vis})=>{
-            try{ this.map.setLayoutProperty(id,'visibility',vis); }catch(e){}
+    // GSI ベースレイヤ追加（未追加なら）
+    addBaseIfNeeded(){
+      if(this.baseAdded || !this.map) return;
+      Object.entries(this.baseSources).forEach(([key, cfg])=>{
+        if(!this.map.getSource(cfg.id)){
+          this.map.addSource(cfg.id, {
+            type:'raster',
+            tiles: cfg.tiles,
+            tileSize: cfg.tileSize,
+            minzoom: cfg.minzoom,
+            maxzoom: cfg.maxzoom
           });
         }
-        this.baseLayerVisCache = null;
-      }else{
-        if(!this.baseLayerVisCache){
-          this.baseLayerVisCache = [];
-          st.layers.forEach(l=>{
-            if(keep.has(l.id)) return;
-            const vis = (l.layout && l.layout.visibility) || 'visible';
-            this.baseLayerVisCache.push({id:l.id, vis});
-            try{ this.map.setLayoutProperty(l.id,'visibility','none'); }catch(e){}
-          });
-        }else{
-          this.baseLayerVisCache.forEach(({id})=>{
-            try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){}
-          });
+        const layerId = this.baseLayers[key];
+        if(!this.map.getLayer(layerId)){
+          this.map.addLayer({
+            id: layerId,
+            type:'raster',
+            source: cfg.id,
+            paint: { 'raster-opacity': 1.0, 'raster-resampling':'linear', 'raster-fade-duration': 0 }
+          }, this.gcpCircleId);
         }
-      }
-    },
-
-    // GSI ベース追加／切替
-    ensureBase(id){
-      if(!this.map) return;
-      const def = this.baseDefs.find(b=>b.id===id);
-      if(!def) return;
-      const sid = `src-${def.id}`, lid = `lyr-${def.id}`;
-      if(!this.map.getSource(sid)){
-        this.map.addSource(sid, {
-          type:'raster',
-          tiles: def.tiles,
-          tileSize: 256,
-          maxzoom: def.maxzoom||18
-        });
-      }
-      if(!this.map.getLayer(lid)){
-        this.map.addLayer({
-          id: lid,
-          type:'raster',
-          source: sid,
-          paint: { 'raster-opacity': 1, 'raster-resampling': 'linear' },
-          layout: { visibility: 'none' }
-        }, this.maskPolyLayerId);
-      }
-    },
-    setBase(id){
-      if(!this.map) return;
-      this.baseDefs.forEach(def=>{
-        this.ensureBase(def.id);
-        const lid = `lyr-${def.id}`;
-        try{
-          this.map.setLayoutProperty(lid,'visibility', def.id===id?'visible':'none');
-        }catch(e){}
       });
-      this.currentBaseId = id;
+      this.baseAdded = true;
+      this.hideAllBaseLayers();
     },
-    onChangeBase(id){ this.setBase(id); },
+    hideAllBaseLayers(){
+      if(!this.map) return;
+      Object.values(this.baseLayers).forEach(id=>{
+        if(this.map.getLayer(id)){
+          try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){}
+        }
+      });
+    },
+    showBase(key){
+      if(!this.map) return;
+      this.addBaseIfNeeded();
+      Object.entries(this.baseLayers).forEach(([k, id])=>{
+        const vis = (k===key)? 'visible' : 'none';
+        if(this.map.getLayer(id)){
+          try{ this.map.setLayoutProperty(id,'visibility',vis); }catch(e){}
+        }
+      });
+    },
+    selectBase(key){
+      this.selectedBase = key;
+      if(this.previewMode) this.showBase(key);
+    },
 
+    _computeImageQuadLLA(imgW,imgH){
+      if(!this.map) return null;
+      const center=this.map.getCenter(); const cM=lngLatToMerc([center.lng, center.lat]);
+      const b=this.map.getBounds();
+      const swM=lngLatToMerc([b.getWest(), b.getSouth()]); const neM=lngLatToMerc([b.getEast(), b.getNorth()]);
+      const viewWm=Math.max(1, neM[0]-swM[0]);
+      const halfWm=viewWm*0.25; const aspect=imgH/imgW; const halfHm=halfWm*aspect;
+      const TLm=[cM[0]-halfWm, cM[1]+halfHm], TRm=[cM[0]+halfWm, cM[1]+halfHm];
+      const BRm=[cM[0]+halfWm, cM[1]-halfHm], BLm=[cM[0]-halfWm, cM[1]-halfHm];
+      return [TLm,TRm,BRm,BLm].map(mercToLngLat);
+    },
     preserveCamera(fn){
       if(!this.map) return fn();
       const c=this.map.getCenter(), z=this.map.getZoom(), b=this.map.getBearing(), p=this.map.getPitch();
       const res=fn();
-      this.map.jumpTo({center:[c.lng,c.lat], zoom:z, bearing:b, pitch:p}); // 無アニメ
+      this.map.jumpTo({center:[c.lng,c.lat], zoom:z, bearing:b, pitch:p});
       return res;
     },
-
     getCurrentImageQuadMerc(){
       return (this.fixedQuadMerc && this.fixedQuadMerc.length===4) ? this.fixedQuadMerc : null;
     },
@@ -754,17 +758,10 @@ export default {
       const allNeg = signs.every(s => s < 0);
       return allPos || allNeg;
     },
-
-    _computeImageQuadLLA(imgW,imgH){
-      if(!this.map) return null;
-      const center=this.map.getCenter(); const cM=lngLatToMerc([center.lng, center.lat]);
-      const b=this.map.getBounds();
-      const swM=lngLatToMerc([b.getWest(), b.getSouth()]); const neM=lngLatToMerc([b.getEast(), b.getNorth()]);
-      const viewWm=Math.max(1, neM[0]-swM[0]);
-      const halfWm=viewWm*0.25; const aspect=imgH/imgW; const halfHm=halfWm*aspect;
-      const TLm=[cM[0]-halfWm, cM[1]+halfHm], TRm=[cM[0]+halfWm, cM[1]+halfHm];
-      const BRm=[cM[0]+halfWm, cM[1]-halfHm], BLm=[cM[0]-halfWm, cM[1]-halfHm];
-      return [TLm,TRm,BRm,BLm].map(mercToLngLat);
+    computeImageQuadLngLat(){
+      return (this.fixedImageCoordsLLA && this.fixedImageCoordsLLA.length===4)
+          ? this.fixedImageCoordsLLA
+          : null;
     },
 
     upsertImageOnMap(){
@@ -788,10 +785,13 @@ export default {
 
       const sid = this.imageSourceId;
       const lid = this.imageLayerId;
+      const beforeId = this.map.getLayer(this.gcpCircleId)
+          ? this.gcpCircleId
+          : (this.map.getLayer(this.gcpLabelId) ? this.gcpLabelId : undefined);
 
       if (!this.map.getSource(sid)) {
         this.map.addSource(sid, { type: 'image', url: this.imgUrl, coordinates: this.fixedImageCoordsLLA });
-        this.map.addLayer({ id: lid, type: 'raster', source: sid, paint: { 'raster-opacity': 1.0, 'raster-resampling':'linear' }, layout:{visibility:'visible'} });
+        this.map.addLayer({ id: lid, type: 'raster', source: sid, paint: { 'raster-opacity': 1.0, 'raster-resampling':'linear', 'raster-fade-duration': 0 } }, beforeId);
       }else{
         try{ this.map.setLayoutProperty(lid,'visibility','visible'); }catch(e){}
       }
@@ -804,7 +804,6 @@ export default {
         this.fixedImgSizeNat = [img.naturalWidth, img.naturalHeight];
       }
       this.syncCanvasSize();
-      this.drawGrid();
       this.redrawMarkers();
       this.upsertImageOnMap();
     },
@@ -814,6 +813,7 @@ export default {
       if(!this.map || this.gcpClickBound) return;
       this.gcpClickBound = true;
       this.map.on('click', (e)=>{
+        if(this.previewMode) return; // プレビュー中は操作不可
         const {lng,lat}=e.lngLat||{}; if(!Number.isFinite(lng)||!Number.isFinite(lat)) return;
 
         // 画像四隅内チェック
@@ -822,14 +822,13 @@ export default {
         const pM = lngLatToMerc([lng, lat]);
         if (!this._pointInQuadMerc(quadM, pM)) return;
 
-        // --- マスクモード：緑丸を追加（最大4点） ---
+        // マスクモード
         if (this.maskMode) {
           let nextVerts = this.maskVertsLngLat.slice();
-          if (nextVerts.length >= 4) nextVerts = [];  // 5点目でリセット
+          if (nextVerts.length >= 4) nextVerts = [];
           nextVerts.push([lng,lat]);
           this.maskVertsLngLat = nextVerts;
 
-          // 画像ナチュラル座標へ逆写像（fixedHinv）
           if (this.fixedHinv) {
             this.maskQuadNat = nextVerts.map(ll => {
               const XY = lngLatToMerc(ll);
@@ -844,9 +843,8 @@ export default {
           return;
         }
 
-        // --- 通常モード：赤丸（GCP） ---
+        // GCP追加
         const next=(this.gcpList||[]).slice();
-
         const img=this.$refs.warpImage;
         if(!img || !img.naturalWidth || !this.fixedHinv) return;
         const worldXY = lngLatToMerc([lng,lat]);
@@ -856,11 +854,11 @@ export default {
         if(xNat<-10 || yNat<-10 || xNat>W+10 || yNat>H+10) return;
 
         next.push({ imageCoord:[xNat,yNat], mapCoord: null, redCircleCoord:[lng,lat] });
-        this.$emit('update:gcpList', next); // watcher で同期・履歴
+        this.$emit('update:gcpList', next);
       });
     },
 
-    // ★ gcpList → GeoJSON（赤丸）へ一括同期
+    // 赤丸GeoJSON同期
     syncGeoJsonMarkersFromGcpList(){
       const features=[];
       (this.gcpList||[]).forEach((g,i)=>{
@@ -877,8 +875,7 @@ export default {
       if(src && src.setData){ src.setData(this.gcpFC); }
       this.ensureOverlayOrder();
     },
-
-    // ★ maskVertsLngLat → GeoJSON（緑丸＋ポリゴン）
+    // マスクGeoJSON同期
     syncMaskGeoJsonFromVerts(){
       const feats=[];
       (this.maskVertsLngLat||[]).forEach((ll)=>feats.push({ type:'Feature', geometry:{ type:'Point', coordinates: ll } }));
@@ -943,61 +940,44 @@ export default {
       return [x,y];
     },
 
+    // ---------- 共通 ----------
     onExternalClose(fromUnmount=false){
       try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize); } }catch(e){}
       if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
-      // プレビュー撤収
-      this.exitPreview();
-      this.clearCanvas(this.$refs.warpCanvas); this.clearCanvas(this.$refs.gridCanvas); this.clearCanvas(this.$refs.markerCanvas);
+      this.exitPreview(); // プレビュー撤収
+      this.clearCanvas(this.$refs.warpCanvas);
+      this.clearCanvas(this.$refs.markerCanvas);
       this.$emit('clear-map-markers'); this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.closedOnce=true;
     },
-    toggleGcpPanel(){
-      this.showGcpPanel = !this.showGcpPanel;
-      this.$nextTick(() => { try{ this.map && this.map.resize(); }catch(e){} });
-    },
     resetAll(){
-      // プレビュー撤収
       this.exitPreview();
-
       this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
-      this.$emit('update:gcpList', []); // gcpList→watcherで赤丸クリア＆履歴
+      this.$emit('update:gcpList', []);
       this.maskQuadNat=[]; this.maskVertsLngLat=[]; this.syncMaskGeoJsonFromVerts();
       this.clearCanvas(this.$refs.warpCanvas); this.redrawMarkers();
 
-      // 画像レイヤ初期化（固定情報もクリア）
       if(this.map && this.map.getSource(this.imageSourceId)){
         this.preserveCamera(()=>{
           if(this.map.getLayer(this.imageLayerId)) this.map.removeLayer(this.imageLayerId);
           this.map.removeSource(this.imageSourceId);
         });
       }
+      this.imageCoordsLLA=null;
       this.fixedImageCoordsLLA=null;
       this.fixedQuadMerc=null;
       this.fixedHinv=null;
       this.fixedImgSizeNat=null;
 
       this.upsertImageOnMap();
-      // 無背景へ
-      this.setBaseVisibility(false);
-
+      this.hideAllBaseLayers();
       this.resetHistory(); this.pushHistory('reset');
     },
     onResize(){
-      this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers();
-      if(this.affineM||this.tps) this.previewWarp();
+      this.syncCanvasSize();
       if(this.map) this.map.resize();
     },
 
     // ---- 履歴（Undo/Redo） ----
-    _getCamera(){
-      if(!this.map) return null;
-      const c=this.map.getCenter();
-      return { center:[c.lng,c.lat], zoom:this.map.getZoom(), bearing:this.map.getBearing(), pitch:this.map.getPitch() };
-    },
-    _restoreCamera(cam){
-      if(!this.map || !cam) return;
-      this.map.jumpTo({ center: cam.center, zoom: cam.zoom, bearing: cam.bearing, pitch: cam.pitch }); // 無アニメ
-    },
     snapshot(){
       return {
         gcpList: JSON.parse(JSON.stringify(this.gcpList||[])),
@@ -1005,8 +985,6 @@ export default {
         tps: this.tps? { wx:[...this.tps.wx], wy:[...this.tps.wy], srcPts:this.tps.srcPts.map(p=>[...p]) }:null,
         maskQuadNat: this.maskQuadNat.map(p=>[...p]),
         maskVertsLngLat: (this.maskVertsLngLat||[]).map(p=>[...p]),
-        strict2pt: !!this.strict2pt,
-        camera: this._getCamera()
       };
     },
     resetHistory(){ this.history=[]; this.histIndex=-1; },
@@ -1024,24 +1002,24 @@ export default {
       this.tps = snap.tps? { wx:[...snap.tps.wx], wy:[...snap.tps.wy], srcPts:snap.tps.srcPts.map(p=>[...p]) }:null;
       this.maskQuadNat=(snap.maskQuadNat||[]).map(p=>[...p]);
       this.maskVertsLngLat=(snap.maskVertsLngLat||[]).map(p=>[...p]);
-      this.strict2pt=!!snap.strict2pt;
 
-      // gcpList を復元
       this.$emit('update:gcpList', JSON.parse(JSON.stringify(snap.gcpList)));
 
       this.$nextTick(()=>{
         this.syncGeoJsonMarkersFromGcpList();
         this.syncMaskGeoJsonFromVerts();
         this.isRestoring=false;
-        if(this.affineM||this.tps) this.previewWarp(); else { this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.clearCanvas(this.$refs.warpCanvas); }
         this.redrawMarkers();
         this.upsertImageOnMap();
-        // カメラ復元（無アニメ）
-        if(snap.camera) this._restoreCamera(snap.camera);
       });
     },
-    undo(){ if(!this.canUndo) return; this.exitPreview(true /* keepCamera */); this.histIndex--; this.applySnapshot(this.history[this.histIndex]); },
-    redo(){ if(!this.canRedo) return; this.exitPreview(true /* keepCamera */); this.histIndex++; this.applySnapshot(this.history[this.histIndex]); },
+    undo(){
+      // プレビュー中のUndoは「プレビュー終了のみ」。GCPや履歴は触らない。
+      if(this.previewMode){ this.exitPreview(); return; }
+      if(!this.canUndo) return;
+      this.histIndex--; this.applySnapshot(this.history[this.histIndex]);
+    },
+    redo(){ if(!this.canRedo) return; this.histIndex++; this.applySnapshot(this.history[this.histIndex]); },
     onKeydown(e){
       const isMac=/Mac|iPod|iPhone|iPad/.test(navigator.platform);
       const mod=isMac?e.metaKey:e.ctrlKey; if(!mod) return;
@@ -1052,21 +1030,12 @@ export default {
     syncCanvasSize(){
       const img=this.$refs.warpImage; if(!img) return;
       const cw=img.clientWidth||img.naturalWidth, ch=img.clientHeight||img.naturalHeight;
-      [this.$refs.warpCanvas, this.$refs.gridCanvas, this.$refs.markerCanvas].forEach(c=>{ if(!c) return; c.width=cw; c.height=ch; });
+      [this.$refs.warpCanvas, this.$refs.markerCanvas].forEach(c=>{ if(!c) return; c.width=cw; c.height=ch; });
     },
     clearCanvas(c){ if(!c) return; const ctx=c.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,c.width,c.height); },
-    drawGrid(){
-      if(!this.grid) return;
-      const img=this.$refs.warpImage, canvas=this.$refs.gridCanvas; if(!img||!canvas) return;
-      const cw=img.clientWidth||img.naturalWidth, ch=img.clientHeight||img.naturalHeight;
-      const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,cw,ch);
-      ctx.globalAlpha=.35; ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.6)';
-      const step=Math.max(32, Math.round(cw/20));
-      for(let x=0;x<cw;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke(); }
-      for(let y=0;y<ch;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
-      ctx.globalAlpha=1;
-    },
     redrawMarkers(){
+      // プレビュー中はガイド描画しない
+      if(this.previewMode) return;
       const canvas=this.$refs.markerCanvas, img=this.$refs.warpImage;
       if(!canvas||!img) return;
       const ctx=canvas.getContext('2d'), cw=canvas.width, ch=canvas.height;
@@ -1095,7 +1064,7 @@ export default {
       const srcNat=pairs.map(g=>g.imageCoord), srcUp=srcNat.map(([x,y])=>[x,-y]); const dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
       const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
       if(pairs.length===2){
-        const Mup=this.strict2pt? fitSimilarity2PExact(srcUp, dstUp): fitSimilarity2P(srcUp, dstUp);
+        const Mup=fitSimilarity2P(srcUp, dstUp);
         const FLIP=[1,0,0, 0,-1,0]; const M=composeAffine(Mup, FLIP); this.tps=null; this.affineM=M; previewOnCanvas(this,img,canvas,M,clipNat); return;
       }
       if(pairs.length===3){
@@ -1105,49 +1074,37 @@ export default {
       const tps=fitTPS(srcUp,dstUp); this.affineM=null; this.tps=tps; previewTPSOnCanvas(this,img,canvas,tps,28,clipNat);
     },
 
-    // ★ MapLibre 上にプレビューを貼り、背景を ON に（赤丸/マスクは隠す）
+    // プレビュー：MapLibre上に貼り、ベースを表示・カメラを瞬間移動
     previewOnMap(){
       if(!(this.affineM || this.tps)) this.previewWarp();
       if(!(this.affineM || this.tps) || !this.map) return;
 
-      // プレビュー前のカメラ保存
-      this.cameraBeforePreview = this._getCamera();
+      // 先にベースを準備＆表示（この順序が重要）
+      this.addBaseIfNeeded();
+      this.showBase(this.selectedBase);
 
-      // 元の固定画像レイヤは隠す
+      // 元画像レイヤは隠す
       if(this.map.getLayer(this.imageLayerId)){
         try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','none'); }catch(e){}
       }
       // 既存プレビュー撤収
       this._removePreviewLayerAndSource();
 
-      // 赤丸/マスクはプレビュー中は隠す
-      [this.gcpCircleId, this.gcpLabelId, this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId]
-          .forEach(id=>{ if(this.map.getLayer(id)) try{ this.map.setLayoutProperty(id,'visibility','none'); }catch(e){} });
-
-      // ベースをON & 初期ベース選択
-      this.baseDefs.forEach(b=>this.ensureBase(b.id));
-      this.setBaseVisibility(true);
-      this.setBase(this.currentBaseId || DEFAULT_PREVIEW_BASE_ID);
-
       const beforeId = (this.gcpCircleId && this.map.getLayer(this.gcpCircleId)) ? this.gcpCircleId : undefined;
 
+      let coordsLngLat = null; // [TL,TR,BR,BL]
       if(this.affineM && !this.tps){
         const img = this.$refs.warpImage;
         const W = img.naturalWidth, H = img.naturalHeight;
         const cornersXY = [[0,0],[W,0],[W,H],[0,H]].map(p=>applyAffine(this.affineM, p)); // 3857
-        const coords = cornersXY.map(mercToLngLat); // TL,TR,BR,BL
+        coordsLngLat = cornersXY.map(mercToLngLat);
+        this.map.addSource(this.previewSourceId, { type:'image', url:this.imgUrl, coordinates:coordsLngLat });
+        this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} }, beforeId);
 
-        try{
-          this.map.addSource(this.previewSourceId, { type:'image', url:this.imgUrl, coordinates:coords });
-          this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1,'raster-resampling':'linear'} }, beforeId);
-          this.previewMode = true;
+        // 追加直後に最前面へ（ベースの上に確実に出す）
+        this.ensureOverlayOrder();
+        this._enterPreviewFinalize(coordsLngLat);
 
-          // 外接矩形にフィット（無アニメ）
-          const xs=cornersXY.map(p=>p[0]), ys=cornersXY.map(p=>p[1]);
-          const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-          const sw=mercToLngLat([minX, minY]), ne=mercToLngLat([maxX, maxY]);
-          this.map.fitBounds([sw, ne], { padding: 40, duration: 0 });
-        }catch(e){}
       }else{
         const img = this.$refs.warpImage;
         const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
@@ -1159,27 +1116,49 @@ export default {
           if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
           this.previewObjUrl = URL.createObjectURL(blob);
 
-          const C = world.C, F = world.F, A = world.A, E = world.E;
+          const C = world.C, F = world.F, A = world.A, E = world.E; // E<0
           const TL = [C, F];
           const TR = [C + A*outW, F];
           const BR = [C + A*outW, F + E*outH];
           const BL = [C, F + E*outH];
-          const coords = [TL,TR,BR,BL].map(mercToLngLat);
+          coordsLngLat = [TL,TR,BR,BL].map(mercToLngLat);
 
           try{
-            this.map.addSource(this.previewSourceId, { type:'image', url:this.previewObjUrl, coordinates:coords });
-            this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1,'raster-resampling':'linear'} }, beforeId);
-            this.previewMode = true;
+            this.map.addSource(this.previewSourceId, { type:'image', url:this.previewObjUrl, coordinates:coordsLngLat });
+            this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} }, beforeId);
 
-            // 外接矩形にフィット（無アニメ）
-            const minX = Math.min(TL[0], BL[0]), maxX = Math.max(TR[0], BR[0]);
-            const minY = Math.min(BR[1], BL[1]), maxY = Math.max(TL[1], TR[1]);
-            const sw = mercToLngLat([minX, minY]), ne = mercToLngLat([maxX, maxY]);
-            this.map.fitBounds([sw, ne], { padding: 40, duration: 0 });
+            // 追加直後に最前面へ
+            this.ensureOverlayOrder();
+            this._enterPreviewFinalize(coordsLngLat);
           }catch(e){
             try{ URL.revokeObjectURL(this.previewObjUrl) }catch(_){} this.previewObjUrl=null;
           }
         }, 'image/png');
+
+        // TPSは非同期blob完了後に_finalizeするので、ここでreturn
+        return;
+      }
+    },
+    _enterPreviewFinalize(coordsLngLat){
+      // GCPを隠す
+      this._setGcpVisible(false);
+
+      // プレビューON
+      this.previewMode = true;
+
+      // カメラ保存 & 変換後範囲へ瞬時に移動
+      if(this.map){
+        this.previewPrevCam = {
+          center: this.map.getCenter(),
+          zoom:   this.map.getZoom(),
+          bearing:this.map.getBearing(),
+          pitch:  this.map.getPitch()
+        };
+        try{
+          const bounds = new maplibregl.LngLatBounds();
+          coordsLngLat.forEach(ll=> bounds.extend(ll));
+          this.map.fitBounds(bounds, { padding: 16, linear: true, duration: 0 }); // 最速で飛ぶ
+        }catch(e){}
       }
     },
     _removePreviewLayerAndSource(){
@@ -1190,24 +1169,65 @@ export default {
       });
       if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} this.previewObjUrl=null; }
     },
-    // ★ プレビュー解除：背景OFF・元画像レイヤ再表示・赤丸/マスク再表示
-    exitPreview(keepCamera=false){
+    _setGcpVisible(show){
       if(!this.map) return;
-      const cam = keepCamera ? null : (this.cameraBeforePreview || null);
-
+      const vis = show ? 'visible' : 'none';
+      [this.gcpCircleId, this.gcpLabelId].forEach(id=>{
+        if(this.map.getLayer(id)){
+          try{ this.map.setLayoutProperty(id,'visibility',vis); }catch(e){}
+        }
+      });
+    },
+    // プレビュー解除：ベースOFF・元画像再表示・カメラを元に戻す
+    exitPreview(){
+      if(!this.map) { this.previewMode=false; return; }
       this._removePreviewLayerAndSource();
 
-      if(this.map?.getLayer(this.imageLayerId)){
+      // 画像レイヤ再表示
+      if(this.map.getLayer(this.imageLayerId)){
         try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','visible'); }catch(e){}
       }
-      [this.gcpCircleId, this.gcpLabelId, this.maskPolyLayerId, this.maskOutlineLayerId, this.maskPointLayerId]
-          .forEach(id=>{ if(this.map.getLayer(id)) try{ this.map.setLayoutProperty(id,'visibility','visible'); }catch(e){} });
+      // ベース非表示
+      this.hideAllBaseLayers();
+      // GCP再表示
+      this._setGcpVisible(true);
 
-      this.setBaseVisibility(false);
+      // カメラをプレビュー前に戻す（瞬時）
+      if(this.previewPrevCam){
+        try{
+          this.map.jumpTo({
+            center: [this.previewPrevCam.center.lng, this.previewPrevCam.center.lat],
+            zoom: this.previewPrevCam.zoom,
+            bearing: this.previewPrevCam.bearing,
+            pitch: this.previewPrevCam.pitch
+          });
+        }catch(e){}
+        this.previewPrevCam = null;
+      }
+
       this.previewMode=false;
+    },
+    // プレビューボタンのトグル
+    togglePreview(){
+      if(this.previewMode){ this.exitPreview(); return; }
+      this.previewOnMap();
+    },
 
-      if(cam) this._restoreCamera(cam);
-      this.cameraBeforePreview = null;
+    buildWorldAffine(){
+      const img=this.$refs.warpImage; if(!img) return null;
+      const pairs=(this.gcpList||[]).filter(g=>Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
+      if(pairs.length<2) return null;
+      const srcNat=pairs.map(g=>g.imageCoord), srcUp=srcNat.map(([x,y])=>[x,-y]), dstUp=pairs.map(g=>lngLatToMerc(g.mapCoord));
+      let Mup = (pairs.length===2)? fitSimilarity2P(srcUp,dstUp) : fitAffineRobust(srcUp,dstUp,4);
+      const FLIP=[1,0,0, 0,-1,0]; let M=composeAffine(Mup, FLIP);
+      let [A,B,C,D,E,F]=M; const scaleX=Math.hypot(A,D), scaleY=Math.hypot(B,E); const W=img.naturalWidth, H=img.naturalHeight;
+      const worldW=scaleX*W, worldH=scaleY*H; const TOO_BIG=6e7, TOO_FINE=1e-3, TOO_COARSE=1e4;
+      const bad=!isFinite(worldW)||!isFinite(worldH)||worldW>TOO_BIG||worldH>TOO_BIG||scaleX<TOO_FINE||scaleY<TOO_FINE||scaleX>TOO_COARSE||scaleY>TOO_COARSE;
+      if(bad && pairs.length>=2){
+        let i1=0,i2=1,maxd=-1; for(let a=0;a<srcUp.length;a++){ for(let b=a+1;b<srcUp.length;b++){ const d=Math.hypot(srcUp[b][0]-srcUp[a][0], srcUp[b][1]-srcUp[a][1]); if(d>maxd){maxd=d;i1=a;i2=b;} } }
+        M=composeAffine(fitSimilarity2P([srcUp[i1],srcUp[i2]],[dstUp[i1],dstUp[i2]]), FLIP);
+      }
+      return M;
     },
 
     confirm(){
@@ -1301,12 +1321,15 @@ export default {
       this.redrawMarkers();
       this.pushHistory('mask:clear');
     },
+    onHelpClick(){
+      alert('作成中。しばらくお待ちください。')
+    },
+    toggleGcpPanel(){ this.showGcpPanel = !this.showGcpPanel; },
   }
 };
 </script>
 
 <style scoped>
-/* ---------- Layout ---------- */
 .oh-warp-root{ width:100%; max-width:none; box-sizing:border-box; background:#fff; overflow:hidden; display:flex; flex-direction:column; height:100%; min-height:0; }
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
 .oh-toolbar .v-btn.v-btn--icon{ width:32px; height:32px; }
@@ -1316,7 +1339,6 @@ export default {
 .oh-tools.compact{ display:flex; align-items:center; gap:2px; flex-wrap:nowrap; overflow:hidden; }
 
 .oh-body{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr auto; gap:10px; padding:10px; }
-.oh-body.no-right{ grid-template-columns:1fr; }
 .oh-body.stacked{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
 .oh-body.stacked .left-pane{ order:1; }
 .oh-body.stacked .right-pane{ order:2; }
@@ -1325,12 +1347,23 @@ export default {
 .ml-wrap{ position:relative; width:100%; height:100%; min-height:420px; }
 .ml-map{ position:relative; z-index:10 !important; width:100%; height:100%; border-radius:8px; overflow:hidden; }
 
-/* キャンバスは背面・ヒット無効・非表示（GeoJSON 赤丸を前面に） */
+/* プレビュー時のベース選択UI（小さめ） */
+.base-ui{
+  position:absolute; top:8px; left:8px; z-index:50;
+  display:flex; gap:6px; background:rgba(255,255,255,0.9);
+  padding:4px 6px; border-radius:8px; box-shadow:0 1px 6px rgba(0,0,0,0.12);
+}
+.base-ui .chip{
+  font-size:12px; line-height:1; padding:6px 8px; border-radius:999px; border:1px solid rgba(0,0,0,0.15);
+  background:#fff; cursor:pointer;
+}
+.base-ui .chip.active{ background:#111; color:#fff; border-color:#111; }
+
+/* キャンバスは背面・ヒット無効（GeoJSON赤丸は地図側） */
 .ml-overlay{ position:absolute; inset:0; z-index:0 !important; pointer-events:none !important; opacity:0; }
 
 #warp-image.hidden{ visibility:hidden; }
 .warp-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:8px; z-index:1; }
-.grid-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:8px; opacity:.45; z-index:2; }
 .marker-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:8px; z-index:3; }
 
 .right-pane{ padding:4px 0; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
@@ -1349,10 +1382,4 @@ export default {
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
-
-/* ベースマップ選択（小さめ） */
-.basemap-chips{ margin-left:8px; display:flex; align-items:center; }
-.chip-group{ display:flex; gap:4px; }
-.chip{ font-size:11px; height:24px; }
-.chip-selected{ background:#111; color:#fff; }
 </style>
