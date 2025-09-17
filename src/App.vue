@@ -23,11 +23,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
           windowId = "warp-wizard"
           title = "ジオリファレンス"
           type="normal"
-          :resizable="false"
+          :resizable="true"
           :default-top = "10"
           :default-left = "10"
           :default-width = "550"
-          :default-height = "850"
+          :default-height = "600"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
           @close="onWarpWindowClose"
@@ -4423,10 +4423,6 @@ export default {
         fileOriginal,         // File|Blob （元画像。相似/アフィンで必須）
         worldFile,            // string     （ワールドファイル本文。相似/アフィンで必須）
         worldFileName,        // string     （例: image.jgw/pgw/tfw）無ければ推定
-        previewBlob,          // Blob       （ホモ/TPSの高解像結果。あれば優先）
-        cornersLngLat,        // [[lng,lat]×4]  ホモ/ TPS で使用可
-        tps,                  // TPS係数（あればダイアログへ渡す）
-        srs = 3857,           // 既定3857
         affineM               // 予備（worldFileが無い時だけ最終手段で使う）
       } = payload || {};
 

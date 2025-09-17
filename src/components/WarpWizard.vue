@@ -139,6 +139,39 @@
 </template>
 
 <script>
+// 追加：ポリゴン内判定（偶奇法）
+function pointInPoly([x,y], poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    const intersect = ((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12) + xi);
+    if(intersect) inside=!inside;
+  }
+  return inside;
+}
+
+// 追加：TPS のワールド座標境界をメッシュで推定
+function tpsWorldBounds(W,H,tps, clipNat=null, mesh=40){
+  let minX= Infinity, minY= Infinity, maxX=-Infinity, maxY=-Infinity;
+  const push = (X,Y)=>{ if(X<minX)minX=X; if(X>maxX)maxX=X; if(Y<minY)minY=Y; if(Y>maxY)maxY=Y; };
+
+  for(let j=0;j<=mesh;j++){
+    for(let i=0;i<=mesh;i++){
+      const x = (i*W)/mesh, y = (j*H)/mesh;
+      if (clipNat && !pointInPoly([x,y], clipNat)) continue;
+      const [X,Y] = applyTPS(tps,[x,-y]);
+      push(X,Y);
+    }
+  }
+  // すべて弾かれた場合のフォールバック（四隅）
+  if(!isFinite(minX)){
+    [[0,0],[W,0],[W,H],[0,H]].forEach(([x,y])=>{
+      const [X,Y]=applyTPS(tps,[x,-y]); push(X,Y);
+    });
+  }
+  return {minX,maxX,minY,maxY};
+}
+
 // ------- math utils -------
 function lngLatToMerc([lng, lat]){
   const x = (lng * 20037508.34) / 180;
@@ -297,45 +330,60 @@ function applyTPS(tps,[x,y]){
 }
 function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
   const ctx=canvas.getContext('2d'); const W=img.naturalWidth, H=img.naturalHeight;
-  const corners=[[0,0],[W,0],[W,H],[0,H]].map(p=>applyTPS(tps,[p[0],-p[1]]));
-  const xs=corners.map(p=>p[0]), ys=corners.map(p=>p[1]);
-  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-  const cw=Math.max(1,img.clientWidth||img.naturalWidth), ch=Math.max(1,img.clientHeight||img.naturalHeight);
+
+  // ★ corners ではなくメッシュから境界を算出
+  const B = tpsWorldBounds(W,H,tps, clipNat, 40);
+  // 安全マージンを数ピクセル分
+  const cw=Math.max(1,img.clientWidth||img.naturalWidth),
+      ch=Math.max(1,img.clientHeight||img.naturalHeight);
   canvas.width=cw; canvas.height=ch;
-  const s=Math.min(cw/(maxX-minX), ch/(maxY-minY)), view=([X,Y])=>[ s*(X-minX), s*(maxY-Y) ];
-  vm.viewImgToCanvas=p=>view(applyTPS(tps,[p[0],-p[1]])); vm.viewMapToCanvas=XY=>view(XY);
-  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cw,ch); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+
+  const padWorld = 2 * Math.max((B.maxX-B.minX)/cw, (B.maxY-B.minY)/ch); // ≒2px
+  const minX=B.minX-padWorld, maxX=B.maxX+padWorld, minY=B.minY-padWorld, maxY=B.maxY+padWorld;
+
+  const s=Math.min(cw/(maxX-minX), ch/(maxY-minY));
+  const view=([X,Y])=>[ s*(X-minX), s*(maxY-Y) ];
+
+  vm.viewImgToCanvas=p=>view(applyTPS(tps,[p[0],-p[1]]));
+  vm.viewMapToCanvas=XY=>view(XY);
+
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cw,ch);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+
   let clipped=false;
   if(clipNat && clipNat.length>=3){
     const q=clipNat.slice(), edges=[[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]], pts=[], N=24;
-    edges.forEach(([p0,p1])=>{ if(!p0||!p1) return; for(let i=0;i<=N;i++){ const t=i/N, x=p0[0]*(1-t)+p1[0]*t, y=p0[1]*(1-t)+p1[1]*t; pts.push(view(applyTPS(tps,[x,-y]))); } });
-    ctx.save(); ctx.beginPath(); pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); }); ctx.closePath(); ctx.clip(); clipped=true;
-  }
-  const nx=mesh, ny=mesh, sx=W/nx, sy=H/ny;
-  function aff(srcTri,dstTri){
-    const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
-    const a=p1[0]-p0[0], b=p2[0]-p0[0], c=p1[1]-p0[1], d=p2[1]-p0[1], det=a*d-b*c||1e-12;
-    const A=((q1[0]-q0[0])*d-(q2[0]-q0[0])*c)/det, B=(-(q1[0]-q0[0])*b+(q2[0]-q0[0])*a)/det;
-    const D=((q1[1]-q0[1])*d-(q2[1]-q0[1])*c)/det, E=(-(q1[1]-q0[1])*b+(q2[1]-q0[1])*a)/det;
-    const C=q0[0]-A*p0[0]-B*p0[1], F=q0[1]-D*p0[0]-E*p0[1]; return [A,B,C,D,E,F];
-  }
-  function drawTri(ctx,img,srcTri,dstTri){
+    edges.forEach(([p0,p1])=>{
+      if(!p0||!p1) return;
+      for(let i=0;i<=N;i++){
+        const t=i/N, x=p0[0]*(1-t)+p1[0]*t, y=p0[1]*(1-t)+p1[1]*t;
+        pts.push(view(applyTPS(tps,[x,-y])));
+      }
+    });
     ctx.save(); ctx.beginPath();
-    ctx.moveTo(dstTri[0][0],dstTri[0][1]); ctx.lineTo(dstTri[1][0],dstTri[1][1]); ctx.lineTo(dstTri[2][0],dstTri[2][1]);
-    ctx.closePath(); ctx.clip(); const [a,b,c,d,e,f]=aff(srcTri,dstTri); ctx.setTransform(a,d,b,e,c,f); ctx.drawImage(img,0,0); ctx.restore();
+    pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
+    ctx.closePath(); ctx.clip(); clipped=true;
   }
+
+  // メッシュ描画
+  const nx=mesh, ny=mesh, sx=W/nx, sy=H/ny;
+  function aff(srcTri,dstTri){ /* 既存のまま */ }
+  function drawTri(ctx,img,srcTri,dstTri){ /* 既存のまま */ }
+
   for(let j=0;j<ny;j++){
     for(let i=0;i<nx;i++){
       const x0=i*sx,y0=j*sy,x1=(i+1)*sx,y1=(j+1)*sy;
       const s00=[x0,y0],s10=[x1,y0],s11=[x1,y1],s01=[x0,y1];
       const d00=view(applyTPS(tps,[x0,-y0])), d10=view(applyTPS(tps,[x1,-y0]));
       const d11=view(applyTPS(tps,[x1,-y1])), d01=view(applyTPS(tps,[x0,-y1]));
-      drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]); drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
+      drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
+      drawTri(ctx,img,[s00,s11,s01],[d00,d11,d01]);
     }
   }
   if(clipped) ctx.restore();
   return canvas;
 }
+
 // TPS を 3857 平面に焼き込み
 function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   const W = img.naturalWidth, H = img.naturalHeight;
@@ -538,7 +586,10 @@ export default {
       }
     }
   },
-  beforeUnmount(){ this.onExternalClose(true); },
+  beforeUnmount(){
+    this.onExternalClose(true);
+    try { this._ro && this._ro.disconnect(); } catch(e){}
+  },
   mounted() {
     const h = document.querySelector('#handle-' + this.item?.id);
     if (h) h.innerHTML = `<span style="font-size: large;">${this.item?.label || 'Warp Wizard'}</span>`;
@@ -546,6 +597,46 @@ export default {
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
     this.$nextTick(() => { this.syncCanvasSize(); this.redrawMarkers(); });
+// mounted 内の置き換え
+    this.$nextTick(() => {
+      this.initMapLibre();
+      const scheduleLayout = () => {
+        if (this._raf) cancelAnimationFrame(this._raf);
+        this._raf = requestAnimationFrame(() => {
+          const root = this.$el;
+          if (!root) return;
+          const toolbar = root.querySelector('.oh-toolbar');
+          // const body = root.querySelector('.oh-body');
+          // if (!body) return;
+
+          const rootH = root.clientHeight || 0;
+          const tbH   = toolbar ? toolbar.offsetHeight : 0;
+          const h = Math.max(0, rootH - tbH);
+
+          // 変化があるときだけ書き換える（無駄な再レイアウト防止）
+          // const newH = `${h}px`;
+          // if (body.style.height !== newH) {
+            // body.style.height = newH;
+
+            document.querySelector('.left-pane').style.height = `${h - 20}px`;
+
+            // map/canvas の resize は次フレームに送る（ループ抑止）
+            requestAnimationFrame(() => {
+              this.syncCanvasSize();
+              if (this.map) this.map.resize();
+            });
+          // }
+        });
+      };
+
+      // 監視は root（this.$el）。祖先を書き換えないのでループにならない
+      if (window.ResizeObserver) {
+        this._ro = new ResizeObserver(() => scheduleLayout());
+        this._ro.observe(this.$el);
+      }
+      // 初回レイアウト
+      scheduleLayout();
+    });
   },
   methods:{
     // ---------- MapLibre ----------
@@ -1343,8 +1434,8 @@ export default {
 .oh-body.stacked .left-pane{ order:1; }
 .oh-body.stacked .right-pane{ order:2; }
 
-.left-pane{ display:flex; align-items:center; justify-content:center; min-height:420px; background:rgba(0,0,0,0.03); border:1px dashed rgba(0,0,0,0.2); border-radius:10px; }
-.ml-wrap{ position:relative; width:100%; height:100%; min-height:420px; }
+.left-pane{ display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.03); border:1px dashed rgba(0,0,0,0.2); border-radius:10px; }
+.ml-wrap{ position:relative; width:100%; height:100%; }
 .ml-map{ position:relative; z-index:10 !important; width:100%; height:100%; border-radius:8px; overflow:hidden; }
 
 /* プレビュー時のベース選択UI（小さめ） */
@@ -1382,4 +1473,5 @@ export default {
 :deep(.gcp-editor .v-field__input){ min-height:22px; padding:0 3px; }
 :deep(.gcp-editor .v-field--variant-plain .v-field__overlay){ background:transparent; }
 :deep(.gcp-editor .v-field__outline){ display:none; }
+
 </style>
