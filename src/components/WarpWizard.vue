@@ -613,10 +613,10 @@ export default {
           document.querySelector('.left-pane').style.height = `${h - 20}px`;
 
           // map/canvas の resize は次フレームに送る（ループ抑止）
-          requestAnimationFrame(() => {
-            this.syncCanvasSize();
-            if (this.map) this.map.resize();
-          });
+          // requestAnimationFrame(() => {
+          //   this.syncCanvasSize();
+          //   if (this.map) this.map.resize();
+          // });
         });
       };
 
@@ -1024,6 +1024,7 @@ export default {
 
     // ---------- 共通 ----------
     onExternalClose(fromUnmount=false){
+      this.resetAll()
       try{ if(fromUnmount){ window.removeEventListener('keydown', this.onKeydown); window.removeEventListener('resize', this.onResize); } }catch(e){}
       if(this.objUrl){ try{ URL.revokeObjectURL(this.objUrl) }catch(e){} this.objUrl=null; }
       this.exitPreview(); // プレビュー撤収
@@ -1032,6 +1033,7 @@ export default {
       this.$emit('clear-map-markers'); this.viewImgToCanvas=null; this.viewMapToCanvas=null; this.closedOnce=true;
     },
     resetAll(){
+      this.maskMode = false;
       this.exitPreview();
       this.affineM=null; this.tps=null; this.viewImgToCanvas=null; this.viewMapToCanvas=null;
       this.$emit('update:gcpList', []);

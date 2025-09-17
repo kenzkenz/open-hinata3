@@ -4904,7 +4904,7 @@ export default {
       };
     },
     onMapClick(e) {
-      if (!this.gcpList.length) {
+      if (!this.gcpList.length || this.gcpList.length === 0) {
         return;
       }
       console.log(this.gcpList)
