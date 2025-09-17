@@ -120,33 +120,81 @@ function fitSimilarity2P(srcPts, dstPts){
 }
 function fitSimilarity2PExact(srcPts, dstPts){ return fitSimilarity2P(srcPts, dstPts); }
 function fitAffineN(srcPts, dstPts, w){
-  const n=srcPts.length, M=6;
-  const A=Array.from({length:M},()=>Array(M).fill(0)), b=Array(M).fill(0);
-  for(let i=0;i<n;i++){
-    const wi=w?w[i]:1; const [x,y]=srcPts[i]; const [X,Y]=dstPts[i];
-    const rowX=[x,y,1,0,0,0].map(v=>wi*v), rowY=[0,0,0,x,y,1].map(v=>wi*v);
-    for(let j=0;j<M;j++){
-      for(let k=0;k<M;k++){ A[j][k]+=rowX[j]*rowX[k]+rowY[j]*rowY[k]; }
-      b[j]+=rowX[j]*X+rowY[j]*Y;
+  const n = srcPts.length, M6 = 6;                 // ← M を M6 に
+  const A = Array.from({length:M6}, ()=>Array(M6).fill(0));
+  const b = Array(M6).fill(0);
+
+  for (let i=0;i<n;i++){
+    const wi = w ? w[i] : 1;
+    const [x,y] = srcPts[i];
+    const [X,Y] = dstPts[i];
+    const rowX = [x,y,1, 0,0,0].map(v => wi*v);
+    const rowY = [0,0,0, x,y,1].map(v => wi*v);
+    for (let j=0;j<M6;j++){
+      for (let k=0;k<M6;k++){
+        A[j][k] += rowX[j]*rowX[k] + rowY[j]*rowY[k];
+      }
+      b[j] += rowX[j]*X + rowY[j]*Y;
     }
   }
-  const x=b.slice(), B=A.map(r=>r.slice()), N=B.length;
-  for(let i=0;i<N;i++){
-    let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r; }
-    if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]]; }
-    const diag=B[i][i]||1e-12;
-    for(let j=i+1;j<N;j++){
-      const f=B[j][i]/diag;
-      for(let k=i;k<N;k++) B[j][k]-=f*M[i][k];
-      x[j]-=f*x[i];
+
+  const B = A.map(r => r.slice());
+  const x = b.slice();
+  const N = B.length;
+
+  // 前進消去（部分ピボット）
+  for (let i=0;i<N;i++){
+    let p = i;
+    for (let r=i+1;r<N;r++){
+      if (Math.abs(B[r][i]) > Math.abs(B[p][i])) p = r;
+    }
+    if (p !== i){ [B[i],B[p]] = [B[p],B[i]]; [x[i],x[p]] = [x[p],x[i]]; }
+
+    const diag = B[i][i] || 1e-12;
+    for (let j=i+1;j<N;j++){
+      const f = B[j][i] / diag;
+      for (let k=i;k<N;k++) B[j][k] -= f * B[i][k];   // ← ここを修正（B に対して更新）
+      x[j] -= f * x[i];
     }
   }
-  for(let i=N-1;i>=0;i--){
-    let s=0; for(let j=i+1;j<N;j++) s+=B[i][j]*x[j];
-    x[i]=(x[i]-s)/(B[i][i]||1e-12);
+
+  // 後退代入
+  for (let i=N-1;i>=0;i--){
+    let s = 0;
+    for (let j=i+1;j<N;j++) s += B[i][j]*x[j];
+    x[i] = (x[i] - s) / (B[i][i] || 1e-12);
   }
-  return x;
+  return x; // [A,B,C,D,E,F]
 }
+
+// function fitAffineN(srcPts, dstPts, w){
+//   const n=srcPts.length, M=6;
+//   const A=Array.from({length:M},()=>Array(M).fill(0)), b=Array(M).fill(0);
+//   for(let i=0;i<n;i++){
+//     const wi=w?w[i]:1; const [x,y]=srcPts[i]; const [X,Y]=dstPts[i];
+//     const rowX=[x,y,1,0,0,0].map(v=>wi*v), rowY=[0,0,0,x,y,1].map(v=>wi*v);
+//     for(let j=0;j<M;j++){
+//       for(let k=0;k<M;k++){ A[j][k]+=rowX[j]*rowX[k]+rowY[j]*rowY[k]; }
+//       b[j]+=rowX[j]*X+rowY[j]*Y;
+//     }
+//   }
+//   const x=b.slice(), B=A.map(r=>r.slice()), N=B.length;
+//   for(let i=0;i<N;i++){
+//     let p=i; for(let r=i+1;r<N;r++){ if(Math.abs(B[r][i])>Math.abs(B[p][i])) p=r; }
+//     if(p!==i){ [B[i],B[p]]=[B[p],B[i]]; [x[i],x[p]]=[x[p],x[i]]; }
+//     const diag=B[i][i]||1e-12;
+//     for(let j=i+1;j<N;j++){
+//       const f=B[j][i]/diag;
+//       for(let k=i;k<N;k++) B[j][k]-=f*M[i][k];
+//       x[j]-=f*x[i];
+//     }
+//   }
+//   for(let i=N-1;i>=0;i--){
+//     let s=0; for(let j=i+1;j<N;j++) s+=B[i][j]*x[j];
+//     x[i]=(x[i]-s)/(B[i][i]||1e-12);
+//   }
+//   return x;
+// }
 function huberWeights(res, delta){ return res.map(r=>{ const a=Math.abs(r); return a<=delta?1:(delta/a); }); }
 function median(arr){ const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
 function fitAffineRobust(srcPts, dstPts, iters=3){
@@ -569,7 +617,6 @@ export default {
         if(xNat<-10 || yNat<-10 || xNat>W+10 || yNat>H+10) return;
 
         next.push({ imageCoord:[xNat,yNat], mapCoord: null, redCircleCoord:[lng,lat] });
-        // this.clonedGcpList.push({ imageCoord:[xNat,yNat], mapCoord:[lng,lat] });
         this.$emit('update:gcpList', next); // watcher で同期・履歴
       });
     },
