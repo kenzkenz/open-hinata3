@@ -1173,7 +1173,7 @@ export default {
     },
 
     // プレビュー：MapLibre上に貼り、ベースを表示・カメラを瞬間移動
-    previewOnMap(){
+    async previewOnMap(){
       if(!(this.affineM || this.tps)) this.previewWarp();
       if(!(this.affineM || this.tps) || !this.map) return;
 
@@ -1185,58 +1185,90 @@ export default {
       if(this.map.getLayer(this.imageLayerId)){
         try{ this.map.setLayoutProperty(this.imageLayerId,'visibility','none'); }catch(e){}
       }
+
       // 既存プレビュー撤収
       this._removePreviewLayerAndSource();
 
       const beforeId = (this.gcpCircleId && this.map.getLayer(this.gcpCircleId)) ? this.gcpCircleId : undefined;
 
       let coordsLngLat = null; // [TL,TR,BR,BL]
+      const img = this.$refs.warpImage;
+      const clipNat = (this.maskQuadNat && this.maskQuadNat.length>=3) ? this.maskQuadNat : null;
+
+      // --- Similarity/Affine（2〜3点） ---
       if(this.affineM && !this.tps){
-        const img = this.$refs.warpImage;
         const W = img.naturalWidth, H = img.naturalHeight;
         const cornersXY = [[0,0],[W,0],[W,H],[0,H]].map(p=>applyAffine(this.affineM, p)); // 3857
         coordsLngLat = cornersXY.map(mercToLngLat);
-        this.map.addSource(this.previewSourceId, { type:'image', url:this.imgUrl, coordinates:coordsLngLat });
-        this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} }, beforeId);
 
-        // 追加直後に最前面へ（ベースの上に確実に出す）
-        this.ensureOverlayOrder();
-        this._enterPreviewFinalize(coordsLngLat);
+        // マスクがある時は、透明マスク済みPNGを一時生成してURLとして使う
+        let urlForPreview = this.imgUrl;
+        if (clipNat){
+          const blob = await this._makeMaskedPngBlob(img, clipNat);
+          if (blob){
+            if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
+            this.previewObjUrl = URL.createObjectURL(blob);
+            urlForPreview = this.previewObjUrl;
+          }
+        }
 
-      }else{
-        const img = this.$refs.warpImage;
-        const clipNat=(this.maskQuadNat && this.maskQuadNat.length>=3)? this.maskQuadNat : null;
+        try{
+          this.map.addSource(this.previewSourceId, { type:'image', url:urlForPreview, coordinates:coordsLngLat });
+          this.map.addLayer(
+              { id:this.previewLayerId, type:'raster', source:this.previewSourceId,
+                paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} },
+              beforeId
+          );
+
+          // 追加直後に最前面へ（ベースの上に確実に出す）
+          this.ensureOverlayOrder();
+          this._enterPreviewFinalize(coordsLngLat);
+        }catch(e){
+          // 失敗時は生成URLを解放
+          if (urlForPreview === this.previewObjUrl){
+            try{ URL.revokeObjectURL(this.previewObjUrl) }catch(_){}
+            this.previewObjUrl = null;
+          }
+        }
+        return; // ここで終了
+      }
+
+      // --- TPS（4点以上） ---
+      {
         const {canvas, world} = exportTPSWithWorld(img, this.tps, clipNat, 32);
         const outW = canvas.width, outH = canvas.height;
 
-        canvas.toBlob((blob)=>{
-          if(!blob) return;
-          if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
-          this.previewObjUrl = URL.createObjectURL(blob);
+        const blob = await new Promise(resolve => canvas.toBlob(b=>resolve(b), 'image/png'));
+        if(!blob) return;
 
-          const C = world.C, F = world.F, A = world.A, E = world.E; // E<0
-          const TL = [C, F];
-          const TR = [C + A*outW, F];
-          const BR = [C + A*outW, F + E*outH];
-          const BL = [C, F + E*outH];
-          coordsLngLat = [TL,TR,BR,BL].map(mercToLngLat);
+        if(this.previewObjUrl){ try{ URL.revokeObjectURL(this.previewObjUrl) }catch(e){} }
+        this.previewObjUrl = URL.createObjectURL(blob);
 
-          try{
-            this.map.addSource(this.previewSourceId, { type:'image', url:this.previewObjUrl, coordinates:coordsLngLat });
-            this.map.addLayer({ id:this.previewLayerId, type:'raster', source:this.previewSourceId, paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} }, beforeId);
+        const C = world.C, F = world.F, A = world.A, E = world.E; // E<0
+        const TL = [C, F];
+        const TR = [C + A*outW, F];
+        const BR = [C + A*outW, F + E*outH];
+        const BL = [C, F + E*outH];
+        coordsLngLat = [TL,TR,BR,BL].map(mercToLngLat);
 
-            // 追加直後に最前面へ
-            this.ensureOverlayOrder();
-            this._enterPreviewFinalize(coordsLngLat);
-          }catch(e){
-            try{ URL.revokeObjectURL(this.previewObjUrl) }catch(_){} this.previewObjUrl=null;
-          }
-        }, 'image/png');
+        try{
+          this.map.addSource(this.previewSourceId, { type:'image', url:this.previewObjUrl, coordinates:coordsLngLat });
+          this.map.addLayer(
+              { id:this.previewLayerId, type:'raster', source:this.previewSourceId,
+                paint:{'raster-opacity':1, 'raster-resampling':'linear', 'raster-fade-duration':0} },
+              beforeId
+          );
 
-        // TPSは非同期blob完了後に_finalizeするので、ここでreturn
-        return;
+          // 追加直後に最前面へ
+          this.ensureOverlayOrder();
+          this._enterPreviewFinalize(coordsLngLat);
+        }catch(e){
+          try{ URL.revokeObjectURL(this.previewObjUrl) }catch(_){}
+          this.previewObjUrl=null;
+        }
       }
     },
+
     _enterPreviewFinalize(coordsLngLat){
       // GCPを隠す
       this._setGcpVisible(false);
