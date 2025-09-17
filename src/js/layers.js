@@ -2008,6 +2008,7 @@ import fxBasic from '@/assets/json/modified_fx_basic.json'
 import mono from '@/assets/json/modified_mono.json'
 import fxDark from '@/assets/json/modified_fx-dark.json'
 import osmBright from '@/assets/json/osm_bright.json'
+import osmBrightLabelOnly from '@/assets/json/osm_bright_label_only.json'
 import osmToner from '@/assets/json/osm_toner.json'
 import osm3d from '@/assets/json/osmfj_nopoi.json'
 import axios from "axios";
@@ -2059,6 +2060,22 @@ Object.keys(osmBright.sources).forEach(function(key) {
     osmBrightSources.push({
         id: key,
         obj: osmBright.sources[key]
+    })
+})
+//-------------------------------------------------------
+export const osmBrightLabelOnlySources = []
+export const osmBrightLabelOnlyLayers = osmBrightLabelOnly.layers.map(layer => {
+    return {
+        ...layer, // 既存のレイヤー設定を維持
+        metadata: {
+            group: 'osm-bright-label-only' // 新しいmetadataプロパティを追加
+        }
+    }
+})
+Object.keys(osmBrightLabelOnly.sources).forEach(function(key) {
+    osmBrightLabelOnlySources.push({
+        id: key,
+        obj: osmBrightLabelOnly.sources[key]
     })
 })
 //----------------------------------------------------------
@@ -11169,6 +11186,13 @@ let layers01 = [
                         label: "OSMベクター",
                         sources: osmBrightSources,
                         layers: osmBrightLayers,
+                        attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                    },
+                    {
+                        id: 'oh-vector-layer-osm-bright-label-only',
+                        label: "OSMベクターラベルのみ",
+                        sources: osmBrightLabelOnlySources,
+                        layers: osmBrightLabelOnlyLayers,
                         attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
                     },
                     {
