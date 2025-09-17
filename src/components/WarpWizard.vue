@@ -46,6 +46,13 @@
           </v-btn>
         </MiniTooltip>
 
+        <!-- ★ ヘルプ（からメソッド openHelp を呼ぶ） -->
+        <MiniTooltip text="ヘルプ" :offset-x="0" :offset-y="0">
+          <v-btn icon variant="text" @click="openHelp" :title="'ヘルプ'">
+            <v-icon>mdi-help-circle-outline</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
         <!-- ▼ プレビュー時のみ表示：ベースマップ選択（小さめ） -->
         <div v-if="previewMode" class="basemap-chips">
           <v-chip-group
@@ -403,14 +410,14 @@ export default {
       imgUrl: null,
       affineM: null, tps: null,
       viewImgToCanvas: null, viewMapToCanvas: null,
-      grid: false, // ← グリッドは使わない（初期オフ＆ボタン削除）
+      grid: false,
       objUrl: null,
       history: [], histIndex: -1, isRestoring:false, closedOnce:false,
 
       // --- マスク ---
       maskMode:false,
-      maskQuadNat:[],            // 画像ナチュラル座標（クリップ用）
-      maskVertsLngLat:[],        // 地図の緑丸（順序つき）
+      maskQuadNat:[],
+      maskVertsLngLat:[],
 
       // MapLibre
       map:null,
@@ -512,6 +519,12 @@ export default {
     this.$nextTick(() => { this.syncCanvasSize(); this.drawGrid(); this.redrawMarkers(); });
   },
   methods:{
+    // ---------- ここが「ヘルプ」クリック時のフック ----------
+    openHelp(){
+      // TODO: 外部のヘルプウインドウを表示する処理をここに実装してください
+      // 例）this.$emit('open-help') などに差し替えてもOK
+    },
+
     // ---------- MapLibre ----------
     initMapLibre(){
       if (this.map) return;
