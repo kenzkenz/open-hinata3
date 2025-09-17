@@ -597,7 +597,7 @@ export default {
     window.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.onResize);
     this.$nextTick(() => { this.syncCanvasSize(); this.redrawMarkers(); });
-// mounted 内の置き換え
+    // mounted 内の置き換え
     this.$nextTick(() => {
       this.initMapLibre();
       const scheduleLayout = () => {
@@ -606,26 +606,17 @@ export default {
           const root = this.$el;
           if (!root) return;
           const toolbar = root.querySelector('.oh-toolbar');
-          // const body = root.querySelector('.oh-body');
-          // if (!body) return;
-
           const rootH = root.clientHeight || 0;
           const tbH   = toolbar ? toolbar.offsetHeight : 0;
           const h = Math.max(0, rootH - tbH);
 
-          // 変化があるときだけ書き換える（無駄な再レイアウト防止）
-          // const newH = `${h}px`;
-          // if (body.style.height !== newH) {
-            // body.style.height = newH;
+          document.querySelector('.left-pane').style.height = `${h - 20}px`;
 
-            document.querySelector('.left-pane').style.height = `${h - 20}px`;
-
-            // map/canvas の resize は次フレームに送る（ループ抑止）
-            requestAnimationFrame(() => {
-              this.syncCanvasSize();
-              if (this.map) this.map.resize();
-            });
-          // }
+          // map/canvas の resize は次フレームに送る（ループ抑止）
+          requestAnimationFrame(() => {
+            this.syncCanvasSize();
+            if (this.map) this.map.resize();
+          });
         });
       };
 
