@@ -21,6 +21,19 @@
           </v-btn>
         </MiniTooltip>
 
+        <!-- ダウンロード（Zip: マスク画像 + ワールドファイル） -->
+        <MiniTooltip text="ダウンロード" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              variant="text"
+              :disabled="!(affineM || tps) || !imgReady"
+              @click="downloadZip"
+              title="Zipでダウンロード（マスク後画像 + ワールドファイル）"
+          >
+            <v-icon>mdi-download</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
         <v-divider vertical class="mx-1"/>
 
         <!-- Undo/Redo（プレビュー中のUndoはプレビュー解除だけ） -->
@@ -62,16 +75,16 @@
         <v-divider vertical class="mx-1"/>
 
         <!-- GCPテーブル表示/非表示 -->
-<!--        <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">-->
-<!--          <v-btn-->
-<!--              icon-->
-<!--              variant="text"-->
-<!--              :class="{ 'is-active': showGcpPanel }"-->
-<!--              @click="toggleGcpPanel"-->
-<!--              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'">-->
-<!--            <v-icon>{{ showGcpPanel ? 'mdi-table-eye' : 'mdi-table' }}</v-icon>-->
-<!--          </v-btn>-->
-<!--        </MiniTooltip>-->
+        <!--        <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">-->
+        <!--          <v-btn-->
+        <!--              icon-->
+        <!--              variant="text"-->
+        <!--              :class="{ 'is-active': showGcpPanel }"-->
+        <!--              @click="toggleGcpPanel"-->
+        <!--              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'">-->
+        <!--            <v-icon>{{ showGcpPanel ? 'mdi-table-eye' : 'mdi-table' }}</v-icon>-->
+        <!--          </v-btn>-->
+        <!--        </MiniTooltip>-->
       </div>
     </div>
 
@@ -300,7 +313,7 @@ function solveLinear(A, b) {
       x[j]-=f*x[i];
     }
   }
-  for(let i=N-1;i>=0;i--){
+  for (let i=N-1;i>=0;i--){
     let s=0; for(let j=i+1;j<N;j++) s+=M[i][j]*x[j];
     x[i]=(x[i]-s)/(M[i][i]||1e-12);
   }
@@ -437,7 +450,7 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   }
   for(let j=0;j<ny;j++){
     for(let i=0;i<nx;i++){
-      const x0=i*sx,y0=j*sy,x1=(i+1)*sx,y1=(j+1)*sy;
+      const x0=i*sx,y0=j*sy,x1=(i+1)*sx,y1=(i+1)*sy;
       const s00=[x0,y0],s10=[x1,y0],s11=[x1,y1],s01=[x0,y1];
       const d00=view(applyTPS(tps,[x0,-y0])), d10=view(applyTPS(tps,[x1,-y0]));
       const d11=view(applyTPS(tps,[x1,-y1])), d01=view(applyTPS(tps,[x0,-y1]));
@@ -455,6 +468,7 @@ const DEFAULT_PREVIEW_BASE = 'photo';
 
 import MiniTooltip from '@/components/MiniTooltip';
 import maplibregl from 'maplibre-gl';
+import JSZip from 'jszip';
 
 export default {
   name: 'WarpWizard',
@@ -1362,6 +1376,124 @@ export default {
         this.$emit('confirm',{ ...payload, kind, affineM:this.affineM, worldFile:wld, fileOriginal:this.$props.file||null });
       }
     },
+
+    // ---- ここからDL系ユーティリティ ----
+    _getBaseName(){
+      const f = this.$props.file;
+      if (f && f.name) return f.name.replace(/\.[^.]+$/, '');
+      try{
+        const u = new URL(this.imgUrl);
+        const last = (u.pathname.split('/').pop() || '').replace(/\.[^.]+$/, '');
+        return last || 'image';
+      }catch(e){
+        return 'image';
+      }
+    },
+    _getImageExtLower(){
+      const f = this.$props.file;
+      let name = '';
+      if (f && f.name) name = f.name;
+      else if (this.imgUrl) {
+        try { name = new URL(this.imgUrl).pathname.split('/').pop() || ''; }
+        catch(e){ name = this.imgUrl.split('?')[0].split('/').pop() || ''; }
+      }
+      const match = /\.([a-zA-Z0-9]+)$/.exec(name || '');
+      const m = match ? match[1] : '';
+      return (m || '').toLowerCase();
+    },
+    _worldExtForImageExt(imgExt){
+      // 画像拡張子に対応するワールドファイル拡張子
+      const map = {
+        'tif':'tfw', 'tiff':'tfw',
+        'jpg':'jgw', 'jpeg':'jgw', 'jfif':'jgw',
+        'png':'pgw',
+        'gif':'gfw',
+        'bmp':'bpw',
+        'webp':'wpw', // 一部GISは未対応。ダメな場合は .wld を使うこと
+      };
+      const chosen = map[imgExt];
+      return '.' + (chosen || 'wld');
+    },
+    _makeMaskedPngBlob(img, clipNat=null){
+      return new Promise((resolve) => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0,0,c.width,c.height);
+
+        if (clipNat && clipNat.length >= 3){
+          ctx.save();
+          ctx.beginPath();
+          clipNat.forEach(([x,y],i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, 0, 0);
+          ctx.restore();
+        }else{
+          ctx.drawImage(img, 0, 0);
+        }
+
+        c.toBlob(b => resolve(b), 'image/png');
+      });
+    },
+    _makeTpsPngAndWorld(img, tps, clipNat=null){
+      return new Promise((resolve) => {
+        const { canvas, world } = exportTPSWithWorld(img, tps, clipNat, 32);
+        const worldText = `${world.A}\n${world.D}\n${world.B}\n${world.E}\n${world.C}\n${world.F}`;
+        canvas.toBlob((blob)=>{
+          resolve({ blob, worldText });
+        }, 'image/png');
+      });
+    },
+    async downloadZip(){
+      if(!(this.affineM || this.tps) || !this.imgReady) return;
+
+      const img = this.$refs.warpImage;
+      const clipNat = (this.maskQuadNat && this.maskQuadNat.length >= 3) ? this.maskQuadNat : null;
+      const zip = new JSZip();
+
+      let outBase = this._getBaseName();
+      let outImgBlob = null;
+      let outImgExt = 'png'; // このコンポーネントのDLは常にPNGで出す
+      let worldText = '';
+
+      if (this.tps){
+        // TPS: 焼き込み PNG + world
+        const { blob, worldText: w } = await this._makeTpsPngAndWorld(img, this.tps, clipNat);
+        outImgBlob = blob;
+        worldText = w;
+        outBase = `${outBase}-tps`;
+      }else{
+        // Affine/Similarity: マスクPNG（無ければ全体） + world（affine）
+        outImgBlob = await this._makeMaskedPngBlob(img, clipNat);
+        worldText = worldFileFromAffine(this.affineM);
+      }
+
+      // 画像ファイル
+      const imgFilename = `${outBase}.png`;
+      if (outImgBlob) zip.file(imgFilename, outImgBlob);
+
+      // ワールドファイル拡張子は「出力画像の拡張子」に合わせる
+      const worldExt = this._worldExtForImageExt(outImgExt); // 'png' -> '.pgw'
+      const worldFilename = `${outBase}${worldExt}`;
+      zip.file(worldFilename, worldText);
+
+      // まとめてZip化 & ダウンロード
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${outBase}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // dissolve: ObjectURL を解放
+      setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    },
+    // ---- ここまでDL系 ----
 
     // ---- GCP エディタ ----
     removeGcp(idx){
