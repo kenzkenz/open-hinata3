@@ -62,16 +62,16 @@
         <v-divider vertical class="mx-1"/>
 
         <!-- GCPテーブル表示/非表示 -->
-        <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">
-          <v-btn
-              icon
-              variant="text"
-              :class="{ 'is-active': showGcpPanel }"
-              @click="toggleGcpPanel"
-              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'">
-            <v-icon>{{ showGcpPanel ? 'mdi-table-eye' : 'mdi-table' }}</v-icon>
-          </v-btn>
-        </MiniTooltip>
+<!--        <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">-->
+<!--          <v-btn-->
+<!--              icon-->
+<!--              variant="text"-->
+<!--              :class="{ 'is-active': showGcpPanel }"-->
+<!--              @click="toggleGcpPanel"-->
+<!--              :title="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'">-->
+<!--            <v-icon>{{ showGcpPanel ? 'mdi-table-eye' : 'mdi-table' }}</v-icon>-->
+<!--          </v-btn>-->
+<!--        </MiniTooltip>-->
       </div>
     </div>
 
