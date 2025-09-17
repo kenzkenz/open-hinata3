@@ -956,8 +956,8 @@ export default {
           const warpedPng = blob ? new File([blob], `${baseName}-tps.png`, {type:'image/png'}) : null;
 
           // 親へ：TPS でも「PNG + world file」で渡す（＝タイル化の通常経路が使える）
-          alert('子のconfirm//' + worldFileText)
-          console.log(warpedPng)
+          // alert('子のconfirm//' + worldFileText)
+          // console.log(warpedPng)
           this.$emit('confirm',{
             ...payload,
             kind:'tps',

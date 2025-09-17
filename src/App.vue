@@ -3418,7 +3418,6 @@ export default {
         alert('推定コーナーが不正です。別のGCP配置を試してください。');
         return;
       }
-
       if (kind === 'similarity' || kind === 'affine') {
         // ✅ アフィンは「元画像 + ワールドファイル」で登録が正道
         const worldFile = this._worldFileFromAffine(affineM);
@@ -3429,39 +3428,14 @@ export default {
           worldFile,
           // previewBlob: blob, // （任意）プレビュー表示用に保持してもいい
         });
-
-      } else if (kind === 'homography') {
-        // ホモグラフィはワールドファイル不可
-        if (this.serverSupportsWarp) {
-          // ✅ サーバ側で再サンプリングできるなら「元画像 + H」で渡す
-          this.openTileUploadDialog({
-            kind,
-            fileOriginal: maskedPngFile,
-            H,
-            cornersLngLat, // 参考 or 事前プレビュー用
-          });
-        } else {
-          // フォールバック：クライアントで作ったワープ済み画像を使う
-          this.openTileUploadDialog({ kind, blob, cornersLngLat });
-        }
-
       } else if (kind === 'tps') {
-        alert('App.vue-onWarpConfirm//' + worldFile)
-        alert(fileOriginal)
-        // TPS もワールドファイル不可
-        // if (this.serverSupportsWarp) {
-          // ✅ サーバ側で TPS ワープできるなら「元画像 + tps」
-          this.openTileUploadDialog({
-            kind,
-            fileOriginal,
-            tps,
-            cornersLngLat, // 表示位置の初期合わせに使える
-            worldFile
-          });
-        // } else {
-        //   // フォールバック：クライアント出力を使う
-        //   this.openTileUploadDialog({ kind, blob, cornersLngLat, tps });
-        // }
+        this.openTileUploadDialog({
+          kind,
+          fileOriginal,
+          tps,
+          cornersLngLat, // 表示位置の初期合わせに使える
+          worldFile
+        });
       }
     },
     _validCorners(c) {
@@ -4456,7 +4430,6 @@ export default {
         affineM               // 予備（worldFileが無い時だけ最終手段で使う）
       } = payload || {};
 
-
       const baseName = this.s_gazoName || 'image';
 
       // ヘルパ
@@ -4511,15 +4484,8 @@ export default {
         return;
       }
 
-      // ========= ホモグラフィ / TPS =========
-      // 画像は「高解像の previewBlob を最優先」。無ければ元画像で近似（四隅表示）も可。
-
-      // alert('App.vue-openTileUploadDialog//' + worldFile)
-
-      // ========= ホモグラフィ / TPS =========
-      alert('fileOriginal' + fileOriginal)
-      if ((kind === 'tps' || kind === 'homography') && worldFile && fileOriginal) {
-        alert('App.vue-openTileUploadDialog//' + worldFile)
+      // ========= TPS =========
+      if ((kind === 'tps') && worldFile && fileOriginal) {
 
         // 子が「ワープ済み画像＋world file」を作ってくれたケース → そのまま通常経路へ
         const imgFile = asFile(fileOriginal, baseName);
@@ -4531,43 +4497,6 @@ export default {
         this.showTileDialog = true;
         return;
       }
-
-      if (kind === 'homography' || kind === 'tps') {
-        // 1) 使う画像を決める
-        let chosen = previewBlob || fileOriginal;
-        const fallbackFromCanvas = () => new Promise((resolve, reject) => {
-          const canvas = document.querySelector('#warp-canvas');
-          if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
-          if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
-          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
-        });
-
-        const ensure = chosen
-            ? Promise.resolve(chosen)
-            : fallbackFromCanvas(); // 最後の手段（ボケ得るので基本使わない）
-
-        ensure.then((blobOrFile) => {
-          const name = `${baseName}-${kind}.png`;
-          const imgFile = (blobOrFile instanceof File)
-              ? blobOrFile
-              : new File([blobOrFile], name, { type: 'image/png' });
-
-          // ストアへ「角座標/方式/SRS/オプション」をまとめて渡す（ダイアログが解釈）
-          this.$store.commit('setWarpPreviewAndCorners', {
-            imageFile: imgFile,
-            kind,
-            cornersLngLat: cornersLngLat || null,
-            srs,
-            tps: tps || null,
-          });
-          this.showTileDialog = true;
-        }).catch(err => {
-          console.error('openTileUploadDialog (homography/tps) failed:', err);
-        });
-
-        return;
-      }
-
       console.warn('openTileUploadDialog: unknown kind', kind);
     },
 
