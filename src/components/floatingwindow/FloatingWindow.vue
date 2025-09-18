@@ -504,6 +504,12 @@ export default {
         this.saveToStorage();
       }
     },
+
+    /* -------------------- 追加: 表示時/初期表示で width-changed を発火 -------------------- */
+    emitWidthNow() {
+      // 現在の幅を即通知（親で初期レイアウト調整に使える）
+      this.$emit('width-changed', this.width);
+    },
   },
 
   mounted() {
@@ -513,6 +519,8 @@ export default {
     // 保存値復元 → 画面外チェック
     this.restoreFromStorage();
     this.ensureInitialIfOffscreen();
+    // 初回表示タイミングで幅を通知
+    this.$nextTick(() => { this.emitWidthNow(); });
     // キー操作
     window.addEventListener('keydown', this.onKeydown, { passive: false });
   },
@@ -529,7 +537,11 @@ export default {
             elm.style.zIndex = getNextZIndex();
           });
         }, 30);
-        if (val) this.ensureInitialIfOffscreen();
+        if (val) {
+          // 表示切替で出現したときにも位置補正後に幅を通知
+          this.ensureInitialIfOffscreen();
+          this.$nextTick(() => { this.emitWidthNow(); });
+        }
       });
     },
   },
