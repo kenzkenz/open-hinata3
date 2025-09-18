@@ -400,13 +400,22 @@ function previewTPSOnCanvas(vm,img,canvas,tps,mesh=24,clipNat=null){
 // TPS を 3857 平面に焼き込み
 function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   const W = img.naturalWidth, H = img.naturalHeight;
-  const corners = [[0,0],[W,0],[W,H],[0,H]].map(p => applyTPS(tps, [p[0], -p[1]]));
-  const xs = corners.map(p=>p[0]), ys = corners.map(p=>p[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+
+  // 1) 境界はメッシュから推定（プレビューと同じ）
+  const bounds = tpsWorldBounds(W, H, tps, clipNat, Math.max(32, mesh));
+  const tmpScale = W / Math.max(1, (bounds.maxX - bounds.minX)); // 仮スケール
+  const padWorld = 2 / tmpScale;                                  // ≒2px 余白
+  const minX = bounds.minX - padWorld, maxX = bounds.maxX + padWorld;
+  const minY = bounds.minY - padWorld, maxY = bounds.maxY + padWorld;
+
+  // 2) 出力解像度
   const worldW = Math.max(1, maxX - minX);
+  const worldH = Math.max(1, maxY - minY);
   const scale = pxPerMeter || (W / worldW);
   const outW = Math.max(1, Math.round(worldW * scale));
-  const outH = Math.max(1, Math.round((maxY - minY) * scale));
+  const outH = Math.max(1, Math.round(worldH * scale));
+
+  // 3) 描画キャンバス
   const canvas = document.createElement('canvas');
   canvas.width = outW; canvas.height = outH;
   const ctx = canvas.getContext('2d');
@@ -414,7 +423,10 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   ctx.clearRect(0,0,outW,outH);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
+
   const view = ([X,Y]) => [ scale*(X - minX), scale*(maxY - Y) ];
+
+  // 4) マスク
   let clipped=false;
   if (clipNat && clipNat.length>=3){
     const q=clipNat.slice(), edges=[[q[0],q[1]],[q[1],q[2]],[q[2],q[3]||q[0]],[q[3]||q[0],q[0]]], pts=[], N=24;
@@ -429,6 +441,8 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
     pts.forEach(([cx,cy],i)=>{ if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); });
     ctx.closePath(); ctx.clip(); clipped=true;
   }
+
+  // 5) 三角メッシュで焼き込み（y1 のバグも修正済み）
   const nx = mesh, ny = mesh, sx = W/nx, sy = H/ny;
   function aff(srcTri,dstTri){
     const p0=srcTri[0],p1=srcTri[1],p2=srcTri[2],q0=dstTri[0],q1=dstTri[1],q2=dstTri[2];
@@ -450,8 +464,8 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
   }
   for(let j=0;j<ny;j++){
     for(let i=0;i<nx;i++){
-      const x0=i*sx,y0=j*sy,x1=(i+1)*sx,y1=(i+1)*sy;
-      const s00=[x0,y0],s10=[x1,y0],s11=[x1,y1],s01=[x0,y1];
+      const x0=i*sx, y0=j*sy, x1=(i+1)*sx, y1=(j+1)*sy;
+      const s00=[x0,y0], s10=[x1,y0], s11=[x1,y1], s01=[x0,y1];
       const d00=view(applyTPS(tps,[x0,-y0])), d10=view(applyTPS(tps,[x1,-y0]));
       const d11=view(applyTPS(tps,[x1,-y1])), d01=view(applyTPS(tps,[x0,-y1]));
       drawTri(ctx,img,[s00,s10,s11],[d00,d10,d11]);
@@ -459,9 +473,13 @@ function exportTPSWithWorld(img, tps, clipNat=null, mesh=32, pxPerMeter=null){
     }
   }
   if (clipped) ctx.restore();
+
+  // 6) ワールドファイル
   const A = 1/scale, D = 0, B = 0, E = -1/scale, C = minX, F = maxY;
   return { canvas, world: {A,B,C,D,E,F} };
 }
+
+
 
 // ===== 設定：プレビュー時の初期ベースレイヤ（'photo' | 'pale' | 'standard'） =====
 const DEFAULT_PREVIEW_BASE = 'photo';
