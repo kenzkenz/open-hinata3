@@ -824,7 +824,7 @@ export const cityGeojsonSource = {
     id: 'city-geojson-source', obj: {
         'type': 'geojson',
         // 'data': 'https://kenzkenz.net/original-data/chibanzumap.geojson?nocache=' + Date.now()
-        'data': 'https://kenzkenz.net/original-data/chibanzumap.geojson?v=2'
+        'data': 'https://kenzkenz.net/original-data/chibanzumap.geojson?v=3'
     }
 }
 

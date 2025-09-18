@@ -16,8 +16,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @cancel="onConfirmCancel"
       />
 
-
-
       <!-- ジオリファレンス -->
       <FloatingWindow
           windowId = "warp-wizard"
@@ -153,17 +151,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             :id="Number(s_pmtiles0Id)"
             @update:paint="onPaintUpdate"
         />
-      </FloatingWindow>
-      <!-- QRコード -->
-      <FloatingWindow
-          windowId="qrcode"
-          type="simple"
-          :default-width=200
-          :default-height=200
-          :keepAspectRatio="true"
-          @width-changed="onWidthChanged"
-      >
-        <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
       </FloatingWindow>
       <!-- ペイントエディター -->
       <FloatingWindow
@@ -1384,6 +1371,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <div id="map00">
+        <!-- ⭐️ここに置くと印刷プレビュー時もプレビュー内に収まる -->
+        <FloatingWindow
+            windowId="qrcode"
+            type="simple"
+            :default-width=200
+            :default-height=200
+            :keepAspectRatio="true"
+            @width-changed="onWidthChanged"
+        >
+          <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
+        </FloatingWindow>
 
 <!--        <div class="my-speed-dial">-->
 <!--        <v-speed-dial-->
@@ -1560,8 +1558,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <span class="terrain-btn-span" v-show="mapName === 'map01' || (mapName === 'map02' && !s_isPrint)">
           <div :id="'terrain-btn-div-' + mapName"
                class="terrain-btn-div"
-               @mouseenter="onPanelEnter"
-               @mouseleave="onPanelLeave">
+          >
             <div class="terrain-btn-container">
               <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
               <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="pressPitchUp(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
