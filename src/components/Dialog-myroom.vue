@@ -1143,7 +1143,12 @@ export default {
         }
         let opacity
         if (vm.$store.state.simaTextForUser) {
-          opacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+          try {
+            opacity = JSON.parse(vm.$store.state.simaTextForUser).opacity
+          }catch (e) {
+            console.log('原因調査がまだ。')
+            console.log(e)
+          }
         } else {
           opacity = 0
         }

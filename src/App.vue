@@ -1476,9 +1476,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="マイ ルーム">
               <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="グループ機能">
-                <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>
-              </MiniTooltip>
+<!--              <MiniTooltip text="グループ機能">-->
+<!--                <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
+<!--              </MiniTooltip>-->
               <MiniTooltip text="レイヤー選択">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
               </MiniTooltip>
@@ -3333,7 +3333,6 @@ export default {
                          srs  = 'EPSG:3857',    // 'EPSG:3857'（メートル） or 'EPSG:4326'（度）
                          useExportScale = false // true にすると exportWidth/Height 等の異方スケール補正を掛けます
                        } = {}) {
-      alert(888)
 
       const img = this.$refs?.warpImage || document.getElementById('warp-image');
       if (!img) { console.warn('image not found'); return null; }

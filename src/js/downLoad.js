@@ -234,13 +234,23 @@ export function exportLayerToGeoJSON(map,layerId,sourceId,fields) {
         } else {
             geojson = extractHighlightedGeoJSONFromSource(geojson,layerId)
             console.log(geojson)
+            /**
+             * いつのまにか全国地番図公開マップで全てdissolveになっていたので除外
+             */
+            // if (!layerId.includes('oh-chiban')) {
+            //     return dissolveGeoJSONByFields(geojson, fields)
+            // } else {
+            //     return geojson
+            // }
             return dissolveGeoJSONByFields(geojson, fields)
+
         }
     } else {
         console.warn('このソースタイプはサポートされていません。');
         return null;
     }
 }
+
 export function saveGeojsonToDraw (map,layerId,sourceId,fields) {
     if (map.getZoom() <= 15) {
         alert('ズーム15以上にしてください。')
@@ -654,6 +664,7 @@ export async function convertAndDownloadGeoJSONToSIMA(map,layerId, geojson, file
     } else {
         fileName = fileName + kei + firstChiban + hoka + '.txt';
     }
+
     link.download = fileName; // ファイル名を正確に指定
     // リンクをクリックしてダウンロード
     link.click();

@@ -199,7 +199,12 @@ export default {
       return this.type === "simple";
     },
     resizerDirs() {
-      return ["top-left", "top-right", "bottom-left", "bottom-right"];
+      // 四隅 + 四辺 すべてでリサイズ可能に
+      return [
+        "top-left", "top", "top-right",
+        "left",               "right",
+        "bottom-left", "bottom", "bottom-right"
+      ];
     },
     rootHeightStyle() {
       if (this.isMaximized) return this.height + 'px';
@@ -413,27 +418,74 @@ export default {
     onResize(e) {
       if (!this.resizing) return;
       if (e.cancelable) e.preventDefault();
+
       const dx = e.clientX - this.startX;
       const dy = e.clientY - this.startY;
+
+      const hasLeft   = this.resizeDir.includes('left');
+      const hasRight  = this.resizeDir.includes('right');
+      const hasTop    = this.resizeDir.includes('top');
+      const hasBottom = this.resizeDir.includes('bottom');
+
       let newW = this.startWidth;
       let newH = this.startHeight;
+
       if (this.keepAspectRatio) {
-        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
-        else if (this.resizeDir.includes('left')) newW = this.startWidth - dx;
-        else if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
-        else if (this.resizeDir.includes('top')) newH = this.startHeight - dy;
-        newH = newW / this.originalAspect;
-        newW = newH * this.originalAspect;
+        const aspect = this.originalAspect || (this.startWidth / Math.max(1, this.startHeight));
+
+        // --- 水平エッジのみ（left / right） ---
+        if ((hasLeft || hasRight) && !(hasTop || hasBottom)) {
+          if (hasRight) newW = this.startWidth + dx;
+          if (hasLeft)  newW = this.startWidth - dx;
+          newH = newW / aspect;
+          // 高さ変化は上下へ対称配分（中心維持）
+          const dH = newH - this.startHeight;
+          this.top = Math.max(0, this.startTop - dH / 2);
+          // left は left エッジのときだけ移動（右エッジは固定）
+          if (hasLeft) this.left = this.startLeft + (this.startWidth - newW);
+        }
+        // --- 垂直エッジのみ（top / bottom） ---
+        else if ((hasTop || hasBottom) && !(hasLeft || hasRight)) {
+          if (hasBottom) newH = this.startHeight + dy;
+          if (hasTop)    newH = this.startHeight - dy;
+          newW = newH * aspect;
+          // 幅変化は左右へ対称配分（中心維持）
+          const dW = newW - this.startWidth;
+          this.left = Math.max(0, this.startLeft - dW / 2);
+          // top は top エッジのときだけ移動（bottom は固定）
+          if (hasTop) this.top = Math.max(0, this.startTop + (this.startHeight - newH));
+        }
+        // --- コーナー（四隅） ---
+        else {
+          // 基本は幅ドリブン（左右の動きがあればそれを優先）
+          if (hasRight) newW = this.startWidth + dx;
+          if (hasLeft)  newW = this.startWidth - dx;
+          // 幅の指定が無い場合は高さドリブン
+          if (!(hasLeft || hasRight)) {
+            if (hasBottom) newH = this.startHeight + dy;
+            if (hasTop)    newH = this.startHeight - dy;
+            newW = newH * aspect;
+          } else {
+            newH = newW / aspect;
+          }
+          // エッジに応じて原点側を調整
+          if (hasLeft)  this.left = this.startLeft + (this.startWidth - newW);
+          if (hasTop)   this.top  = Math.max(0, this.startTop  + (this.startHeight - newH));
+        }
       } else {
-        if (this.resizeDir.includes('right')) newW = this.startWidth + dx;
-        if (this.resizeDir.includes('left')) { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
-        if (this.resizeDir.includes('bottom')) newH = this.startHeight + dy;
-        if (this.resizeDir.includes('top')) { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
+        // アスペクト固定なし：通常処理
+        if (hasRight) newW = this.startWidth + dx;
+        if (hasLeft)  { newW = this.startWidth - dx; this.left = this.startLeft + dx; }
+        if (hasBottom) newH = this.startHeight + dy;
+        if (hasTop)    { newH = this.startHeight - dy; this.top = Math.max(0, this.startTop + dy); }
       }
-      if (this.keepAspectRatio && this.resizeDir.includes('left')) this.left = this.startLeft + (this.startWidth - newW);
-      if (this.keepAspectRatio && this.resizeDir.includes('top'))  this.top  = this.startTop  + (this.startHeight - newH);
-      this.width = Math.max(20, newW);
-      this.height = Math.max(20, newH);
+
+      // 最小サイズ・境界
+      newW = Math.max(20, newW);
+      newH = Math.max(20, newH);
+
+      this.width  = newW;
+      this.height = newH;
       this.$emit('width-changed', this.width);
       this.$emit('height-changed', this.height);
     },
@@ -657,14 +709,18 @@ export default {
 
 .resizer {
   position: absolute;
-  width: 10px;
-  height: 10px;
   background: transparent;
   /* リサイズ中の画面スクロール抑止 */
   touch-action: none;
 }
-.top-left    { top: -5px; left: -5px; cursor: nwse-resize; }
-.top-right   { top: -5px; right: -5px; cursor: nesw-resize; }
-.bottom-left { bottom: -5px; left: -5px; cursor: nwse-resize; }
-.bottom-right{ bottom: -5px; right: -5px; cursor: nwse-resize; width: 30px; height: 30px; }
+/* 角ハンドル（つまみ） */
+.top-left    { top: -5px; left: -5px; width: 10px; height: 10px; cursor: nwse-resize; }
+.top-right   { top: -5px; right: -5px; width: 10px; height: 10px; cursor: nesw-resize; }
+.bottom-left { bottom: -5px; left: -5px; width: 10px; height: 10px; cursor: nesw-resize; }
+.bottom-right{ bottom: -5px; right: -5px; width: 30px; height: 30px; cursor: nwse-resize; }
+/* 辺ハンドル（全面リサイズ用） */
+.top    { top: -4px; left: 4px; right: 4px; height: 8px; cursor: ns-resize; }
+.bottom { bottom: -4px; left: 4px; right: 4px; height: 8px; cursor: ns-resize; }
+.left   { left: -4px; top: 4px; bottom: 4px; width: 8px; cursor: ew-resize; }
+.right  { right: -4px; top: 4px; bottom: 4px; width: 8px; cursor: ew-resize; }
 </style>

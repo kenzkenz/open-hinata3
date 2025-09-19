@@ -132,8 +132,8 @@
                     outlined
           ></v-select>
         </div>
-        <v-btn :disabled="isDraw" @click="saveSima(false)">sima出力開始</v-btn>
-        <v-btn :disabled="!isDraw" @click="saveSima(true)" style="margin-left: 10px;">ドローへ</v-btn>
+        <v-btn :disabled="isDraw" @click="saveSima0(false)">sima出力開始</v-btn>
+        <v-btn :disabled="!isDraw" @click="saveSima0(true)" style="margin-left: 10px;">ドローへ</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -183,12 +183,7 @@
         <v-btn class="tiny-btn2" block @click="saveKml">kml保存</v-btn>
       </v-col>
     </v-row>
-<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog5=true">sima保存（簡易）</v-btn>-->
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;width: 72px;" class="tiny-btn" @click="dialog=true">sima読込</v-btn>-->
-<!--    <br>-->
-<!--    <v-btn style="margin-top: 0px;margin-left: 0px;" class="tiny-btn" @click="dialog4=true">dxf保存</v-btn>-->
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveCsv">csv保存</v-btn>-->
-<!--    <v-btn style="margin-top: 0px;margin-left: 5px;" class="tiny-btn" @click="saveKml">kml保存</v-btn>-->
+
     <hr>
     <div style="display: flex; align-items: center; gap: 10px;">
       <v-btn style="height: 40px; line-height: 40px; margin-left: 0px;margin-top: 10px;" class="tiny-btn" @click="resetFeatureColors">
@@ -878,6 +873,7 @@ export default {
         //   break
       }
       if(/^oh-chiban-/.test(id)) {
+        alert('到達')
         this.layerId = id
         this.sourceId = id.replace('-layer','-source')
         this.fields = ['oh3id']
@@ -937,7 +933,7 @@ export default {
       const map = this.$store.state[this.mapName]
       saveCima3(map)
     },
-    saveSima (isDraw) {
+    saveSima0 (isDraw) {
       const map = this.$store.state[this.mapName]
       const vm = this
       async function aaa () {
@@ -955,7 +951,8 @@ export default {
           const style = map.getStyle();
           const sourceInfo = style.sources[sourceId];
           console.log(sourceInfo.url);
-          const url = sourceInfo.url.replace('pmtiles://', '')
+          let url = sourceInfo.url.replace('pmtiles://', '')
+          url = url.replace('https://kenzkenz.net/', 'https://kenzkenz.duckdns.org/')
           console.log(url)
           const response = await fetch(`https://kenzkenz.xsrv.jp/open-hinata3/php/userPmtilesSelectByUrl.php?url=${url}`);
           const data = await response.json();
@@ -971,7 +968,11 @@ export default {
           const geojson = saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban, true)
           vm.toDraw(geojson)
         } else {
-          saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban, false)
+          /**
+           * 下記を差し替え。不具合が起こる可能性あり。
+           */
+          // saveCima(map, vm.layerId, vm.sourceId, vm.fields, true, vm.s_zahyokei,chiban, false)
+          saveCima(map, vm.layerId, vm.sourceId, ['id', 'oh3id'], true, vm.s_zahyokei,chiban, false)
         }
         vm.dialog5 = false
       }
