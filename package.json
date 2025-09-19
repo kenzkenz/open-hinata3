@@ -40,7 +40,7 @@
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "mapillary-js": "^4.1.2",
-    "maplibre-gl": "^5.7.1",
+    "maplibre-gl": "^5.7.2",
     "maplibre-gl-compass": "^0.3.0",
     "maplibre-gl-gsi-terrain": "^2.2.2",
     "mathjs": "^14.5.2",
