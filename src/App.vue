@@ -1624,6 +1624,8 @@ import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
 import WarpWizard from '@/components/WarpWizard.vue'
+import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios-map-tuning';
+
 
 import {
   addDraw,
@@ -7073,67 +7075,19 @@ export default {
         this.$store.state[mapName] = map
 
       })
+
       // --------------------------------
       const map = this.$store.state.map01
       // const vm = this
       //----------------------------------
-
-
-
-
-
-      function featuresCreate (features) {
-        features = features.filter(feature => feature.properties?.mode !== 'select')
-        features = features.map(feature => {
-          const newProps = {...feature.properties};
-          delete newProps.selected;
-          return {
-            ...feature,
-            properties: newProps,
-          };
-        })
-        return features
-      }
-
-
-
-
-      // drawInstance.on('finish', (e) => {
-      //   // const features =featuresCreate (drawInstance.getSnapshot())
-      //   const features = convertPolygonsToLineStrings(featuresCreate (drawInstance.getSnapshot()))
-      //   drawInstance.clear();
-      //   drawInstance.addFeatures(features);
-      //   setTimeout(() => {
-      //     map.moveLayer( 'terradraw-measure-polygon-label')
-      //     map.moveLayer( 'terradraw-measure-line-label')
-      //     map.moveLayer( 'terradraw-measure-line-node')
-      //   },500)
-      //   const geojsonText = JSON.stringify(features, null, 2);
-      //   this.$store.state.drawGeojsonText = geojsonText
-      //   this.updatePermalink()
-      // });
-
-      // document.querySelector('.maplibregl-terradraw-delete-button').addEventListener('click', () => {
-      //   this.$store.state.drawGeojsonText = ''
-      //   this.updatePermalink()
-      // });
-
-      // document.addEventListener('keydown', (e) => {
-      //   // MacのBackspaceに相当するキー
-      //   if (e.key === 'Backspace') {
-      //     e.preventDefault(); // 不要な戻る操作を防ぐ
-      //
-      //     // TerraDraw にカスタム delete イベントを送信
-      //     if (this.drawControl) {
-      //
-      //       // this.drawControl.draw.handleEvent({
-      //       //   type: 'keydown',
-      //       //   key: 'Delete', // ← 擬似的に "Delete" を送る！
-      //       // });
-      //     }
-      //   }
-      // })
-
+      // iOS 向けチューニング適用
+      tuneMapForIOS(map, this.$store, {
+        heavyLayerIds: [
+          // 例: 'oh-dem-tint', 'hillshade', 'population-3d-extrusion',
+        ],
+        disable3D: false,
+        reduceLabels: true,
+      });
       function getNearbyClickCirclePointId(map, e, pixelTolerance = 20) {
         if (!e || !e.lngLat) return null;
         const clickPixel = map.project(e.lngLat);
