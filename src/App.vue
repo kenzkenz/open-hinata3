@@ -7017,6 +7017,7 @@ export default {
         //   }
         // }
 
+        const isIOS = this.$store.state.isIOS
         const map = new maplibregl.Map({
           container: mapName,
           localIdeographFontFamily: ['sans-serif'], // 日本語を表示するための設定
@@ -7029,6 +7030,13 @@ export default {
           attributionControl: false, // ズーム中の衝突フェードをカット（微小だが効く）
           fadeDuration: 0,
           renderWorldCopies: false, // 世界コピーを描かない＝タイル負荷減
+          maxTileCacheZoomLevels: isIOS ? 2 : 5,
+          canvasContextAttributes: {
+            // iOS 安定重視: WebGL1 を優先
+            contextType: isIOS ? 'webgl' : 'webgl2',
+            antialias: false,
+            preserveDrawingBuffer: false
+          },
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",
