@@ -124,6 +124,9 @@
 
         <v-divider />
         <v-card-actions class="px-4 py-3 d-flex justify-end">
+          <!-- ★ 追加：このレイヤーだけリセット（ダイアログは閉じない） -->
+          <v-btn variant="outlined" color="secondary" @click="resetCurrent" class="mr-auto">リセット</v-btn>
+
           <v-btn variant="text" @click="edit.open=false">閉じる</v-btn>
           <v-btn color="primary" @click="applyEdit">反映</v-btn>
         </v-card-actions>
@@ -164,7 +167,7 @@ export default {
         },
       },
       localZ: 2000,
-      originalStyle: null,
+      originalStyle: null,   // マウント時に深いコピーを保持
     }
   },
   computed:{
@@ -270,6 +273,7 @@ export default {
       }
       this.edit.open = true
     },
+
     applyEdit(){
       const id = this.edit.target?.id
       if(!id) return
@@ -296,21 +300,67 @@ export default {
       if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
       else delete l['paint']['text-halo-width']
 
-      try{
-        if(this.map?.getLayer?.(id)){
-          if('text-size' in l.layout) this.map.setLayoutProperty(id, 'text-size', l['layout']['text-size']); else this.map.setLayoutProperty(id, 'text-size', null)
-          if('symbol-placement' in l.layout) this.map.setLayoutProperty(id, 'symbol-placement', l['layout']['symbol-placement'])
-          if(id === ICON_ONLY_ID){
-            if('icon-size' in l.layout) this.map.setLayoutProperty(id, 'icon-size', l['layout']['icon-size']); else this.map.setLayoutProperty(id, 'icon-size', null)
-          }else{
-            this.map.setLayoutProperty(id, 'icon-size', null)
-          }
-          if('text-color' in l.paint) this.map.setPaintProperty(id, 'text-color', l['paint']['text-color']); else this.map.setPaintProperty(id, 'text-color', null)
-          if('text-halo-color' in l.paint) this.map.setPaintProperty(id, 'text-halo-color', l['paint']['text-halo-color']); else this.map.setPaintProperty(id, 'text-halo-color', null)
-          if('text-halo-width' in l.paint) this.map.setPaintProperty(id, 'text-halo-width', l['paint']['text-halo-width']); else this.map.setPaintProperty(id, 'text-halo-width', null)
-        }
-      }catch(e){}
+      // Mapへ即時反映
+      this._applyToMap(id, l, /*fromReset=*/false)
       // ダイアログは閉じない
+    },
+
+    // ★ 追加：このレイヤーだけ初期値に戻す（ダイアログは閉じない）
+    resetCurrent(){
+      const id = this.edit.target?.id
+      if(!id || !this.originalStyle) return
+
+      const orig = (this.originalStyle.layers || []).find(x=>x.id===id)
+      const cur  = this._findLayerInJson(id)
+      if(!orig || !cur) return
+
+      // JSONを初期状態に戻す
+      cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
+      cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
+
+      // UIの visible も初期状態に合わせる
+      const ui = this.layers.find(x=>x.id===id)
+      if(ui) ui.visible = (cur.layout?.visibility ?? 'visible') !== 'none'
+
+      // 編集フォームも初期値で更新（閉じずにそのまま見せる）
+      const layout = cur.layout || {}
+      const paint  = cur.paint  || {}
+      this.edit.form = {
+        textSize:        this._numOrNull(layout['text-size']),
+        iconSize:        this._numOrNull(layout['icon-size']),
+        textColor:       paint['text-color'] ?? '',
+        textHaloColor:   paint['text-halo-color'] ?? '',
+        textHaloWidth:   this._numOrNull(paint['text-halo-width']),
+        symbolPlacement: layout['symbol-placement'] ?? null,
+      }
+
+      // Mapへ即時反映
+      this._applyToMap(id, cur, /*fromReset=*/true)
+    },
+
+    // MapLibreへ反映する共通処理
+    _applyToMap(id, layerJson, fromReset){
+      const m = this.map
+      if(!m?.getLayer?.(id)) return
+      try{
+        // visibility
+        const vis = (layerJson.layout?.visibility ?? 'visible')
+        m.setLayoutProperty(id, 'visibility', vis)
+
+        // layout
+        if('text-size' in (layerJson.layout||{})) m.setLayoutProperty(id, 'text-size', layerJson.layout['text-size']); else m.setLayoutProperty(id, 'text-size', null)
+        if('symbol-placement' in (layerJson.layout||{})) m.setLayoutProperty(id, 'symbol-placement', layerJson.layout['symbol-placement'])
+        if(id === ICON_ONLY_ID){
+          if('icon-size' in (layerJson.layout||{})) m.setLayoutProperty(id, 'icon-size', layerJson.layout['icon-size']); else m.setLayoutProperty(id, 'icon-size', null)
+        }else{
+          m.setLayoutProperty(id, 'icon-size', null)
+        }
+
+        // paint
+        if('text-color' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-color', layerJson.paint['text-color']); else m.setPaintProperty(id, 'text-color', null)
+        if('text-halo-color' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-halo-color', layerJson.paint['text-halo-color']); else m.setPaintProperty(id, 'text-halo-color', null)
+        if('text-halo-width' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-halo-width', layerJson.paint['text-halo-width']); else m.setPaintProperty(id, 'text-halo-width', null)
+      }catch(e){}
     },
 
     resetAll(){
@@ -420,7 +470,7 @@ export default {
 /* ====== リスト（スマホ幅に合わせて列幅調整） ====== */
 .list-head{
   display:grid;
-  grid-template-columns: 1fr 110px 48px 48px; /* ← 380px用に圧縮 */
+  grid-template-columns: 1fr 110px 48px 48px; /* 380px用 */
   gap:8px;
   font-size:11px;
   color:#6b7280;
@@ -445,10 +495,23 @@ export default {
 .item:first-child{ border-top:none; }
 .item .id code{ font-size:12px; word-break: break-all; }
 
-.chip{
-  border-radius: var(--chip-radius) !important;
-  height: var(--chip-h) !important;
-  font-size: var(--chip-fs) !important;
+/* 種別（ラベル/アイコン）を必ず1行で収める：最小限の修正だけ */
+.kind{
+  display:flex; align-items:center; justify-content:flex-start;
+  gap:4px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  min-width:0;
+  overflow:hidden;
+}
+.kind .chip{
+  border-radius: 8px !important;
+  height: 22px !important;
+  line-height: 22px !important;
+  font-size: 11px !important;
+  padding: 0 6px !important;
+  min-width: auto !important;
+  flex: 0 0 auto;
 }
 .chip-text{ background:#eef6ff; border:1px solid #cfe6ff; }
 .chip-icon{ background:#f9f3ff; border:1px solid #eadcff; }
@@ -463,22 +526,4 @@ export default {
 /* Vuetify fields 少しだけタイトに */
 :deep(.v-field--variant-outlined){ --v-field-padding-start: 8px; }
 :deep(.v-field__outline__start), :deep(.v-field__outline__end){ opacity:.9; }
-
-/* 種別（ラベル/アイコン）を必ず1行で収める：最小限の修正だけ */
-.kind{
-  display:flex; align-items:center; justify-content:flex-start;
-  gap:4px;                 /* ちょい詰める */
-  flex-wrap:nowrap;        /* 折り返し禁止 */
-  white-space:nowrap;      /* 文言も折り返さない */
-  min-width:0;             /* グリッド内での計算を安定させる */
-}
-
-.kind .chip{
-  height:22px !important;
-  line-height:22px !important;
-  font-size:11px !important;
-  padding:0 6px !important;
-  min-width:auto !important;  /* v-chip のデフォ最小幅を解除して縮められるように */
-  flex:0 1 auto;              /* 必要に応じて“少しだけ”縮む */
-}
 </style>
