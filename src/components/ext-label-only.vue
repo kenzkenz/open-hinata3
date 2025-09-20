@@ -13,6 +13,7 @@
             class="search"
             @keydown.stop
         />
+        <!-- フィルタトグル（下のチップ類と寸法/角/余白を統一） -->
         <v-btn-toggle v-model="kind" density="comfortable" mandatory class="seg">
           <v-btn value="all"   class="seg-btn is-all">すべて</v-btn>
           <v-btn value="label" class="seg-btn is-label">ラベル</v-btn>
@@ -34,8 +35,8 @@
             </div>
 
             <div class="kind">
-              <v-chip v-if="ly.hasText"  size="small" class="chip-text"  label>ラベル</v-chip>
-              <v-chip v-if="ly.hasIcon"  size="small" class="chip-icon"  label>アイコン</v-chip>
+              <v-chip v-if="ly.hasText" size="small" class="chip chip-text" label>ラベル</v-chip>
+              <v-chip v-if="ly.hasIcon" size="small" class="chip chip-icon" label>アイコン</v-chip>
             </div>
 
             <div class="vis">
@@ -114,7 +115,6 @@
 
 <script>
 import osmBrightLabelOnly from '@/assets/json/osm_bright_label_only.json'
-
 const HIDE_PREFIX = 'oh-vector-osm-bright-labels-only-'
 
 export default {
@@ -243,6 +243,7 @@ export default {
 </script>
 
 <style scoped>
+/* ====== 共通（カード） ====== */
 .label-controller-root{
   width: 560px;
   max-width: 100%;
@@ -256,41 +257,43 @@ export default {
   flex-direction: column;
 }
 
-/* Toolbar — 左端にくっつかないようパディング */
+/* ====== ツールバー ====== */
 .toolbar{
   display:flex; align-items:center;
   padding: 12px 16px;
   background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0));
   border-bottom: 1px solid rgba(0,0,0,.08);
 }
-.tools{ display:flex; align-items:center; gap:10px; width:100%; flex-wrap:nowrap; }
+.tools{ display:flex; align-items:center; gap:8px; width:100%; flex-wrap:nowrap; }
 .search{ flex:1 1 auto; min-width:140px; max-width:300px; }
 
-/* Segmented (chip-like) toggle — 一覧のチップ配色に統一、折り返し無し */
-.seg{ flex:0 0 auto; display:flex; gap:8px; background:transparent; padding:0; border:0; }
+/* ====== セグメントトグル（下のチップ群と寸法/角/間隔/パディングを統一） ====== */
+:root{ --chip-radius:8px; --chip-h:28px; --chip-gap:8px; --chip-pad-x:12px; --chip-fs:13px; }
+
+.seg{
+  flex:0 0 auto; display:flex; gap:var(--chip-gap); background:transparent; padding:0; border:0;
+}
 .seg :deep(.v-btn){
   text-transform:none;
-  border-radius:12px !important;
-  height:34px; min-width:84px; padding:0 14px;
+  border-radius:var(--chip-radius) !important;
+  height:var(--chip-h); line-height:var(--chip-h);
+  min-width:auto; padding:0 var(--chip-pad-x);
+  font-size:var(--chip-fs);
   box-shadow:none;
   border:1px solid var(--seg-bd,#e5e7eb);
   background:var(--seg-bg,#f7f8fa);
   color:#374151;
 }
-/* すべて（ニュートラル） */
 .seg .is-all   { --seg-bg:#f6f7fa; --seg-bd:#e5e7eb; --seg-bg-active:#ffffff; --seg-bd-active:#d1d5db; }
-/* ラベル（青系） */
 .seg .is-label { --seg-bg:#eef6ff; --seg-bd:#cfe6ff; --seg-bg-active:#e7f0ff; --seg-bd-active:#9cc3ff; }
-/* アイコン（紫系） */
 .seg .is-icon  { --seg-bg:#f9f3ff; --seg-bd:#eadcff; --seg-bg-active:#f0eaff; --seg-bd-active:#c3b7ff; }
-/* Active状態 */
 .seg :deep(.v-btn.v-btn--active){
   background:var(--seg-bg-active,#fff) !important;
   border-color:var(--seg-bd-active,#d1d5db) !important;
-  box-shadow:0 2px 8px rgba(0,0,0,.10);
+  box-shadow:none;
 }
 
-/* Body */
+/* ====== 本体 ====== */
 .body{ padding:10px; }
 .panel{
   background: rgba(0,0,0,0.03);
@@ -299,7 +302,7 @@ export default {
   padding: 12px;
 }
 
-/* List */
+/* ====== リスト ====== */
 .list-head{
   display:grid;
   grid-template-columns: 1fr 160px 64px 64px;
@@ -327,11 +330,19 @@ export default {
 .item:first-child{ border-top:none; }
 .item .id code{ font-size:12px; }
 
-/* Chips (一覧とトグルで色統一) */
+.seg-btn{
+  padding: 0 10px!important;
+}
+
+.chip{
+  border-radius: var(--chip-radius) !important;
+  height: var(--chip-h) !important;
+  font-size: var(--chip-fs) !important;
+}
 .chip-text{ background:#eef6ff; border:1px solid #cfe6ff; }
 .chip-icon{ background:#f9f3ff; border:1px solid #eadcff; }
 
-/* Dialog */
+/* ====== ダイアログ ====== */
 .editor-dialog :deep(.v-overlay__scrim){ background: rgba(15,18,25,0.5) !important; }
 .editor-body{ padding: 8px 4px; }
 .grid.two-col{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
@@ -339,7 +350,7 @@ export default {
 .field-label{ display:block; margin-bottom:6px; font-size:12px; color:#6b7280; }
 .hint{ font-size:12px; color:#6b7280; }
 
-/* Vuetify fields a bit tighter */
+/* Vuetify fields 少しだけタイトに */
 :deep(.v-field--variant-outlined){ --v-field-padding-start: 8px; }
 :deep(.v-field__outline__start), :deep(.v-field__outline__end){ opacity:.9; }
 </style>
