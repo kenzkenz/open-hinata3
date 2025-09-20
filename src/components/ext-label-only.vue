@@ -100,7 +100,7 @@
               <v-select v-model="edit.form.symbolPlacement" :items="['point','line']" density="comfortable" variant="outlined" hide-details placeholder="point / line" />
             </div>
           </div>
-          <div class="hint mt-2">※ いまは <strong>JSON（スタイル定義）</strong> に対してのみ変更を保持します（Map へは即時反映しません）。</div>
+          <div class="hint mt-2">※ JSON（スタイル定義）を更新し、MapLibre にも即時反映します。</div>
         </v-card-text>
 
         <v-divider />
@@ -122,6 +122,10 @@ export default {
   props: {
     modelValue: { type: Boolean, default: true },
     open:       { type: Boolean, default: undefined },
+    /** 親から来る識別子。実マップは this.$store.state[mapName] にある前提 */
+    mapName:    { type: String, required: true },
+    /** 互換のため受けるが未使用（親都合で渡ってくる想定） */
+    item:       { type: Object, default: null },
   },
   emits: ['update:modelValue','update:open'],
   data(){
@@ -166,6 +170,7 @@ export default {
   },
   mounted(){ this.buildFromJson() },
   methods:{
+    /* ========== JSON（唯一のソース）から一覧構築 ========== */
     buildFromJson(){
       const style = osmBrightLabelOnly
       const list = []
@@ -186,16 +191,23 @@ export default {
       }
       this.layers = list
     },
+
+    /* ========== 表示/非表示（JSON + MapLibre） ========== */
     toggleVisibility(id){
       const t = this.layers.find(x=>x.id===id)
       if(!t) return
       t.visible = !t.visible
+      // JSON 更新
       const l = this._findLayerInJson(id)
       if(l){
         l.layout = l.layout || {}
         l.layout.visibility = t.visible ? 'visible' : 'none'
       }
+      // Map 反映
+      this._applyVisibilityToMap(id, t.visible)
     },
+
+    /* ========== 編集 ========== */
     openEdit(ly){
       this.edit.target = ly
       const l = this._findLayerInJson(ly.id)
@@ -211,6 +223,7 @@ export default {
       }
       this.edit.open = true
     },
+
     applyEdit(){
       const id = this.edit.target?.id
       if(!id) return
@@ -219,6 +232,7 @@ export default {
       l.layout = l.layout || {}
       l.paint  = l.paint  || {}
 
+      // JSON 更新
       if(this.edit.form.textSize !== null && this.edit.form.textSize !== undefined) l.layout['text-size'] = Number(this.edit.form.textSize)
       else delete l.layout['text-size']
 
@@ -228,14 +242,69 @@ export default {
       if(this.edit.form.iconSize !== null && this.edit.form.iconSize !== undefined) l.paint['icon-size'] = Number(this.edit.form.iconSize)
       else delete l.paint['icon-size']
 
-      if(this.edit.form.textColor)     l.paint['text-color'] = this.edit.form.textColor;       else delete l.paint['text-color']
-      if(this.edit.form.textHaloColor) l.paint['text-halo-color'] = this.edit.form.textHaloColor; else delete l.paint['text-halo-color']
+      if(this.edit.form.textColor)     l.paint['text-color'] = this.edit.form.textColor;           else delete l.paint['text-color']
+      if(this.edit.form.textHaloColor) l.paint['text-halo-color'] = this.edit.form.textHaloColor;  else delete l.paint['text-halo-color']
 
       if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
       else delete l.paint['text-halo-width']
 
+      // Map 反映
+      this._applyEditsToMap(id, this.edit.form)
+
       this.edit.open = false
     },
+
+    /* ========== MapLibre 反映ヘルパ（mapName 経由） ========== */
+    _getMap(){
+      // 親が this.$store.state[mapName] に MapLibre インスタンスを保持している前提（ext-dem-tint と同様）
+      return this.$store?.state?.[this.mapName] || null
+    },
+
+    _applyVisibilityToMap(id, visible){
+      const m = this._getMap()
+      if(!m || !m.getLayer) return
+      const apply = () => {
+        if(!m.getLayer(id)) return
+        try{
+          m.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none')
+        }catch(e){}
+      }
+      try{
+        if (m.isStyleLoaded?.()) apply()
+        else m.once?.('styledata', apply)
+      }catch(e){}
+    },
+
+    _applyEditsToMap(id, form){
+      const m = this._getMap()
+      if(!m || !m.getLayer) return
+      const setL = (k, v)=>{
+        try{
+          if(v===null || v===undefined || v==='') m.setLayoutProperty(id, k, null)
+          else m.setLayoutProperty(id, k, v)
+        }catch(e){}
+      }
+      const setP = (k, v)=>{
+        try{
+          if(v===null || v===undefined || v==='') m.setPaintProperty(id, k, null)
+          else m.setPaintProperty(id, k, v)
+        }catch(e){}
+      }
+      const apply = ()=>{
+        if(!m.getLayer(id)) return
+        setL('text-size',        this._numOrNull(form.textSize))
+        setL('symbol-placement', form.symbolPlacement || null)
+        setP('icon-size',        this._numOrNull(form.iconSize))
+        setP('text-color',       form.textColor || null)
+        setP('text-halo-color',  form.textHaloColor || null)
+        setP('text-halo-width',  this._numOrNull(form.textHaloWidth))
+      }
+      try{
+        if (m.isStyleLoaded?.()) apply()
+        else m.once?.('styledata', apply)
+      }catch(e){}
+    },
+
     _findLayerInJson(id){ return osmBrightLabelOnly.layers.find(x=>x.id===id) },
     _numOrNull(v){ if(v===null || v===undefined || v==='') return null; const n=Number(v); return Number.isFinite(n)?n:null }
   }
