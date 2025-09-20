@@ -11194,6 +11194,7 @@ let layers01 = [
                         sources: osmBrightLabelOnlySources,
                         layers: osmBrightLabelOnlyLayers,
                         attribution: '© <a href="https://wiki.openstreetmap.org/wiki/Japan/OSMFJ_Tileserver" target="_blank">OpenStreetMap</a> contributors',
+                        ext: {name:'extLabelOnly'}
                     },
                     {
                         id: 'oh-vector-layer-osm-3d',

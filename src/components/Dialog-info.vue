@@ -64,6 +64,7 @@
     <extSaaLevel :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extSeaLevel'"/>
     <extKihonkijyunten :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extKhonkijyunten'"/>
     <extDemTint :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extDemTint'"/>
+    <extLabelOnly :item="item" :mapName="mapName" v-else-if="item.ext.name === 'extLabelOnly'"/>
 
   </div>
 </template>
@@ -94,6 +95,7 @@ import extSaga from "@/components/ext-saga"
 import extSaaLevel from "@/components/ext-sea-level"
 import extKihonkijyunten from "@/components/ext-kihonkijyunten"
 import extDemTint from "@/components/ext-dem-tint"
+import extLabelOnly from "@/components/ext-label-only"
 import {getNextZIndex} from "@/js/downLoad"
 
 export default {
@@ -124,6 +126,7 @@ export default {
     extSaaLevel,
     extKihonkijyunten,
     extDemTint,
+    extLabelOnly,
   },
   props: ['mapName'],
   data: () => ({
