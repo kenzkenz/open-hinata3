@@ -4,6 +4,15 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="tools">
+        <!-- すべて表示/非表示 -->
+        <v-btn icon variant="text" class="bulk-btn" title="すべて表示" @click="setAllVisibility(true)">
+          <v-icon>mdi-eye</v-icon>
+        </v-btn>
+        <v-btn icon variant="text" class="bulk-btn" title="すべて非表示" @click="setAllVisibility(false)">
+          <v-icon>mdi-eye-off</v-icon>
+        </v-btn>
+
+        <!-- 検索 -->
         <v-text-field
             v-model.trim="q"
             density="compact"
@@ -13,6 +22,8 @@
             class="search"
             @keydown.stop
         />
+
+        <!-- フィルタトグル -->
         <v-btn-toggle v-model="kind" density="comfortable" mandatory class="seg">
           <v-btn value="all"   class="seg-btn is-all">すべて</v-btn>
           <v-btn value="label" class="seg-btn is-label">ラベル</v-btn>
@@ -135,7 +146,7 @@ export default {
         target: null,
         form: {
           textSize: null,
-          iconSize: null,       // layout
+          iconSize: null,
           textColor: '',
           textHaloColor: '',
           textHaloWidth: null,
@@ -167,7 +178,7 @@ export default {
   },
   mounted(){ this.buildFromJson() },
   methods:{
-    /* ========== JSON（唯一のソース）から一覧構築（IDで集約） ========== */
+    /* ===== JSON から一覧を構築（同一ID集約） ===== */
     buildFromJson(){
       const style = osmBrightLabelOnly
       const byId = new Map()
@@ -177,59 +188,74 @@ export default {
       for(const l of style.layers){
         if(l.type !== 'symbol') continue
         const layout = l.layout || {}
-        const paint  = l.paint  || {}
-
         const hasText = layout['text-field'] !== undefined && layout['text-field'] !== null
         const hasIcon = layout['icon-image'] !== undefined && layout['icon-image'] !== null
         const visible = (layout.visibility ?? 'visible') !== 'none'
-
-        const curr = byId.get(l.id)
-        if(!curr){
+        const cur = byId.get(l.id)
+        if(!cur){
           byId.set(l.id, {
             id: l.id,
             displayName: (l.id || '').startsWith(HIDE_PREFIX) ? l.id.slice(HIDE_PREFIX.length) : l.id,
-            hasText,
-            hasIcon,
-            visible,
+            hasText, hasIcon, visible,
             _order: ++order,
           })
         }else{
-          // 同一IDが複数ある場合は集約（OR / どれか見えていれば見えている扱い）
-          curr.hasText = curr.hasText || hasText
-          curr.hasIcon = curr.hasIcon || hasIcon
-          curr.visible = curr.visible || visible
+          cur.hasText = cur.hasText || hasText
+          cur.hasIcon = cur.hasIcon || hasIcon
+          cur.visible = cur.visible || visible
         }
       }
       this.layers = Array.from(byId.values()).sort((a,b)=>a._order-b._order)
     },
 
-    /* ========== 表示/非表示（JSON全定義 + MapLibre） ========== */
+    /* ===== すべて表示/非表示 ===== */
+    setAllVisibility(vis){
+      // UI
+      this.layers.forEach(l => { l.visible = vis })
+      // JSON（同ID全部）
+      for(const l of this.layers){
+        for(const def of this._findLayersInJson(l.id)){
+          def.layout = def.layout || {}
+          def.layout.visibility = vis ? 'visible' : 'none'
+        }
+      }
+      // Map
+      const m = this._getMap()
+      if(!m || !m.getLayer) return
+      const apply = ()=>{
+        for(const l of this.layers){
+          if(m.getLayer(l.id)){
+            try{ m.setLayoutProperty(l.id, 'visibility', vis ? 'visible' : 'none') }catch(e){}
+          }
+        }
+      }
+      try{
+        if (m.isStyleLoaded?.()) apply()
+        else m.once?.('styledata', apply)
+      }catch(e){}
+    },
+
+    /* ===== 個別表示/非表示 ===== */
     toggleVisibility(id){
       const t = this.layers.find(x=>x.id===id)
       if(!t) return
       t.visible = !t.visible
-
-      // JSON：同じ id の全レイヤーに反映
-      const layersInJson = this._findLayersInJson(id)
-      for(const l of layersInJson){
+      for(const l of this._findLayersInJson(id)){
         l.layout = l.layout || {}
         l.layout.visibility = t.visible ? 'visible' : 'none'
       }
-
-      // Map 反映
       this._applyVisibilityToMap(id, t.visible)
     },
 
-    /* ========== 編集 ========== */
+    /* ===== 編集 ===== */
     openEdit(ly){
       this.edit.target = ly
-      // 任意の1本（同IDの最初）から値を拾う
-      const l = this._findLayersInJson(ly.id)[0]
-      const layout = l?.layout || {}
-      const paint  = l?.paint || {}
+      const first = this._findLayersInJson(ly.id)[0]
+      const layout = first?.layout || {}
+      const paint  = first?.paint || {}
       this.edit.form = {
         textSize:        this._numOrNull(layout['text-size']),
-        iconSize:        this._numOrNull(layout['icon-size']),   // layout
+        iconSize:        this._numOrNull(layout['icon-size']),
         textColor:       paint['text-color'] ?? '',
         textHaloColor:   paint['text-halo-color'] ?? '',
         textHaloWidth:   this._numOrNull(paint['text-halo-width']),
@@ -241,35 +267,28 @@ export default {
     applyEdit(){
       const id = this.edit.target?.id
       if(!id) return
-
-      // JSON：同じ id の全レイヤーへ反映
-      const arr = this._findLayersInJson(id)
-      for(const l of arr){
+      const defs = this._findLayersInJson(id)
+      for(const l of defs){
         l.layout = l.layout || {}
         l.paint  = l.paint  || {}
-
+        // layout
         if(this.edit.form.textSize !== null && this.edit.form.textSize !== undefined) l.layout['text-size'] = Number(this.edit.form.textSize)
         else delete l.layout['text-size']
-
         if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement
         else delete l.layout['symbol-placement']
-
         if(this.edit.form.iconSize !== null && this.edit.form.iconSize !== undefined) l.layout['icon-size'] = Number(this.edit.form.iconSize)
         else delete l.layout['icon-size']
-
+        // paint
         if(this.edit.form.textColor)       l.paint['text-color'] = this.edit.form.textColor;           else delete l.paint['text-color']
         if(this.edit.form.textHaloColor)   l.paint['text-halo-color'] = this.edit.form.textHaloColor;  else delete l.paint['text-halo-color']
         if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
         else delete l.paint['text-halo-width']
       }
-
-      // Map 反映（該当 id はユニーク）
       this._applyEditsToMap(id, this.edit.form)
-
       this.edit.open = false
     },
 
-    /* ========== MapLibre 反映ヘルパ（mapName 経由） ========== */
+    /* ===== MapLibre helper ===== */
     _getMap(){ return this.$store?.state?.[this.mapName] || null },
 
     _applyVisibilityToMap(id, visible){
@@ -277,9 +296,7 @@ export default {
       if(!m || !m.getLayer) return
       const apply = () => {
         if(!m.getLayer(id)) { console.warn('[ExtLabelOnly] layer not found in map:', id); return }
-        try{
-          m.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none')
-        }catch(e){ console.warn(e) }
+        try{ m.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none') }catch(e){}
       }
       try{
         if (m.isStyleLoaded?.()) apply()
@@ -290,12 +307,8 @@ export default {
     _applyEditsToMap(id, form){
       const m = this._getMap()
       if(!m || !m.getLayer) return
-      const setL = (k, v)=>{
-        try{ m.setLayoutProperty(id, k, (v===null||v===undefined||v==='')? null : v) }catch(e){}
-      }
-      const setP = (k, v)=>{
-        try{ m.setPaintProperty(id,  k, (v===null||v===undefined||v==='')? null : v) }catch(e){}
-      }
+      const setL = (k, v)=>{ try{ m.setLayoutProperty(id, k, (v===null||v===undefined||v==='')? null : v) }catch(e){} }
+      const setP = (k, v)=>{ try{ m.setPaintProperty(id,  k, (v===null||v===undefined||v==='')? null : v) }catch(e){} }
       const apply = ()=>{
         if(!m.getLayer(id)) { console.warn('[ExtLabelOnly] layer not found in map:', id); return }
         setL('text-size',        this._numOrNull(form.textSize))
@@ -311,7 +324,7 @@ export default {
       }catch(e){}
     },
 
-    /* ========== JSON アクセス ========== */
+    /* ===== JSON access ===== */
     _findLayersInJson(id){ return (osmBrightLabelOnly.layers || []).filter(x=>x.id===id) },
     _numOrNull(v){ if(v===null || v===undefined || v==='') return null; const n=Number(v); return Number.isFinite(n)?n:null }
   }
@@ -319,7 +332,7 @@ export default {
 </script>
 
 <style scoped>
-/* あなたが直したCSSをそのまま使う（変更なし） */
+/* ====== 共通（カード） ====== */
 .label-controller-root{
   width: 560px;
   max-width: 100%;
@@ -332,6 +345,8 @@ export default {
   display: flex;
   flex-direction: column;
 }
+
+/* ====== ツールバー ====== */
 .toolbar{
   display:flex; align-items:center;
   padding: 12px 16px;
@@ -339,8 +354,10 @@ export default {
   border-bottom: 1px solid rgba(0,0,0,.08);
 }
 .tools{ display:flex; align-items:center; gap:8px; width:100%; flex-wrap:nowrap; }
-.search{ flex:1 1 auto; min-width:140px; max-width:300px; }
+.bulk-btn{ flex:0 0 auto; } /* アイコンボタン */
+.search{ flex:1 1 auto; min-width:120px; max-width:220px; } /* ← 少し短くした */
 
+/* ====== セグメントトグル（下のチップ群と統一） ====== */
 :root{ --chip-radius:8px; --chip-h:28px; --chip-gap:8px; --chip-pad-x:12px; --chip-fs:13px; }
 .seg{ flex:0 0 auto; display:flex; gap:var(--chip-gap); background:transparent; padding:0; border:0; }
 .seg :deep(.v-btn){
@@ -356,27 +373,54 @@ export default {
   background:var(--seg-bg-active,#fff) !important; border-color:var(--seg-bd-active,#d1d5db) !important; box-shadow:none;
 }
 
+/* ====== 本体 ====== */
 .body{ padding:10px; }
-.panel{ background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.2); border-radius: 10px; padding: 12px; }
+.panel{
+  background: rgba(0,0,0,0.03);
+  border: 1px dashed rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 12px;
+}
 
+/* ====== リスト ====== */
 .list-head{
-  display:grid; grid-template-columns: 1fr 160px 64px 64px; gap:10px;
-  font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase;
+  display:grid;
+  grid-template-columns: 1fr 160px 64px 64px;
+  gap:10px;
+  font-size:11px;
+  color:#6b7280;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-transform:uppercase;
   padding: 0 12px 8px;
 }
-.list-scroll{ max-height: 48vh; overflow: auto; padding: 0 12px 8px; }
+.list-scroll{
+  max-height: 48vh;
+  overflow: auto;
+  padding: 0 12px 8px;
+}
 .item{
-  display:grid; grid-template-columns: 1fr 160px 64px 64px; align-items:center; gap:10px;
-  padding:10px 12px; border-top:1px solid rgba(0,0,0,0.06);
+  display:grid;
+  grid-template-columns: 1fr 160px 64px 64px;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-top:1px solid rgba(0,0,0,0.06);
 }
 .item:first-child{ border-top:none; }
 .item .id code{ font-size:12px; }
 
+/* chips */
 .seg-btn{ padding: 0 10px!important; }
-.chip{ border-radius: var(--chip-radius) !important; height: var(--chip-h) !important; font-size: var(--chip-fs) !important; }
+.chip{
+  border-radius: var(--chip-radius) !important;
+  height: var(--chip-h) !important;
+  font-size: var(--chip-fs) !important;
+}
 .chip-text{ background:#eef6ff; border:1px solid #cfe6ff; }
 .chip-icon{ background:#f9f3ff; border:1px solid #eadcff; }
 
+/* ====== ダイアログ ====== */
 .editor-dialog :deep(.v-overlay__scrim){ background: rgba(15,18,25,0.5) !important; }
 .editor-body{ padding: 8px 4px; }
 .grid.two-col{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
@@ -384,6 +428,7 @@ export default {
 .field-label{ display:block; margin-bottom:6px; font-size:12px; color:#6b7280; }
 .hint{ font-size:12px; color:#6b7280; }
 
+/* Vuetify fields 少しだけタイトに */
 :deep(.v-field--variant-outlined){ --v-field-padding-start: 8px; }
 :deep(.v-field__outline__start), :deep(.v-field__outline__end){ opacity:.9; }
 </style>
