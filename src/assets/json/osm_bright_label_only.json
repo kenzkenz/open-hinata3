@@ -567,7 +567,7 @@
       }
     },
     {
-      "id": "oh-vector-osm-bright-poi-level-1",
+      "id": "oh-vector-osm-bright-labels-only-poi-level-1-1",
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
