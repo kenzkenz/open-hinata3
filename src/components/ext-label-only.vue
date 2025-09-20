@@ -4,15 +4,6 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="tools">
-        <!-- すべて表示/非表示 -->
-        <v-btn icon variant="text" class="bulk-btn" title="すべて表示" @click="setAllVisibility(true)">
-          <v-icon>mdi-eye</v-icon>
-        </v-btn>
-        <v-btn icon variant="text" class="bulk-btn" title="すべて非表示" @click="setAllVisibility(false)">
-          <v-icon>mdi-eye-off</v-icon>
-        </v-btn>
-
-        <!-- 検索 -->
         <v-text-field
             v-model.trim="q"
             density="compact"
@@ -29,6 +20,19 @@
           <v-btn value="label" class="seg-btn is-label">ラベル</v-btn>
           <v-btn value="icon"  class="seg-btn is-icon">アイコン</v-btn>
         </v-btn-toggle>
+
+        <!-- すべて表示/非表示 -->
+        <v-btn icon variant="text" class="allvis" :title="'すべて表示'"  @click="setAllVisibility(true)">
+          <v-icon>mdi-eye</v-icon>
+        </v-btn>
+        <v-btn icon variant="text" class="allvis" :title="'すべて非表示'" @click="setAllVisibility(false)">
+          <v-icon>mdi-eye-off</v-icon>
+        </v-btn>
+
+        <!-- すべてリセット -->
+        <v-btn icon variant="text" class="allvis" :title="'すべてリセット'" @click="resetAll">
+          <v-icon>mdi-backup-restore</v-icon>
+        </v-btn>
       </div>
     </div>
 
@@ -52,10 +56,10 @@
             <div class="vis">
               <v-btn
                   icon size="small" variant="text"
-                  :title="ly.visible ? '非表示' : '表示'"
+                  :title="isActuallyVisible(ly.id) ? '非表示' : '表示'"
                   @click="toggleVisibility(ly.id)"
               >
-                <v-icon>{{ ly.visible ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon>
+                <v-icon>{{ isActuallyVisible(ly.id) ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon>
               </v-btn>
             </div>
 
@@ -91,7 +95,11 @@
             </div>
             <div>
               <label class="field-label">icon-size</label>
-              <v-text-field v-model="edit.form.iconSize" type="number" step="0.1" density="comfortable" variant="outlined" hide-details placeholder="例: 1.0" />
+              <v-text-field
+                  v-model="edit.form.iconSize"
+                  type="number" step="0.1" density="comfortable" variant="outlined" hide-details placeholder="例: 1.0"
+                  :disabled="!edit.target?.hasIcon"
+              />
             </div>
             <div>
               <label class="field-label">text-color</label>
@@ -110,13 +118,12 @@
               <v-select v-model="edit.form.symbolPlacement" :items="['point','line']" density="comfortable" variant="outlined" hide-details placeholder="point / line" />
             </div>
           </div>
-          <div class="hint mt-2">※ JSON（スタイル定義）を更新し、MapLibre にも即時反映します。</div>
         </v-card-text>
 
         <v-divider />
         <v-card-actions class="px-4 py-3 d-flex justify-end">
           <v-btn variant="text" @click="edit.open=false">閉じる</v-btn>
-          <v-btn color="primary" @click="applyEdit">保存</v-btn>
+          <v-btn color="primary" @click="applyEdit">反映</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -125,15 +132,16 @@
 
 <script>
 import osmBrightLabelOnly from '@/assets/json/osm_bright_label_only.json'
-const HIDE_PREFIX = 'oh-vector-osm-bright-labels-only-'
+
+const HIDE_PREFIX   = 'oh-vector-osm-bright-labels-only-'
+const ICON_ONLY_ID  = 'oh-vector-osm-bright-labels-only-poi-level-1-1'
 
 export default {
   name: 'ExtLabelOnly',
   props: {
     modelValue: { type: Boolean, default: true },
     open:       { type: Boolean, default: undefined },
-    mapName:    { type: String, required: true },
-    item:       { type: Object, default: null },
+    mapName:    { type: String,  required: true },
   },
   emits: ['update:modelValue','update:open'],
   data(){
@@ -154,6 +162,7 @@ export default {
         },
       },
       localZ: 2000,
+      originalStyle: null, // 読み込み直後のスタイルを保持（リセット用）
     }
   },
   computed:{
@@ -170,92 +179,91 @@ export default {
         if(this.kind==='icon')  return l.hasIcon === true
         return true
       })
-    }
+    },
+    map(){ return this.$store.state?.[this.mapName] || null }
   },
   watch:{
     modelValue(v){ if(v===false) this.$emit('update:open', false) },
     open(v){ if(v===false) this.$emit('update:modelValue', false) },
   },
-  mounted(){ this.buildFromJson() },
+  mounted(){
+    // リセット用にオリジナルを保持（ディープコピー）
+    this.originalStyle = JSON.parse(JSON.stringify(osmBrightLabelOnly))
+    this.buildFromJson()
+  },
   methods:{
-    /* ===== JSON から一覧を構築（同一ID集約） ===== */
     buildFromJson(){
       const style = osmBrightLabelOnly
-      const byId = new Map()
+      const list = []
       if(!style || !Array.isArray(style.layers)) return
-
-      let order = 0
       for(const l of style.layers){
         if(l.type !== 'symbol') continue
-        const layout = l.layout || {}
-        const hasText = layout['text-field'] !== undefined && layout['text-field'] !== null
-        const hasIcon = layout['icon-image'] !== undefined && layout['icon-image'] !== null
-        const visible = (layout.visibility ?? 'visible') !== 'none'
-        const cur = byId.get(l.id)
-        if(!cur){
-          byId.set(l.id, {
-            id: l.id,
-            displayName: (l.id || '').startsWith(HIDE_PREFIX) ? l.id.slice(HIDE_PREFIX.length) : l.id,
-            hasText, hasIcon, visible,
-            _order: ++order,
-          })
-        }else{
-          cur.hasText = cur.hasText || hasText
-          cur.hasIcon = cur.hasIcon || hasIcon
-          cur.visible = cur.visible || visible
-        }
+        const hasText = !!(l.layout && l.layout['text-field'] !== undefined && l.layout['text-field'] !== null)
+        const hasIcon = l.id === ICON_ONLY_ID // 仕様：このIDのみアイコンありとして扱う
+        list.push({
+          id: l.id,
+          displayName: (l.id || '').startsWith(HIDE_PREFIX) ? l.id.slice(HIDE_PREFIX.length) : l.id,
+          hasText, hasIcon,
+          visible: (l.layout?.visibility ?? 'visible') !== 'none'
+        })
       }
-      this.layers = Array.from(byId.values()).sort((a,b)=>a._order-b._order)
+      this.layers = list
     },
 
-    /* ===== すべて表示/非表示 ===== */
-    setAllVisibility(vis){
-      // UI
-      this.layers.forEach(l => { l.visible = vis })
-      // JSON（同ID全部）
-      for(const l of this.layers){
-        for(const def of this._findLayersInJson(l.id)){
-          def.layout = def.layout || {}
-          def.layout.visibility = vis ? 'visible' : 'none'
-        }
-      }
-      // Map
-      const m = this._getMap()
-      if(!m || !m.getLayer) return
-      const apply = ()=>{
-        for(const l of this.layers){
-          if(m.getLayer(l.id)){
-            try{ m.setLayoutProperty(l.id, 'visibility', vis ? 'visible' : 'none') }catch(e){}
-          }
-        }
-      }
-      try{
-        if (m.isStyleLoaded?.()) apply()
-        else m.once?.('styledata', apply)
-      }catch(e){}
-    },
-
-    /* ===== 個別表示/非表示 ===== */
+    // ===== 可視性 =====
     toggleVisibility(id){
       const t = this.layers.find(x=>x.id===id)
       if(!t) return
-      t.visible = !t.visible
-      for(const l of this._findLayersInJson(id)){
+      const newVis = !this.isActuallyVisible(id)
+      t.visible = newVis
+      const l = this._findLayerInJson(id)
+      if(l){
         l.layout = l.layout || {}
-        l.layout.visibility = t.visible ? 'visible' : 'none'
+        l.layout.visibility = newVis ? 'visible' : 'none'
       }
-      this._applyVisibilityToMap(id, t.visible)
+      this._setMapVisibility(id, newVis)
+    },
+    setAllVisibility(flag){
+      for(const t of this.layers){
+        t.visible = !!flag
+        const l = this._findLayerInJson(t.id)
+        if(l){
+          l.layout = l.layout || {}
+          l.layout.visibility = flag ? 'visible' : 'none'
+        }
+      }
+      if(this.map?.getStyle){
+        for(const t of this.layers){
+          this._setMapVisibility(t.id, !!flag)
+        }
+      }
+    },
+    isActuallyVisible(id){
+      try{
+        const v = this.map?.getLayoutProperty?.(id, 'visibility')
+        if(v === 'none') return false
+        if(v === 'visible') return true
+      }catch(e){}
+      const l = this.layers.find(x=>x.id===id)
+      return l ? !!l.visible : true
+    },
+    _setMapVisibility(id, flag){
+      try{
+        if(this.map?.getLayer?.(id)){
+          this.map.setLayoutProperty(id, 'visibility', flag ? 'visible' : 'none')
+        }
+      }catch(e){}
     },
 
-    /* ===== 編集 ===== */
+    // ===== 編集 =====
     openEdit(ly){
       this.edit.target = ly
-      const first = this._findLayersInJson(ly.id)[0]
-      const layout = first?.layout || {}
-      const paint  = first?.paint || {}
+      const l = this._findLayerInJson(ly.id)
+      const layout = l?.layout || {}
+      const paint  = l?.paint || {}
       this.edit.form = {
         textSize:        this._numOrNull(layout['text-size']),
-        iconSize:        this._numOrNull(layout['icon-size']),
+        iconSize:        this._numOrNull(layout['icon-size']), // icon-size は layout
         textColor:       paint['text-color'] ?? '',
         textHaloColor:   paint['text-halo-color'] ?? '',
         textHaloWidth:   this._numOrNull(paint['text-halo-width']),
@@ -263,69 +271,98 @@ export default {
       }
       this.edit.open = true
     },
-
     applyEdit(){
       const id = this.edit.target?.id
       if(!id) return
-      const defs = this._findLayersInJson(id)
-      for(const l of defs){
-        l.layout = l.layout || {}
-        l.paint  = l.paint  || {}
-        // layout
-        if(this.edit.form.textSize !== null && this.edit.form.textSize !== undefined) l.layout['text-size'] = Number(this.edit.form.textSize)
-        else delete l.layout['text-size']
-        if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement
-        else delete l.layout['symbol-placement']
+      const l = this._findLayerInJson(id)
+      if(!l) return
+      l.layout = l.layout || {}
+      l.paint  = l.paint  || {}
+
+      // JSON 反映（layout）
+      if(this.edit.form.textSize !== null && this.edit.form.textSize !== undefined) l.layout['text-size'] = Number(this.edit.form.textSize)
+      else delete l.layout['text-size']
+
+      if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement
+      else delete l.layout['symbol-placement']
+
+      // icon-size は ICON_ONLY_ID のみ維持
+      if(id === ICON_ONLY_ID && this.edit.target?.hasIcon){
         if(this.edit.form.iconSize !== null && this.edit.form.iconSize !== undefined) l.layout['icon-size'] = Number(this.edit.form.iconSize)
         else delete l.layout['icon-size']
-        // paint
-        if(this.edit.form.textColor)       l.paint['text-color'] = this.edit.form.textColor;           else delete l.paint['text-color']
-        if(this.edit.form.textHaloColor)   l.paint['text-halo-color'] = this.edit.form.textHaloColor;  else delete l.paint['text-halo-color']
-        if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
-        else delete l.paint['text-halo-width']
+      }else{
+        delete l.layout['icon-size']
       }
-      this._applyEditsToMap(id, this.edit.form)
-      this.edit.open = false
-    },
 
-    /* ===== MapLibre helper ===== */
-    _getMap(){ return this.$store?.state?.[this.mapName] || null },
+      // JSON 反映（paint）
+      if(this.edit.form.textColor)     l.paint['text-color'] = this.edit.form.textColor;         else delete l.paint['text-color']
+      if(this.edit.form.textHaloColor) l.paint['text-halo-color'] = this.edit.form.textHaloColor; else delete l.paint['text-halo-color']
+      if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
+      else delete l.paint['text-halo-width']
 
-    _applyVisibilityToMap(id, visible){
-      const m = this._getMap()
-      if(!m || !m.getLayer) return
-      const apply = () => {
-        if(!m.getLayer(id)) { console.warn('[ExtLabelOnly] layer not found in map:', id); return }
-        try{ m.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none') }catch(e){}
-      }
+      // Map 即時反映
       try{
-        if (m.isStyleLoaded?.()) apply()
-        else m.once?.('styledata', apply)
+        if(this.map?.getLayer?.(id)){
+          if('text-size' in l.layout) this.map.setLayoutProperty(id, 'text-size', l['layout']['text-size']); else this.map.setLayoutProperty(id, 'text-size', null)
+          if('symbol-placement' in l.layout) this.map.setLayoutProperty(id, 'symbol-placement', l['layout']['symbol-placement'])
+          if(id === ICON_ONLY_ID){
+            if('icon-size' in l.layout) this.map.setLayoutProperty(id, 'icon-size', l['layout']['icon-size']); else this.map.setLayoutProperty(id, 'icon-size', null)
+          }else{
+            this.map.setLayoutProperty(id, 'icon-size', null)
+          }
+          if('text-color' in l.paint) this.map.setPaintProperty(id, 'text-color', l['paint']['text-color']); else this.map.setPaintProperty(id, 'text-color', null)
+          if('text-halo-color' in l.paint) this.map.setPaintProperty(id, 'text-halo-color', l['paint']['text-halo-color']); else this.map.setPaintProperty(id, 'text-halo-color', null)
+          if('text-halo-width' in l.paint) this.map.setPaintProperty(id, 'text-halo-width', l['paint']['text-halo-width']); else this.map.setPaintProperty(id, 'text-halo-width', null)
+        }
       }catch(e){}
+      // ダイアログは閉じない
     },
 
-    _applyEditsToMap(id, form){
-      const m = this._getMap()
-      if(!m || !m.getLayer) return
-      const setL = (k, v)=>{ try{ m.setLayoutProperty(id, k, (v===null||v===undefined||v==='')? null : v) }catch(e){} }
-      const setP = (k, v)=>{ try{ m.setPaintProperty(id,  k, (v===null||v===undefined||v==='')? null : v) }catch(e){} }
-      const apply = ()=>{
-        if(!m.getLayer(id)) { console.warn('[ExtLabelOnly] layer not found in map:', id); return }
-        setL('text-size',        this._numOrNull(form.textSize))
-        setL('symbol-placement', form.symbolPlacement || null)
-        setL('icon-size',        this._numOrNull(form.iconSize))
-        setP('text-color',       form.textColor || null)
-        setP('text-halo-color',  form.textHaloColor || null)
-        setP('text-halo-width',  this._numOrNull(form.textHaloWidth))
+    // ===== すべてリセット =====
+    resetAll(){
+      if(!this.originalStyle) return
+      const origLayers = this.originalStyle.layers || []
+      const m = this.map
+
+      for (const cur of osmBrightLabelOnly.layers) {
+        if(cur.type !== 'symbol') continue
+        const orig = origLayers.find(x=>x.id===cur.id)
+        if(!orig) continue
+
+        // JSON（現在のスタイル）を元の状態へ戻す
+        cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
+        cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
+
+        // UI 側の visible 状態を同期
+        const ui = this.layers.find(x=>x.id===cur.id)
+        if(ui) ui.visible = (cur.layout?.visibility ?? 'visible') !== 'none'
+
+        // Map へ即時反映
+        if(m?.getLayer?.(cur.id)){
+          try{
+            // visibility
+            m.setLayoutProperty(cur.id, 'visibility', ui?.visible ? 'visible' : 'none')
+
+            // layout
+            m.setLayoutProperty(cur.id, 'text-size',        ('text-size' in (cur.layout||{})) ? cur.layout['text-size'] : null)
+            if('symbol-placement' in (cur.layout||{})) m.setLayoutProperty(cur.id, 'symbol-placement', cur.layout['symbol-placement'])
+            // icon-size は ICON_ONLY_ID のみ
+            if(cur.id === ICON_ONLY_ID){
+              m.setLayoutProperty(cur.id, 'icon-size', ('icon-size' in (cur.layout||{})) ? cur.layout['icon-size'] : null)
+            }else{
+              m.setLayoutProperty(cur.id, 'icon-size', null)
+            }
+
+            // paint
+            m.setPaintProperty(cur.id, 'text-color',      ('text-color'      in (cur.paint||{})) ? cur.paint['text-color'] : null)
+            m.setPaintProperty(cur.id, 'text-halo-color', ('text-halo-color' in (cur.paint||{})) ? cur.paint['text-halo-color'] : null)
+            m.setPaintProperty(cur.id, 'text-halo-width', ('text-halo-width' in (cur.paint||{})) ? cur.paint['text-halo-width'] : null)
+          }catch(e){}
+        }
       }
-      try{
-        if (m.isStyleLoaded?.()) apply()
-        else m.once?.('styledata', apply)
-      }catch(e){}
     },
 
-    /* ===== JSON access ===== */
-    _findLayersInJson(id){ return (osmBrightLabelOnly.layers || []).filter(x=>x.id===id) },
+    _findLayerInJson(id){ return osmBrightLabelOnly.layers.find(x=>x.id===id) },
     _numOrNull(v){ if(v===null || v===undefined || v==='') return null; const n=Number(v); return Number.isFinite(n)?n:null }
   }
 }
@@ -354,24 +391,37 @@ export default {
   border-bottom: 1px solid rgba(0,0,0,.08);
 }
 .tools{ display:flex; align-items:center; gap:8px; width:100%; flex-wrap:nowrap; }
-.bulk-btn{ flex:0 0 auto; } /* アイコンボタン */
-.search{ flex:1 1 auto; min-width:120px; max-width:220px; } /* ← 少し短くした */
 
-/* ====== セグメントトグル（下のチップ群と統一） ====== */
+/* 短く（ボタンを収める） */
+.search{ flex:1 1 auto; min-width:120px; max-width:200px; }
+
+.allvis{ margin-left: 2px; }
+
+/* ====== セグメントトグル ====== */
 :root{ --chip-radius:8px; --chip-h:28px; --chip-gap:8px; --chip-pad-x:12px; --chip-fs:13px; }
-.seg{ flex:0 0 auto; display:flex; gap:var(--chip-gap); background:transparent; padding:0; border:0; }
+.seg{
+  flex:0 0 auto; display:flex; gap:var(--chip-gap); background:transparent; padding:0; border:0;
+}
 .seg :deep(.v-btn){
-  text-transform:none; border-radius:var(--chip-radius) !important;
+  text-transform:none;
+  border-radius:var(--chip-radius) !important;
   height:var(--chip-h); line-height:var(--chip-h);
-  min-width:auto; padding:0 var(--chip-pad-x); font-size:var(--chip-fs);
-  box-shadow:none; border:1px solid var(--seg-bd,#e5e7eb); background:var(--seg-bg,#f7f8fa); color:#374151;
+  min-width:auto; padding:0 var(--chip-pad-x);
+  font-size:var(--chip-fs);
+  box-shadow:none;
+  border:1px solid var(--seg-bd,#e5e7eb);
+  background:var(--seg-bg,#f7f8fa);
+  color:#374151;
 }
 .seg .is-all   { --seg-bg:#f6f7fa; --seg-bd:#e5e7eb; --seg-bg-active:#ffffff; --seg-bd-active:#d1d5db; }
 .seg .is-label { --seg-bg:#eef6ff; --seg-bd:#cfe6ff; --seg-bg-active:#e7f0ff; --seg-bd-active:#9cc3ff; }
 .seg .is-icon  { --seg-bg:#f9f3ff; --seg-bd:#eadcff; --seg-bg-active:#f0eaff; --seg-bd-active:#c3b7ff; }
 .seg :deep(.v-btn.v-btn--active){
-  background:var(--seg-bg-active,#fff) !important; border-color:var(--seg-bd-active,#d1d5db) !important; box-shadow:none;
+  background:var(--seg-bg-active,#fff) !important;
+  border-color:var(--seg-bd-active,#d1d5db) !important;
+  box-shadow:none;
 }
+.seg-btn{ padding: 0 10px!important; }
 
 /* ====== 本体 ====== */
 .body{ padding:10px; }
@@ -410,8 +460,6 @@ export default {
 .item:first-child{ border-top:none; }
 .item .id code{ font-size:12px; }
 
-/* chips */
-.seg-btn{ padding: 0 10px!important; }
 .chip{
   border-radius: var(--chip-radius) !important;
   height: var(--chip-h) !important;
@@ -426,7 +474,6 @@ export default {
 .grid.two-col{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
 @media (max-width: 560px){ .grid.two-col{ grid-template-columns: 1fr; } }
 .field-label{ display:block; margin-bottom:6px; font-size:12px; color:#6b7280; }
-.hint{ font-size:12px; color:#6b7280; }
 
 /* Vuetify fields 少しだけタイトに */
 :deep(.v-field--variant-outlined){ --v-field-padding-start: 8px; }
