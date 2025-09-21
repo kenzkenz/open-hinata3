@@ -14,7 +14,7 @@
             @keydown.stop
         />
 
-        <!-- フィルタトグル（スマホ対応のため一時的に非表示。ロジックは残す） -->
+        <!-- （スマホ都合で一時非表示。ロジックは生存） -->
         <!--
         <v-btn-toggle v-model="kind" density="comfortable" mandatory class="seg">
           <v-btn value="all"   class="seg-btn is-all">すべて</v-btn>
@@ -23,22 +23,20 @@
         </v-btn-toggle>
         -->
 
-        <!-- すべて表示/非表示 -->
+        <!-- すべて表示/非表示/リセット -->
         <v-btn icon variant="text" class="allvis" :title="'すべて表示'"  @click="setAllVisibility(true)">
           <v-icon>mdi-eye</v-icon>
         </v-btn>
         <v-btn icon variant="text" class="allvis" :title="'すべて非表示'" @click="setAllVisibility(false)">
           <v-icon>mdi-eye-off</v-icon>
         </v-btn>
-
-        <!-- すべてリセット -->
         <v-btn icon variant="text" class="allvis" :title="'すべてリセット'" @click="resetAll">
           <v-icon>mdi-backup-restore</v-icon>
         </v-btn>
       </div>
     </div>
 
-    <!-- Body (list pane only) -->
+    <!-- Body -->
     <div class="body">
       <div class="panel">
         <div class="list-head">
@@ -46,9 +44,7 @@
         </div>
         <div class="list-scroll">
           <div class="item" v-for="(ly, i) in filtered" :key="ly.id + '-' + i">
-            <div class="id">
-              <code :title="ly.id">{{ ly.displayName }}</code>
-            </div>
+            <div class="id"><code :title="ly.id">{{ ly.displayName }}</code></div>
 
             <div class="kind">
               <v-chip v-if="ly.hasText" size="small" class="chip chip-text" label>ラベル</v-chip>
@@ -119,14 +115,25 @@
               <label class="field-label">symbol-placement</label>
               <v-select v-model="edit.form.symbolPlacement" :items="['point','line']" density="comfortable" variant="outlined" hide-details placeholder="point / line" />
             </div>
+
+            <!-- minzoom：トグルのみ（数値非表示） -->
+            <div class="minz-cell">
+              <label class="field-label">minzoom</label>
+              <v-switch
+                  class="minz-switch"
+                  v-model="edit.form.minzoomEnabled"
+                  hide-details density="compact" inset
+                  :color="edit.form.minzoomEnabled ? 'primary' : undefined"
+                  :ripple="false"
+              />
+              <label class="field-label" style="padding-left: 14px;">オフにすると小ズームでも表示されます。</label>
+            </div>
           </div>
         </v-card-text>
 
         <v-divider />
         <v-card-actions class="px-4 py-3 d-flex justify-end">
-          <!-- ★ 追加：このレイヤーだけリセット（ダイアログは閉じない） -->
-          <v-btn variant="outlined" color="secondary" @click="resetCurrent" class="mr-auto">リセット</v-btn>
-
+          <v-btn variant="outlined" @click="resetCurrent" class="mr-auto">リセット</v-btn>
           <v-btn variant="text" @click="edit.open=false">閉じる</v-btn>
           <v-btn color="primary" @click="applyEdit">反映</v-btn>
         </v-card-actions>
@@ -138,8 +145,8 @@
 <script>
 import osmBrightLabelOnly from '@/assets/json/osm_bright_label_only.json'
 
-const HIDE_PREFIX   = 'oh-vector-osm-bright-labels-only-'
-const ICON_ONLY_ID  = 'oh-vector-osm-bright-labels-only-poi-level-1-1'
+const HIDE_PREFIX  = 'oh-vector-osm-bright-labels-only-'
+const ICON_ONLY_ID = 'oh-vector-osm-bright-labels-only-poi-level-1-1'
 
 export default {
   name: 'ExtLabelOnly',
@@ -152,8 +159,8 @@ export default {
   data(){
     return {
       q: '',
-      kind: 'all', // all | label | icon（UIは一時非表示だがロジックは生存）
-      layers: [],  // {id, displayName, hasText, hasIcon, visible}
+      kind: 'all',
+      layers: [],
       edit: {
         open: false,
         target: null,
@@ -164,10 +171,12 @@ export default {
           textHaloColor: '',
           textHaloWidth: null,
           symbolPlacement: null,
+          minzoomEnabled: true,
+          minzoomOriginal: null,
         },
       },
       localZ: 2000,
-      originalStyle: null,   // マウント時に深いコピーを保持
+      originalStyle: null,
     }
   },
   computed:{
@@ -185,7 +194,7 @@ export default {
         return true
       })
     },
-    map(){ return this.$store.state?.[this.mapName] || null }
+    map(){ return this.$store.state?.[this.mapName] || null },
   },
   watch:{
     modelValue(v){ if(v===false) this.$emit('update:open', false) },
@@ -202,7 +211,7 @@ export default {
       if(!style || !Array.isArray(style.layers)) return
       for(const l of style.layers){
         if(l.type !== 'symbol') continue
-        const hasText = !!(l.layout && l.layout['text-field'] !== undefined && l.layout['text-field'] !== null)
+        const hasText = !!(l.layout && l.layout['text-field'] != null)
         const hasIcon = l.id === ICON_ONLY_ID
         list.push({
           id: l.id,
@@ -220,25 +229,15 @@ export default {
       const newVis = !this.isActuallyVisible(id)
       t.visible = newVis
       const l = this._findLayerInJson(id)
-      if(l){
-        l.layout = l.layout || {}
-        l.layout.visibility = newVis ? 'visible' : 'none'
-      }
+      if(l){ l.layout = l.layout || {}; l.layout.visibility = newVis ? 'visible' : 'none' }
       this._setMapVisibility(id, newVis)
     },
     setAllVisibility(flag){
       for(const t of this.layers){
         t.visible = !!flag
         const l = this._findLayerInJson(t.id)
-        if(l){
-          l.layout = l.layout || {}
-          l.layout.visibility = flag ? 'visible' : 'none'
-        }
-      }
-      if(this.map?.getStyle){
-        for(const t of this.layers){
-          this._setMapVisibility(t.id, !!flag)
-        }
+        if(l){ l.layout = l.layout || {}; l.layout.visibility = flag ? 'visible' : 'none' }
+        this._setMapVisibility(t.id, !!flag)
       }
     },
     isActuallyVisible(id){
@@ -263,6 +262,10 @@ export default {
       const l = this._findLayerInJson(ly.id)
       const layout = l?.layout || {}
       const paint  = l?.paint || {}
+
+      const orig = this._findLayerInOriginal(ly.id)
+      const originalMin = (orig && typeof orig.minzoom !== 'undefined') ? orig.minzoom : null
+
       this.edit.form = {
         textSize:        this._numOrNull(layout['text-size']),
         iconSize:        this._numOrNull(layout['icon-size']),
@@ -270,96 +273,95 @@ export default {
         textHaloColor:   paint['text-halo-color'] ?? '',
         textHaloWidth:   this._numOrNull(paint['text-halo-width']),
         symbolPlacement: layout['symbol-placement'] ?? null,
+        minzoomEnabled:  (typeof l?.minzoom !== 'undefined'),
+        minzoomOriginal: originalMin
       }
       this.edit.open = true
     },
 
     applyEdit(){
-      const id = this.edit.target?.id
-      if(!id) return
-      const l = this._findLayerInJson(id)
-      if(!l) return
-      l.layout = l.layout || {}
-      l.paint  = l.paint  || {}
+      const id = this.edit.target?.id; if(!id) return
+      const l = this._findLayerInJson(id); if(!l) return
+      l.layout = l.layout || {}; l.paint = l.paint || {}
 
-      if(this.edit.form.textSize !== null && this.edit.form.textSize !== undefined) l.layout['text-size'] = Number(this.edit.form.textSize)
-      else delete l.layout['text-size']
-
-      if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement
-      else delete l.layout['symbol-placement']
-
+      // JSON
+      if(this.edit.form.textSize != null) l.layout['text-size'] = Number(this.edit.form.textSize); else delete l.layout['text-size']
+      if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement; else delete l.layout['symbol-placement']
       if(id === ICON_ONLY_ID && this.edit.target?.hasIcon){
-        if(this.edit.form.iconSize !== null && this.edit.form.iconSize !== undefined) l.layout['icon-size'] = Number(this.edit.form.iconSize)
-        else delete l.layout['icon-size']
+        if(this.edit.form.iconSize != null) l.layout['icon-size'] = Number(this.edit.form.iconSize); else delete l.layout['icon-size']
       }else{
         delete l.layout['icon-size']
       }
-
       if(this.edit.form.textColor)     l.paint['text-color'] = this.edit.form.textColor;         else delete l.paint['text-color']
       if(this.edit.form.textHaloColor) l.paint['text-halo-color'] = this.edit.form.textHaloColor; else delete l.paint['text-halo-color']
-      if(this.edit.form.textHaloWidth !== null && this.edit.form.textHaloWidth !== undefined) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth)
-      else delete l['paint']['text-halo-width']
+      if(this.edit.form.textHaloWidth != null) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth); else delete l.paint['text-halo-width']
 
-      // Mapへ即時反映
-      this._applyToMap(id, l, /*fromReset=*/false)
-      // ダイアログは閉じない
-    },
-
-    // ★ 追加：このレイヤーだけ初期値に戻す（ダイアログは閉じない）
-    resetCurrent(){
-      const id = this.edit.target?.id
-      if(!id || !this.originalStyle) return
-
-      const orig = (this.originalStyle.layers || []).find(x=>x.id===id)
-      const cur  = this._findLayerInJson(id)
-      if(!orig || !cur) return
-
-      // JSONを初期状態に戻す
-      cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
-      cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
-
-      // UIの visible も初期状態に合わせる
-      const ui = this.layers.find(x=>x.id===id)
-      if(ui) ui.visible = (cur.layout?.visibility ?? 'visible') !== 'none'
-
-      // 編集フォームも初期値で更新（閉じずにそのまま見せる）
-      const layout = cur.layout || {}
-      const paint  = cur.paint  || {}
-      this.edit.form = {
-        textSize:        this._numOrNull(layout['text-size']),
-        iconSize:        this._numOrNull(layout['icon-size']),
-        textColor:       paint['text-color'] ?? '',
-        textHaloColor:   paint['text-halo-color'] ?? '',
-        textHaloWidth:   this._numOrNull(paint['text-halo-width']),
-        symbolPlacement: layout['symbol-placement'] ?? null,
+      // minzoom（ON=オリジナル / OFF=1 相当）
+      if(this.edit.form.minzoomEnabled){
+        if(this.edit.form.minzoomOriginal != null) l.minzoom = this.edit.form.minzoomOriginal
+        else delete l.minzoom
+      }else{
+        delete l.minzoom
       }
 
-      // Mapへ即時反映
-      this._applyToMap(id, cur, /*fromReset=*/true)
+      // Map 反映
+      const m = this.map
+      try{
+        if(m?.getLayer?.(id)){
+          if('text-size' in l.layout) m.setLayoutProperty(id,'text-size', l.layout['text-size']); else m.setLayoutProperty(id,'text-size', null)
+          if('symbol-placement' in l.layout) m.setLayoutProperty(id,'symbol-placement', l.layout['symbol-placement'])
+          if(id === ICON_ONLY_ID){
+            if('icon-size' in l.layout) m.setLayoutProperty(id,'icon-size', l.layout['icon-size']); else m.setLayoutProperty(id,'icon-size', null)
+          }else{
+            m.setLayoutProperty(id,'icon-size', null)
+          }
+          if('text-color' in l.paint) m.setPaintProperty(id,'text-color', l.paint['text-color']); else m.setPaintProperty(id,'text-color', null)
+          if('text-halo-color' in l.paint) m.setPaintProperty(id,'text-halo-color', l.paint['text-halo-color']); else m.setPaintProperty(id,'text-halo-color', null)
+          if('text-halo-width' in l.paint) m.setPaintProperty(id,'text-halo-width', l.paint['text-halo-width']); else m.setPaintProperty(id,'text-halo-width', null)
+
+          const max = this._resolveMaxZoom(id, l)
+          const min = this.edit.form.minzoomEnabled
+              ? (this.edit.form.minzoomOriginal != null ? this.edit.form.minzoomOriginal : 0)
+              : 1
+          m.setLayerZoomRange(id, min, max)
+        }
+      }catch(e){}
     },
 
-    // MapLibreへ反映する共通処理
-    _applyToMap(id, layerJson, fromReset){
+    resetCurrent(){
+      const trg = this.edit.target; if(!trg) return
+      const orig = this._findLayerInOriginal(trg.id)
+      const cur  = this._findLayerInJson(trg.id)
+      if(!orig || !cur) return
+
+      cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
+      cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
+      if(typeof orig.minzoom !== 'undefined') cur.minzoom = orig.minzoom
+      else delete cur.minzoom
+
+      // 画面のフォームを再読込（ダイアログは開いたまま）
+      this.openEdit({ id: trg.id, displayName: trg.displayName, hasIcon: trg.hasIcon, hasText: trg.hasText })
+
+      // Map 反映
       const m = this.map
-      if(!m?.getLayer?.(id)) return
       try{
-        // visibility
-        const vis = (layerJson.layout?.visibility ?? 'visible')
-        m.setLayoutProperty(id, 'visibility', vis)
+        if(m?.getLayer?.(trg.id)){
+          m.setLayoutProperty(trg.id,'visibility', (cur.layout?.visibility ?? 'visible') !== 'none' ? 'visible' : 'none')
+          if('text-size' in cur.layout) m.setLayoutProperty(trg.id,'text-size', cur.layout['text-size']); else m.setLayoutProperty(trg.id,'text-size', null)
+          if('symbol-placement' in cur.layout) m.setLayoutProperty(trg.id,'symbol-placement', cur.layout['symbol-placement'])
+          if(trg.id === ICON_ONLY_ID){
+            if('icon-size' in cur.layout) m.setLayoutProperty(trg.id,'icon-size', cur.layout['icon-size']); else m.setLayoutProperty(trg.id,'icon-size', null)
+          }else{
+            m.setLayoutProperty(trg.id,'icon-size', null)
+          }
+          m.setPaintProperty(trg.id,'text-color',      ('text-color'      in (cur.paint||{})) ? cur.paint['text-color'] : null)
+          m.setPaintProperty(trg.id,'text-halo-color', ('text-halo-color' in (cur.paint||{})) ? cur.paint['text-halo-color'] : null)
+          m.setPaintProperty(trg.id,'text-halo-width', ('text-halo-width' in (cur.paint||{})) ? cur.paint['text-halo-width'] : null)
 
-        // layout
-        if('text-size' in (layerJson.layout||{})) m.setLayoutProperty(id, 'text-size', layerJson.layout['text-size']); else m.setLayoutProperty(id, 'text-size', null)
-        if('symbol-placement' in (layerJson.layout||{})) m.setLayoutProperty(id, 'symbol-placement', layerJson.layout['symbol-placement'])
-        if(id === ICON_ONLY_ID){
-          if('icon-size' in (layerJson.layout||{})) m.setLayoutProperty(id, 'icon-size', layerJson.layout['icon-size']); else m.setLayoutProperty(id, 'icon-size', null)
-        }else{
-          m.setLayoutProperty(id, 'icon-size', null)
+          const max = this._resolveMaxZoom(trg.id, cur)
+          const min = (typeof cur.minzoom !== 'undefined') ? cur.minzoom : 1
+          m.setLayerZoomRange(trg.id, min, max)
         }
-
-        // paint
-        if('text-color' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-color', layerJson.paint['text-color']); else m.setPaintProperty(id, 'text-color', null)
-        if('text-halo-color' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-halo-color', layerJson.paint['text-halo-color']); else m.setPaintProperty(id, 'text-halo-color', null)
-        if('text-halo-width' in (layerJson.paint||{})) m.setPaintProperty(id, 'text-halo-width', layerJson.paint['text-halo-width']); else m.setPaintProperty(id, 'text-halo-width', null)
       }catch(e){}
     },
 
@@ -367,20 +369,20 @@ export default {
       if(!this.originalStyle) return
       const origLayers = this.originalStyle.layers || []
       const m = this.map
-
       for (const cur of osmBrightLabelOnly.layers) {
         if(cur.type !== 'symbol') continue
-        const orig = origLayers.find(x=>x.id===cur.id)
-        if(!orig) continue
+        const orig = origLayers.find(x=>x.id===cur.id); if(!orig) continue
 
         cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
         cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
+        if(typeof orig.minzoom !== 'undefined') cur.minzoom = orig.minzoom
+        else delete cur.minzoom
 
         const ui = this.layers.find(x=>x.id===cur.id)
         if(ui) ui.visible = (cur.layout?.visibility ?? 'visible') !== 'none'
 
-        if(m?.getLayer?.(cur.id)){
-          try{
+        try{
+          if(m?.getLayer?.(cur.id)){
             m.setLayoutProperty(cur.id, 'visibility', ui?.visible ? 'visible' : 'none')
             m.setLayoutProperty(cur.id, 'text-size', ('text-size' in (cur.layout||{})) ? cur.layout['text-size'] : null)
             if('symbol-placement' in (cur.layout||{})) m.setLayoutProperty(cur.id, 'symbol-placement', cur.layout['symbol-placement'])
@@ -392,21 +394,36 @@ export default {
             m.setPaintProperty(cur.id, 'text-color',      ('text-color'      in (cur.paint||{})) ? cur.paint['text-color'] : null)
             m.setPaintProperty(cur.id, 'text-halo-color', ('text-halo-color' in (cur.paint||{})) ? cur.paint['text-halo-color'] : null)
             m.setPaintProperty(cur.id, 'text-halo-width', ('text-halo-width' in (cur.paint||{})) ? cur.paint['text-halo-width'] : null)
-          }catch(e){}
-        }
+
+            const max = this._resolveMaxZoom(cur.id, cur)
+            const min = (typeof cur.minzoom !== 'undefined') ? cur.minzoom : 1
+            m.setLayerZoomRange(cur.id, min, max)
+          }
+        }catch(e){}
       }
     },
 
+    _resolveMaxZoom(id, layerJson){
+      const jsonMax = (typeof layerJson?.maxzoom !== 'undefined') ? layerJson.maxzoom : undefined
+      if(typeof jsonMax !== 'undefined') return jsonMax
+      try{
+        const lyr = this.map?.getLayer?.(id)
+        if(lyr && typeof lyr.maxzoom !== 'undefined') return lyr.maxzoom
+      }catch(e){}
+      return 24
+    },
+
     _findLayerInJson(id){ return osmBrightLabelOnly.layers.find(x=>x.id===id) },
+    _findLayerInOriginal(id){ return this.originalStyle?.layers?.find(x=>x.id===id) || null },
     _numOrNull(v){ if(v===null || v===undefined || v==='') return null; const n=Number(v); return Number.isFinite(n)?n:null }
   }
 }
 </script>
 
 <style scoped>
-/* ====== 共通（カード） ====== */
+/* ===== カード ===== */
 .label-controller-root{
-  width: 380px;  /* スマホ幅 */
+  width: 380px;
   max-width: 100%;
   box-sizing: border-box;
   background: #fff;
@@ -418,112 +435,116 @@ export default {
   flex-direction: column;
 }
 
-/* ====== ツールバー ====== */
-.toolbar{
-  display:flex; align-items:center;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0));
-  border-bottom: 1px solid rgba(0,0,0,.08);
-}
+/* ===== ツールバー ===== */
+.toolbar{ display:flex; align-items:center; padding:10px 12px; background:linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,.08); }
 .tools{ display:flex; align-items:center; gap:6px; width:100%; flex-wrap:nowrap; }
-
-/* 検索フィールドを短く（スマホでボタンが並ぶように） */
 .search{ flex:1 1 auto; min-width:100px; max-width:150px; }
+.allvis{ margin-left:0; }
 
-.allvis{ margin-left: 0; }
-
-/* ====== セグメントトグル（いまは非表示：上のtemplateでコメントアウト） ====== */
-:root{ --chip-radius:8px; --chip-h:28px; --chip-gap:8px; --chip-pad-x:12px; --chip-fs:13px; }
-.seg{
-  flex:0 0 auto; display:flex; gap:var(--chip-gap); background:transparent; padding:0; border:0;
-}
-.seg :deep(.v-btn){
-  text-transform:none;
-  border-radius:var(--chip-radius) !important;
-  height:var(--chip-h); line-height:var(--chip-h);
-  min-width:auto; padding:0 var(--chip-pad-x);
-  font-size:var(--chip-fs);
-  box-shadow:none;
-  border:1px solid var(--seg-bd,#e5e7eb);
-  background:var(--seg-bg,#f7f8fa);
-  color:#374151;
-}
-.seg .is-all   { --seg-bg:#f6f7fa; --seg-bd:#e5e7eb; --seg-bg-active:#ffffff; --seg-bd-active:#d1d5db; }
-.seg .is-label { --seg-bg:#eef6ff; --seg-bd:#cfe6ff; --seg-bg-active:#e7f0ff; --seg-bd-active:#9cc3ff; }
-.seg .is-icon  { --seg-bg:#f9f3ff; --seg-bd:#eadcff; --seg-bg-active:#f0eaff; --seg-bd-active:#c3b7ff; }
-.seg :deep(.v-btn.v-btn--active){
-  background:var(--seg-bg-active,#fff) !important;
-  border-color:var(--seg-bd-active,#d1d5db) !important;
-  box-shadow:none;
-}
-.seg-btn{ padding: 0 10px!important; }
-
-/* ====== 本体 ====== */
+/* ===== 本体 ===== */
 .body{ padding:8px; }
-.panel{
-  background: rgba(0,0,0,0.03);
-  border: 1px dashed rgba(0,0,0,0.2);
-  border-radius: 10px;
-  padding: 10px;
-}
+.panel{ background:rgba(0,0,0,.03); border:1px dashed rgba(0,0,0,.2); border-radius:10px; padding:10px; }
 
-/* ====== リスト（スマホ幅に合わせて列幅調整） ====== */
+/* グリッド：列幅を minmax 固定でブレ防止 */
 .list-head{
   display:grid;
-  grid-template-columns: 1fr 110px 48px 48px; /* 380px用 */
+  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
   gap:8px;
-  font-size:11px;
-  color:#6b7280;
-  font-weight:600;
-  letter-spacing:.02em;
-  text-transform:uppercase;
-  padding: 0 8px 6px;
+  font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase;
+  padding:0 8px 6px;
 }
-.list-scroll{
-  max-height: 50vh;
-  overflow: auto;
-  padding: 0 8px 6px;
-}
+.list-scroll{ max-height:50vh; overflow:auto; padding:0 8px 6px; }
 .item{
   display:grid;
-  grid-template-columns: 1fr 110px 48px 48px;
+  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
   align-items:center;
   gap:8px;
   padding:8px 8px;
-  border-top:1px solid rgba(0,0,0,0.06);
+  border-top:1px solid rgba(0,0,0,.06);
+  min-height:48px;              /* 行高を固定に近づける */
 }
 .item:first-child{ border-top:none; }
-.item .id code{ font-size:12px; word-break: break-all; }
 
-/* 種別（ラベル/アイコン）を必ず1行で収める：最小限の修正だけ */
-.kind{
-  display:flex; align-items:center; justify-content:flex-start;
-  gap:4px;
-  flex-wrap:nowrap;
-  white-space:nowrap;
-  min-width:0;
+/* レイヤー名：一行省略・高さ安定化 */
+.id{ min-width:0; }
+.id code{
+  display:block;
+  font-size:12px;
+  line-height:1.3;
   overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  margin:0; padding:0;
 }
-.kind .chip{
-  border-radius: 8px !important;
-  height: 22px !important;
-  line-height: 22px !important;
-  font-size: 11px !important;
-  padding: 0 6px !important;
-  min-width: auto !important;
-  flex: 0 0 auto;
+
+/* 種別チップ：上下の余白ゼロ、横並び固定 */
+.kind{ display:flex; align-items:center; gap:4px; flex-wrap:nowrap; white-space:nowrap; min-width:0; }
+.chip{
+  border-radius:8px !important;
+  height:22px !important;
+  line-height:22px !important;
+  font-size:11px !important;
+  padding:0 6px !important;
+  min-width:auto !important;
+  margin:0 !important;          /* ← 余計な上下マージン禁止 */
 }
 .chip-text{ background:#eef6ff; border:1px solid #cfe6ff; }
 .chip-icon{ background:#f9f3ff; border:1px solid #eadcff; }
 
-/* ====== ダイアログ ====== */
+/* アイコン列の幅 */
+.vis :deep(.v-btn), .edit :deep(.v-btn){ width:36px; height:36px; }
+
+/* ===== ダイアログ ===== */
 .editor-dialog :deep(.v-overlay__scrim){ background: rgba(15,18,25,0.5) !important; }
-.editor-body{ padding: 8px 4px; }
+.editor-body{ padding:8px 4px; }
 .grid.two-col{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
-@media (max-width: 560px){ .grid.two-col{ grid-template-columns: 1fr; } }
+@media (max-width:560px){ .grid.two-col{ grid-template-columns:1fr; } }
 .field-label{ display:block; margin-bottom:6px; font-size:12px; color:#6b7280; }
 
-/* Vuetify fields 少しだけタイトに */
-:deep(.v-field--variant-outlined){ --v-field-padding-start: 8px; }
+/* minzoom スイッチを小さめに */
+.minz-cell{ display:flex; align-items:center; gap:10px; }
+.minz-switch :deep(.v-selection-control){ transform: scale(0.92); transform-origin:left center; }
+
+/* Vuetify fields（タイトめ） */
+:deep(.v-field--variant-outlined){ --v-field-padding-start:8px; }
 :deep(.v-field__outline__start), :deep(.v-field__outline__end){ opacity:.9; }
+
+/* 行本体：複数行でもブレにくいよう上揃え＋一定の内側余白 */
+.item{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
+  align-items: start;       /* ← ここを start に */
+  gap:8px;
+  padding:8px 8px;
+  border-top:1px solid rgba(0,0,0,.06);
+}
+
+/* レイヤー名：省略せず正しく改行させる */
+.id{ min-width:0; }
+.id code{
+  display:block;
+  font-size:12px;
+  line-height:1.3;
+  white-space: normal;      /* ← 正しく改行 */
+  word-break: break-word;   /* ← 長い単語も折り返し */
+  overflow: visible;        /* ← 省略記号を出さない */
+  margin:0; padding:0;
+}
+
+/* 種別（ラベル/アイコン）は中央揃えのまま */
+.kind{
+  display:flex; align-items:center; gap:4px;
+  flex-wrap:nowrap; white-space:nowrap; min-width:0;
+  align-self: center;        /* ← 行が高くなっても中央に見える */
+}
+
+/* 右側のアイコン列は行が高くなっても中央に */
+.vis, .edit{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+}
+
+
 </style>

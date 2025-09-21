@@ -44,7 +44,7 @@ import {closeAllPopups, popup} from "@/js/popup";
 import {isNumber} from "lodash";
 import sanitizeHtml from 'sanitize-html';
 import {Viewer} from "mapillary-js";
-
+import * as UTIF from 'utif';
 const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -5592,26 +5592,56 @@ export function fncPngDl(printMap) {
 }
 
 
-export function pngDownload() {
-    const map01 = store.state.map01
+// UTIF 専用版（npm で `npm i utif` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+// UTIF 専用版（npm で `npm i utif` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+// UTIF 専用版（npm で `npm i utif` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+// UTIF 専用版（npm で `npm i utif` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+// UTIF 専用版（npm で `npm i c` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+// UTIF 専用版（npm で `npm i utif` 済みを前提）
+// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
+//    例) main.js など: import * as UTIF from 'utif'
+//    ここではこのファイル単体でも動くように import しています。
+export async function pngDownload() {
+    const map01 = store.state.map01;
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
-    // 地図のレンダリング完了を待機
+
+    if (!UTIF || typeof UTIF.encodeImage !== 'function' || typeof UTIF.encode !== 'function') {
+        console.error('[pngDownload] UTIF not available. Make sure `import * as UTIF from "utif"` is present.');
+        return;
+    }
+
     map01.once('idle', async () => {
         const zip = new JSZip();
 
         const canvas = map01.getCanvas();
-        const imageData = canvas.toDataURL("image/png");
-        // PNGファイルを追加
-        const pngBlob = await fetch(imageData).then(res => res.blob());
-        zip.file("map-image.png", pngBlob);
+        const imageDataUrl = canvas.toDataURL('image/png');
 
-        // ワールドファイルの生成
-        const bounds = map01.getBounds(); // 表示範囲を取得
+        // PNG をBlob化してZIPへ（このBlobをTIFFにも使う）
+        const pngBlob = await (await fetch(imageDataUrl)).blob();
+        zip.file('map-image.png', pngBlob);
+
+        // Bounds & canvas size
+        const bounds = map01.getBounds();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
 
-        // WGS84 -> 平面直角座標系に変換
-        const topLeft = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
+        // 4326 -> 平面直角
+        const topLeft     = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
         const bottomRight = proj4('EPSG:4326', code, [bounds.getEast(), bounds.getSouth()]);
 
         const xMin = topLeft[0];
@@ -5619,21 +5649,24 @@ export function pngDownload() {
         const yMin = bottomRight[1];
         const yMax = topLeft[1];
 
-        const pixelWidth = (xMax - xMin) / canvasWidth;
+        const pixelWidth  = (xMax - xMin) / canvasWidth;
         const pixelHeight = (yMax - yMin) / canvasHeight;
 
-        const worldFileContent = `
-            ${pixelWidth}
-            0
-            0
-            -${pixelHeight}
-            ${xMin + pixelWidth / 2}
-            ${yMax - pixelHeight / 2}`.trim();
+        // WorldFile（PGW/TFW 共通内容）
+        const worldFileContent = [
+            `${pixelWidth}`,
+            '0',
+            '0',
+            `${-pixelHeight}`,
+            `${xMin + pixelWidth / 2}`,
+            `${yMax - pixelHeight / 2}`
+        ].join('\n');
 
-        // ワールドファイルをZIPに追加
-        zip.file("map-image.pgw", worldFileContent);
+        // PGW / TFW
+        zip.file('map-image.pgw', worldFileContent);
+        zip.file('map-image.tfw', worldFileContent);
 
-        // simaファイル
+        // SIMA（Shift-JIS）
         let simaData = 'G00,01,open-hinata3,\n';
         simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
         simaData += 'A00,\n';
@@ -5644,59 +5677,271 @@ export function pngDownload() {
         A01Text += 'A01,' + 4 + ',' + 4 + ',' + yMin.toFixed(3) + ',' + xMax.toFixed(3) + ',\n';
         simaData += A01Text + 'A99,END,,\n';
 
-        // UTF-8で文字列をコードポイントに変換
         const utf8Array = window.Encoding.stringToCode(simaData);
-        // UTF-8からShift-JISに変換
         const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
-        // Shift-JISエンコードされたデータをUint8Arrayに格納
-        const uint8Array = new Uint8Array(shiftJISArray);
-        // Blobを作成
-        const simaBlob = new Blob([uint8Array], { type: 'application/octet-stream' });
+        const simaBlob = new Blob([new Uint8Array(shiftJISArray)], { type: 'application/octet-stream' });
+        zip.file('map-image.sim', simaBlob);
 
-        // simaファイルをZIPに追加
-        zip.file("map-image.sim", simaBlob);
+        // DXF（四隅ポイント）
+        const geojson = { type: 'FeatureCollection', features: [] };
+        const pt = (x, y) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [x, y] }, properties: {} });
+        geojson.features.push(
+            pt(Number(xMin.toFixed(3)), Number(yMin.toFixed(3))),
+            pt(Number(xMax.toFixed(3)), Number(yMin.toFixed(3))),
+            pt(Number(xMin.toFixed(3)), Number(yMax.toFixed(3))),
+            pt(Number(xMax.toFixed(3)), Number(yMax.toFixed(3)))
+        );
+        const dxfString = geojsonToDXF(geojson);
+        zip.file('map-image.dxf', dxfString);
 
-        // DXFファイル
-        const geojson = {
-            type: "FeatureCollection",
-            features: []
-        };
-
-        function createPoint(x, y) {
-            return {
-                type: "Feature",
-                geometry: {
-                    type: "Point",
-                    coordinates: [x, y]
-                },
-                properties: {}
-            };
+        // TIFF（PNG Blob から生成：WebGLバッファクリア問題を回避）
+        try {
+            const tiffBlob = await encodeCanvasToTIFF_fromPNGBlob(pngBlob, canvas.width, canvas.height);
+            console.log('[pngDownload] tiffBlob size =', tiffBlob && tiffBlob.size);
+            if (tiffBlob && tiffBlob.size > 0) {
+                zip.file('map-image.tif', tiffBlob);
+            } else {
+                console.warn('[pngDownload] TIFF blob is empty or undefined. Skipped adding TIFF.');
+            }
+        } catch (e) {
+            console.error('[pngDownload] TIFF encode failed.', e);
         }
 
-        const points = [
-            createPoint(xMin.toFixed(3), yMin.toFixed(3)),
-            createPoint(xMax.toFixed(3), yMin.toFixed(3)),
-            createPoint(xMin.toFixed(3), yMax.toFixed(3)),
-            createPoint(xMax.toFixed(3), yMax.toFixed(3))
-        ];
-
-        geojson.features.push(...points);
-        const dxfString = geojsonToDXF(geojson);
-
-        // DXFファイルをZIPに追加
-        zip.file("map-image.dxf", dxfString);
-
-        // ZIPファイルを生成してダウンロード
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        const zipLink = document.createElement("a");
+        // ZIP を生成・DL
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipLink = document.createElement('a');
         zipLink.href = URL.createObjectURL(zipBlob);
-        zipLink.download = "map-files.zip";
+        zipLink.download = 'map-files.zip';
         zipLink.click();
         URL.revokeObjectURL(zipLink.href);
     });
+
+    // idle を確実に発火させる微小ズーム
     const currentZoom = map01.getZoom();
-    map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+    map01.zoomTo(currentZoom + 1e-14);
 }
+
+// PNG Blob → TIFF Blob（まず UTIF、ダメなら内蔵 Baseline RGB TIFF）
+async function encodeCanvasToTIFF_fromPNGBlob(pngBlob, width, height) {
+    // PNG → 2D Canvas（preserveDrawingBuffer=false でも安全）
+    let bitmap = null;
+    if (window.createImageBitmap) bitmap = await createImageBitmap(pngBlob);
+
+    const off = document.createElement('canvas');
+    off.width = width; off.height = height;
+    const ctx2d = off.getContext('2d', { willReadFrequently: true });
+    if (!ctx2d) throw new Error('2D context unavailable');
+
+    if (bitmap) {
+        ctx2d.drawImage(bitmap, 0, 0);
+        try { bitmap.close && bitmap.close(); } catch {}
+    } else {
+        await new Promise((res, rej) => {
+            const img = new Image();
+            img.onload = () => { ctx2d.drawImage(img, 0, 0); URL.revokeObjectURL(img.src); res(); };
+            img.onerror = rej;
+            img.src = URL.createObjectURL(pngBlob);
+        });
+    }
+
+    const img = ctx2d.getImageData(0, 0, width, height);
+    const rgba = new Uint8Array(img.data.buffer);
+
+    // 1) UTIF で試す
+    try {
+        let ifd = UTIF.encodeImage(rgba, width, height);
+        let buf = UTIF.encode([ifd]);
+        let byteLen = buf && (buf.byteLength ?? buf.length) || 0;
+        if (byteLen < 1024) {
+            ifd = UTIF.encodeImage(rgba, width, height, true);
+            buf = UTIF.encode([ifd]);
+            byteLen = buf && (buf.byteLength ?? buf.length) || 0;
+        }
+        if (byteLen >= 1024) return new Blob([buf], { type: 'image/tiff' });
+        console.warn('[encodeCanvasToTIFF_fromPNGBlob] UTIF small buffer, fallback.');
+    } catch (e) {
+        console.warn('[encodeCanvasToTIFF_fromPNGBlob] UTIF failed, fallback.', e);
+    }
+
+    // 2) 内蔵 Baseline TIFF（無圧縮 RGB）
+    const rgb = new Uint8Array(width * height * 3);
+    for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
+        rgb[j] = rgba[i]; rgb[j+1] = rgba[i+1]; rgb[j+2] = rgba[i+2];
+    }
+    const arrBuf = encodeBaselineTIFFRGB(width, height, rgb);
+    return new Blob([arrBuf], { type: 'image/tiff' });
+}
+
+// --- 内蔵 Baseline TIFF エンコーダ（Little Endian, Uncompressed, RGB, 8bit, 単一ストリップ） ---
+function encodeBaselineTIFFRGB(width, height, rgb /* Uint8Array length=W*H*3 */) {
+    const LE = true;
+    const headerBytes = 8; // 'II' 2B + 42 2B + IFDOffset 4B
+    const ifdEntryCount = 10; // 必須＋最低限
+    const ifdBytes = 2 /*count*/ + ifdEntryCount*12 + 4 /*nextIFD*/;
+    const bitsPerSampleCount = 3 * 2; // 3 SHORTs (8,8,8)
+    const bitsPerSampleOffset = headerBytes + ifdBytes;
+
+    const imageDataOffset = headerBytes + ifdBytes + bitsPerSampleCount;
+    const imageByteCount = rgb.byteLength; // width*height*3
+
+    const buf = new ArrayBuffer(imageDataOffset + imageByteCount);
+    const dv = new DataView(buf);
+    let p = 0;
+
+    // Header
+    dv.setUint8(p++, 0x49); dv.setUint8(p++, 0x49); // 'II'
+    dv.setUint16(p, 42, LE); p += 2;
+    dv.setUint32(p, headerBytes, LE); p += 4; // IFD at offset 8
+
+    // IFD
+    dv.setUint16(p, ifdEntryCount, LE); p += 2;
+
+    const TYPE_SHORT = 3, TYPE_LONG = 4;
+    function writeIFD(tag, type, count, valueOrOffset) {
+        dv.setUint16(p, tag, LE); p += 2;
+        dv.setUint16(p, type, LE); p += 2;
+        dv.setUint32(p, count, LE); p += 4;
+        if (type === TYPE_SHORT && count === 1) {
+            dv.setUint16(p, valueOrOffset, LE); p += 2; dv.setUint16(p, 0, LE); p += 2;
+        } else if (type === TYPE_SHORT && count === 3) {
+            dv.setUint32(p, valueOrOffset, LE); p += 4;
+        } else {
+            dv.setUint32(p, valueOrOffset, LE); p += 4;
+        }
+    }
+
+    // Entries
+    writeIFD(256, TYPE_LONG, 1, width);                 // ImageWidth
+    writeIFD(257, TYPE_LONG, 1, height);                // ImageLength
+    writeIFD(258, TYPE_SHORT, 3, bitsPerSampleOffset);  // BitsPerSample [8,8,8]
+    writeIFD(259, TYPE_SHORT, 1, 1);                    // Compression: None
+    writeIFD(262, TYPE_SHORT, 1, 2);                    // Photometric: RGB
+    writeIFD(273, TYPE_LONG, 1, imageDataOffset);       // StripOffsets
+    writeIFD(277, TYPE_SHORT, 1, 3);                    // SamplesPerPixel
+    writeIFD(278, TYPE_LONG, 1, height);                // RowsPerStrip (single strip)
+    writeIFD(279, TYPE_LONG, 1, imageByteCount);        // StripByteCounts
+    writeIFD(284, TYPE_SHORT, 1, 1);                    // PlanarConfiguration: chunky
+
+    dv.setUint32(p, 0, LE); p += 4; // nextIFD=0
+
+    // BitsPerSample[3]
+    let q = bitsPerSampleOffset;
+    dv.setUint16(q, 8, LE); q += 2;
+    dv.setUint16(q, 8, LE); q += 2;
+    dv.setUint16(q, 8, LE); q += 2;
+
+    // Image data
+    new Uint8Array(buf, imageDataOffset, imageByteCount).set(rgb);
+    return buf;
+}
+
+
+
+// export function pngDownload() {
+//     const map01 = store.state.map01
+//     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
+//     // 地図のレンダリング完了を待機
+//     map01.once('idle', async () => {
+//         const zip = new JSZip();
+//
+//         const canvas = map01.getCanvas();
+//         const imageData = canvas.toDataURL("image/png");
+//         // PNGファイルを追加
+//         const pngBlob = await fetch(imageData).then(res => res.blob());
+//         zip.file("map-image.png", pngBlob);
+//
+//         // ワールドファイルの生成
+//         const bounds = map01.getBounds(); // 表示範囲を取得
+//         const canvasWidth = canvas.width;
+//         const canvasHeight = canvas.height;
+//
+//         // WGS84 -> 平面直角座標系に変換
+//         const topLeft = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
+//         const bottomRight = proj4('EPSG:4326', code, [bounds.getEast(), bounds.getSouth()]);
+//
+//         const xMin = topLeft[0];
+//         const xMax = bottomRight[0];
+//         const yMin = bottomRight[1];
+//         const yMax = topLeft[1];
+//
+//         const pixelWidth = (xMax - xMin) / canvasWidth;
+//         const pixelHeight = (yMax - yMin) / canvasHeight;
+//
+//         const worldFileContent = `
+//             ${pixelWidth}
+//             0
+//             0
+//             -${pixelHeight}
+//             ${xMin + pixelWidth / 2}
+//             ${yMax - pixelHeight / 2}`.trim();
+//
+//         // ワールドファイルをZIPに追加
+//         zip.file("map-image.pgw", worldFileContent);
+//
+//         // simaファイル
+//         let simaData = 'G00,01,open-hinata3,\n';
+//         simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
+//         simaData += 'A00,\n';
+//         let A01Text = '';
+//         A01Text += 'A01,' + 1 + ',' + 1 + ',' + yMax.toFixed(3) + ',' + xMin.toFixed(3) + ',\n';
+//         A01Text += 'A01,' + 2 + ',' + 2 + ',' + yMax.toFixed(3) + ',' + xMax.toFixed(3) + ',\n';
+//         A01Text += 'A01,' + 3 + ',' + 3 + ',' + yMin.toFixed(3) + ',' + xMin.toFixed(3) + ',\n';
+//         A01Text += 'A01,' + 4 + ',' + 4 + ',' + yMin.toFixed(3) + ',' + xMax.toFixed(3) + ',\n';
+//         simaData += A01Text + 'A99,END,,\n';
+//
+//         // UTF-8で文字列をコードポイントに変換
+//         const utf8Array = window.Encoding.stringToCode(simaData);
+//         // UTF-8からShift-JISに変換
+//         const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
+//         // Shift-JISエンコードされたデータをUint8Arrayに格納
+//         const uint8Array = new Uint8Array(shiftJISArray);
+//         // Blobを作成
+//         const simaBlob = new Blob([uint8Array], { type: 'application/octet-stream' });
+//
+//         // simaファイルをZIPに追加
+//         zip.file("map-image.sim", simaBlob);
+//
+//         // DXFファイル
+//         const geojson = {
+//             type: "FeatureCollection",
+//             features: []
+//         };
+//
+//         function createPoint(x, y) {
+//             return {
+//                 type: "Feature",
+//                 geometry: {
+//                     type: "Point",
+//                     coordinates: [x, y]
+//                 },
+//                 properties: {}
+//             };
+//         }
+//
+//         const points = [
+//             createPoint(xMin.toFixed(3), yMin.toFixed(3)),
+//             createPoint(xMax.toFixed(3), yMin.toFixed(3)),
+//             createPoint(xMin.toFixed(3), yMax.toFixed(3)),
+//             createPoint(xMax.toFixed(3), yMax.toFixed(3))
+//         ];
+//
+//         geojson.features.push(...points);
+//         const dxfString = geojsonToDXF(geojson);
+//
+//         // DXFファイルをZIPに追加
+//         zip.file("map-image.dxf", dxfString);
+//
+//         // ZIPファイルを生成してダウンロード
+//         const zipBlob = await zip.generateAsync({ type: "blob" });
+//         const zipLink = document.createElement("a");
+//         zipLink.href = URL.createObjectURL(zipBlob);
+//         zipLink.download = "map-files.zip";
+//         zipLink.click();
+//         URL.revokeObjectURL(zipLink.href);
+//     });
+//     const currentZoom = map01.getZoom();
+//     map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
+// }
 
 // 改修必要あり！！！！！
 export function geojsonAddLayer (map, geojson, isFitBounds, fileExtension) {
