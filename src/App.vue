@@ -1451,15 +1451,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
 
           <!-- コンパス -->
-          <div class="compassDiv"  v-if="s_isPrint">
+          <div :class="!s_isPrint && isHeadingUp ? 'compass-div-headingup' : 'compass-div'" v-if="s_isPrint || isHeadingUp">
             <svg class="compass-icon" viewBox="0 0 100 100" width="40" height="40">
               <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
               <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
               <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
             </svg>
           </div>
-          <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
 
+          <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
 
           <div :style="{fontSize: textPx + 'px', color: titleColor}" class="print-title">
             <MiniTooltip text="click me" :offset-x="0" :offset-y="4">
@@ -2409,7 +2409,7 @@ export default {
     centerMarker: null,
     currentMarker: null,
     isTracking: false,
-    isHeadingUp: true,
+    isHeadingUp: false,
     compass: null,
     dialog: false,
     dialogForSima: false,
@@ -6260,6 +6260,9 @@ export default {
       this.isTracking = true
       if (up === 'h') {
         this.compass.turnOn()
+        this.isHeadingUp = true
+      } else {
+        this.isHeadingUp = false
       }
       if (this.currentMarker) this.currentMarker.remove();
       history('現在位置継続取得スタート',window.location.href)
@@ -6268,6 +6271,7 @@ export default {
       if (this.watchId === null) {
         this.dialogForWatchPosition = true
       } else {
+        this.isHeadingUp = false
         navigator.geolocation.clearWatch(this.watchId);
         this.watchId = null;
         this.centerMarker.remove()
@@ -11268,7 +11272,7 @@ select {
   pointer-events: none; /* マーカークリックなどを通す */
 }
 
-.compassDiv {
+.compass-div {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -11277,7 +11281,15 @@ select {
   pointer-events: none;
   z-index: 1;
 }
-
+.compass-div-headingup {
+  position: absolute;
+  top: 60px;
+  left: calc(50% - 20px);
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 1;
+}
 .scale-ratio {
   position: absolute;
   bottom: 35px;
