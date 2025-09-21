@@ -44,7 +44,6 @@ import {closeAllPopups, popup} from "@/js/popup";
 import {isNumber} from "lodash";
 import sanitizeHtml from 'sanitize-html';
 import {Viewer} from "mapillary-js";
-import * as UTIF from 'utif';
 const MAPILLARY_CLIENT_ID = 'MLY|9491817110902654|13f790a1e9fc37ee2d4e65193833812c'
 
 // import publicChk from '@/components/Dialog-myroom'
@@ -5592,38 +5591,12 @@ export function fncPngDl(printMap) {
 }
 
 
-// UTIF 専用版（npm で `npm i utif` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
-// UTIF 専用版（npm で `npm i utif` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
-// UTIF 専用版（npm で `npm i utif` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
-// UTIF 専用版（npm で `npm i utif` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
-// UTIF 専用版（npm で `npm i c` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
-// UTIF 専用版（npm で `npm i utif` 済みを前提）
-// ※ Vite/Webpack/Nuxt 等のエントリで import してください。
-//    例) main.js など: import * as UTIF from 'utif'
-//    ここではこのファイル単体でも動くように import しています。
+// ※ UTIF の import は削除
+// import * as UTIF from 'utif';
+
 export async function pngDownload() {
     const map01 = store.state.map01;
     const code = zahyokei.find(item => item.kei === store.state.zahyokei).code;
-
-    if (!UTIF || typeof UTIF.encodeImage !== 'function' || typeof UTIF.encode !== 'function') {
-        console.error('[pngDownload] UTIF not available. Make sure `import * as UTIF from "utif"` is present.');
-        return;
-    }
 
     map01.once('idle', async () => {
         const zip = new JSZip();
@@ -5631,16 +5604,15 @@ export async function pngDownload() {
         const canvas = map01.getCanvas();
         const imageDataUrl = canvas.toDataURL('image/png');
 
-        // PNG をBlob化してZIPへ（このBlobをTIFFにも使う）
+        // PNG（Blob化してZIPへ、かつTIFF化にも使う）
         const pngBlob = await (await fetch(imageDataUrl)).blob();
         zip.file('map-image.png', pngBlob);
 
-        // Bounds & canvas size
+        // ----- ここはあなたの元コードそのまま（bounds→world file→SIMA→DXF） -----
         const bounds = map01.getBounds();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
 
-        // 4326 -> 平面直角
         const topLeft     = proj4('EPSG:4326', code, [bounds.getWest(), bounds.getNorth()]);
         const bottomRight = proj4('EPSG:4326', code, [bounds.getEast(), bounds.getSouth()]);
 
@@ -5652,21 +5624,14 @@ export async function pngDownload() {
         const pixelWidth  = (xMax - xMin) / canvasWidth;
         const pixelHeight = (yMax - yMin) / canvasHeight;
 
-        // WorldFile（PGW/TFW 共通内容）
         const worldFileContent = [
-            `${pixelWidth}`,
-            '0',
-            '0',
-            `${-pixelHeight}`,
-            `${xMin + pixelWidth / 2}`,
-            `${yMax - pixelHeight / 2}`
+            `${pixelWidth}`, '0', '0', `${-pixelHeight}`,
+            `${xMin + pixelWidth / 2}`, `${yMax - pixelHeight / 2}`
         ].join('\n');
 
-        // PGW / TFW
         zip.file('map-image.pgw', worldFileContent);
         zip.file('map-image.tfw', worldFileContent);
 
-        // SIMA（Shift-JIS）
         let simaData = 'G00,01,open-hinata3,\n';
         simaData += 'Z00,座標ﾃﾞｰﾀ,,\n';
         simaData += 'A00,\n';
@@ -5676,13 +5641,11 @@ export async function pngDownload() {
         A01Text += 'A01,' + 3 + ',' + 3 + ',' + yMin.toFixed(3) + ',' + xMin.toFixed(3) + ',\n';
         A01Text += 'A01,' + 4 + ',' + 4 + ',' + yMin.toFixed(3) + ',' + xMax.toFixed(3) + ',\n';
         simaData += A01Text + 'A99,END,,\n';
-
         const utf8Array = window.Encoding.stringToCode(simaData);
         const shiftJISArray = window.Encoding.convert(utf8Array, 'SJIS');
         const simaBlob = new Blob([new Uint8Array(shiftJISArray)], { type: 'application/octet-stream' });
         zip.file('map-image.sim', simaBlob);
 
-        // DXF（四隅ポイント）
         const geojson = { type: 'FeatureCollection', features: [] };
         const pt = (x, y) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [x, y] }, properties: {} });
         geojson.features.push(
@@ -5693,11 +5656,11 @@ export async function pngDownload() {
         );
         const dxfString = geojsonToDXF(geojson);
         zip.file('map-image.dxf', dxfString);
+        // ----- ここまで -----
 
-        // TIFF（PNG Blob から生成：WebGLバッファクリア問題を回避）
+        // TIFF（PNG Blob → Baseline TIFF）
         try {
-            const tiffBlob = await encodeCanvasToTIFF_fromPNGBlob(pngBlob, canvas.width, canvas.height);
-            console.log('[pngDownload] tiffBlob size =', tiffBlob && tiffBlob.size);
+            const tiffBlob = await encodePNGToBaselineTIFF(pngBlob, canvas.width, canvas.height);
             if (tiffBlob && tiffBlob.size > 0) {
                 zip.file('map-image.tif', tiffBlob);
             } else {
@@ -5721,9 +5684,9 @@ export async function pngDownload() {
     map01.zoomTo(currentZoom + 1e-14);
 }
 
-// PNG Blob → TIFF Blob（まず UTIF、ダメなら内蔵 Baseline RGB TIFF）
-async function encodeCanvasToTIFF_fromPNGBlob(pngBlob, width, height) {
-    // PNG → 2D Canvas（preserveDrawingBuffer=false でも安全）
+// PNG Blob → Baseline TIFF（無圧縮 RGB, 8bit, 単一ストリップ）
+async function encodePNGToBaselineTIFF(pngBlob, width, height) {
+    // PNG → 2D Canvas（WebGLのバッファクリア問題の影響なし）
     let bitmap = null;
     if (window.createImageBitmap) bitmap = await createImageBitmap(pngBlob);
 
@@ -5731,6 +5694,12 @@ async function encodeCanvasToTIFF_fromPNGBlob(pngBlob, width, height) {
     off.width = width; off.height = height;
     const ctx2d = off.getContext('2d', { willReadFrequently: true });
     if (!ctx2d) throw new Error('2D context unavailable');
+
+    // 透過があっても白地に合成されるよう、先に白で塗る
+    ctx2d.save();
+    ctx2d.globalCompositeOperation = 'source-over';
+    ctx2d.fillStyle = '#ffffff';
+    ctx2d.fillRect(0, 0, width, height);
 
     if (bitmap) {
         ctx2d.drawImage(bitmap, 0, 0);
@@ -5743,31 +5712,17 @@ async function encodeCanvasToTIFF_fromPNGBlob(pngBlob, width, height) {
             img.src = URL.createObjectURL(pngBlob);
         });
     }
+    ctx2d.restore();
 
     const img = ctx2d.getImageData(0, 0, width, height);
-    const rgba = new Uint8Array(img.data.buffer);
+    const rgba = img.data; // Uint8ClampedArray
 
-    // 1) UTIF で試す
-    try {
-        let ifd = UTIF.encodeImage(rgba, width, height);
-        let buf = UTIF.encode([ifd]);
-        let byteLen = buf && (buf.byteLength ?? buf.length) || 0;
-        if (byteLen < 1024) {
-            ifd = UTIF.encodeImage(rgba, width, height, true);
-            buf = UTIF.encode([ifd]);
-            byteLen = buf && (buf.byteLength ?? buf.length) || 0;
-        }
-        if (byteLen >= 1024) return new Blob([buf], { type: 'image/tiff' });
-        console.warn('[encodeCanvasToTIFF_fromPNGBlob] UTIF small buffer, fallback.');
-    } catch (e) {
-        console.warn('[encodeCanvasToTIFF_fromPNGBlob] UTIF failed, fallback.', e);
-    }
-
-    // 2) 内蔵 Baseline TIFF（無圧縮 RGB）
+    // RGBA → RGB（Aは破棄）
     const rgb = new Uint8Array(width * height * 3);
     for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
         rgb[j] = rgba[i]; rgb[j+1] = rgba[i+1]; rgb[j+2] = rgba[i+2];
     }
+
     const arrBuf = encodeBaselineTIFFRGB(width, height, rgb);
     return new Blob([arrBuf], { type: 'image/tiff' });
 }
@@ -5834,6 +5789,7 @@ function encodeBaselineTIFFRGB(width, height, rgb /* Uint8Array length=W*H*3 */)
     new Uint8Array(buf, imageDataOffset, imageByteCount).set(rgb);
     return buf;
 }
+
 
 
 

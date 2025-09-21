@@ -337,7 +337,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
       <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
-      <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">PNGダウンロード</v-btn>
+      <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">画面保存</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
 
       <!--      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />-->

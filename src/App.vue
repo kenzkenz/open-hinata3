@@ -7885,7 +7885,10 @@ export default {
               }
             ]
           },
-          { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
+          // { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
+          { label: '画面保存', onSelect: () => {
+            pngDownload();
+          }},
           { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
           {
             label: '点追加＆削除',
