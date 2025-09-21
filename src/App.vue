@@ -2370,6 +2370,7 @@ export default {
     centerMarker: null,
     currentMarker: null,
     isTracking: false,
+    isHeadingUp: true,
     compass: null,
     dialog: false,
     dialogForSima: false,
@@ -6217,7 +6218,9 @@ export default {
       if (this.watchId === null) {
         this.startWatchPosition()
         this.isTracking = true
-        // this.compass.turnOn()
+        if (this.isHeadingUp) {
+          this.compass.turnOn()
+        }
         if (this.currentMarker) this.currentMarker.remove();
         history('現在位置継続取得スタート',window.location.href)
       } else {
@@ -6227,7 +6230,9 @@ export default {
         this.centerMarker = null
         this.isTracking = false
         this.currentMarker = null
-        // this.compass.turnOff()
+        this.compass.turnOff()
+        const map = this.$store.state.map01
+        map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
         history('現在位置継続取得ストップ',window.location.href)
       }
     },
