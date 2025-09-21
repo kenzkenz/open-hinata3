@@ -400,6 +400,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="dialogForWatchPosition" max-width="500px">
+        <v-card>
+          <v-card-title>
+            orientation
+          </v-card-title>
+          <v-card-text>
+            <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
+            <v-btn style="margin-left: 0px;" @click="watchPosition('n')">固定</v-btn>
+            <v-btn style="margin-left: 20px;" @click="watchPosition('h')">回転</v-btn>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <v-dialog class="exclude-overlay" v-model="s_dialogForPicture" max-width="400px" :style="{zIndex: dialogForPictureZindex}">
         <v-card>
           <v-card-title>
@@ -1486,7 +1503,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
           <!--右メニュー-->
           <div id="right-top-div" v-show="mapName === 'map01' && !isIframe">
-            <span v-if="!s_isPrint">
+            <div v-if="!s_isPrint">
               <div v-if="isRightDiv">
 <!--                <div v-if="isRightDiv2">-->
                   <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
@@ -1549,37 +1566,59 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   </template>
                 </FanMenu>
 
-
-
               </div>
-            </span>
-          </div>
-
-          <span class="terrain-btn-span" v-show="mapName === 'map01' || (mapName === 'map02' && !s_isPrint)">
-          <div :id="'terrain-btn-div-' + mapName"
-               class="terrain-btn-div"
-          >
-            <div class="terrain-btn-container">
-              <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
-              <v-btn type="button" class="terrain-btn-up terrain-btn" @pointerdown="pressPitchUp(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-up fa-lg hover'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-down terrain-btn" @pointerdown="pressPitchDown(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-down fa-lg'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-left terrain-btn" @pointerdown="pressRotateRight(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-left fa-lg'></i></v-btn>
-              <v-btn type="button" class="terrain-btn-right terrain-btn" @pointerdown=" pressRotateLeft(mapName)" @pointerup="releaseOrientationButtons"><i class='fa fa-arrow-right fa-lg'></i></v-btn>
-              <v-btn icon type="button" class="terrain-btn-center terrain-btn" @pointerdown="terrainReset(mapName)"><v-icon>mdi-undo</v-icon></v-btn>
             </div>
           </div>
-          <div class="terrain-btn-expand-div">
-            <v-btn icon type="button" @pointerdown="terrainBtnExpand"><v-icon>mdi-arrow-expand</v-icon></v-btn>
+
+          <div class="terrain-btn-wrap" v-show="mapName === 'map01' || (mapName === 'map02' && !s_isPrint)">
+            <div
+                :id="'terrain-btn-div-' + mapName"
+                class="terrain-btn-div"
+            >
+              <div class="terrain-btn-container">
+                <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
+
+                <v-btn type="button" class="terrain-btn-up terrain-btn"
+                       @pointerdown="pressPitchUp(mapName)" @pointerup="releaseOrientationButtons">
+                  <i class="fa fa-arrow-up fa-lg hover"></i>
+                </v-btn>
+
+                <v-btn type="button" class="terrain-btn-down terrain-btn"
+                       @pointerdown="pressPitchDown(mapName)" @pointerup="releaseOrientationButtons">
+                  <i class="fa fa-arrow-down fa-lg"></i>
+                </v-btn>
+
+                <v-btn type="button" class="terrain-btn-left terrain-btn"
+                       @pointerdown="pressRotateRight(mapName)" @pointerup="releaseOrientationButtons">
+                  <i class="fa fa-arrow-left fa-lg"></i>
+                </v-btn>
+
+                <v-btn type="button" class="terrain-btn-right terrain-btn"
+                       @pointerdown="pressRotateLeft(mapName)" @pointerup="releaseOrientationButtons">
+                  <i class="fa fa-arrow-right fa-lg"></i>
+                </v-btn>
+
+                <v-btn icon type="button" class="terrain-btn-center terrain-btn"
+                       @pointerdown="terrainReset(mapName)">
+                  <v-icon>mdi-undo</v-icon>
+                </v-btn>
+              </div>
+            </div>
+
+            <div class="terrain-btn-expand-div">
+              <v-btn icon type="button" @pointerdown="terrainBtnExpand">
+                <v-icon>mdi-arrow-expand</v-icon>
+              </v-btn>
+            </div>
+
+            <div class="zoom-div" v-if="!s_isPrint">
+              zoom={{ zoom.toFixed(2) }} {{ elevation }}<br>
+              {{ s_address }}<br>
+              {{ s_zahyokei }}
+              {{ s_jdpCoordinates }}
+            </div>
           </div>
 
-          <div class="zoom-div" v-if="!s_isPrint && !isSmall500">
-            zoom={{zoom.toFixed(2)}} {{elevation}}<br>
-            {{s_address}}
-            <br>
-            {{s_zahyokei}}
-            {{s_jdpCoordinates}}
-          </div>
-          </span>
 
           <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
           <DialogMyroom v-if="mapName === 'map01'" :mapName=mapName />
@@ -2509,6 +2548,7 @@ export default {
     stopSpin: null,
     stopPitch: null,
     showWarpWizard: false,
+    dialogForWatchPosition: false,
     aaa: null,
   }),
   computed: {
@@ -6214,7 +6254,32 @@ export default {
         );
       }
     },
+    watchPosition (up) {
+      this.dialogForWatchPosition = false
+      this.startWatchPosition()
+      this.isTracking = true
+      if (up === 'h') {
+        this.compass.turnOn()
+      }
+      if (this.currentMarker) this.currentMarker.remove();
+      history('現在位置継続取得スタート',window.location.href)
+    },
     toggleWatchPosition () {
+      if (this.watchId === null) {
+        this.dialogForWatchPosition = true
+      } else {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+        this.centerMarker.remove()
+        this.centerMarker = null
+        this.isTracking = false
+        this.currentMarker = null
+        this.compass.turnOff()
+        const map = this.$store.state.map01
+        map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
+        history('現在位置継続取得ストップ',window.location.href)      }
+    },
+    toggleWatchPosition2 () {
       if (this.watchId === null) {
         this.startWatchPosition()
         this.isTracking = true
