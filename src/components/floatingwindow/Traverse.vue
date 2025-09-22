@@ -1,12 +1,13 @@
+
 <template>
   <!-- 最小UI（Vuetify想定）。親から v-model:open で開閉制御可 -->
   <div v-show="isOpen" class="oh-surveyor-root">
     <div class="oh-toolbar">
       <div class="left">
-        <v-btn size="small" icon variant="text" @click="centerToA" :title="'既知点Aへ移動'">
+        <v-btn size="small" icon variant="text" @click="centerToA" :title="'既知点Aへ移動'" :disabled="!hasA">
           <v-icon>mdi-crosshairs-gps</v-icon>
         </v-btn>
-        <v-btn size="small" icon variant="text" @click="centerToB" :title="'既知点Bへ移動'">
+        <v-btn size="small" icon variant="text" @click="centerToB" :title="'既知点Bへ移動'" :disabled="!hasB">
           <v-icon>mdi-crosshairs</v-icon>
         </v-btn>
         <v-divider vertical class="mx-2"></v-divider>
@@ -33,17 +34,17 @@
         <div class="mr-6">
           <div class="text-caption mb-1">既知点A（基点）</div>
           <div class="d-flex align-center gap-1">
-            <v-text-field v-model.number="A.lng" label="経度" type="number" density="compact" hide-details style="max-width:160px" />
-            <v-text-field v-model.number="A.lat" label="緯度" type="number" density="compact" hide-details style="max-width:160px" />
-            <v-btn size="x-small" variant="text" @click="useMapCenterAs('A')">Map中心</v-btn>
+            <v-text-field v-model.number="A.lng" label="経度" placeholder="例: 139.7" type="number" density="compact" hide-details style="max-width:160px" />
+            <v-text-field v-model.number="A.lat" label="緯度" placeholder="例: 35.6" type="number" density="compact" hide-details style="max-width:160px" />
+            <v-btn variant="text" @click="useMapCenterAs('A')">Map中心</v-btn>
           </div>
         </div>
         <div>
           <div class="text-caption mb-1">既知点B（終点）</div>
           <div class="d-flex align-center gap-1">
-            <v-text-field v-model.number="B.lng" label="経度" type="number" density="compact" hide-details style="max-width:160px" />
-            <v-text-field v-model.number="B.lat" label="緯度" type="number" density="compact" hide-details style="max-width:160px" />
-            <v-btn size="x-small" variant="text" @click="useMapCenterAs('B')">Map中心</v-btn>
+            <v-text-field v-model.number="B.lng" label="経度" placeholder="例: 139.7" type="number" density="compact" hide-details style="max-width:160px" />
+            <v-text-field v-model.number="B.lat" label="緯度" placeholder="例: 35.6" type="number" density="compact" hide-details style="max-width:160px" />
+            <v-btn variant="text" @click="useMapCenterAs('B')">Map中心</v-btn>
           </div>
         </div>
       </div>
@@ -53,27 +54,34 @@
     <v-card class="pa-3 mb-2" elevation="1">
       <div class="d-flex align-center justify-space-between mb-2">
         <div class="text-subtitle-2">観測区間（方位角・距離）</div>
-        <v-switch class="oh-switch-compact" v-model="useBowditch" inset density="compact" hide-details label="ボーディッチ補正"></v-switch>
+        <v-switch
+            v-model="useBowditch"
+            inset
+            density="compact"
+            hide-details
+            label="ボーディッチ補正"
+            class="oh-switch-compact" color="primary"
+        ></v-switch>
       </div>
 
       <v-table density="compact" class="oh-tight-table">
         <thead>
         <tr>
-          <th style="width:30px">#</th>
+          <th style="width:40px">#</th>
           <th style="width:150px">方位角[°]</th>
           <th style="width:150px">距離[m]</th>
           <th>備考</th>
-          <th style="width:60px"></th>
+          <th style="width:50px"></th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="(leg, i) in legs" :key="i">
           <td class="text-center">{{ i+1 }}</td>
           <td>
-            <v-text-field v-model.number="leg.bearing" type="number" density="compact" hide-details :min="0" :max="360" class="oh-compact-field" />
+            <v-text-field v-model.number="leg.bearing" type="number" placeholder="例: 90" density="compact" hide-details :min="0" :max="360" class="oh-compact-field" />
           </td>
           <td>
-            <v-text-field v-model.number="leg.distance" type="number" density="compact" hide-details :min="0" class="oh-compact-field" />
+            <v-text-field v-model.number="leg.distance" type="number" placeholder="例: 12.34" density="compact" hide-details :min="0" class="oh-compact-field" />
           </td>
           <td>
             <v-text-field v-model="leg.note" density="compact" hide-details class="oh-compact-field" />
@@ -86,15 +94,15 @@
       </v-table>
 
       <div class="d-flex mt-2">
-        <v-text-field v-model.number="newLeg.bearing" label="方位角[°]" type="number" density="compact" hide-details style="max-width:140px" />
-        <v-text-field v-model.number="newLeg.distance" label="距離[m]" type="number" density="compact" hide-details style="max-width:140px" class="ml-2" />
+        <v-text-field v-model.number="newLeg.bearing" label="方位角[°]" placeholder="例: 90" type="number" density="compact" hide-details style="max-width:140px" />
+        <v-text-field v-model.number="newLeg.distance" label="距離[m]" placeholder="例: 12.34" type="number" density="compact" hide-details style="max-width:140px" class="ml-2" />
         <v-text-field v-model="newLeg.note" label="備考" density="compact" hide-details class="ml-2" />
         <v-btn class="ml-2" size="small" @click="pushNewLeg">追加</v-btn>
       </div>
     </v-card>
 
     <!-- 結果サマリ -->
-    <v-card class="pa-3" elevation="1">
+    <v-card class="pa-3" elevation="1" style="margin-bottom: 10px;">
       <div class="text-subtitle-2 mb-2">計算結果</div>
       <div v-if="computedChain.length===0" class="text-caption">区間を入力してください。</div>
       <div v-else>
@@ -144,8 +152,8 @@ export default {
   props: { isOpen: { type: Boolean, default: true } },
   data(){
     return {
-      A: {lng: 139.7671, lat: 35.6812}, // デフォルト: 東京駅
-      B: {lng: 139.7671, lat: 35.6822},
+      A: {lng: null, lat: null}, // 初期は未記入
+      B: {lng: null, lat: null},
       legs: [],
       newLeg: { bearing: 0, distance: 0, note: '' },
       useBowditch: true,
@@ -158,9 +166,11 @@ export default {
     }
   },
   computed:{
+    hasA(){ return this.A && Number.isFinite(this.A.lng) && Number.isFinite(this.A.lat); },
+    hasB(){ return this.B && Number.isFinite(this.B.lng) && Number.isFinite(this.B.lat); },
     computedChain(){
       // 区間列から座標列を生成（未補正）
-      if(!this.A || this.legs.length===0) return [];
+      if(!this.hasA || this.legs.length===0) return [];
       const pts = [];
       let cur = lngLatToMeters(this.A.lng, this.A.lat);
       pts.push({ idx: 0, ...metersToLngLat(cur.x, cur.y) });
@@ -180,7 +190,7 @@ export default {
       return this.computedChain[this.computedChain.length-1];
     },
     closure(){
-      if(!this.calcEndRaw) return {dx:0,dy:0,len:0};
+      if(!this.calcEndRaw || !this.hasB) return {dx:0,dy:0,len:0};
       const endXY = lngLatToMeters(this.calcEndRaw.lng, this.calcEndRaw.lat);
       const Bxy = lngLatToMeters(this.B.lng, this.B.lat);
       const dx = Bxy.x - endXY.x;
@@ -190,7 +200,7 @@ export default {
     },
     adjustedChain(){
       // Bowditch: 各辺の距離比で Δx,Δy を按分
-      if(!this.useBowditch || this.legs.length===0) return this.computedChain;
+      if(!this.useBowditch || this.legs.length===0 || !this.hasA) return this.computedChain;
       const total = this.legs.reduce((s,l)=>s+(Number(l.distance)||0),0);
       if(total<=0) return this.computedChain;
       const adjPts = [];
@@ -240,8 +250,8 @@ export default {
       if(which==='A') { this.A = {lng:c.lng, lat:c.lat}; }
       else if(which==='B'){ this.B = {lng:c.lng, lat:c.lat}; }
     },
-    centerToA(){ const map=this.$store?.state?.map01; if(!map) return; map.flyTo({center:this.A, zoom:18}); },
-    centerToB(){ const map=this.$store?.state?.map01; if(!map) return; map.flyTo({center:this.B, zoom:18}); },
+    centerToA(){ const map=this.$store?.state?.map01; if(!map || !this.hasA) return; map.flyTo({center:this.A, zoom:18}); },
+    centerToB(){ const map=this.$store?.state?.map01; if(!map || !this.hasB) return; map.flyTo({center:this.B, zoom:18}); },
     flyToChain(){
       const map=this.$store?.state?.map01; if(!map||this.adjustedChain.length===0) return;
       const coords = this.adjustedChain.map(p=>[p.lng,p.lat]);
@@ -290,8 +300,8 @@ export default {
         });
       }
       // A/B参照点
-      if(this.A) fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.A.lng,this.A.lat]}, properties:{name:'A(既知)'} });
-      if(this.B) fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.B.lng,this.B.lat]}, properties:{name:'B(既知)'} });
+      if(this.hasA) fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.A.lng,this.A.lat]}, properties:{name:'A(既知)'} });
+      if(this.hasB) fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.B.lng,this.B.lat]}, properties:{name:'B(既知)'} });
       return fc;
     },
     redrawOnMap(){
@@ -306,8 +316,8 @@ export default {
       const rows = [];
       rows.push(['type','idx','lng','lat','bearing_deg','distance_m','note']);
       // 既知点
-      rows.push(['known','A',this.A.lng,this.A.lat,'','', '']);
-      rows.push(['known','B',this.B.lng,this.B.lat,'','', '']);
+      rows.push(['known','A', this.hasA?this.A.lng:'', this.hasA?this.A.lat:'', '', '', '']);
+      rows.push(['known','B', this.hasB?this.B.lng:'', this.hasB?this.B.lat:'', '', '', '']);
       // 区間
       this.legs.forEach((l,i)=>{
         rows.push(['leg', i+1, '', '', l.bearing, l.distance, l.note||'' ]);
@@ -327,8 +337,8 @@ export default {
       const legs = []; let A=null, B=null;
       for(const line of lines){
         const [type, idx, lng, lat, bearing, dist, note] = line.split(',');
-        if(type==='known' && idx==='A'){ A={lng:Number(lng), lat:Number(lat)} }
-        else if(type==='known' && idx==='B'){ B={lng:Number(lng), lat:Number(lat)} }
+        if(type==='known' && idx==='A'){ const L=Number(lng), La=Number(lat); if(Number.isFinite(L)&&Number.isFinite(La)) A={lng:L, lat:La}; }
+        else if(type==='known' && idx==='B'){ const L=Number(lng), La=Number(lat); if(Number.isFinite(L)&&Number.isFinite(La)) B={lng:L, lat:La}; }
         else if(type==='leg'){
           legs.push({ bearing: Number(bearing)||0, distance: Number(dist)||0, note: note||'' });
         }
@@ -351,7 +361,7 @@ export default {
 .oh-compact-field :deep(.v-field){ --v-field-padding-start:6px; --v-field-padding-end:6px; }
 .oh-compact-field :deep(.v-field__input){ padding-top:0; padding-bottom:0; min-height:40px; }
 .oh-switch-compact :deep(.v-selection-control){ padding:0 4px; min-height:24px; }
-.oh-switch-compact :deep(.v-switch__track){ height:20px; width:32px; transition: background-color .15s ease; }
+.oh-switch-compact :deep(.v-switch__track){ height:16px; width:32px; transition: background-color .15s ease; }
 .oh-switch-compact :deep(.v-switch__thumb){ height:20px; width:20px; transition: background-color .15s ease, border-color .15s ease; }
 .oh-switch-compact :deep(.v-label){ font-size:12px; line-height:1.1; }
 .oh-tight-table td {
