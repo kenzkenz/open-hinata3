@@ -16,7 +16,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @cancel="onConfirmCancel"
       />
 
-
       <!-- <v-btn @click="test">test</v-btn>-->
       <!-- トラバース -->
       <FloatingWindow
@@ -27,12 +26,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-top = "10"
           :default-left = "10"
           :default-width = "530"
-          :default-height = "510"
           :keepAspectRatio = "false"
           :showMaxRestore="false"
       >
-       <Traverse></Traverse>
-
+        <Traverse
+            @mousedown.stop
+            @pointerdown.stop
+            @touchstart.stop
+        >
+        </Traverse>
       </FloatingWindow>
 
 

@@ -53,7 +53,7 @@
     <v-card class="pa-3 mb-2" elevation="1">
       <div class="d-flex align-center justify-space-between mb-2">
         <div class="text-subtitle-2">観測区間（方位角・距離）</div>
-        <v-switch v-model="useBowditch" inset density="compact" hide-details label="ボーディッチ補正"></v-switch>
+        <v-switch class="oh-switch-compact" v-model="useBowditch" inset density="compact" hide-details label="ボーディッチ補正"></v-switch>
       </div>
 
       <v-table density="compact" class="oh-tight-table">
@@ -350,6 +350,10 @@ export default {
 .oh-compact-field{ margin:0 !important; }
 .oh-compact-field :deep(.v-field){ --v-field-padding-start:6px; --v-field-padding-end:6px; }
 .oh-compact-field :deep(.v-field__input){ padding-top:0; padding-bottom:0; min-height:40px; }
+.oh-switch-compact :deep(.v-selection-control){ padding:0 4px; min-height:24px; }
+.oh-switch-compact :deep(.v-switch__track){ height:20px; width:32px; transition: background-color .15s ease; }
+.oh-switch-compact :deep(.v-switch__thumb){ height:20px; width:20px; transition: background-color .15s ease, border-color .15s ease; }
+.oh-switch-compact :deep(.v-label){ font-size:12px; line-height:1.1; }
 .oh-tight-table td {
   padding: 4px 4px!important;
 }
