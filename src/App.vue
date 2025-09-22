@@ -20,7 +20,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!-- トラバース -->
       <FloatingWindow
           windowId = "traverse"
-          title = "トラバース"
+          title = "方位距離エディタ"
           type="normal"
           :resizable="false"
           :default-top = "10"

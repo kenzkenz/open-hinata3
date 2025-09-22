@@ -46,20 +46,22 @@
           </div>
         </div>
         <div class="known-col">
-          <div class="text-caption mb-1">既知点B（終点）</div>
+          <div class="text-caption mb-1">検証終点B（任意）</div>
           <div class="d-flex align-center gap-1 known-row">
             <v-text-field v-model.number="B.lng" :label="isWGS84 ? '経度' : 'X(東) [m]'" :placeholder="isWGS84 ? '例: 139.7' : '例: 12345.67'" type="number" density="compact" hide-details class="coord-field" />
             <v-text-field v-model.number="B.lat" :label="isWGS84 ? '緯度' : 'Y(北) [m]'" :placeholder="isWGS84 ? '例: 35.6' : '例: 67890.12'" type="number" density="compact" hide-details class="coord-field" />
             <v-btn size="x-small" variant="text" @click="useMapCenterAs('B')" class="mapcenter-btn" :disabled="!isWGS84 && !proj4Ready" :title="(!isWGS84 && !proj4Ready) ? 'proj4未ロードのため変換不可' : 'Map中心をセット'">Map中心</v-btn>
           </div>
+          <!-- 任意: 小さな注記 -->
+          <!-- <div class="text-caption" style="opacity:.75">Bは閉合差の評価/補正に使用します（未入力でも計算可）。</div> -->
         </div>
       </div>
     </v-card>
 
-    <!-- 区間入力テーブル（方位角=真北0°→時計回り、距離[m]） -->
+    <!-- 方位距離入力（方位角=真北0°→時計回り、距離[m]） -->
     <v-card class="pa-3 mb-2" elevation="1">
       <div class="d-flex align-center justify-space-between mb-2">
-        <div class="text-subtitle-2">観測区間（方位角・距離）</div>
+        <div class="text-subtitle-2">方位距離入力</div>
         <v-switch
             v-model="useBowditch"
             inset
@@ -67,6 +69,8 @@
             hide-details
             label="ボーディッチ補正"
             class="oh-switch-compact" color="primary"
+            :disabled="!hasB"
+            :title="!hasB ? 'B未入力のため補正は適用されません' : '閉合差に基づき距離按分補正を行います'"
         ></v-switch>
       </div>
 
@@ -117,13 +121,16 @@
             <div class="text-caption">計算終点（未補正）</div>
             <div class="mono">{{ fmtLngLat(calcEndRaw) }}</div>
           </div>
-          <div>
-            <div class="text-caption">閉合差（未補正→既知B）</div>
+          <div v-if="hasB">
+            <div class="text-caption">閉合差（未補正→B）</div>
             <div class="mono">ΔE={{ closure.dx.toFixed(3) }} m, ΔN={{ closure.dy.toFixed(3) }} m, |f|={{ closure.len.toFixed(3) }} m</div>
           </div>
+          <div v-else class="text-caption" style="opacity:.75">B未入力のため、閉合差は表示しません。</div>
           <div>
             <div class="text-caption">補正方式</div>
-            <div class="mono">{{ useBowditch ? 'Bowditch (距離配分)' : '補正なし' }}</div>
+            <div class="mono">
+              {{ hasB ? (useBowditch ? 'Bowditch (距離配分)' : '補正なし') : 'B未入力（補正なし）' }}
+            </div>
           </div>
         </div>
         <v-btn size="small" variant="tonal" @click="flyToChain" :disabled="computedChain.length===0">軌跡へ移動</v-btn>
@@ -330,9 +337,12 @@ export default {
       let coords = [];
       if(this.isWGS84){
         coords = this.adjustedChain.map(p=>[p.lng,p.lat]);
-      }else if(this.p4()){ const p4 = this.p4(); const epsg = this.currentEPSG; coords = this.adjustedChain.map(p=>{ const [lng, lat] = p4(epsg, 'EPSG:4326', [p.x, p.y]);
-        return [lng, lat];
-      });
+      }else if(this.p4()){
+        const p4 = this.p4(); const epsg = this.currentEPSG;
+        coords = this.adjustedChain.map(p=>{
+          const [lng, lat] = p4(epsg, 'EPSG:4326', [p.x, p.y]);
+          return [lng, lat];
+        });
       }
       if(coords.length===0) return;
       const bbox = coords.reduce((b,[lng,lat])=>{
@@ -376,9 +386,12 @@ export default {
       if(this.adjustedChain.length>0){
         if(this.isWGS84){
           this.adjustedChain.forEach(p=>coordsForMap.push([p.lng,p.lat]));
-        }else if(this.p4()){ const p4 = this.p4(); const epsg = this.currentEPSG; this.adjustedChain.forEach(p=>{ const [lng,lat] = p4(epsg, 'EPSG:4326', [p.x, p.y]);
-          coordsForMap.push([lng,lat]);
-        });
+        }else if(this.p4()){
+          const p4 = this.p4(); const epsg = this.currentEPSG;
+          this.adjustedChain.forEach(p=>{
+            const [lng,lat] = p4(epsg, 'EPSG:4326', [p.x, p.y]);
+            coordsForMap.push([lng,lat]);
+          });
         }
       }
       if(coordsForMap.length>0){
@@ -390,11 +403,17 @@ export default {
       // A/B参照点
       if(this.hasA){
         if(this.isWGS84){ fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.A.lng,this.A.lat]}, properties:{name:'A(既知)'} }); }
-        else if(this.p4()){ const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.A.lng, this.A.lat]); fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'A(既知)'} }); }
+        else if(this.p4()){
+          const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.A.lng, this.A.lat]);
+          fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'A(既知)'} });
+        }
       }
       if(this.hasB){
         if(this.isWGS84){ fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.B.lng,this.B.lat]}, properties:{name:'B(既知)'} }); }
-        else if(this.p4()){ const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.B.lng, this.B.lat]); fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'B(既知)'} }); }
+        else if(this.p4()){
+          const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.B.lng, this.B.lat]);
+          fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'B(既知)'} });
+        }
       }
       return fc;
     },
