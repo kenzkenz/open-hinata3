@@ -341,7 +341,7 @@ export default {
 </script>
 
 <style scoped>
-.oh-surveyor-root{ width: 520px; max-width: 95vw; background:#fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.oh-surveyor-root{ width: 520px; max-width: 95vw; background:#fff; }
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid #eee; }
 .hidden{ display:none; }
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }

@@ -149,6 +149,9 @@ export default {
      *  未指定時は CSS 変数 --fw-overflow を見て、無ければ hidden。
      */
     overflow: { type: String, default: "" },
+
+    /** defaultHeight が auto のときの高さ上限（viewport 下端からの余白 px） */
+    autoHeightCapOffset: { type: Number, default: 80 },
   },
 
   data() {
@@ -175,6 +178,10 @@ export default {
       // 最大化
       isMaximized: false,
       preMaxState: null,
+
+      // auto高さクランプ管理
+      isAutoClamped: false,
+      contentMo: null,
     };
   },
 
@@ -221,6 +228,7 @@ export default {
     },
     contentOverflowStyle() {
       const v = (this.overflow || '').trim();
+      if (this.isAutoClamped) return 'auto';
       return v || 'var(--fw-overflow, hidden)';
     },
   },
@@ -395,6 +403,8 @@ export default {
       document.removeEventListener('pointercancel', this.stopDrag);
       this.snapToEdges();
       this.saveToStorage();
+      // 移動に応じて auto クランプを再評価
+      this.$nextTick(() => this.updateAutoHeightClamp());
     },
 
     /* -------------------- リサイズ -------------------- */
@@ -499,6 +509,8 @@ export default {
       else this.left = Math.min(this.left, Math.max(0, window.innerWidth - this.width));
       this.snapToEdges();
       this.saveToStorage();
+      // ユーザーが手で小さく/大きくした後にもクランプ再評価
+      this.$nextTick(() => this.updateAutoHeightClamp());
     },
 
     /* -------------------- 最大化/復元 -------------------- */
@@ -528,6 +540,8 @@ export default {
       this.$nextTick(() => { this.$emit('width-changed', this.width); this.$emit('height-changed', this.height); });
       this.$emit('restore');
       this.saveToStorage();
+      // 復元後にクランプ評価
+      this.$nextTick(() => this.updateAutoHeightClamp());
     },
     syncMaxSize() {
       if (!this.isMaximized) return;
@@ -555,12 +569,74 @@ export default {
         else this.left = this.left + step;
         this.saveToStorage();
       }
+      // 位置調整に応じてクランプ再評価
+      this.$nextTick(() => this.updateAutoHeightClamp());
     },
 
     /* -------------------- 追加: 表示時/初期表示で width-changed を発火 -------------------- */
     emitWidthNow() {
       // 現在の幅を即通知（親で初期レイアウト調整に使える）
       this.$emit('width-changed', this.width);
+    },
+
+    /* -------------------- auto高さの上限制御 -------------------- */
+    updateAutoHeightClamp() {
+      // auto指定時を中心に評価（固定高でも natural <= maxH なら auto に戻す）
+      const el = this.$el;
+      if (!el) return;
+
+      // 現在の最大許容高（ウィンドウtopから画面下端までの余白 - オフセット）
+      const maxH = Math.max(
+          100,
+          window.innerHeight - this.autoHeightCapOffset - Math.max(0, this.top | 0)
+      );
+
+      // 自然（理想）の高さを推定：ヘッダー + content の scrollHeight
+      const contentEl = el.querySelector('.content');
+      let natural = this.headerShown ? this.headerHeight : 0;
+      if (contentEl) natural += contentEl.scrollHeight;
+
+      // クランプが必要か？
+      const needClamp = this.autoHeight && natural > maxH;
+
+      if (needClamp) {
+        // auto → 固定高へ切り替え & overflow:auto
+        this.height = maxH;
+        this.autoHeight = false;
+        this.isAutoClamped = true;
+        this.$nextTick(() => this.$emit('height-changed', this.height));
+      } else {
+        // 余裕ができたら固定高→autoに戻す
+        if (!this.autoHeight) {
+          if (natural <= maxH) {
+            this.autoHeight = true;
+            this.isAutoClamped = false;
+            this.$nextTick(() => this.$emit('height-changed', this.currentHeight()));
+          } else {
+            // まだ大きい場合は固定高のまま（クランプ状態扱い）
+            this.isAutoClamped = true;
+            this.height = Math.max(100, Math.min(this.height, maxH));
+          }
+        } else {
+          // autoで収まっている
+          this.isAutoClamped = false;
+        }
+      }
+    },
+
+    setupContentObserver() {
+      // content配下のDOM変化で再評価（テキスト追加・折返し等）
+      const contentEl = this.$el?.querySelector('.content');
+      if (!contentEl) return;
+      this.contentMo?.disconnect();
+      this.contentMo = new MutationObserver(() => {
+        this.$nextTick(() => this.updateAutoHeightClamp());
+      });
+      this.contentMo.observe(contentEl, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
     },
   },
 
@@ -575,6 +651,13 @@ export default {
     this.$nextTick(() => { this.emitWidthNow(); });
     // キー操作
     window.addEventListener('keydown', this.onKeydown, { passive: false });
+    // 初回: auto高をクランプ評価 + 監視設定
+    this.$nextTick(() => {
+      this.updateAutoHeightClamp();
+      this.setupContentObserver();
+    });
+    // ビューポートのリサイズにも追従
+    window.addEventListener('resize', this.updateAutoHeightClamp, { passive: true });
   },
 
   watch: {
@@ -592,7 +675,14 @@ export default {
         if (val) {
           // 表示切替で出現したときにも位置補正後に幅を通知
           this.ensureInitialIfOffscreen();
-          this.$nextTick(() => { this.emitWidthNow(); });
+          this.$nextTick(() => {
+            this.emitWidthNow();
+            this.updateAutoHeightClamp();
+            this.setupContentObserver();
+          });
+        } else {
+          // 非表示時はObserver負荷を減らす
+          this.contentMo?.disconnect();
         }
       });
     },
@@ -607,6 +697,8 @@ export default {
     document.removeEventListener('pointercancel', this.stopResize);
     window.removeEventListener('resize', this.syncMaxSize);
     window.removeEventListener('keydown', this.onKeydown);
+    window.removeEventListener('resize', this.updateAutoHeightClamp);
+    this.contentMo?.disconnect();
   },
 };
 </script>
