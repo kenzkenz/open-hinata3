@@ -16,6 +16,26 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @cancel="onConfirmCancel"
       />
 
+
+      <!-- <v-btn @click="test">test</v-btn>-->
+      <!-- トラバース -->
+      <FloatingWindow
+          windowId = "traverse"
+          title = "トラバース"
+          type="normal"
+          :resizable="false"
+          :default-top = "10"
+          :default-left = "10"
+          :default-width = "530"
+          :default-height = "510"
+          :keepAspectRatio = "false"
+          :showMaxRestore="false"
+      >
+       <Traverse></Traverse>
+
+      </FloatingWindow>
+
+
       <!-- ジオリファレンス -->
       <FloatingWindow
           windowId = "warp-wizard"
@@ -1664,6 +1684,7 @@ import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
 import WarpWizard from '@/components/WarpWizard.vue'
 import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios-map-tuning';
+import Traverse from "@/components/floatingwindow/Traverse";
 
 
 import {
@@ -2356,7 +2377,8 @@ export default {
     MessageDialog,
     MapillaryFilter,
     VDialogConfirm,
-    WarpWizard
+    WarpWizard,
+    Traverse,
   },
   data: () => ({
     pendingFile: null,   // ← D&D/読み込み直後のファイルを保持
@@ -4000,10 +4022,13 @@ export default {
       }
     },
     async test () {
-      const tileJson = await fetchGsiTileTest()
-      console.log(tileJson)
-      const converTileJson = convertGsiTileJson2(tileJson)
-      console.log(converTileJson)
+
+      this.$store.dispatch('showFloatingWindow', 'traverse');
+
+      // const tileJson = await fetchGsiTileTest()
+      // console.log(tileJson)
+      // const converTileJson = convertGsiTileJson2(tileJson)
+      // console.log(converTileJson)
     },
     openPaintEditorWindow() {
       this.$store.dispatch('showFloatingWindow', 'painteditor');
@@ -7961,8 +7986,13 @@ export default {
           },
           // { label: 'Mapillaryを開く', onSelect: ({ lngLat }) => window.open(buildMapillaryUrl(lngLat, map.getZoom?.() ?? 18, map.getBearing?.() ?? 0), '_blank', 'noopener') },
           { label: '画面保存', onSelect: () => {
-            pngDownload();
-          }},
+              pngDownload();
+            }
+          },
+          { label: 'トラバース', onSelect: () => {
+              this.$store.dispatch('showFloatingWindow', 'traverse');
+            }
+          },
           { label: '俯瞰 60°/0° 切替', onSelect: () => { const p = map.getPitch(); map.easeTo({ pitch: p > 30 ? 0 : 60 }); } },
           {
             label: '点追加＆削除',
