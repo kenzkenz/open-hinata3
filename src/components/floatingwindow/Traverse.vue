@@ -3,16 +3,19 @@
   <div v-show="isOpen" class="oh-surveyor-root">
     <div class="oh-toolbar">
       <div class="left">
-        <v-btn size="small" icon variant="text" @click="centerToA" :title="'既知点Aへ移動'" :disabled="!hasA">
+        <!-- 既知点A/Bジャンプ：UIは隠す（ロジックは残す） -->
+        <v-btn v-if="false" size="small" icon variant="text" @click="centerToA" :title="'既知点Aへ移動'" :disabled="!hasA">
           <v-icon>mdi-crosshairs-gps</v-icon>
         </v-btn>
-        <v-btn size="small" icon variant="text" @click="centerToB" :title="'既知点Bへ移動'" :disabled="!hasB">
+        <v-btn v-if="false" size="small" icon variant="text" @click="centerToB" :title="'既知点Bへ移動'" :disabled="!hasB">
           <v-icon>mdi-crosshairs</v-icon>
         </v-btn>
         <v-divider vertical class="mx-2"></v-divider>
-        <v-btn size="small" icon variant="text" @click="addLeg" :title="'区間を追加'">
+        <!-- 行追加ボタン：UIは隠す（ロジックは残す） -->
+        <v-btn v-if="false" size="small" icon variant="text" @click="addLeg" :title="'区間を追加'">
           <v-icon>mdi-vector-line</v-icon>
         </v-btn>
+
         <v-btn size="small" icon variant="text" @click="undoLeg" :disabled="legs.length===0" :title="'一手戻す'">
           <v-icon>mdi-undo</v-icon>
         </v-btn>
@@ -27,115 +30,152 @@
       </div>
     </div>
 
-    <!-- 現在の座標系インジケータ -->
-    <div class="oh-crs-indicator">
-      <v-chip size="x-small" color="primary" variant="flat" class="mr-2">{{ currentKei }}</v-chip>
-      <span class="text-caption mono">{{ currentEPSG }}</span>
-      <span v-if="!proj4Ready && !isWGS84" class="text-caption" style="color:#d32f2f; margin-left:8px;">proj4未ロードのため変換不可</span>
-    </div>
-
-    <!-- 既知点入力 -->
-    <v-card class="pa-3 mb-2" elevation="1">
-      <div class="d-flex flex-wrap gap-3 known-wrap">
-        <div class="known-col">
-          <div class="text-caption mb-1">既知点A（基点）</div>
-          <div class="d-flex align-center gap-1 known-row">
-            <v-text-field v-model.number="A.lng" :label="isWGS84 ? '経度' : 'X(東) [m]'" :placeholder="isWGS84 ? '例: 139.7' : '例: 12345.67'" type="number" density="compact" hide-details class="coord-field" />
-            <v-text-field v-model.number="A.lat" :label="isWGS84 ? '緯度' : 'Y(北) [m]'" :placeholder="isWGS84 ? '例: 35.6' : '例: 67890.12'" type="number" density="compact" hide-details class="coord-field" />
-            <v-btn size="x-small" variant="text" @click="useMapCenterAs('A')" class="mapcenter-btn" :disabled="!isWGS84 && !proj4Ready" :title="(!isWGS84 && !proj4Ready) ? 'proj4未ロードのため変換不可' : 'Map中心をセット'">Map中心</v-btn>
-          </div>
-        </div>
-        <div class="known-col">
-          <div class="text-caption mb-1">検証終点B（任意）</div>
-          <div class="d-flex align-center gap-1 known-row">
-            <v-text-field v-model.number="B.lng" :label="isWGS84 ? '経度' : 'X(東) [m]'" :placeholder="isWGS84 ? '例: 139.7' : '例: 12345.67'" type="number" density="compact" hide-details class="coord-field" />
-            <v-text-field v-model.number="B.lat" :label="isWGS84 ? '緯度' : 'Y(北) [m]'" :placeholder="isWGS84 ? '例: 35.6' : '例: 67890.12'" type="number" density="compact" hide-details class="coord-field" />
-            <v-btn size="x-small" variant="text" @click="useMapCenterAs('B')" class="mapcenter-btn" :disabled="!isWGS84 && !proj4Ready" :title="(!isWGS84 && !proj4Ready) ? 'proj4未ロードのため変換不可' : 'Map中心をセット'">Map中心</v-btn>
-          </div>
-          <!-- 任意: 小さな注記 -->
-          <!-- <div class="text-caption" style="opacity:.75">Bは閉合差の評価/補正に使用します（未入力でも計算可）。</div> -->
-        </div>
-      </div>
-    </v-card>
-
-    <!-- 方位距離入力（方位角=真北0°→時計回り、距離[m]） -->
-    <v-card class="pa-3 mb-2" elevation="1">
-      <div class="d-flex align-center justify-space-between mb-2">
-        <div class="text-subtitle-2">方位距離入力</div>
-        <v-switch
-            v-model="useBowditch"
-            inset
-            density="compact"
-            hide-details
-            label="ボーディッチ補正"
-            class="oh-switch-compact" color="primary"
-            :disabled="!hasB"
-            :title="!hasB ? 'B未入力のため補正は適用されません' : '閉合差に基づき距離按分補正を行います'"
-        ></v-switch>
+    <div style="margin-left: 10px; padding-bottom: 10px;">
+      <!-- 現在の座標系インジケータ -->
+      <div class="oh-crs-indicator">
+        <v-chip size="x-small" color="primary" variant="flat" class="mr-2">{{ currentKei }}</v-chip>
+        <span class="text-caption mono">{{ currentEPSG }}</span>
+        <span v-if="!proj4Ready && !isWGS84" class="text-caption" style="color:#d32f2f; margin-left:8px;">proj4未ロードのため変換不可</span>
       </div>
 
-      <v-table density="compact" class="oh-tight-table">
-        <thead>
-        <tr>
-          <th style="width:64px">#</th>
-          <th style="width:140px">方位角[°]</th>
-          <th style="width:140px">距離[m]</th>
-          <th>備考</th>
-          <th style="width:48px"></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="(leg, i) in legs" :key="i">
-          <td class="text-right">{{ i+1 }}</td>
-          <td>
-            <v-text-field v-model.number="leg.bearing" type="number" placeholder="例: 90" density="compact" hide-details :min="0" :max="360" class="oh-compact-field" />
-          </td>
-          <td>
-            <v-text-field v-model.number="leg.distance" type="number" placeholder="例: 12.34" density="compact" hide-details :min="0" class="oh-compact-field" />
-          </td>
-          <td>
-            <v-text-field v-model="leg.note" density="compact" hide-details class="oh-compact-field" />
-          </td>
-          <td>
-            <v-btn size="x-small" icon variant="text" @click="removeLeg(i)"><v-icon>mdi-close</v-icon></v-btn>
-          </td>
-        </tr>
-        </tbody>
-      </v-table>
-
-      <div class="d-flex mt-2">
-        <v-text-field v-model.number="newLeg.bearing" label="方位角[°]" placeholder="例: 90" type="number" density="compact" hide-details style="max-width:140px" />
-        <v-text-field v-model.number="newLeg.distance" label="距離[m]" placeholder="例: 12.34" type="number" density="compact" hide-details style="max-width:140px" class="ml-2" />
-        <v-text-field v-model="newLeg.note" label="備考" density="compact" hide-details class="ml-2" />
-        <v-btn class="ml-2" size="small" @click="pushNewLeg">追加</v-btn>
-      </div>
-    </v-card>
-
-    <!-- 結果サマリ -->
-    <v-card class="pa-3" elevation="1">
-      <div class="text-subtitle-2 mb-2">計算結果</div>
-      <div v-if="computedChain.length===0" class="text-caption">区間を入力してください。</div>
-      <div v-else>
-        <div class="d-flex flex-wrap gap-6 mb-2">
-          <div>
-            <div class="text-caption">計算終点（未補正）</div>
-            <div class="mono">{{ fmtLngLat(calcEndRaw) }}</div>
+      <!-- 既知点入力 -->
+      <v-card class="pa-3 mb-2" elevation="1">
+        <div class="d-flex flex-wrap gap-3 known-wrap">
+          <div class="known-col">
+            <div class="text-caption mb-1">既知点A（基点）</div>
+            <div class="d-flex align-center gap-1 known-row">
+              <v-text-field
+                  v-model.number="A.lng"
+                  :label="isWGS84 ? '経度' : 'X(東) [m]'"
+                  :placeholder="isWGS84 ? '例: 139.7' : '例: 12345.67'"
+                  type="number"
+                  :step="isWGS84 ? '0.0000001' : '0.001'"
+                  density="compact" hide-details class="coord-field"
+              />
+              <v-text-field
+                  v-model.number="A.lat"
+                  :label="isWGS84 ? '緯度' : 'Y(北) [m]'"
+                  :placeholder="isWGS84 ? '例: 35.6' : '例: 67890.12'"
+                  type="number"
+                  :step="isWGS84 ? '0.0000001' : '0.001'"
+                  density="compact" hide-details class="coord-field"
+              />
+              <v-btn
+                  size="x-small" variant="text" @click="useMapCenterAs('A')" class="mapcenter-btn"
+                  :disabled="!isWGS84 && !proj4Ready"
+                  :title="(!isWGS84 && !proj4Ready) ? 'proj4未ロードのため変換不可' : 'Map中心をセット'"
+              >Map中心</v-btn>
+            </div>
           </div>
-          <div v-if="hasB">
-            <div class="text-caption">閉合差（未補正→B）</div>
-            <div class="mono">ΔE={{ closure.dx.toFixed(3) }} m, ΔN={{ closure.dy.toFixed(3) }} m, |f|={{ closure.len.toFixed(3) }} m</div>
-          </div>
-          <div v-else class="text-caption" style="opacity:.75">B未入力のため、閉合差は表示しません。</div>
-          <div>
-            <div class="text-caption">補正方式</div>
-            <div class="mono">
-              {{ hasB ? (useBowditch ? 'Bowditch (距離配分)' : '補正なし') : 'B未入力（補正なし）' }}
+          <div class="known-col">
+            <div class="text-caption mb-1">検証終点B（任意）</div>
+            <div class="d-flex align-center gap-1 known-row">
+              <v-text-field
+                  v-model.number="B.lng"
+                  :label="isWGS84 ? '経度' : 'X(東) [m]'"
+                  :placeholder="isWGS84 ? '例: 139.7' : '例: 12345.67'"
+                  type="number"
+                  :step="isWGS84 ? '0.0000001' : '0.001'"
+                  density="compact" hide-details class="coord-field"
+              />
+              <v-text-field
+                  v-model.number="B.lat"
+                  :label="isWGS84 ? '緯度' : 'Y(北) [m]'"
+                  :placeholder="isWGS84 ? '例: 35.6' : '例: 67890.12'"
+                  type="number"
+                  :step="isWGS84 ? '0.0000001' : '0.001'"
+                  density="compact" hide-details class="coord-field"
+              />
+              <v-btn
+                  size="x-small" variant="text" @click="useMapCenterAs('B')" class="mapcenter-btn"
+                  :disabled="!isWGS84 && !proj4Ready"
+                  :title="(!isWGS84 && !proj4Ready) ? 'proj4未ロードのため変換不可' : 'Map中心をセット'"
+              >Map中心</v-btn>
             </div>
           </div>
         </div>
-        <v-btn size="small" variant="tonal" @click="flyToChain" :disabled="computedChain.length===0">軌跡へ移動</v-btn>
-      </div>
-    </v-card>
+        <div class="text-caption mt-1" style="opacity:.75">
+          Aだけで計算できます。Bを入力すると閉合差の表示とボーディッチ補正が使えます。
+        </div>
+      </v-card>
+
+      <!-- 方位距離入力（方位角=真北0°→時計回り、距離[m]） -->
+      <v-card class="pa-3 mb-2" elevation="1">
+        <div class="d-flex align-center justify-space-between mb-2">
+          <div class="text-subtitle-2">方位距離入力</div>
+          <v-switch
+              v-model="useBowditch"
+              inset density="compact" hide-details
+              label="ボーディッチ補正"
+              class="oh-switch-compact" color="primary"
+              :disabled="!hasB"
+              :title="!hasB ? 'B未入力のため補正は適用されません' : '閉合差に基づき距離按分補正を行います'"
+          ></v-switch>
+        </div>
+
+        <v-table density="compact" class="oh-tight-table">
+          <thead>
+          <tr>
+            <th style="width:64px">#</th>
+            <th style="width:140px">方位角[°]</th>
+            <th style="width:140px">距離[m]</th>
+            <th>備考</th>
+            <th style="width:48px"></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(leg, i) in legs" :key="i">
+            <td class="text-center">{{ i+1 }}</td>
+            <td>
+              <v-text-field v-model.number="leg.bearing" type="number" placeholder="例: 90" density="compact" hide-details :min="0" :max="360" class="oh-compact-field" />
+            </td>
+            <td>
+              <v-text-field v-model.number="leg.distance" type="number" placeholder="例: 12.34" density="compact" hide-details :min="0" class="oh-compact-field" />
+            </td>
+            <td>
+              <v-text-field v-model="leg.note" density="compact" hide-details class="oh-compact-field" />
+            </td>
+            <td>
+              <v-btn size="x-small" icon variant="text" @click="removeLeg(i)"><v-icon>mdi-close</v-icon></v-btn>
+            </td>
+          </tr>
+          </tbody>
+        </v-table>
+
+        <div class="d-flex mt-2">
+          <v-text-field v-model.number="newLeg.bearing" label="方位角[°]" placeholder="例: 90" type="number" density="compact" hide-details style="max-width:140px" />
+          <v-text-field v-model.number="newLeg.distance" label="距離[m]" placeholder="例: 12.34" type="number" density="compact" hide-details style="max-width:140px" class="ml-2" />
+          <v-text-field v-model="newLeg.note" label="備考" density="compact" hide-details class="ml-2" />
+          <v-btn class="ml-2" size="small" @click="pushNewLeg">追加</v-btn>
+        </div>
+      </v-card>
+
+      <!-- 結果サマリ -->
+      <v-card class="pa-3" elevation="1">
+        <div class="text-subtitle-2 mb-2">計算結果</div>
+        <div v-if="computedChain.length===0" class="text-caption">区間を入力してください。</div>
+        <div v-else>
+          <div class="d-flex flex-wrap gap-6 mb-2">
+            <div>
+              <div class="text-caption">計算終点（未補正）</div>
+              <div class="mono">{{ fmtLngLat(calcEndRaw) }}</div>
+            </div>
+            <div v-if="hasB">
+              <div class="text-caption">閉合差（未補正→B）</div>
+              <div class="mono">ΔE={{ closure.dx.toFixed(3) }} m, ΔN={{ closure.dy.toFixed(3) }} m, |f|={{ closure.len.toFixed(3) }} m</div>
+            </div>
+            <div v-else class="text-caption" style="opacity:.75">B未入力のため、閉合差は表示しません。</div>
+            <div>
+              <div class="text-caption">補正方式</div>
+              <div class="mono">
+                {{ hasB ? (useBowditch ? 'Bowditch (距離配分)' : '補正なし') : 'B未入力（補正なし）' }}
+              </div>
+            </div>
+          </div>
+          <v-btn size="small" variant="tonal" @click="flyToChain" :disabled="computedChain.length===0">軌跡へ移動</v-btn>
+        </div>
+      </v-card>
+    </div>
   </div>
 </template>
 
@@ -297,12 +337,17 @@ export default {
   mounted(){ this.ensureMapLayers(); this.redrawOnMap(); },
   beforeUnmount(){ this.teardownMapLayers(); },
   methods:{
-    // proj4 をどこから読み込んでいても拾えるようにする（CDNの window.proj4 / ESM の proj4 の両対応）
+    // 丸めヘルパー
+    round3(v){ return Math.round((Number(v)||0) * 1000) / 1000 },
+    round7(v){ return Math.round((Number(v)||0) * 1e7) / 1e7 },
+
+    // proj4 をどこから読み込んでいても拾えるようにする
     p4(){ return proj4; },
+
     fmtLngLat(ll){
       if(!ll) return '-';
       if(this.isWGS84){ return `${ll.lng.toFixed(7)}, ${ll.lat.toFixed(7)}`; }
-      // 平面直角：x,y
+      // 平面直角：x,y（下4桁を四捨五入して下3桁表示）
       const x = (ll.x ?? ll.lng); const y = (ll.y ?? ll.lat);
       if(!Number.isFinite(x) || !Number.isFinite(y)) return '-';
       return `${x.toFixed(3)} mE, ${y.toFixed(3)} mN`;
@@ -317,12 +362,19 @@ export default {
       const map = this.$store?.state?.map01; if(!map) return;
       const c = map.getCenter(); // lng/lat
       if(this.isWGS84){
-        if(which==='A') this.A = {lng:c.lng, lat:c.lat};
-        else if(which==='B') this.B = {lng:c.lng, lat:c.lat};
+        // WGS84は小数7桁で代入
+        const lng = this.round7(c.lng);
+        const lat = this.round7(c.lat);
+        if(which==='A') this.A = {lng, lat};
+        else if(which==='B') this.B = {lng, lat};
       } else {
         const p4 = this.p4(); if(!p4){ console.warn('proj4 not ready; skip transform'); return; }
         try{
-          const epsg = this.currentEPSG; const [x,y] = p4('EPSG:4326', epsg, [c.lng, c.lat]);
+          const epsg = this.currentEPSG;
+          const [xRaw,yRaw] = p4('EPSG:4326', epsg, [c.lng, c.lat]);
+          // 平面直角は小数3桁で代入
+          const x = this.round3(xRaw);
+          const y = this.round3(yRaw);
           if(Number.isFinite(x) && Number.isFinite(y)){
             if(which==='A') this.A = {lng:x, lat:y};
             else if(which==='B') this.B = {lng:x, lat:y};
@@ -402,15 +454,17 @@ export default {
       }
       // A/B参照点
       if(this.hasA){
-        if(this.isWGS84){ fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.A.lng,this.A.lat]}, properties:{name:'A(既知)'} }); }
-        else if(this.p4()){
+        if(this.isWGS84){
+          fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.A.lng,this.A.lat]}, properties:{name:'A(既知)'} });
+        } else if(this.p4()){
           const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.A.lng, this.A.lat]);
           fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'A(既知)'} });
         }
       }
       if(this.hasB){
-        if(this.isWGS84){ fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.B.lng,this.B.lat]}, properties:{name:'B(既知)'} }); }
-        else if(this.p4()){
+        if(this.isWGS84){
+          fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[this.B.lng,this.B.lat]}, properties:{name:'B(既知)'} });
+        } else if(this.p4()){
           const p4 = this.p4(); const [lng,lat] = p4(this.currentEPSG, 'EPSG:4326', [this.B.lng, this.B.lat]);
           fc.features.push({ type:'Feature', geometry:{ type:'Point', coordinates:[lng,lat]}, properties:{name:'B(既知)'} });
         }
@@ -464,7 +518,7 @@ export default {
 </script>
 
 <style scoped>
-.oh-surveyor-root{ width: 520px; max-width: 95vw; background:#fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.oh-surveyor-root{ width: 520px; max-width: 95vw; background:#fff; }
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid #eee; }
 .hidden{ display:none; }
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -472,7 +526,7 @@ export default {
 .oh-tight-table :deep(th), .oh-tight-table :deep(td){ padding:2px 6px; }
 .oh-compact-field{ margin:0 !important; }
 .oh-compact-field :deep(.v-field){ --v-field-padding-start:6px; --v-field-padding-end:6px; }
-.oh-compact-field :deep(.v-field__input){ padding-top:0; padding-bottom:0; min-height:28px; }
+.oh-compact-field :deep(.v-field__input){ padding-top:0; padding-bottom:0; min-height:40px; }
 .oh-switch-compact :deep(.v-selection-control){ padding:0 4px; min-height:24px; }
 .oh-switch-compact :deep(.v-switch__track){ height:16px; width:32px; transition: background-color .15s ease; }
 .oh-switch-compact :deep(.v-switch__thumb){ height:20px; width:20px; transition: background-color .15s ease, border-color .15s ease; }
@@ -483,4 +537,5 @@ export default {
 .coord-field{ width:160px; max-width:160px; }
 .mapcenter-btn{ white-space:nowrap; }
 .oh-crs-indicator{ padding:6px 10px; display:flex; align-items:center; }
+.oh-tight-table td { padding: 4px 4px!important; }
 </style>

@@ -7991,7 +7991,7 @@ export default {
               pngDownload();
             }
           },
-          { label: 'トラバース', onSelect: () => {
+          { label: '方位距離エディタ', onSelect: () => {
               this.$store.dispatch('showFloatingWindow', 'traverse');
             }
           },
