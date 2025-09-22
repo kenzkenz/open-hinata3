@@ -28,6 +28,8 @@
       </div>
     </div>
 
+    <div style="padding-left: 10px;">
+
     <!-- 既知点入力 -->
     <v-card class="pa-3 mb-2" elevation="1">
       <div class="d-flex flex-wrap gap-3">
@@ -39,7 +41,7 @@
             <v-btn variant="text" @click="useMapCenterAs('A')">Map中心</v-btn>
           </div>
         </div>
-        <div>
+        <div class="mr-6">
           <div class="text-caption mb-1">既知点B（終点）</div>
           <div class="d-flex align-center gap-1">
             <v-text-field v-model.number="B.lng" label="経度" placeholder="例: 139.7" type="number" density="compact" hide-details style="max-width:160px" />
@@ -123,6 +125,7 @@
         <v-btn size="small" variant="tonal" @click="flyToChain" :disabled="computedChain.length===0">軌跡へ移動</v-btn>
       </div>
     </v-card>
+  </div>
   </div>
 </template>
 
