@@ -2595,6 +2595,7 @@ export default {
     geoStaleMs: 8000, // 8秒以上更新が無ければ再起動
     geoVisHookBound: false,
     geoAccAvgAlpha: 0.3, // 精度EWMAの係数（0<α≤1）
+    keepAliveCtx:null, keepAliveNode:null, keepAliveOn:false,
     aaa: null,
   }),
   computed: {
@@ -6443,7 +6444,8 @@ export default {
     },
 
     // ---- UIから呼ぶ開始（方位指定つき） ----
-    watchPosition (up) {
+    async watchPosition (up) {
+      await this.startKeepAliveAudio();
       this.dialogForWatchPosition = false;
       // ヘディングアップ処理
       if (up === 'h') {
@@ -6460,7 +6462,7 @@ export default {
     },
 
     // ---- トグル ----
-    toggleWatchPosition () {
+    async toggleWatchPosition () {
       if (this.watchId === null) {
         // ダイアログを出してから watchPosition(up) へ
         this.dialogForWatchPosition = true;
@@ -6478,10 +6480,34 @@ export default {
         const map = this.$store?.state?.map01;
         try { map?.resetNorthPitch?.(); } catch(_) {}
         this.$store.state.geo = null
+        await this.stopKeepAliveAudio();
+
         try { history('現在位置継続取得ストップ', window.location.href); } catch(_) {}
       }
     },
 
+    // data() にも追記: keepAliveCtx:null, keepAliveNode:null, keepAliveOn:false
+    async startKeepAliveAudio () {
+      try {
+        if (this.keepAliveOn) return;
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001; // 実質無音
+        osc.connect(gain).connect(ctx.destination);
+        osc.frequency.value = 20;  // 低周波
+        osc.start();
+        this.keepAliveCtx = ctx;
+        this.keepAliveNode = osc;
+        this.keepAliveOn = true;
+        console.info('[keepalive] audio started');
+      } catch(e){ console.warn('[keepalive] fail', e); }
+    },
+    async stopKeepAliveAudio () {
+      try { this.keepAliveNode?.stop?.(); await this.keepAliveCtx?.close?.(); } catch(_) {}
+      this.keepAliveCtx = null; this.keepAliveNode = null; this.keepAliveOn = false;
+      console.info('[keepalive] audio stopped');
+    },
 
 
 
