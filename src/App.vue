@@ -1634,13 +1634,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </div>
 
             <div class="zoom-div" v-if="!s_isPrint">
+              <div v-html="geoQuality"></div>
               zoom={{ zoom.toFixed(2) }} {{ elevation }}<br>
               {{ s_address }}<br>
               {{ s_zahyokei }}
               {{ s_jdpCoordinates }}
             </div>
           </div>
-
 
           <DialogMenu v-if="mapName === 'map01'" :mapName=mapName />
           <DialogMyroom v-if="mapName === 'map01'" :mapName=mapName />
@@ -2630,7 +2630,17 @@ export default {
       'drawGeojsonId',
       'isUsingServerGeojson',
       'drawFeature',
+      'geo'
     ]),
+    geoQuality () {
+      const geo = this.$store.state.geo
+      if (geo) {
+        const qualityHtml = geo.quality === 'RTK級' ? '<span style="color: blue;">RTK稼働中</span>' : geo.quality
+        return `座標品質= ${qualityHtml}（${geo.accuracy.toFixed(2)}m）`
+      } else {
+        return ''
+      }
+    },
     canUpload() {
       const pairs = (this.gcpList || []).filter(g => Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
       return pairs.length >= 2 && !!this.affineM && !this.isUploading;
@@ -6306,8 +6316,10 @@ export default {
           (position) => {
             this.geoLastTs = position.timestamp || Date.now();
             try {
-              // 既存の座標更新ロジックをそのまま活用
+              // 既存の座標更新
               this.updateLocationAndCoordinates(position);
+              // 精度や速度などを store.state へ保存
+              this.saveGeoMetrics(position);
             } catch (e) {
               console.warn('[geo] updateLocationAndCoordinates error', e);
             }
@@ -6374,10 +6386,65 @@ export default {
       });
     },
 
+    // ---- ナビゲータ精度などを store.state に保存 ----
+    saveGeoMetrics (pos) {
+      try {
+        const c = pos.coords || {};
+        const now = pos.timestamp || Date.now();
+        const s = this.$store?.state;
+        if (!s) return;
+
+        // 既存の平均値を保持
+        const prev = s.geo || {};
+        const alpha = this.geoAccAvgAlpha || 0.3;
+        const ewma = (prevVal, newVal) => {
+          if (newVal == null || Number.isNaN(newVal)) return prevVal ?? null;
+          if (prevVal == null) return newVal;
+          return alpha * newVal + (1 - alpha) * prevVal;
+        };
+
+        const accuracy = typeof c.accuracy === 'number' ? c.accuracy : null;
+        const altitudeAccuracy = typeof c.altitudeAccuracy === 'number' ? c.altitudeAccuracy : null;
+        const speed = typeof c.speed === 'number' ? c.speed : null;
+        const heading = typeof c.heading === 'number' ? c.heading : null;
+
+        const accuracyAvg = ewma(prev.accuracyAvg, accuracy);
+
+        const geo = {
+          time: now,
+          lat: (typeof c.latitude === 'number') ? c.latitude : prev.lat ?? null,
+          lon: (typeof c.longitude === 'number') ? c.longitude : prev.lon ?? null,
+          altitude: (typeof c.altitude === 'number') ? c.altitude : prev.altitude ?? null,
+          accuracy,
+          accuracyAvg,
+          altitudeAccuracy,
+          speed,
+          heading,
+          quality: this.getGeoQualityLabel(accuracy, altitudeAccuracy),
+          source: 'navigator',
+        };
+
+        // 直接代入（あなたのプロジェクトは store.state を直接使っている前提）
+        s.geo = geo;
+        console.log(geo)
+      } catch (e) {
+        console.warn('[geo] saveGeoMetrics error', e);
+      }
+    },
+
+    // ---- 精度のラベル化（UI用） ----
+    getGeoQualityLabel (acc, altAcc) {
+      if (acc == null) return 'unknown';
+      if (acc <= 1)  return 'RTK級';        // ~1m: RTK級っぽい
+      if (acc <= 3)  return '高';  // 1-3m
+      if (acc <= 10) return '中';       // 3-10m
+      if (acc <= 30) return '低';       // 10-30m
+      return '低';                      // >30m
+    },
+
     // ---- UIから呼ぶ開始（方位指定つき） ----
     watchPosition (up) {
       this.dialogForWatchPosition = false;
-
       // ヘディングアップ処理
       if (up === 'h') {
         this.isHeadingUp = true;
@@ -6386,10 +6453,8 @@ export default {
         this.isHeadingUp = false;
         try { this.compass?.turnOff?.(); } catch(_) {}
       }
-
       // 既存マーカーの整理
       try { this.currentMarker?.remove?.(); } catch(_) {}
-
       // 起動
       this.startWatchPosition();
     },
@@ -6402,20 +6467,17 @@ export default {
       } else {
         // 停止処理
         this.isHeadingUp = false;
-
         this.stopWatchPosition();
-
         // マーカー類の安全な破棄
         try { this.centerMarker?.remove?.(); } catch(_) {}
         this.centerMarker = null;
         try { this.currentMarker?.remove?.(); } catch(_) {}
         this.currentMarker = null;
-
         // コンパスOFF + North/Pitchへ戻す
         try { this.compass?.turnOff?.(); } catch(_) {}
         const map = this.$store?.state?.map01;
         try { map?.resetNorthPitch?.(); } catch(_) {}
-
+        this.$store.state.geo = null
         try { history('現在位置継続取得ストップ', window.location.href); } catch(_) {}
       }
     },
