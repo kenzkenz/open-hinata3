@@ -84,8 +84,9 @@ import {
   userPmtileSet,
   highlightSpecificFeaturesSima,
   getNextZIndex,
-  forseMoveLayer, fitClickCircleAll
+  forseMoveLayer, fitClickCircleAll, readdAllByPrefix, readdById, readdByIdPreservingLast, getLayerContext
 } from "@/js/downLoad";
+import originalStyle from '@/assets/json/osm_bright_label_only.json'
 import * as Layers from '@/js/layers'
 // import Tree from "vue3-tree"
 import Tree from '@/components/custom-tree/Tree.vue'
@@ -485,7 +486,13 @@ export default {
               this.mw5AddLayers(map,this.mapName)
             } else {
               if (!map.getLayer(layer0.id)) {
-                map.addLayer(layer0)
+                const PREFIX = 'oh-vector-osm-bright-labels-only-'
+                const ICON_ONLY_ID = 'oh-vector-osm-bright-labels-only-poi-level-1-1'
+                if (!layer0.id.includes(PREFIX)) {
+                  map.addLayer(layer0)
+                } else {
+                  readdByIdPreservingLast(map, originalStyle, layer0.id, null, ICON_ONLY_ID)
+                }
 
                 if (layer0.id.includes('oh-pmtiles-') && layer0.id.endsWith('-point-layer')) {
                   console.log(layer0.id)
@@ -1366,6 +1373,9 @@ export default {
       handler: function(){
         if (this.s_selectedLayers.map01.find(v => v.id === 'oh-mw5') || this.s_selectedLayers.map02.find(v => v.id === 'oh-mw5')) {
           this.addLayers()
+          // this.mw5AddLayers(this.$store.state.map01, 'map01')
+          // const info = getLayerContext(this.$store.state.map01, 'oh-mw-dummy');
+          // console.table({ index: info.index, beforeId: info.beforeId, afterId: info.afterId });
         }
       },
       deep: true

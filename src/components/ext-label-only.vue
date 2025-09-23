@@ -1,4 +1,4 @@
-<!-- components/ext-label-only.vue (final, validated) -->
+<!-- components/ext-label-only.vue (final, validated, resetAll強化) -->
 <template>
   <div class="label-controller-root" v-show="isOpen">
     <!-- Toolbar（検索／可視切替のみ） -->
@@ -161,6 +161,7 @@ export default {
       localZ: 2000,
       originalStyle: null,
       textSizeBaseline: Object.create(null),
+      idSet: new Set(), // このコンポが管理するレイヤーID集合（symbolかつテキスト or ICON_ONLY）
     }
   },
   computed:{
@@ -186,6 +187,17 @@ export default {
   },
   mounted(){
     this.originalStyle = JSON.parse(JSON.stringify(osmBrightLabelOnly))
+
+    // 管轄レイヤーIDを抽出（symbol かつ text-field を持つもの、もしくは ICON_ONLY_ID）
+    const ids = []
+    for (const l of this.originalStyle.layers || []) {
+      if (l.type !== 'symbol') continue
+      const hasText = !!(l.layout && l.layout['text-field'] != null)
+      const isIconOnly = l.id === ICON_ONLY_ID
+      if (hasText || isIconOnly) ids.push(l.id)
+    }
+    this.idSet = new Set(ids)
+
     this.buildFromJson()
   },
   methods:{
@@ -305,8 +317,10 @@ export default {
         const layers = style?.layers || []
         for(const l of layers){
           if(l.type !== 'symbol') continue
+          if(!this.idSet.has(l.id)) continue // 対象外レイヤーは無視
           const hasText = !!(l.layout && l.layout['text-field'] != null)
-          if(!hasText) continue
+          const isIconOnly = l.id === ICON_ONLY_ID
+          if(!hasText && !isIconOnly) continue
           fn(l.id, l)
         }
       }catch(e){}
@@ -321,12 +335,14 @@ export default {
         if(l.type !== 'symbol') continue
         const hasText = !!(l.layout && l.layout['text-field'] != null)
         const hasIcon = l.id === ICON_ONLY_ID
-        list.push({
-          id: l.id,
-          displayName: (l.id || '').startsWith(HIDE_PREFIX) ? l.id.slice(HIDE_PREFIX.length) : l.id,
-          hasText, hasIcon,
-          visible: (l.layout?.visibility ?? 'visible') !== 'none'
-        })
+        if(!this.idSet.size || this.idSet.has(l.id)){
+          list.push({
+            id: l.id,
+            displayName: (l.id || '').startsWith(HIDE_PREFIX) ? l.id.slice(HIDE_PREFIX.length) : l.id,
+            hasText, hasIcon,
+            visible: (l.layout?.visibility ?? 'visible') !== 'none'
+          })
+        }
       }
       this.layers = list
     },
@@ -451,7 +467,7 @@ export default {
       }catch(e){}
     },
     resetAll(){
-      // 倍率適用をベースに戻す
+      // 1) 倍率適用ベースを反映してからクリア（対象IDのみ）
       this.eachTextSymbolLayerLive((id)=>{
         const base = this.textSizeBaseline[id]
         if(base !== undefined){
@@ -467,21 +483,22 @@ export default {
       })
       this.textSizeBaseline = Object.create(null)
 
+      // 2) 作業JSONを元JSONで配列ごと完全復元
       if(!this.originalStyle) return
-      const origLayers = this.originalStyle.layers || []
+      osmBrightLabelOnly.layers = JSON.parse(JSON.stringify(this.originalStyle.layers))
+
+      // 3) UIリストを再構築
+      this.buildFromJson()
+
+      // 4) MapLibreへ対象IDのみ反映
       const m = this.map
       for (const cur of osmBrightLabelOnly.layers) {
         if(cur.type !== 'symbol') continue
-        const orig = origLayers.find(x=>x.id===cur.id); if(!orig) continue
-        cur.layout = JSON.parse(JSON.stringify(orig.layout || {}))
-        cur.paint  = JSON.parse(JSON.stringify(orig.paint  || {}))
-        if(typeof orig.minzoom !== 'undefined') cur.minzoom = orig.minzoom
-        else delete cur.minzoom
+        if(!this.idSet.has(cur.id)) continue
         const ui = this.layers.find(x=>x.id===cur.id)
-        if(ui) ui.visible = (cur.layout?.visibility ?? 'visible') !== 'none'
         try{
           if(m?.getLayer?.(cur.id)){
-            m.setLayoutProperty(cur.id, 'visibility', ui?.visible ? 'visible' : 'none')
+            m.setLayoutProperty(cur.id, 'visibility', (ui?.visible ? 'visible' : 'none'))
             m.setLayoutProperty(cur.id, 'text-size', ('text-size' in (cur.layout||{})) ? cur.layout['text-size'] : null)
             if('symbol-placement' in (cur.layout||{})) m.setLayoutProperty(cur.id, 'symbol-placement', cur.layout['symbol-placement'])
             if(cur.id === ICON_ONLY_ID){

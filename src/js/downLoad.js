@@ -13661,3 +13661,242 @@ export function forseMoveLayer(map) {
         map.moveLayer(drawLayerId)
     })
 }
+
+// src/js/downLoad.js
+// 単体レイヤーを remove → original から deep clone → addLayer（位置維持 optional）
+export function readdById(map, originalStyle, id, beforeId = null, iconOnlyId = null) {
+    if (!map || !originalStyle || !id) return
+
+    // beforeId が未指定なら、現在の順序で「id の直後にある非 id レイヤー」を推定
+    if (!beforeId) {
+        try {
+            const order = (map.getStyle()?.layers || []).map(l => l.id)
+            const idx = order.indexOf(id)
+            if (idx >= 0 && idx + 1 < order.length) beforeId = order[idx + 1]
+        } catch (e) {}
+    }
+
+    // いったん remove
+    try { if (map.getLayer(id)) map.removeLayer(id) } catch (e) {}
+
+    // originalStyle から spec を deep clone
+    const orig = (originalStyle.layers || []).find(l => l.id === id)
+    if (!orig) return
+    const spec = JSON.parse(JSON.stringify(orig))
+
+    // 念のための痕跡掃除（冪等）
+    if (spec.paint) {
+        delete spec.paint['text-color']
+        delete spec.paint['text-halo-color']
+        delete spec.paint['text-halo-width']
+    }
+    if (spec.layout) {
+        if (!('visibility' in spec.layout)) spec.layout.visibility = 'visible'
+        if (!('symbol-placement' in (orig.layout || {}))) delete spec.layout['symbol-placement']
+        // アイコン専用以外の icon-size を念のため削除したい場合に使う（不要なら iconOnlyId は null のままでOK）
+        if (iconOnlyId && spec.id !== iconOnlyId) delete spec.layout['icon-size']
+    }
+
+    // addLayer（beforeId が生きていればそこへ）
+    try {
+        if (beforeId && map.getLayer(beforeId)) map.addLayer(spec, beforeId)
+        else map.addLayer(spec)
+    } catch (e) {}
+}
+
+// src/js/downLoad.js
+
+// ---- ラストスタイルの簡易キャッシュ（メモリ） ----
+const LAST_STYLE_CACHE = Object.create(null)
+
+/** 対象IDの live スタイルを採取してキャッシュする */
+export function snapshotLastStyle(map, id) {
+    if (!map || !id || !map.getLayer?.(id)) return
+    const take = (p, k) => {
+        try { return map[p]?.(id, k) } catch { return undefined }
+    }
+    const lyr = map.getLayer(id) || {}
+    LAST_STYLE_CACHE[id] = {
+        // 必要に応じてキーを増やせます
+        paint: {
+            'text-color':      take('getPaintProperty', 'text-color'),
+            'text-halo-color': take('getPaintProperty', 'text-halo-color'),
+            'text-halo-width': take('getPaintProperty', 'text-halo-width'),
+        },
+        layout: {
+            'text-size':        take('getLayoutProperty', 'text-size'),
+            'symbol-placement': take('getLayoutProperty', 'symbol-placement'),
+            'icon-size':        take('getLayoutProperty', 'icon-size'),
+            'visibility':       take('getLayoutProperty', 'visibility') || 'visible',
+        },
+        // ズーム範囲
+        minzoom: typeof lyr.minzoom === 'number' ? lyr.minzoom : undefined,
+        maxzoom: typeof lyr.maxzoom === 'number' ? lyr.maxzoom : undefined,
+    }
+}
+
+/** プレフィックス一致する現在存在レイヤーを一括スナップショット */
+export function snapshotByPrefix(map, prefix) {
+    if (!map || !prefix) return
+    const ids = (map.getStyle()?.layers || []).map(l => l.id).filter(id => id.includes(prefix))
+    for (const id of ids) snapshotLastStyle(map, id)
+}
+
+/** リセット時にキャッシュを捨てる */
+export function clearLastStyleCache() {
+    for (const k of Object.keys(LAST_STYLE_CACHE)) delete LAST_STYLE_CACHE[k]
+}
+
+/** デバッグ用（任意） */
+export function getLastStyleCache() {
+    return JSON.parse(JSON.stringify(LAST_STYLE_CACHE))
+}
+
+// ---- ここから “最後のスタイルを保ったまま remove→add” 実装 ----
+
+/**
+ * 単体レイヤーを、最後に見えていたスタイルを可能な範囲で再適用して re-add する。
+ * - 直前に map 上にあれば、その live 値を採取
+ * - なければキャッシュの値を使用
+ * - どちらも無ければ original をそのまま
+ */
+export function readdByIdPreservingLast(map, originalStyle, id, beforeId = null, iconOnlyId = null) {
+    if (!map || !originalStyle || !id) return
+
+    // 1) 可能なら現時点の live スタイルを採取（remove 前）
+    if (map.getLayer?.(id)) snapshotLastStyle(map, id)
+
+    // 2) 位置が無指定なら現在順序から推定
+    if (!beforeId) {
+        try {
+            const order = (map.getStyle()?.layers || []).map(l => l.id)
+            const idx = order.indexOf(id)
+            if (idx >= 0 && idx + 1 < order.length) beforeId = order[idx + 1]
+        } catch {}
+    }
+
+    // 3) remove
+    try { if (map.getLayer(id)) map.removeLayer(id) } catch {}
+
+    // 4) original からクリーン clone を用意（ベース）
+    const orig = (originalStyle.layers || []).find(l => l.id === id)
+    if (!orig) return
+    const spec = JSON.parse(JSON.stringify(orig))
+
+    // 5) “最後のスタイル”を引き当て（あればベースに反映）
+    const last = LAST_STYLE_CACHE[id]
+    if (last) {
+        spec.layout = spec.layout || {}
+        spec.paint  = spec.paint  || {}
+
+        // visibility
+        if (last.layout?.visibility) spec.layout.visibility = last.layout.visibility
+
+        // text-size / symbol-placement / icon-size（icon-only以外は icon-size を落とす）
+        if (typeof last.layout?.['text-size'] !== 'undefined')        spec.layout['text-size'] = last.layout['text-size']
+        if (typeof last.layout?.['symbol-placement'] !== 'undefined') spec.layout['symbol-placement'] = last.layout['symbol-placement']
+        if (typeof last.layout?.['icon-size'] !== 'undefined') {
+            if (!iconOnlyId || id === iconOnlyId) spec.layout['icon-size'] = last.layout['icon-size']
+            else delete spec.layout['icon-size']
+        } else {
+            if (iconOnlyId && id !== iconOnlyId) delete spec.layout['icon-size']
+        }
+
+        // text-color / halo
+        if (typeof last.paint?.['text-color'] !== 'undefined')      spec.paint['text-color'] = last.paint['text-color']
+        if (typeof last.paint?.['text-halo-color'] !== 'undefined') spec.paint['text-halo-color'] = last.paint['text-halo-color']
+        if (typeof last.paint?.['text-halo-width'] !== 'undefined') spec.paint['text-halo-width'] = last.paint['text-halo-width']
+
+        // ズーム範囲（minzoom は spec フィールド、max は add 後 setLayerZoomRange）
+        if (typeof last.minzoom === 'number') spec.minzoom = last.minzoom
+    } else {
+        // キャッシュが無い＝“元に戻す”。icon-only 以外の icon-size は念のため消す
+        if (iconOnlyId && spec.id !== iconOnlyId && spec.layout) delete spec.layout['icon-size']
+    }
+
+    // 6) addLayer（beforeId が生きていればその前）
+    try {
+        if (beforeId && map.getLayer(beforeId)) map.addLayer(spec, beforeId)
+        else map.addLayer(spec)
+    } catch {}
+
+    // 7) maxzoom や residual を後段で反映（MapLibre API は追加後に調整が安全）
+    try {
+        const max = (last && typeof last.maxzoom === 'number') ? last.maxzoom : (map.getLayer(id)?.maxzoom ?? 24)
+        const min = (typeof spec.minzoom === 'number') ? spec.minzoom : (map.getLayer(id)?.minzoom ?? 0)
+        map.setLayerZoomRange(id, min, max)
+    } catch {}
+
+    // 8) 後から null で消すべきものがあればここで（例：指定が無いキーを確実に消したい場合）
+    //    今回は “最後の値が undefined の場合は触らない” 方針。必要なら消去ロジックを追記。
+}
+
+/**
+ * プレフィックス一致する現在存在レイヤーを “最後のスタイルを保ったまま” 一括 re-add。
+ * - 直前 live → remove → original ＋ last を合成 → add
+ * - リセット後は clearLastStyleCache() を呼んでおけば original のままになります
+ */
+export function readdByPrefixPreservingLast(map, originalStyle, prefix, iconOnlyId = null) {
+    if (!map || !originalStyle || !prefix) return
+    const order = (map.getStyle()?.layers || []).map(l => l.id)
+    const targets = order.filter(id => id.includes(prefix))
+    // beforeId を先に計算
+    const set = new Set(targets)
+    const beforeOf = new Map()
+    for (const id of targets) {
+        const idx = order.indexOf(id)
+        let beforeId = null
+        if (idx >= 0) {
+            for (let j = idx + 1; j < order.length; j++) {
+                const cand = order[j]
+                if (!set.has(cand)) { beforeId = cand; break }
+            }
+        }
+        beforeOf.set(id, beforeId)
+    }
+    // 一個ずつ
+    for (const id of targets) {
+        readdByIdPreservingLast(map, originalStyle, id, beforeOf.get(id), iconOnlyId)
+    }
+}
+
+// MapLibre GL JS — get the current order (index) of a layer by id
+// Usage:
+//   const idx = getLayerIndex(map, 'oh-mw-dummy');
+//   const ctx = getLayerContext(map, 'oh-mw-dummy');
+//   console.log(idx, ctx);
+
+export function getLayerIndex(map, layerId) {
+    if (!map || !map.getStyle || !layerId) return -1;
+    const style = map.getStyle() || {};
+    const layers = style.layers || [];
+    for (let i = 0; i < layers.length; i++) {
+        if (layers[i]?.id === layerId) return i;
+    }
+    return -1; // not found
+}
+
+// Convenience: returns rich context around the layer's position
+export function getLayerContext(map, layerId) {
+    const index = getLayerIndex(map, layerId);
+    if (index < 0) {
+        return { index: -1, exists: false, beforeId: null, afterId: null, order: [] };
+    }
+    const layers = (map.getStyle()?.layers) || [];
+    const beforeId = (index < layers.length - 1) ? layers[index + 1].id : null; // layer added BEFORE this would go above this id
+    const afterId  = (index > 0) ? layers[index - 1].id : null;                  // layer added AFTER this would end up below this id
+    return {
+        index,
+        exists: true,
+        id: layerId,
+        beforeId, // use as 3rd arg of map.addLayer(layer, beforeId)
+        afterId,
+        order: layers.map(l => l.id)
+    };
+}
+
+// Example (safe to run in console after map is ready):
+// const info = getLayerContext(map, 'oh-mw-dummy');
+// console.table({ index: info.index, beforeId: info.beforeId, afterId: info.afterId });
+
+
