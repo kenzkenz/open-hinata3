@@ -2590,6 +2590,11 @@ export default {
     stopPitch: null,
     showWarpWizard: false,
     dialogForWatchPosition: false,
+    geoLastTs: 0,
+    geoTimer: null,
+    geoStaleMs: 8000, // 8秒以上更新が無ければ再起動
+    geoVisHookBound: false,
+    geoAccAvgAlpha: 0.3, // 精度EWMAの係数（0<α≤1）
     aaa: null,
   }),
   computed: {
@@ -6285,70 +6290,206 @@ export default {
       const map = this.$store.state.map01
       map.zoomOut({duration: 500})
     },
+    /**
+     * 現在地連続取得を改良
+     */
     startWatchPosition () {
-      if (this.watchId === null && navigator.geolocation) {
-        this.watchId = navigator.geolocation.watchPosition(
-            (position) => {
+      if (!('geolocation' in navigator)) {
+        console.warn('[geo] navigator.geolocation 未対応');
+        return;
+      }
+      // 二重起動防止のため、いったん停止
+      this.stopWatchPosition();
+
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            this.geoLastTs = position.timestamp || Date.now();
+            try {
+              // 既存の座標更新ロジックをそのまま活用
               this.updateLocationAndCoordinates(position);
-            },
-            (error) => {
-              console.error('Geolocation error:', error);
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-        );
-      }
+            } catch (e) {
+              console.warn('[geo] updateLocationAndCoordinates error', e);
+            }
+          },
+          (error) => {
+            console.warn('[geo] error', error);
+            // 小休止してリスタート（端末や省電力で間欠的に落ちる対策）
+            this.restartWatchSoon();
+          },
+          opt
+      );
+
+      this.isTracking = true;
+      this.kickGeoWatchdog();
+      this.ensureGeoVisibilityHook();
+
+      // ログ
+      try { history('現在位置継続取得スタート', window.location.href); } catch(_) {}
     },
+
+    // ---- 位置監視の停止（★これが stopWatchPosition ）----
+    stopWatchPosition () {
+      if (this.geoTimer) { clearInterval(this.geoTimer); this.geoTimer = null; }
+      if (this.watchId !== null) {
+        try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
+        this.watchId = null;
+      }
+      this.isTracking = false;
+    },
+
+    // ---- ウォッチドッグ: 無更新を検知して再起動 ----
+    kickGeoWatchdog () {
+      if (this.geoTimer) { clearInterval(this.geoTimer); }
+      this.geoLastTs = Date.now();
+      this.geoTimer = setInterval(() => {
+        const dt = Date.now() - this.geoLastTs;
+        if (this.watchId !== null && dt > this.geoStaleMs) {
+          console.warn('[geo] stale detected (', dt, 'ms ), restarting…');
+          this.restartWatchSoon();
+        }
+      }, 2000);
+    },
+
+    restartWatchSoon () {
+      this.stopWatchPosition();
+      setTimeout(() => {
+        // 画面が非可視なら立ち上げない（復帰時のvisibilitychangeで再開）
+        if (document.visibilityState === 'visible') {
+          this.startWatchPosition();
+        }
+      }, 500);
+    },
+
+    ensureGeoVisibilityHook () {
+      if (this.geoVisHookBound) return;
+      this.geoVisHookBound = true;
+      document.addEventListener('visibilitychange', () => {
+        // 復帰時に再確立。省電力・バックグラウンド間引きからの復帰を安定化
+        if (document.visibilityState === 'visible') {
+          if (this.isTracking && this.watchId === null) {
+            this.startWatchPosition();
+          }
+        }
+      });
+    },
+
+    // ---- UIから呼ぶ開始（方位指定つき） ----
     watchPosition (up) {
-      this.dialogForWatchPosition = false
-      this.startWatchPosition()
-      this.isTracking = true
+      this.dialogForWatchPosition = false;
+
+      // ヘディングアップ処理
       if (up === 'h') {
-        this.compass.turnOn()
-        this.isHeadingUp = true
+        this.isHeadingUp = true;
+        try { this.compass?.turnOn?.(); } catch(_) {}
       } else {
-        this.isHeadingUp = false
+        this.isHeadingUp = false;
+        try { this.compass?.turnOff?.(); } catch(_) {}
       }
-      if (this.currentMarker) this.currentMarker.remove();
-      history('現在位置継続取得スタート',window.location.href)
+
+      // 既存マーカーの整理
+      try { this.currentMarker?.remove?.(); } catch(_) {}
+
+      // 起動
+      this.startWatchPosition();
     },
+
+    // ---- トグル ----
     toggleWatchPosition () {
       if (this.watchId === null) {
-        this.dialogForWatchPosition = true
+        // ダイアログを出してから watchPosition(up) へ
+        this.dialogForWatchPosition = true;
       } else {
-        this.isHeadingUp = false
-        navigator.geolocation.clearWatch(this.watchId);
-        this.watchId = null;
-        this.centerMarker.remove()
-        this.centerMarker = null
-        this.isTracking = false
-        this.currentMarker = null
-        this.compass.turnOff()
-        const map = this.$store.state.map01
-        map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
-        history('現在位置継続取得ストップ',window.location.href)      }
-    },
-    toggleWatchPosition2 () {
-      if (this.watchId === null) {
-        this.startWatchPosition()
-        this.isTracking = true
-        if (this.isHeadingUp) {
-          this.compass.turnOn()
-        }
-        if (this.currentMarker) this.currentMarker.remove();
-        history('現在位置継続取得スタート',window.location.href)
-      } else {
-        navigator.geolocation.clearWatch(this.watchId);
-        this.watchId = null;
-        this.centerMarker.remove()
-        this.centerMarker = null
-        this.isTracking = false
-        this.currentMarker = null
-        this.compass.turnOff()
-        const map = this.$store.state.map01
-        map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
-        history('現在位置継続取得ストップ',window.location.href)
+        // 停止処理
+        this.isHeadingUp = false;
+
+        this.stopWatchPosition();
+
+        // マーカー類の安全な破棄
+        try { this.centerMarker?.remove?.(); } catch(_) {}
+        this.centerMarker = null;
+        try { this.currentMarker?.remove?.(); } catch(_) {}
+        this.currentMarker = null;
+
+        // コンパスOFF + North/Pitchへ戻す
+        try { this.compass?.turnOff?.(); } catch(_) {}
+        const map = this.$store?.state?.map01;
+        try { map?.resetNorthPitch?.(); } catch(_) {}
+
+        try { history('現在位置継続取得ストップ', window.location.href); } catch(_) {}
       }
     },
+
+
+
+
+
+
+
+    // startWatchPosition () {
+    //   if (this.watchId === null && navigator.geolocation) {
+    //     this.watchId = navigator.geolocation.watchPosition(
+    //         (position) => {
+    //           this.updateLocationAndCoordinates(position);
+    //         },
+    //         (error) => {
+    //           console.error('Geolocation error:', error);
+    //         },
+    //         { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+    //     );
+    //   }
+    // },
+    // watchPosition (up) {
+    //   this.dialogForWatchPosition = false
+    //   this.startWatchPosition()
+    //   this.isTracking = true
+    //   if (up === 'h') {
+    //     this.compass.turnOn()
+    //     this.isHeadingUp = true
+    //   } else {
+    //     this.isHeadingUp = false
+    //   }
+    //   if (this.currentMarker) this.currentMarker.remove();
+    //   history('現在位置継続取得スタート',window.location.href)
+    // },
+    // toggleWatchPosition () {
+    //   if (this.watchId === null) {
+    //     this.dialogForWatchPosition = true
+    //   } else {
+    //     this.isHeadingUp = false
+    //     navigator.geolocation.clearWatch(this.watchId);
+    //     this.watchId = null;
+    //     this.centerMarker.remove()
+    //     this.centerMarker = null
+    //     this.isTracking = false
+    //     this.currentMarker = null
+    //     this.compass.turnOff()
+    //     const map = this.$store.state.map01
+    //     map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
+    //     history('現在位置継続取得ストップ',window.location.href)      }
+    // },
+    // toggleWatchPosition2 () {
+    //   if (this.watchId === null) {
+    //     this.startWatchPosition()
+    //     this.isTracking = true
+    //     if (this.isHeadingUp) {
+    //       this.compass.turnOn()
+    //     }
+    //     if (this.currentMarker) this.currentMarker.remove();
+    //     history('現在位置継続取得スタート',window.location.href)
+    //   } else {
+    //     navigator.geolocation.clearWatch(this.watchId);
+    //     this.watchId = null;
+    //     this.centerMarker.remove()
+    //     this.centerMarker = null
+    //     this.isTracking = false
+    //     this.currentMarker = null
+    //     this.compass.turnOff()
+    //     const map = this.$store.state.map01
+    //     map.resetNorthPitch();        // bearing=0, pitch=0 にアニメーションで戻す
+    //     history('現在位置継続取得ストップ',window.location.href)
+    //   }
+    // },
     updateLocationAndCoordinates(position) {
       const map = this.$store.state.map01
       let longitude, latitude;
