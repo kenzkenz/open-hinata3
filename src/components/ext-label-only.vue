@@ -1,7 +1,7 @@
-<!-- components/ext-label-only.vue -->
+<!-- components/ext-label-only.vue (clean full source) -->
 <template>
   <div class="label-controller-root" v-show="isOpen">
-    <!-- Toolbar -->
+    <!-- Toolbar（検索／表示系のみ） -->
     <div class="toolbar">
       <div class="tools">
         <v-text-field
@@ -14,17 +14,8 @@
             @keydown.stop
         />
 
-        <!-- （スマホ都合で一時非表示。ロジックは生存） -->
-        <!--
-        <v-btn-toggle v-model="kind" density="comfortable" mandatory class="seg">
-          <v-btn value="all"   class="seg-btn is-all">すべて</v-btn>
-          <v-btn value="label" class="seg-btn is-label">ラベル</v-btn>
-          <v-btn value="icon"  class="seg-btn is-icon">アイコン</v-btn>
-        </v-btn-toggle>
-        -->
-
         <!-- すべて表示/非表示/リセット -->
-        <v-btn icon variant="text" class="allvis" :title="'すべて表示'"  @click="setAllVisibility(true)">
+        <v-btn icon variant="text" class="allvis" :title="'すべて表示'" @click="setAllVisibility(true)">
           <v-icon>mdi-eye</v-icon>
         </v-btn>
         <v-btn icon variant="text" class="allvis" :title="'すべて非表示'" @click="setAllVisibility(false)">
@@ -39,9 +30,11 @@
     <!-- Body -->
     <div class="body">
       <div class="panel">
+        <!-- ヘッダ行 -->
         <div class="list-head">
           <span>レイヤー名</span><span>種別</span><span>表示</span><span>編集</span>
         </div>
+        <!-- リスト -->
         <div class="list-scroll">
           <div class="item" v-for="(ly, i) in filtered" :key="ly.id + '-' + i">
             <div class="id"><code :title="ly.id">{{ ly.displayName }}</code></div>
@@ -67,6 +60,36 @@
               </v-btn>
             </div>
           </div>
+        </div>
+
+        <!-- ▼ カードの下（リスト直下）に一括操作を配置 -->
+        <div class="bulk-controls under-card">
+          <v-text-field
+              v-model.trim="bulk.textColor"
+              density="compact"
+              hide-details
+              variant="outlined"
+              placeholder="#333 or rgba()"
+              class="bulk-color"
+          />
+          <v-btn size="small" variant="tonal" class="mr-2" @click="applyAllTextColor" :disabled="!bulk.textColor">
+            全ラベル色
+          </v-btn>
+
+          <v-text-field
+              v-model.number="bulk.textSizeFactor"
+              type="number"
+              step="0.1"
+              min="0.1"
+              density="compact"
+              hide-details
+              variant="outlined"
+              placeholder="倍率 X"
+              class="bulk-factor"
+          />
+          <v-btn size="small" color="primary" variant="flat" @click="multiplyAllTextSize">
+            X倍に
+          </v-btn>
         </div>
       </div>
     </div>
@@ -175,6 +198,10 @@ export default {
           minzoomOriginal: null,
         },
       },
+      bulk: {
+        textColor: '',
+        textSizeFactor: 1.0,
+      },
       localZ: 2000,
       originalStyle: null,
     }
@@ -205,6 +232,51 @@ export default {
     this.buildFromJson()
   },
   methods:{
+    // ===== 一括操作 =====
+    applyAllTextColor(){
+      const color = (this.bulk.textColor||'').trim()
+      if(!color) return
+      this._eachTextSymbolLayer((id, curJson)=>{
+        curJson.paint = curJson.paint || {}
+        curJson.paint['text-color'] = color
+        try{ if(this.map?.getLayer?.(id)) this.map.setPaintProperty(id, 'text-color', color) }catch(e){}
+      })
+    },
+    multiplyAllTextSize(){
+      const f = Number(this.bulk.textSizeFactor)
+      if(!Number.isFinite(f) || f <= 0) return
+      this._eachTextSymbolLayer((id, curJson)=>{
+        let cur = curJson?.layout?.['text-size']
+        if(cur === undefined){
+          try{ cur = this.map?.getLayoutProperty?.(id, 'text-size') }catch(e){}
+        }
+        if(cur === undefined || cur === null) return
+        const next = this._mulExpr(cur, f)
+        curJson.layout = curJson.layout || {}
+        curJson.layout['text-size'] = next
+        try{ if(this.map?.getLayer?.(id)) this.map.setLayoutProperty(id, 'text-size', next) }catch(e){}
+      })
+    },
+    _mulExpr(valueOrExpr, factor){
+      if(Array.isArray(valueOrExpr)){
+        return ['*', valueOrExpr, factor]
+      }
+      const n = Number(valueOrExpr)
+      if(Number.isFinite(n)) return n * factor
+      return valueOrExpr
+    },
+    _eachTextSymbolLayer(fn){
+      const style = osmBrightLabelOnly
+      if(!style || !Array.isArray(style.layers)) return
+      for(const l of style.layers){
+        if(l.type !== 'symbol') continue
+        const hasText = !!(l.layout && l.layout['text-field'] != null)
+        if(!hasText) continue
+        fn(l.id, l)
+      }
+    },
+
+    // ===== 既存機能 =====
     buildFromJson(){
       const style = osmBrightLabelOnly
       const list = []
@@ -284,7 +356,6 @@ export default {
       const l = this._findLayerInJson(id); if(!l) return
       l.layout = l.layout || {}; l.paint = l.paint || {}
 
-      // JSON
       if(this.edit.form.textSize != null) l.layout['text-size'] = Number(this.edit.form.textSize); else delete l.layout['text-size']
       if(this.edit.form.symbolPlacement) l.layout['symbol-placement'] = this.edit.form.symbolPlacement; else delete l.layout['symbol-placement']
       if(id === ICON_ONLY_ID && this.edit.target?.hasIcon){
@@ -296,7 +367,6 @@ export default {
       if(this.edit.form.textHaloColor) l.paint['text-halo-color'] = this.edit.form.textHaloColor; else delete l.paint['text-halo-color']
       if(this.edit.form.textHaloWidth != null) l.paint['text-halo-width'] = Number(this.edit.form.textHaloWidth); else delete l.paint['text-halo-width']
 
-      // minzoom（ON=オリジナル / OFF=1 相当）
       if(this.edit.form.minzoomEnabled){
         if(this.edit.form.minzoomOriginal != null) l.minzoom = this.edit.form.minzoomOriginal
         else delete l.minzoom
@@ -304,7 +374,6 @@ export default {
         delete l.minzoom
       }
 
-      // Map 反映
       const m = this.map
       try{
         if(m?.getLayer?.(id)){
@@ -339,10 +408,8 @@ export default {
       if(typeof orig.minzoom !== 'undefined') cur.minzoom = orig.minzoom
       else delete cur.minzoom
 
-      // 画面のフォームを再読込（ダイアログは開いたまま）
       this.openEdit({ id: trg.id, displayName: trg.displayName, hasIcon: trg.hasIcon, hasText: trg.hasText })
 
-      // Map 反映
       const m = this.map
       try{
         if(m?.getLayer?.(trg.id)){
@@ -423,7 +490,7 @@ export default {
 <style scoped>
 /* ===== カード ===== */
 .label-controller-root{
-  width: 380px;
+  width: 420px;
   max-width: 100%;
   box-sizing: border-box;
   background: #fff;
@@ -443,108 +510,78 @@ export default {
 
 /* ===== 本体 ===== */
 .body{ padding:8px; }
-.panel{ background:rgba(0,0,0,.03); border:1px dashed rgba(0,0,0,.2); border-radius:10px; padding:10px; }
+.panel{ background:rgba(0,0,0,.03); border:1px dashed rgba(0,0,0,.2); border-radius:10px; padding:8px; }
 
-/* グリッド：列幅を minmax 固定でブレ防止 */
+/* ヘッダ行：コンパクト化 */
 .list-head{
   display:grid;
-  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
-  gap:8px;
-  font-size:11px; color:#6b7280; font-weight:600; letter-spacing:.02em; text-transform:uppercase;
-  padding:0 8px 6px;
+  grid-template-columns: minmax(0,1fr) 92px 42px 42px; /* 横幅を詰める */
+  gap:6px;                           /* 余白縮小 */
+  font-size:10px;                    /* 高さ抑制 */
+  line-height:1.1;
+  color:#6b7280;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  padding:0 8px 2px;                 /* 下余白を小さく */
+  min-height:28px;                   /* 見出しの高さを低く */
+  align-items:center;                /* 垂直中央 */
 }
-.list-scroll{ max-height:50vh; overflow:auto; padding:0 8px 6px; }
+
+/* リスト領域 */
+.list-scroll{ max-height:48vh; overflow:auto; padding:0 8px 6px; }
+
+/* 各行：高さを低めに・整列 */
 .item{
   display:grid;
-  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
-  align-items:center;
-  gap:8px;
-  padding:8px 8px;
+  grid-template-columns: minmax(0,1fr) 92px 42px 42px; /* ヘッダと揃える */
+  align-items:center;                /* 垂直中央 */
+  gap:6px;
+  padding:6px 8px;                   /* 内側余白を減らす */
   border-top:1px solid rgba(0,0,0,.06);
-  min-height:48px;              /* 行高を固定に近づける */
+  min-height:42px;                   /* 既定より低く */
 }
 .item:first-child{ border-top:none; }
 
-/* レイヤー名：一行省略・高さ安定化 */
+/* レイヤー名：省略せず正しく折り返し（高さ安定） */
 .id{ min-width:0; }
 .id code{
   display:block;
   font-size:12px;
-  line-height:1.3;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  line-height:1.25;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
   margin:0; padding:0;
 }
 
-/* 種別チップ：上下の余白ゼロ、横並び固定 */
+/* 種別チップ：コンパクト */
 .kind{ display:flex; align-items:center; gap:4px; flex-wrap:nowrap; white-space:nowrap; min-width:0; }
-.chip{
-  border-radius:8px !important;
-  height:22px !important;
-  line-height:22px !important;
-  font-size:11px !important;
-  padding:0 6px !important;
-  min-width:auto !important;
-  margin:0 !important;          /* ← 余計な上下マージン禁止 */
-}
+.chip{ border-radius:8px !important; height:20px !important; line-height:20px !important; font-size:10px !important; padding:0 6px !important; min-width:auto !important; margin:0 !important; }
 .chip-text{ background:#eef6ff; border:1px solid #cfe6ff; }
 .chip-icon{ background:#f9f3ff; border:1px solid #eadcff; }
 
-/* アイコン列の幅 */
-.vis :deep(.v-btn), .edit :deep(.v-btn){ width:36px; height:36px; }
+/* 右側のボタン列もコンパクトに */
+.vis :deep(.v-btn), .edit :deep(.v-btn){ width:28px; height:28px; }
+.vis :deep(.v-icon), .edit :deep(.v-icon){ font-size:18px; }
 
-/* ===== ダイアログ ===== */
+/* ===== 一括操作（カード下） ===== */
+.bulk-controls.under-card{
+  display:flex; align-items:center; gap:8px; padding:8px; margin-top:4px;
+  border-top:1px dashed rgba(0,0,0,.15);
+  background:rgba(255,255,255,.6);
+}
+.bulk-controls .bulk-color{ width:160px; }
+.bulk-controls .bulk-factor{ width:110px; }
+
+/* ダイアログまわり */
 .editor-dialog :deep(.v-overlay__scrim){ background: rgba(15,18,25,0.5) !important; }
 .editor-body{ padding:8px 4px; }
 .grid.two-col{ display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
 @media (max-width:560px){ .grid.two-col{ grid-template-columns:1fr; } }
 .field-label{ display:block; margin-bottom:6px; font-size:12px; color:#6b7280; }
-
-/* minzoom スイッチを小さめに */
 .minz-cell{ display:flex; align-items:center; gap:10px; }
 .minz-switch :deep(.v-selection-control){ transform: scale(0.92); transform-origin:left center; }
-
-/* Vuetify fields（タイトめ） */
 :deep(.v-field--variant-outlined){ --v-field-padding-start:8px; }
 :deep(.v-field__outline__start), :deep(.v-field__outline__end){ opacity:.9; }
-
-/* 行本体：複数行でもブレにくいよう上揃え＋一定の内側余白 */
-.item{
-  display:grid;
-  grid-template-columns: minmax(0,1fr) 110px 48px 48px;
-  align-items: start;       /* ← ここを start に */
-  gap:8px;
-  padding:8px 8px;
-  border-top:1px solid rgba(0,0,0,.06);
-}
-
-/* レイヤー名：省略せず正しく改行させる */
-.id{ min-width:0; }
-.id code{
-  display:block;
-  font-size:12px;
-  line-height:1.3;
-  white-space: normal;      /* ← 正しく改行 */
-  word-break: break-word;   /* ← 長い単語も折り返し */
-  overflow: visible;        /* ← 省略記号を出さない */
-  margin:0; padding:0;
-}
-
-/* 種別（ラベル/アイコン）は中央揃えのまま */
-.kind{
-  display:flex; align-items:center; gap:4px;
-  flex-wrap:nowrap; white-space:nowrap; min-width:0;
-  align-self: center;        /* ← 行が高くなっても中央に見える */
-}
-
-/* 右側のアイコン列は行が高くなっても中央に */
-.vis, .edit{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100%;
-}
-
-
 </style>
