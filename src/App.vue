@@ -2628,6 +2628,9 @@ export default {
     // UI: 最終更新経過の見える化用
     geoLastAgeSec: 0,
     geoAgeTimer: null,
+
+    prevQuality: '',
+
     aaa: null,
   }),
   computed: {
@@ -6350,8 +6353,10 @@ export default {
           (position) => {
             this.geoLastTs = position.timestamp || Date.now();
             try {
-              this.updateLocationAndCoordinates?.(position);
-              this.saveGeoMetrics(position);
+              const isUpdateLocation = this.saveGeoMetrics(position);
+              if (isUpdateLocation) {
+                this.updateLocationAndCoordinates?.(position);
+              }
             } catch (e) {
               console.warn('[geo] update/save error', e);
             }
@@ -6536,7 +6541,7 @@ export default {
         const speed = (typeof c.speed === 'number') ? c.speed : null;
         const heading = (typeof c.heading === 'number') ? c.heading : null;
         const accuracyAvg = ewma(prev.accuracyAvg, accuracy);
-
+        const quality = this.getGeoQualityLabel(accuracy, altitudeAccuracy)
         const geo = {
           time: now,
           lat: (typeof c.latitude === 'number') ? c.latitude : prev.lat ?? null,
@@ -6547,10 +6552,18 @@ export default {
           altitudeAccuracy,
           speed,
           heading,
-          quality: this.getGeoQualityLabel(accuracy, altitudeAccuracy),
+          quality: quality,
           source: 'navigator',
         };
-        s.geo = geo;
+        if (this.prevQuality === 'RTK級' && quality !== 'RTK級' ) {
+          console.log('低クオリティ混入')
+          this.prevQuality = quality
+        } else {
+          s.geo = geo;
+          this.prevQuality = quality
+          return true
+        }
+        // this.prevQuality = quality
       } catch (e) {
         console.warn('[geo] saveGeoMetrics error', e);
       }
@@ -6620,6 +6633,9 @@ export default {
       this.keepAliveCtx = null; this.keepAliveNode = null; this.keepAliveOn = false;
       console.info('[keepalive] audio stopped');
     },
+
+
+
     // startWatchPosition () {
     //   if (!('geolocation' in navigator)) {
     //     console.warn('[geo] navigator.geolocation 未対応');
