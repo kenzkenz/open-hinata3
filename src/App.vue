@@ -2429,10 +2429,6 @@ export default {
     bearing:0,
     zoom:0,
     elevation:'',
-    centerMarker: null,
-    currentMarker: null,
-    isHeadingUp: false,
-    compass: null,
     dialog: false,
     dialogForSima: false,
     ddSimaText: '',
@@ -2587,49 +2583,25 @@ export default {
     stopSpin: null,
     stopPitch: null,
     showWarpWizard: false,
-    dialogForWatchPosition: false,
 
 
-    // --- 状態 ---
+    // 状態
     watchId: null,
     isTracking: false,
-    geoTimer: null,
     geoLastTs: 0,
 
-    // --- しきい値・設定 ---
-    geoStaleMs: 10_000,         // 無更新でstale扱い
-    geoPollIntervalMs: 1_000,   // 監視ポーリング
-    geoRestartDelayMs: 1_500,   // 再登録までの待機
-    geoAccAvgAlpha: 0.3,        // 精度EWMA
+    // 表示・品質関連
+    prevQuality: null,
+    geoAccAvgAlpha: 0.3, // EWMA 平滑化係数（0<alpha<=1）
 
-    // 連続再起動の統計
-    geoRestartCountWindowMs: 120_000, // 2分窓
-    geoRestartWindow: [],            // timestamp配列
-    geoRestartEscalateThresh: 3,     // 2分に3回でエスカレーション
+    // UI 設定
+    isHeadingUp: false,
+    dialogForWatchPosition: false,
 
-    // 可視性/フォーカス連動
-    geoVisHookBound: false,
-    geoFocusHookBound: false,
-    geoPageShowHookBound: false,
-
-    // Wake Lock（可能なら）
-    wakeLock: null,
-    wakeLockOn: false,
-
-    // 無音オーディオKeepAlive（既存互換）
-    keepAliveCtx: null,
-    keepAliveNode: null,
-    keepAliveOn: false,
-
-    // Permissions監視
-    geoPermStatus: 'prompt',
-    geoPermWatcher: null,
-
-    // UI: 最終更新経過の見える化用
-    geoLastAgeSec: 0,
-    geoAgeTimer: null,
-
-    prevQuality: '',
+    // 既存UI依存（存在すれば使う）
+    currentMarker: null,
+    centerMarker: null,
+    compass: null,
 
     aaa: null,
   }),
@@ -6363,165 +6335,25 @@ export default {
           },
           (error) => {
             console.warn('[geo] error', error);
-            this.noteRestart('error');
-            // TIMEOUT / POSITION_UNAVAILABLE / PERMISSION_DENIED すべて再登録方針
-            this.restartWatchSoon();
+            // ※ 最小構成: 自動再起動しない
           },
           opt
       );
 
       this.isTracking = true;
-      this.kickGeoWatchdog();
-      this.ensureGeoVisibilityHook();
-      this.ensureGeoFocusHook();
-      this.ensureGeoPageShowHook();
-      this.ensureGeoPermissionWatch();
-      this.startGeoAgeTicker();
-      this.requestWakeLock();
-
-      try { history('現在位置継続取得スタート', window.location.href); } catch(_) {}
+      try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
     },
 
-    // ---- 停止（既存置換） ----
+    // ---- 停止（最小） ----
     stopWatchPosition () {
-      if (this.geoTimer) { clearInterval(this.geoTimer); this.geoTimer = null; }
       if (this.watchId !== null) {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
         this.watchId = null;
       }
       this.isTracking = false;
-      this.releaseWakeLock();
-      this.teardownGeoAgeTicker();
     },
 
-    // ---- ウォッチドッグ: 無更新を検知して再起動 ----
-    kickGeoWatchdog () {
-      if (this.geoTimer) { clearInterval(this.geoTimer); }
-      if (!this.geoLastTs) this.geoLastTs = Date.now();
-      this.geoTimer = setInterval(() => {
-        const dt = Date.now() - this.geoLastTs;
-        if (this.watchId !== null && dt > this.geoStaleMs) {
-          console.warn('[geo] stale detected (', dt, 'ms ), restarting…');
-          this.noteRestart('stale');
-          this.restartWatchSoon();
-        }
-      }, this.geoPollIntervalMs);
-    },
-
-    restartWatchSoon () {
-      this.stopWatchPosition();
-      setTimeout(() => {
-        // 非可視時は立ち上げない（復帰イベントで再開）
-        if (document.visibilityState === 'visible') {
-          this.startWatchPosition();
-        } else {
-          // 可視化イベントで復帰
-        }
-      }, this.geoRestartDelayMs);
-    },
-
-    // ---- 連続再起動の窓とエスカレーション ----
-    noteRestart (reason) {
-      const now = Date.now();
-      this.geoRestartWindow.push(now);
-      // 古いものを落とす
-      const cutoff = now - this.geoRestartCountWindowMs;
-      this.geoRestartWindow = this.geoRestartWindow.filter(t => t >= cutoff);
-      if (this.geoRestartWindow.length >= this.geoRestartEscalateThresh) {
-        // ユーザーガイダンス: 位置情報OFF→ON または Drogger→OH3 起動順の徹底
-        this.showGeoStatusBanner?.({
-          level: 'warning',
-          message: '位置取得が不安定です。端末の位置情報をOFF→ONに切り替えるか、Drogger接続後にOH3を起動してください。',
-          details: `再起動 ${this.geoRestartWindow.length} 回 / 過去 ${(this.geoRestartCountWindowMs/1000)|0} 秒`,
-        });
-      } else {
-        this.showGeoStatusBanner?.({ level: 'info', message: `位置取得再確立中…（原因: ${reason}）` });
-      }
-      try { history(`[geo] restart (${reason})`, window.location.href); } catch(_) {}
-    },
-
-    // ---- 可視性/フォーカス/ページ表示復帰で再登録 ----
-    ensureGeoVisibilityHook () {
-      if (this.geoVisHookBound) return; this.geoVisHookBound = true;
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          if (this.isTracking && this.watchId === null) {
-            this.startWatchPosition();
-          }
-        }
-      });
-    },
-    ensureGeoFocusHook () {
-      if (this.geoFocusHookBound) return; this.geoFocusHookBound = true;
-      window.addEventListener('focus', () => {
-        if (this.isTracking && this.watchId === null) {
-          this.startWatchPosition();
-        }
-      });
-    },
-    ensureGeoPageShowHook () {
-      if (this.geoPageShowHookBound) return; this.geoPageShowHookBound = true;
-      window.addEventListener('pageshow', (ev) => {
-        // bfcache 復帰含む
-        if (this.isTracking && this.watchId === null) {
-          this.startWatchPosition();
-        }
-      });
-    },
-
-    // ---- Permissions API 監視（可能な環境だけ） ----
-    async ensureGeoPermissionWatch () {
-      try {
-        if (!('permissions' in navigator)) return;
-        const status = await navigator.permissions.query({ name: 'geolocation' });
-        this.geoPermStatus = status.state;
-        this.geoPermWatcher = status;
-        status.addEventListener('change', this.onGeoPermChange);
-      } catch (_) {}
-    },
-    onGeoPermChange (ev) {
-      try {
-        this.geoPermStatus = ev.target.state;
-        if (this.geoPermStatus !== 'granted') {
-          this.showGeoStatusBanner?.({
-            level: 'error',
-            message: '位置情報の権限が必要です。ブラウザのサイト設定で「位置情報を許可」にしてください。'
-          });
-        }
-      } catch(_) {}
-    },
-
-    // ---- Wake Lock（可能なとき） ----
-    async requestWakeLock () {
-      try {
-        if (!('wakeLock' in navigator)) return;
-        if (this.wakeLockOn) return;
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener?.('release', () => { this.wakeLockOn = false; });
-        this.wakeLockOn = true;
-      } catch(_) {}
-    },
-    async releaseWakeLock () {
-      try { await this.wakeLock?.release?.(); } catch(_) {}
-      this.wakeLock = null; this.wakeLockOn = false;
-    },
-
-    // ---- 最終更新の経過秒の見える化 ----
-    startGeoAgeTicker () {
-      if (this.geoAgeTimer) clearInterval(this.geoAgeTimer);
-      this.geoAgeTimer = setInterval(() => {
-        if (this.geoLastTs) {
-          this.geoLastAgeSec = Math.max(0, (Date.now() - this.geoLastTs) / 1000);
-          this.onGeoAgeTick?.(this.geoLastAgeSec);
-        }
-      }, 1000);
-    },
-    teardownGeoAgeTicker () {
-      if (this.geoAgeTimer) { clearInterval(this.geoAgeTimer); this.geoAgeTimer = null; }
-      this.geoLastAgeSec = 0;
-    },
-
-    // ---- メトリクス保存（既存互換＋微調整） ----
+    // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
     saveGeoMetrics (pos) {
       try {
         const c = pos.coords || {};
@@ -6541,7 +6373,8 @@ export default {
         const speed = (typeof c.speed === 'number') ? c.speed : null;
         const heading = (typeof c.heading === 'number') ? c.heading : null;
         const accuracyAvg = ewma(prev.accuracyAvg, accuracy);
-        const quality = this.getGeoQualityLabel(accuracy, altitudeAccuracy)
+        const quality = this.getGeoQualityLabel(accuracy, altitudeAccuracy);
+
         const geo = {
           time: now,
           lat: (typeof c.latitude === 'number') ? c.latitude : prev.lat ?? null,
@@ -6552,24 +6385,25 @@ export default {
           altitudeAccuracy,
           speed,
           heading,
-          quality: quality,
+          quality,
           source: 'navigator',
         };
-        if (this.prevQuality === 'RTK級' && quality !== 'RTK級' ) {
-          console.log('低クオリティ混入')
-          this.prevQuality = quality
+
+        // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
+        if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
+          this.prevQuality = quality;
+          return false; // updateLocation を抑制
         } else {
           s.geo = geo;
-          this.prevQuality = quality
-          return true
+          this.prevQuality = quality;
+          return true; // updateLocation を許可
         }
-        // this.prevQuality = quality
       } catch (e) {
         console.warn('[geo] saveGeoMetrics error', e);
       }
     },
 
-    // ---- 精度ラベル（既存） ----
+    // ---- 精度ラベル ----
     getGeoQualityLabel (acc, altAcc) {
       if (acc == null) return 'unknown';
       if (acc <= 1)  return 'RTK級';
@@ -6579,9 +6413,8 @@ export default {
       return '低';
     },
 
-    // ---- UIから呼ぶ開始（方位指定つき・既存互換） ----
+    // ---- UIから呼ぶ開始（方位指定つき・最小） ----
     async watchPosition (up) {
-      await this.startKeepAliveAudio();
       this.dialogForWatchPosition = false;
       if (up === 'h') {
         this.isHeadingUp = true;  try { this.compass?.turnOn?.(); } catch(_) {}
@@ -6592,10 +6425,11 @@ export default {
       this.startWatchPosition();
     },
 
-    // ---- トグル（既存互換 + クリーンアップ） ----
+    // ---- トグル（最小） ----
     async toggleWatchPosition () {
       if (this.watchId === null) {
-        this.dialogForWatchPosition = true; // ダイアログから watchPosition(up) へ
+        // 開始前に必ずダイアログを開いて方位方式を選ばせる
+        this.dialogForWatchPosition = true;
       } else {
         this.isHeadingUp = false;
         this.stopWatchPosition();
@@ -6606,32 +6440,8 @@ export default {
         try { this.compass?.turnOff?.(); } catch(_) {}
         const map = this.$store?.state?.map01; try { map?.resetNorthPitch?.(); } catch(_) {}
         this.$store.state.geo = null;
-        await this.stopKeepAliveAudio();
-        try { history('現在位置継続取得ストップ', window.location.href); } catch(_) {}
+        try { history('現在位置継続取得ストップ(最小)', window.location.href); } catch(_) {}
       }
-    },
-
-    // ---- 無音オーディオ（既存互換） ----
-    async startKeepAliveAudio () {
-      try {
-        if (this.keepAliveOn) return;
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        gain.gain.value = 0.0001;
-        osc.connect(gain).connect(ctx.destination);
-        osc.frequency.value = 20;
-        osc.start();
-        this.keepAliveCtx = ctx;
-        this.keepAliveNode = osc;
-        this.keepAliveOn = true;
-        console.info('[keepalive] audio started');
-      } catch(e){ console.warn('[keepalive] fail', e); }
-    },
-    async stopKeepAliveAudio () {
-      try { this.keepAliveNode?.stop?.(); await this.keepAliveCtx?.close?.(); } catch(_) {}
-      this.keepAliveCtx = null; this.keepAliveNode = null; this.keepAliveOn = false;
-      console.info('[keepalive] audio stopped');
     },
 
 
