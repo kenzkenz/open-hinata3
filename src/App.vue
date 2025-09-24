@@ -2671,7 +2671,7 @@ export default {
     geoQuality () {
       const geo = this.$store.state.geo
       if (geo) {
-        const qualityHtml = geo.quality === 'RTK級' ? '<span style="color: blue;">RTK稼働中</span>' : geo.quality
+        const qualityHtml = geo.quality === 'RTK級' ? '<span style="color: blue;">RTK</span>' : geo.quality
         return `座標品質= ${qualityHtml}（${geo.accuracy.toFixed(2)}m）`
       } else {
         return ''
