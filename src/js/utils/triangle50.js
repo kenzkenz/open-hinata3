@@ -165,6 +165,26 @@ export function snapIfNeeded(map, lnglat, opts = {}) {
             pts.push(g.coordinates)
         } else if (g.type === 'MultiPoint' && Array.isArray(g.coordinates)) {
             for (const c of g.coordinates) pts.push(c)
+        } else if (g.type === 'Polygon' && Array.isArray(g.coordinates)) {
+            // ★ 追加：ポリゴンの全頂点を候補にする（外環/内環すべて）
+            if (opts.snapPolygonVertices !== false) {
+                for (const ring of g.coordinates) {
+                    if (Array.isArray(ring)) {
+                        for (const c of ring) pts.push(c)
+                    }
+                }
+            }
+        } else if (g.type === 'MultiPolygon' && Array.isArray(g.coordinates)) {
+            // ★ 追加：マルチポリゴンの全頂点を候補にする
+            if (opts.snapPolygonVertices !== false) {
+                for (const poly of g.coordinates) {
+                    for (const ring of poly) {
+                        if (Array.isArray(ring)) {
+                            for (const c of ring) pts.push(c)
+                        }
+                    }
+                }
+            }
         }
     }
     if (!pts.length) return lnglat
@@ -190,6 +210,28 @@ export function snapIfNeeded(map, lnglat, opts = {}) {
                 const d2 = dx*dx + dy*dy
                 if (d2 < bestD2) { bestD2 = d2; best = c }
             }
+        } else if (g.type === 'Polygon' && Array.isArray(g.coordinates) && opts.snapPolygonVertices !== false) {
+            // ★ 追加：ポリゴンの全頂点から最近点
+            for (const ring of g.coordinates) {
+                for (const c of ring) {
+                    const pp = map.project(c)
+                    const dx = pp.x - p.x, dy = pp.y - p.y
+                    const d2 = dx*dx + dy*dy
+                    if (d2 < bestD2) { bestD2 = d2; best = c }
+                }
+            }
+        } else if (g.type === 'MultiPolygon' && Array.isArray(g.coordinates) && opts.snapPolygonVertices !== false) {
+            // ★ 追加：マルチポリゴンの全頂点から最近点
+            for (const poly of g.coordinates) {
+                for (const ring of poly) {
+                    for (const c of ring) {
+                        const pp = map.project(c)
+                        const dx = pp.x - p.x, dy = pp.y - p.y
+                        const d2 = dx*dx + dy*dy
+                        if (d2 < bestD2) { bestD2 = d2; best = c }
+                    }
+                }
+            }
         }
     }
 
@@ -198,6 +240,75 @@ export function snapIfNeeded(map, lnglat, opts = {}) {
     }
     return lnglat
 }
+
+// export function snapIfNeeded(map, lnglat, opts = {}) {
+//     // 既存ポイントへスナップ
+//     // opts.snapLayerIds: 対象レイヤID配列（未指定なら全レイヤからポイントを検索）
+//     // opts.snapPx: ピクセル許容半径（既定 8）
+//     // opts.excludeLayerIds: 除外するレイヤID配列（既定: 自分のポイントレイヤ）
+//     const tol = Math.max(1, Number(opts.snapPx) || 20)
+//     const p = map.project([lnglat.lng, lnglat.lat])
+//     const bbox = [[p.x - tol, p.y - tol], [p.x + tol, p.y + tol]]
+//
+//     const selfPointLayerId = `${opts.idPrefix || DEF.idPrefix}-points`
+//     const excludeSet = new Set([selfPointLayerId, ...(opts.excludeLayerIds || [])])
+//
+//     const qOpts = {}
+//     if (Array.isArray(opts.snapLayerIds) && opts.snapLayerIds.length) {
+//         const valid = opts.snapLayerIds.filter(id => map.getLayer(id))
+//         if (!valid.length) return lnglat
+//         qOpts.layers = valid
+//     }
+//
+//     let feats = []
+//     try {
+//         // レイヤ指定が無ければ全レイヤから検索（ポイントのみ抽出）
+//         feats = map.queryRenderedFeatures(bbox, qOpts) || []
+//     } catch (_) { return lnglat }
+//
+//     // 自分の一時ポイントレイヤやポイント以外を除外
+//     const pts = []
+//     for (const f of feats) {
+//         if (!f || excludeSet.has(f.layer?.id)) continue
+//         const g = f.geometry
+//         if (!g) continue
+//         if (g.type === 'Point') {
+//             pts.push(g.coordinates)
+//         } else if (g.type === 'MultiPoint' && Array.isArray(g.coordinates)) {
+//             for (const c of g.coordinates) pts.push(c)
+//         }
+//     }
+//     if (!pts.length) return lnglat
+//
+//     // 最も近いポイントを選ぶ（画面座標距離）
+//
+//     let best = null
+//     let bestD2 = Infinity
+//
+//     for (const f of feats) {
+//         const g = f && f.geometry
+//         if (!g) continue
+//         if (g.type === 'Point') {
+//             const c = g.coordinates
+//             const pp = map.project(c)
+//             const dx = pp.x - p.x, dy = pp.y - p.y
+//             const d2 = dx*dx + dy*dy
+//             if (d2 < bestD2) { bestD2 = d2; best = c }
+//         } else if (g.type === 'MultiPoint' && Array.isArray(g.coordinates)) {
+//             for (const c of g.coordinates) {
+//                 const pp = map.project(c)
+//                 const dx = pp.x - p.x, dy = pp.y - p.y
+//                 const d2 = dx*dx + dy*dy
+//                 if (d2 < bestD2) { bestD2 = d2; best = c }
+//             }
+//         }
+//     }
+//
+//     if (best && bestD2 <= tol*tol) {
+//         return { lng: best[0], lat: best[1] }
+//     }
+//     return lnglat
+// }
 
 // ---- lnglat 解決 & 記憶 ----
 function resolveLngLat (map, arg) {
