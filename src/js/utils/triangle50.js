@@ -130,7 +130,7 @@ export function clearTriangle50 (map, opts = {}) {
 }
 
 // ---- クリック位置のスナップ ----------------------------------------------
-function snapIfNeeded(map, lnglat, opts = {}) {
+export function snapIfNeeded(map, lnglat, opts = {}) {
     // 既存ポイントへスナップ
     // opts.snapLayerIds: 対象レイヤID配列（未指定なら全レイヤからポイントを検索）
     // opts.snapPx: ピクセル許容半径（既定 8）

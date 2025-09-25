@@ -1687,7 +1687,7 @@ import {buildTri50Submenu} from '@/js/utils/triangle50'
 import WarpWizard from '@/components/WarpWizard.vue'
 import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios-map-tuning';
 import Traverse from "@/components/floatingwindow/Traverse";
-
+import { snapIfNeeded } from '@/js/utils/triangle50'
 
 import {
   addDraw,
@@ -6315,6 +6315,8 @@ export default {
      * 現在地連続取得を改良
      */
     // ---- 起動（既存置換） ----
+// ここから置き換え
+
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
@@ -6345,20 +6347,31 @@ export default {
 
       this.isTracking = true;
       try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
+
+      // 追加：現在地取得オンの時だけクリックで線を引けるようにする
+      this.attachGpsLineClick();
     },
 
-    // ---- 停止（最小） ----
+// ---- 停止（最小） ----
     stopWatchPosition () {
       if (this.watchId !== null) {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
         this.watchId = null;
       }
       this.isTracking = false;
+
+      // 追加：クリック無効化＆ライン削除
+      this.detachGpsLineClick();
+      this.clearGpsLine();
     },
 
-    // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
+// ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
     saveGeoMetrics (pos) {
       try {
+        // 追加：RTK混入抑止のデフォルト初期化（最小）
+        this.rtkWindowMs = (this.rtkWindowMs ?? 1000);
+        this.lastRtkAt   = (this.lastRtkAt   ?? 0);
+
         const c = pos.coords || {};
         const now = pos.timestamp || Date.now();
         const s = this.$store?.state; if (!s) return;
@@ -6392,8 +6405,7 @@ export default {
           source: 'navigator',
         };
 
-
-        const nowTs = pos.timestamp;
+        const nowTs = pos.timestamp || Date.now();
         // RTK級を観測したら時刻を記録
         if (quality === 'RTK級') {
           this.lastRtkAt = nowTs;
@@ -6407,7 +6419,6 @@ export default {
         s.geo = geo;
         this.prevQuality = quality;
         return true; // updateLocation を許可
-
 
         // // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
         // if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
@@ -6423,7 +6434,7 @@ export default {
       }
     },
 
-    // ---- 精度ラベル ----
+// ---- 精度ラベル ----
     getGeoQualityLabel (acc, altAcc) {
       if (acc == null) return 'unknown';
       if (acc <= 1)  return 'RTK級';
@@ -6433,7 +6444,128 @@ export default {
       return '低';
     },
 
-    // ---- UIから呼ぶ開始（方位指定つき・最小） ----
+// ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（スナップ＋距離ラベル）----
+    drawGpsLine (clickLngLat) {
+      const map = this.$store?.state?.map01;
+      if (!map) return;
+
+      const geo = this.$store?.state?.geo;
+      if (!geo || geo.lat == null || geo.lon == null) return;
+
+      // ② スナップ（import 済みの snapIfNeeded を使用）
+      const p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts で指定
+      const p2 = { lng: geo.lon, lat: geo.lat };
+
+      // LineString 作成（turf 使用）
+      const line = turf.lineString([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
+      const meters = turf.length(line, { units: 'kilometers' }) * 1000;
+
+      // ③ 中点＋方位角でラベル
+      const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
+      const bearing = turf.bearing([p1.lng, p1.lat], [p2.lng, p2.lat]);
+
+      // 最小構成のID（固定）
+      const LINE_SRC   = 'oh-gps-line-src';
+      const LINE_LAYER = 'oh-gps-line';
+      const LAB_SRC    = 'oh-gps-line-label-src';
+      const LAB_LAYER  = 'oh-gps-line-label';
+
+      // ラインソース/レイヤ
+      if (map.getSource(LINE_SRC)) map.getSource(LINE_SRC).setData(line);
+      else map.addSource(LINE_SRC, { type: 'geojson', data: line });
+
+      if (!map.getLayer(LINE_LAYER)) {
+        map.addLayer({
+          id: LINE_LAYER,
+          type: 'line',
+          source: LINE_SRC,
+          paint: { 'line-color': '#00B8D9', 'line-width': 3 }
+        });
+      }
+
+      // ラベル（1点）
+      const label = turf.featureCollection([
+        turf.point(mid.geometry.coordinates, {
+          label: (meters < 1000) ? `${meters.toFixed(1)} m` : `${(meters/1000).toFixed(3)} km`,
+          angle: bearing
+        })
+      ]);
+
+      if (map.getSource(LAB_SRC)) map.getSource(LAB_SRC).setData(label);
+      else map.addSource(LAB_SRC, { type: 'geojson', data: label });
+
+      if (!map.getLayer(LAB_LAYER)) {
+        map.addLayer({
+          id: LAB_LAYER,
+          type: 'symbol',
+          source: LAB_SRC,
+          layout: {
+            'text-field': ['get', 'label'],
+            'text-size': 14,
+            'text-allow-overlap': true,
+            'text-rotation-alignment': 'map',
+            'text-rotate': ['get', 'angle']
+          },
+          paint: { 'text-halo-color': 'white', 'text-halo-width': 1.5 }
+        });
+      }
+    },
+
+// ---- 追加：クリック（現在地オンの時だけ有効）----
+    attachGpsLineClick () {
+      const map = this.$store?.state?.map01;
+      if (!map) return;
+
+      // 既にバインド済みならフラグだけON
+      if (this.onMapClickForGpsLine) {
+        this.enableGpsLineClick = true;
+        return;
+      }
+
+      const bind = () => {
+        this.enableGpsLineClick = true;
+        this.onMapClickForGpsLine = (e) => {
+          if (!this.enableGpsLineClick) return; // 現在地ONの時だけ
+          if (!e || !e.lngLat) return;
+          this.drawGpsLine(e.lngLat);
+        };
+        map.on('click', this.onMapClickForGpsLine);
+      };
+
+      try {
+        if (map.isStyleLoaded && map.isStyleLoaded()) bind();
+        else map.once('load', bind);
+      } catch (_) {
+        map.once('load', bind);
+      }
+    },
+
+// ---- 追加：クリック無効化 ----
+    detachGpsLineClick () {
+      const map = this.$store?.state?.map01;
+      if (!map) return;
+      if (this.onMapClickForGpsLine) {
+        try { map.off('click', this.onMapClickForGpsLine); } catch(_) {}
+        this.onMapClickForGpsLine = null;
+      }
+      this.enableGpsLineClick = false;
+    },
+
+// ---- 追加：ラインとラベルの掃除（停止時に消す）----
+    clearGpsLine () {
+      const map = this.$store?.state?.map01;
+      if (!map) return;
+      const LINE_SRC   = 'oh-gps-line-src';
+      const LINE_LAYER = 'oh-gps-line';
+      const LAB_SRC    = 'oh-gps-line-label-src';
+      const LAB_LAYER  = 'oh-gps-line-label';
+      try { if (map.getLayer(LAB_LAYER)) map.removeLayer(LAB_LAYER); } catch(_) {}
+      try { if (map.getSource(LAB_SRC)) map.removeSource(LAB_SRC); } catch(_) {}
+      try { if (map.getLayer(LINE_LAYER)) map.removeLayer(LINE_LAYER); } catch(_) {}
+      try { if (map.getSource(LINE_SRC)) map.removeSource(LINE_SRC); } catch(_) {}
+    },
+
+// ---- UIから呼ぶ開始（方位指定つき・最小） ----
     async watchPosition (up) {
       this.dialogForWatchPosition = false;
       if (up === 'h') {
@@ -6445,7 +6577,7 @@ export default {
       this.startWatchPosition();
     },
 
-    // ---- トグル（最小） ----
+// ---- トグル（最小） ----
     async toggleWatchPosition () {
       if (this.watchId === null) {
         // 開始前に必ずダイアログを開いて方位方式を選ばせる
@@ -6461,8 +6593,18 @@ export default {
         const map = this.$store?.state?.map01; try { map?.resetNorthPitch?.(); } catch(_) {}
         this.$store.state.geo = null;
         try { history('現在位置継続取得ストップ(最小)', window.location.href); } catch(_) {}
+
+        // 追加：確実に片付け
+        this.detachGpsLineClick();
+        this.clearGpsLine();
       }
     },
+// ここまで置き換え
+
+
+
+
+
 
 
 
@@ -10302,6 +10444,34 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
+
+    // ---- GPSライン描画 用の状態 ----
+    this.gpsLineIds = this.gpsLineIds ?? {
+      src:       'oh-gps-line-src',
+      layer:     'oh-gps-line',
+      labelSrc:  'oh-gps-line-label-src',
+      labelLayer:'oh-gps-line-label'
+    };
+    this.onMapClickForGpsLine = this.onMapClickForGpsLine ?? null;
+
+// Turf / snap の安全な参照
+    this._turf = this._turf ?? (typeof turf !== 'undefined' ? turf : (window && window.turf));
+    this._snapIfNeeded = this._snapIfNeeded ?? (typeof snapIfNeeded === 'function' ? snapIfNeeded : (window && window.snapIfNeeded));
+
+// 距離の表示フォーマット
+    this.formatDist = this.formatDist ?? function (meters) {
+      if (meters < 1000) return `${meters.toFixed(1)} m`;
+      return `${(meters/1000).toFixed(3)} km`;
+    };
+
+// クリック許可フラグ（現在地トラッキング中のみtrue）
+    this.enableGpsLineClick = this.enableGpsLineClick ?? false;
+
+
+
+
+
 
     // this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
 
