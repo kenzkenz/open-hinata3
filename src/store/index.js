@@ -47,7 +47,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.544,
+    clientVersion: 1.545,
     geo: null,
     demTint: null,
     mode: 'step',     // 将来: 'linear' でグラデ

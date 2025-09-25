@@ -1715,7 +1715,7 @@ export function lavelUpdate(e, id) {
     store.state.isLabelUpdated = false
 }
 // ラインの最後のセグメントの方向（ベアリング）を計算する関数
-function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
+export function calculateBearing(coordPrev2, coordPrev, coordLast, endpoint) {
     const map = store.state.map01;
 
     // まずデフォルトは coordPrev を使う

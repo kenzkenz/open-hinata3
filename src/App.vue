@@ -6315,8 +6315,6 @@ export default {
      * 現在地連続取得を改良
      */
     // ---- 起動（既存置換） ----
-// ここから置き換え
-
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
@@ -6352,7 +6350,7 @@ export default {
       this.attachGpsLineClick();
     },
 
-// ---- 停止（最小） ----
+    // ---- 停止（最小） ----
     stopWatchPosition () {
       if (this.watchId !== null) {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
@@ -6365,7 +6363,7 @@ export default {
       this.clearGpsLine();
     },
 
-// ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
+    // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
     saveGeoMetrics (pos) {
       try {
         // 追加：RTK混入抑止のデフォルト初期化（最小）
@@ -6434,7 +6432,7 @@ export default {
       }
     },
 
-// ---- 精度ラベル ----
+    // ---- 精度ラベル ----
     getGeoQualityLabel (acc, altAcc) {
       if (acc == null) return 'unknown';
       if (acc <= 1)  return 'RTK級';
@@ -6444,7 +6442,8 @@ export default {
       return '低';
     },
 
-// ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（スナップ＋距離ラベル）----
+    // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（スナップ＋距離ラベル）----
+    // クリック点（snap後）と現在地を結ぶラインを描画し、
     drawGpsLine (clickLngLat) {
       const map = this.$store?.state?.map01;
       if (!map) return;
@@ -6452,28 +6451,47 @@ export default {
       const geo = this.$store?.state?.geo;
       if (!geo || geo.lat == null || geo.lon == null) return;
 
-      // ② スナップ（import 済みの snapIfNeeded を使用）
-      const p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts で指定
+      // --- ① クリック点をスナップ ---
+      const p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts に
       const p2 = { lng: geo.lon, lat: geo.lat };
 
-      // LineString 作成（turf 使用）
+      // --- ② LineString & 距離 ---
       const line = turf.lineString([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
       const meters = turf.length(line, { units: 'kilometers' }) * 1000;
 
-      // ③ 中点＋方位角でラベル
+      // --- ③ 中点・方位（あなたの考えに合わせて bearing 計算） ---
       const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
-      const bearing = turf.bearing([p1.lng, p1.lat], [p2.lng, p2.lat]);
 
-      // 最小構成のID（固定）
+      const toRad = (d) => d * Math.PI / 180;
+      const lon1 = toRad(p1.lng), lat1 = toRad(p1.lat);
+      const lon2 = toRad(p2.lng), lat2 = toRad(p2.lat);
+      const dLon = lon2 - lon1;
+
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+      // 0–360 に正規化
+      let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+      // 端点向き調整：endpoint=end（現在地側）想定 → +270
+      bearing = (bearing + 90) % 360;
+      // 右向きは問題なし。左向き（90°〜270°）は上下が逆になるので 180° 反転して可読に保つ
+      if (bearing > 90 && bearing <= 270) {
+        bearing = (bearing + 180) % 360;
+      }
+
+      // --- ④ ソース/レイヤID（固定名：最小構成） ---
       const LINE_SRC   = 'oh-gps-line-src';
       const LINE_LAYER = 'oh-gps-line';
       const LAB_SRC    = 'oh-gps-line-label-src';
       const LAB_LAYER  = 'oh-gps-line-label';
 
-      // ラインソース/レイヤ
-      if (map.getSource(LINE_SRC)) map.getSource(LINE_SRC).setData(line);
-      else map.addSource(LINE_SRC, { type: 'geojson', data: line });
-
+      // --- ⑤ ライン描画 ---
+      if (map.getSource(LINE_SRC)) {
+        map.getSource(LINE_SRC).setData(line);
+      } else {
+        map.addSource(LINE_SRC, { type: 'geojson', data: line });
+      }
       if (!map.getLayer(LINE_LAYER)) {
         map.addLayer({
           id: LINE_LAYER,
@@ -6483,17 +6501,25 @@ export default {
         });
       }
 
-      // ラベル（1点）
-      const label = turf.featureCollection([
-        turf.point(mid.geometry.coordinates, {
-          label: (meters < 1000) ? `${meters.toFixed(1)} m` : `${(meters/1000).toFixed(3)} km`,
-          angle: bearing
-        })
+      // --- ⑥ 距離ラベル（中点・bearing を text-rotate へ） ---
+      // const text = (meters < 1000) ? `約${meters.toFixed(1)}m` : `約${(meters/1000).toFixed(2)}km`;
+      let text;
+      if (meters < 1) {
+        text = `約${(meters * 100).toFixed(0)}cm`;  // 0.01m未満も四捨五入
+      } else if (meters < 1000) {
+        text = `約${meters.toFixed(2)}m`;
+      } else {
+        text = `約${(meters/1000).toFixed(2)}km`;
+      }
+      const labelFC = turf.featureCollection([
+        turf.point(mid.geometry.coordinates, { label: text, angle: bearing })
       ]);
 
-      if (map.getSource(LAB_SRC)) map.getSource(LAB_SRC).setData(label);
-      else map.addSource(LAB_SRC, { type: 'geojson', data: label });
-
+      if (map.getSource(LAB_SRC)) {
+        map.getSource(LAB_SRC).setData(labelFC);
+      } else {
+        map.addSource(LAB_SRC, { type: 'geojson', data: labelFC });
+      }
       if (!map.getLayer(LAB_LAYER)) {
         map.addLayer({
           id: LAB_LAYER,
@@ -6505,13 +6531,17 @@ export default {
             'text-allow-overlap': true,
             'text-rotation-alignment': 'map',
             'text-rotate': ['get', 'angle']
+            // 必要なら 'text-keep-upright': false を追加
           },
-          paint: { 'text-halo-color': 'white', 'text-halo-width': 1.5 }
+          paint: {
+            'text-halo-color': 'white',
+            'text-halo-width': 1.5
+          }
         });
       }
     },
 
-// ---- 追加：クリック（現在地オンの時だけ有効）----
+    // ---- 追加：クリック（現在地オンの時だけ有効）----
     attachGpsLineClick () {
       const map = this.$store?.state?.map01;
       if (!map) return;
@@ -6540,7 +6570,7 @@ export default {
       }
     },
 
-// ---- 追加：クリック無効化 ----
+    // ---- 追加：クリック無効化 ----
     detachGpsLineClick () {
       const map = this.$store?.state?.map01;
       if (!map) return;
@@ -6551,7 +6581,7 @@ export default {
       this.enableGpsLineClick = false;
     },
 
-// ---- 追加：ラインとラベルの掃除（停止時に消す）----
+    // ---- 追加：ラインとラベルの掃除（停止時に消す）----
     clearGpsLine () {
       const map = this.$store?.state?.map01;
       if (!map) return;
@@ -6565,7 +6595,7 @@ export default {
       try { if (map.getSource(LINE_SRC)) map.removeSource(LINE_SRC); } catch(_) {}
     },
 
-// ---- UIから呼ぶ開始（方位指定つき・最小） ----
+    // ---- UIから呼ぶ開始（方位指定つき・最小） ----
     async watchPosition (up) {
       this.dialogForWatchPosition = false;
       if (up === 'h') {
@@ -6577,7 +6607,7 @@ export default {
       this.startWatchPosition();
     },
 
-// ---- トグル（最小） ----
+    // ---- トグル（最小） ----
     async toggleWatchPosition () {
       if (this.watchId === null) {
         // 開始前に必ずダイアログを開いて方位方式を選ばせる
@@ -6599,7 +6629,6 @@ export default {
         this.clearGpsLine();
       }
     },
-// ここまで置き換え
 
 
 
