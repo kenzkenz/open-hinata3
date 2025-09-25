@@ -6361,6 +6361,9 @@ export default {
       // 追加：クリック無効化＆ライン削除
       this.detachGpsLineClick();
       this.clearGpsLine();
+
+      // ★ 追加：アンカー点も破棄
+      this.gpsLineAnchorLngLat = null;
     },
 
     // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
@@ -6416,6 +6419,10 @@ export default {
         // ここから通常更新
         s.geo = geo;
         this.prevQuality = quality;
+
+        // ★ 追加：現在地が更新されたら、アンカーがある場合は距離を再計算して再描画
+        try { if (this.gpsLineAnchorLngLat) this.drawGpsLine(this.gpsLineAnchorLngLat); } catch (_) {}
+
         return true; // updateLocation を許可
 
         // // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
@@ -6451,8 +6458,17 @@ export default {
       const geo = this.$store?.state?.geo;
       if (!geo || geo.lat == null || geo.lon == null) return;
 
-      // --- ① クリック点をスナップ ---
-      const p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts に
+      // --- ① クリック点（アンカー） ---
+      // アンカーからの再描画呼び出し時は snap を再実行しない
+      let p1;
+      if (clickLngLat && clickLngLat.__anchor) {
+        p1 = { lng: clickLngLat.lng, lat: clickLngLat.lat };
+      } else {
+        p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts に
+        // ★ 追加：ラインの“起点”（スナップ後のクリック点）を記憶（以後は再スナップしない）
+        this.gpsLineAnchorLngLat = { lng: p1.lng, lat: p1.lat, __anchor: true };
+      }
+
       const p2 = { lng: geo.lon, lat: geo.lat };
 
       // --- ② LineString & 距離 ---
@@ -6473,9 +6489,8 @@ export default {
       // 0–360 に正規化
       let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 
-      // 端点向き調整：endpoint=end（現在地側）想定 → +270
+      // 端点向き調整：+90、左向き（90°〜270°）はさらに+180で反転（あなたの最終仕様）
       bearing = (bearing + 90) % 360;
-      // 右向きは問題なし。左向き（90°〜270°）は上下が逆になるので 180° 反転して可読に保つ
       if (bearing > 90 && bearing <= 270) {
         bearing = (bearing + 180) % 360;
       }
@@ -6505,11 +6520,11 @@ export default {
       // const text = (meters < 1000) ? `約${meters.toFixed(1)}m` : `約${(meters/1000).toFixed(2)}km`;
       let text;
       if (meters < 1) {
-        text = `約${(meters * 100).toFixed(0)}cm`;  // 0.01m未満も四捨五入
+        text = `約${(meters * 100).toFixed(0)}cm`;  // 1m未満はcm表記（四捨五入）
       } else if (meters < 1000) {
-        text = `約${meters.toFixed(2)}m`;
+        text = `約${meters.toFixed(2)}m`;          // mは小数2桁（cm精度）
       } else {
-        text = `約${(meters/1000).toFixed(2)}km`;
+        text = `約${(meters/1000).toFixed(2)}km`;  // kmも小数2桁
       }
       const labelFC = turf.featureCollection([
         turf.point(mid.geometry.coordinates, { label: text, angle: bearing })
@@ -6627,8 +6642,11 @@ export default {
         // 追加：確実に片付け
         this.detachGpsLineClick();
         this.clearGpsLine();
+        // ★ 追加：アンカー点も破棄
+        this.gpsLineAnchorLngLat = null;
       }
     },
+
 
 
 
