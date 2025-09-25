@@ -11708,7 +11708,7 @@ select {
   width: 40px;
   height: 40px;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 }
 .scale-ratio {
   position: absolute;
