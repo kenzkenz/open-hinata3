@@ -2603,6 +2603,9 @@ export default {
     centerMarker: null,
     compass: null,
 
+    rtkWindowMs: 2000,   // 無視する時間窓（ms）
+    lastRtkAt: 0,      // 直近でRTK級を観測したタイムスタンプ(ms)
+
     aaa: null,
   }),
   computed: {
@@ -6389,15 +6392,32 @@ export default {
           source: 'navigator',
         };
 
-        // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
-        if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
-          this.prevQuality = quality;
-          return false; // updateLocation を抑制
-        } else {
-          s.geo = geo;
-          this.prevQuality = quality;
-          return true; // updateLocation を許可
+
+        const nowTs = pos.timestamp;
+        // RTK級を観測したら時刻を記録
+        if (quality === 'RTK級') {
+          this.lastRtkAt = nowTs;
         }
+        // 直近RTKから1秒以内に来た非RTK級は無視（混入抑制）
+        if (quality !== 'RTK級' && this.lastRtkAt && (nowTs - this.lastRtkAt) <= this.rtkWindowMs) {
+          // prevQuality は RTK級のまま維持しておく（品質表示をブレさせない）
+          return false; // updateLocation を抑制
+        }
+        // ここから通常更新
+        s.geo = geo;
+        this.prevQuality = quality;
+        return true; // updateLocation を許可
+
+
+        // // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
+        // if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
+        //   this.prevQuality = quality;
+        //   return false; // updateLocation を抑制
+        // } else {
+        //   s.geo = geo;
+        //   this.prevQuality = quality;
+        //   return true; // updateLocation を許可
+        // }
       } catch (e) {
         console.warn('[geo] saveGeoMetrics error', e);
       }
