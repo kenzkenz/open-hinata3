@@ -8,83 +8,69 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-
       <!-- 右上フローティングツールバー -->
       <div v-if="isTracking" class="oh-tools">
 
         <!-- CSV ダウンロード -->
-        <v-tooltip text="CSVダウンロード" location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-                v-bind="props"
-                icon
-                size="small"
-                :disabled="!csvRows || csvRows.length <= 1"
-                @click="exportTrackCsv"
-                aria-label="CSVダウンロード"
-            >
-              CSV
-<!--              <v-icon size="24">mdi-file-delimited</v-icon>-->
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <MiniTooltip text="CSVダウンロード" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              :disabled="!csvRows || csvRows.length <= 1"
+              @click="exportTrackCsv"
+              aria-label="CSVダウンロード"
+          >
+            csv
+<!--            <v-icon size="18">mdi-file-delimited</v-icon>-->
+          </v-btn>
+        </MiniTooltip>
 
         <!-- SIMA ダウンロード -->
-        <v-tooltip text="SIMAダウンロード" location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-                v-bind="props"
-                icon
-                size="small"
-                :disabled="!csvRows || csvRows.length <= 1"
-                @click="exportTrackSima"
-                aria-label="SIMAダウンロード"
-            >
-              SIM
-<!--              <v-icon size="24">mdi-file-table-box</v-icon>-->
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <MiniTooltip text="SIMAダウンロード" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              :disabled="!csvRows || csvRows.length <= 1"
+              @click="exportTrackSima"
+              aria-label="SIMAダウンロード"
+          >
+            sim
+<!--            <v-icon size="18">mdi-file-table-box</v-icon>-->
+          </v-btn>
+        </MiniTooltip>
 
         <!-- クリア -->
-        <v-tooltip text="ログをクリア" location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-                v-bind="props"
-                icon
-                size="small"
-                :disabled="!csvRows || csvRows.length <= 1"
-                @click="requestClearLog"
-                aria-label="ログをクリア"
-            >
-              <v-icon size="18">mdi-trash-can-outline</v-icon>
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <MiniTooltip text="ログをクリア" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              :disabled="!csvRows || csvRows.length <= 1"
+              @click="requestClearLog"
+              aria-label="ログをクリア"
+          >
+            <v-icon size="18">mdi-trash-can-outline</v-icon>
+          </v-btn>
+        </MiniTooltip>
 
-
-
-        <!-- 記録トグル：停止=赤Stop / 待機=録画アイコン -->
-        <v-tooltip text="記録開始 / 記録停止" location="bottom">
-          <template #activator="{ props }">
-            <v-btn
-                v-bind="props"
-                :color="logEnabled ? 'red' : 'primary'"
-                :variant="logEnabled ? 'elevated' : 'tonal'"
-                :class="logEnabled ? 'blink' : ''"
-                icon
-                size="small"
-                @click="toggleTrackLog"
-                :aria-label="logEnabled ? '記録停止' : '記録開始'"
-            >
-              <v-icon size="28">
-                {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}
-              </v-icon>
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <!-- 記録トグル：停止=赤Stop / 待機=録画 -->
+        <MiniTooltip text="記録開始 / 記録停止" :offset-x="0" :offset-y="0">
+          <v-btn
+              :color="logEnabled ? 'red' : 'primary'"
+              :variant="logEnabled ? 'elevated' : 'tonal'"
+              :class="logEnabled ? 'blink' : ''"
+              icon
+              size="small"
+              @click="toggleTrackLog"
+              :aria-label="logEnabled ? '記録停止' : '記録開始'"
+          >
+            <v-icon size="22">
+              {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}
+            </v-icon>
+          </v-btn>
+        </MiniTooltip>
 
       </div>
+
 
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
@@ -2552,6 +2538,7 @@ import attachMapRightClickMenu, {
 } from "@/js/utils/context-menu";
 import {refreshRadiusHighlight} from "@/js/utils/radius-highlight";
 import {registerDemTintProtocol} from "@/js/utils/dem-tint-protocol";
+import Encoding from 'encoding-japanese'
 
 export default {
   name: 'App',
@@ -6684,12 +6671,30 @@ export default {
 
       const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
 
-      // ▼ ここを変更：octet-stream で .sim を強制
-
-      const bytes = new TextEncoder().encode(simTxt);
-      const blob  = new Blob([bytes], { type: 'application/octet-stream' });
+      // ▼ Shift_JIS に変換して .sim で保存（iOS 対策で application/octet-stream）
+      const sjisBytes = this.$_toShiftJisBytes(simTxt);
+      const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
       this.$_downloadBlob(blob, `track_${this.$_jstStamp()}.sim`);
-      },
+    },
+
+
+    // UTF-16(JavaScript文字列) → Shift_JIS の Uint8Array を返す
+    $_toShiftJisBytes(text) {
+      try {
+        // 2) npm import（ESM）: import Encoding from 'encoding-japanese'
+        if (typeof Encoding !== 'undefined') {
+          const unicodeArr = Encoding.stringToCode(text);
+          const sjisBytes  = Encoding.convert(unicodeArr, 'SJIS', 'UNICODE');
+          return new Uint8Array(sjisBytes);
+        }
+      } catch (e) {
+        console.warn('[export] SJIS convert failed, fallback to UTF-8', e);
+      }
+      // フォールバック（UTF-8）
+      return new TextEncoder().encode(text);
+    },
+
+
 
     // 日本時間(Asia/Tokyo)のタイムスタンプ: 2025-09-27_14-03-05
     $_jstStamp() {
