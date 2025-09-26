@@ -6488,6 +6488,7 @@ export default {
         }
         // ここから通常更新
         s.geo = geo;
+        console.log(s.geo)
         this.prevQuality = quality;
 
         // ★ 追加：現在地が更新されたら、アンカーがある場合は距離を再計算して再描画
