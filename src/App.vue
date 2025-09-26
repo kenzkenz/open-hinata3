@@ -45,6 +45,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </v-btn>
           </template>
         </v-tooltip>
+
+        <!-- クリア -->
+        <v-tooltip text="ログをクリア" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                :disabled="!csvRows || csvRows.length <= 1"
+                @click="requestClearLog"
+                aria-label="ログをクリア"
+            >
+              <v-icon size="18">mdi-trash-can-outline</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
+
+
+
         <!-- 記録トグル：停止=赤Stop / 待機=録画アイコン -->
         <v-tooltip text="記録開始 / 記録停止" location="bottom">
           <template #activator="{ props }">
@@ -64,9 +83,24 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </v-btn>
           </template>
         </v-tooltip>
+
       </div>
 
-
+      <!-- 確認ダイアログ -->
+      <v-dialog v-model="confirmClearLog" width="360">
+        <v-card>
+          <v-card-title class="text-subtitle-1">ログをクリアしますか？</v-card-title>
+          <v-card-text>
+            これまで記録した座標ログ（{{ (csvRows?.length || 1) - 1 }} 件）が削除されます。
+            {{ logEnabled ? '現在の記録は停止されます。' : '' }}
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="confirmClearLog = false">キャンセル</v-btn>
+            <v-btn color="red" variant="elevated" @click="doClearLog">クリア</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
 
       <!--      <div class="oh-tools" style="position:absolute;left:10px;top:70px;z-index:3;display:flex;gap:8px;">-->
@@ -2776,6 +2810,8 @@ export default {
     lastLogXY: null,            // 直近記録XY {x, y}（X=北, Y=東）
     minLogIntervalMs: 1000,     // 時間間引き（ms）
     minLogDistanceM: 0.3,       // 距離間引き（m）
+
+    confirmClearLog: false,
 
     aaa: null,
   }),
@@ -6490,6 +6526,15 @@ export default {
     // =========================
     // ログ制御
     // =========================
+    requestClearLog() {
+      this.confirmClearLog = true;
+    },
+    doClearLog() {
+      // 録画中なら止めてからクリア（安全）
+      if (this.logEnabled) this.stopTrackLog();
+      this.clearTrackLog();
+      this.confirmClearLog = false;
+    },
     toggleTrackLog() {
       if (this.logEnabled) {
         this.stopTrackLog();
