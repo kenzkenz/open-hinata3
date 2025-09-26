@@ -6545,7 +6545,8 @@ export default {
     startTrackLog() {
       if (!this.csvRows) {
         this.csvRows = [[
-          'timestamp','lat','lon','planeX_N','planeY_E','epsg',
+          // ← カラム名は任せてもらったので分かりやすく
+          'timestamp','lat','lon','X_N','Y_E','座標系',
           'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
         ]];
       }
@@ -6571,11 +6572,10 @@ export default {
       const s = this.$store?.state || {};
       const geo = s.geo; if (!geo) return;
 
-      // EPSG（必須）
-      const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
-      if (!epsg) return;
+      // 表示名（例: "公共座標2系"）。既存の s.s_zahyokei / s.zahyokei をそのまま出す
+      const csLabel = s.s_zahyokei || s.zahyokei || '';
 
-      // 平面直角XY：現在地は jdpCoordinates を使用（最終仕様）
+      // 現在地 XY：最終仕様（jdpCoordinates = [Y, X]）
       const jdp = s.jdpCoordinates;
       if (!Array.isArray(jdp) || jdp.length < 2) return;
       const xN = Number(jdp[1]); // X=北
@@ -6597,14 +6597,15 @@ export default {
 
       if (!this.csvRows) {
         this.csvRows = [[
-          'timestamp','lat','lon','planeX_N','planeY_E','epsg',
+          'timestamp','lat','lon','X_N','Y_E','座標系',
           'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
         ]];
       }
+
       this.csvRows.push([
         new Date(now).toISOString(),
         geo.lat, geo.lon,
-        xN, yE, epsg,
+        xN, yE, csLabel,               // ← 座標系は表示名
         geo.accuracy, geo.altitudeAccuracy, geo.speed, geo.heading, geo.quality,
         eventType
       ]);
@@ -6612,6 +6613,7 @@ export default {
       this.lastLogAt = now;
       this.lastLogXY = { x: xN, y: yE };
     },
+
 
     // =========================
     // ダウンロード（CSV / SIMA）
@@ -6639,27 +6641,27 @@ export default {
     },
 
     // SIMA（共通テキスト A01）: 点名＝時刻(HHMMSS)
+    // SIMA（A01）：点名=時刻(HHMMSS)、ヘッダに「座標系=公共座標◯系」を明記
     exportTrackSima(title) {
       if (!this.csvRows || this.csvRows.length <= 1) return;
 
       const header = this.csvRows[0];
       const col = (name) => header.indexOf(name);
-      const idx_ts   = col('timestamp');
-      const idx_x    = col('planeX_N');
-      const idx_y    = col('planeY_E');
-      const idx_epsg = col('epsg');
+      const idx_ts = col('timestamp');
+      const idx_x  = col('X_N');
+      const idx_y  = col('Y_E');
+      const idx_cs = col('座標系');
 
       const rows = this.csvRows.slice(1);
       if (!rows.length) return;
 
       const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-      const epsg = (rows[0] && rows[0][idx_epsg])
-          ? rows[0][idx_epsg]
-          : (this.$store?.state && (epsgFromZahyokei(this.$store.state.s_zahyokei || this.$store.state.zahyokei, zahyokei))) || '';
+      const csLabel = (rows[0] && rows[0][idx_cs]) || (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
 
       const head = [
         `G00,01,${siteName} 座標`,
         `Z00,座標データ,`,
+        `G01,座標系,${csLabel}`,   // ← EPSG の代わりに表示名
         `A00,`
       ];
       const pad = (n, w=2) => String(n).padStart(w, '0');
@@ -6667,30 +6669,20 @@ export default {
       let n = 0;
       const a01 = rows.map(r => {
         const ts = r[idx_ts];
-        const Xn = Number(r[idx_x]);  // X=北
-        const Ye = Number(r[idx_y]);  // Y=東
+        const Xn = Number(r[idx_x]);  // 北
+        const Ye = Number(r[idx_y]);  // 東
         if (!Number.isFinite(Xn) || !Number.isFinite(Ye)) return null;
 
-        // 点名＝時刻（HHMMSS）
         const d = new Date(ts);
-        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; // 点名=時刻
 
         n += 1;
-        const ptNo = n;
-        const X = Xn.toFixed(3);
-        const Y = Ye.toFixed(3);
-        return `A01,${ptNo},${ptName},${X},${Y},,`;
+        return `A01,${n},${ptName},${Xn.toFixed(3)},${Ye.toFixed(3)},,`;
       }).filter(Boolean);
 
       if (!a01.length) return;
 
-      const lines = [
-        ...head,
-        ...(epsg ? [`G01,EPSG,${epsg}`] : []), // 任意メタ（読み飛ばし可）
-        ...a01
-      ];
-
-      const simTxt = lines.join('\r\n') + '\r\n';
+      const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
       this.$_downloadText(
           simTxt,
           `track_${new Date().toISOString().replace(/[:.]/g,'-')}.sim`,
