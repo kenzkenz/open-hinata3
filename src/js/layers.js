@@ -10574,28 +10574,76 @@ const t23kuLayer = {
         ]
     },
 }
+
+
+// ソース（raster）— demtint:// で dem_png を色別標高PNGへ
+const demTintSrc = {
+    id: 'oh-dem-tint-src',
+    obj: {
+        type: 'raster',
+        // level=0 をクエリで渡す。値を変えたい時は setTiles(...) で ?level= を更新
+        tiles: ['demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png?level=0'],
+        tileSize: 256,
+        scheme: 'xyz',
+        maxzoom: 22
+    }
+};
+
+// レイヤ（最近傍で拡大＝ボケなし）
+const demTintLayer = {
+    id: 'oh-dem-tint',
+    type: 'raster',
+    source: 'oh-dem-tint-src',
+    paint: {
+        'raster-resampling': 'nearest',   // ← 補間禁止（ドット強調）
+        'raster-fade-duration': 0,
+        'raster-opacity': 1
+    }
+};
+// -------------------------------------------------------------------
+
+const tochikukakuseiriSource = {
+    id: 'tochikukaku-source', // ← ソース名
+    obj: {
+        type: 'vector',
+        url: 'pmtiles://https://kenzkenz2.xsrv.jp/citygis/r07tochikukakuseiri.pmtiles'
+    }
+};
+
+
+// --- Layer 定義（塗り + 枠線）---
+const tochikukakuseiriLayer = {
+    id: 'oh-tochikukaku-fill',
+    type: 'fill',
+    source: 'tochikukaku-source', // ↑ の id と一致
+    'source-layer': 'polygon', // PMTiles 内のレイヤ名
+    paint: {
+        'fill-color': 'rgba(255, 152, 0, 0.8)'
+    }
+};
+
+
+const tochikukakuseiriLineLayer = {
+    id: 'oh-tochikukaku-line',
+    type: 'line',
+    source: 'tochikukaku-source',
+    'source-layer': 'polygon',
+    paint: {
+        'line-color': 'rgba(230, 81, 0, 1)',
+        'line-width': 1
+    }
+};
+
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
     {
-        id: 'oh-mapillary',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary①-基本",
-        sources: [mapillarySource],
-        layers: [mapillarySequences, mapillaryImages],
-        attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
-    },
-    {
-        id: 'oh-mapillary-2',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary②-オブジェクト",
-        sources: [mapillarySource2],
-        layers: [mapillaryLabels2, mapillaryIcon2],
-        attribution: '© Mapillary',
-    },
-    {
-        id: 'oh-mapillary-3',
-        label: "<span style='color: red'>NEW</span>⭐️mapillary③-交通標識",
-        sources: [mapillarySource3],
-        layers: [mapillaryImages3, mapillaryIcon3 ],
-        attribution: '© Mapillary',
+        id: 'oh-tochikukaku',
+        label: "<span style='color: red'>NEW</span>⭐️R07土地区画整理事業",
+        sources: [tochikukakuseiriSource],
+        layers: [tochikukakuseiriLayer, tochikukakuseiriLineLayer],
+        attribution: '<a href="https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000087.html" target="_blank">都市計画決定GISデータ</a>',
     },
     {
         id: 'oh-homusyo-2025-layer',
@@ -11170,7 +11218,7 @@ let layers01 = [
     },
     {
         id: 'gsi',
-        label: (isGsiNew ? '<span style="color: red;">NEW </span>' : '') + "⭐️地理院タイル",
+        label: (isGsiNew ? '<span style="color: red;">NEW </span>' : '') + "️地理院タイル",
         nodes: convertTileJson
     },
     {
@@ -11467,6 +11515,47 @@ let layers01 = [
                 sources: [jissokuSource,jissokuMatsumaeSource],
                 layers: [jissokuLayer,jissokuMatsumaeLayer]
             },
+        ]
+    },
+    {
+        id: 'citygis',
+        label: "都市計画決定GISデータ",
+        nodes: [
+            {
+                id: 'oh-tochikukaku',
+                label: "<span style='color: red'>NEW</span>⭐️R07土地区画整理事業",
+                sources: [tochikukakuseiriSource],
+                layers: [tochikukakuseiriLayer, tochikukakuseiriLineLayer],
+                attribution: '<a href="https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000087.html" target="_blank">都市計画決定GISデータ</a>',
+            },
+        ]
+    },
+    {
+        id: 'mapillary',
+        label: "mapillary",
+        nodes: [
+            {
+                id: 'oh-mapillary',
+                label: "️mapillary①-基本",
+                sources: [mapillarySource],
+                layers: [mapillarySequences, mapillaryImages],
+                attribution: 'メニューからmapillaryをオンにしてください。<br>© Mapillary',
+            },
+            {
+                id: 'oh-mapillary-2',
+                label: "mapillary②-オブジェクト",
+                sources: [mapillarySource2],
+                layers: [mapillaryLabels2, mapillaryIcon2],
+                attribution: '© Mapillary',
+            },
+            {
+                id: 'oh-mapillary-3',
+                label: "mapillary③-交通標識",
+                sources: [mapillarySource3],
+                layers: [mapillaryImages3, mapillaryIcon3 ],
+                attribution: '© Mapillary',
+            },
+
         ]
     },
     {
@@ -12574,6 +12663,14 @@ let layers01 = [
         label: "その他",
         nodes: [
             {
+                id: 'oh-dem-tint',
+                label: '<span style="color: red">NEW</span>️プリセット色別標高図',
+                sources: [demTintSrc],
+                layers:  [demTintLayer],
+                attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>',
+                ext: {name:'extDemTint'},
+            },
+            {
                 id: 'oh-sekibutsu',
                 label: "みんなで石仏調査",
                 source: sekibutsuSource,
@@ -12774,39 +12871,39 @@ let layers01 = [
 
 //ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
 
-// ソース（raster）— demtint:// で dem_png を色別標高PNGへ
-const demTintSrc = {
-    id: 'oh-dem-tint-src',
-    obj: {
-        type: 'raster',
-        // level=0 をクエリで渡す。値を変えたい時は setTiles(...) で ?level= を更新
-        tiles: ['demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png?level=0'],
-        tileSize: 256,
-        scheme: 'xyz',
-        maxzoom: 22
-    }
-};
+// // ソース（raster）— demtint:// で dem_png を色別標高PNGへ
+// const demTintSrc = {
+//     id: 'oh-dem-tint-src',
+//     obj: {
+//         type: 'raster',
+//         // level=0 をクエリで渡す。値を変えたい時は setTiles(...) で ?level= を更新
+//         tiles: ['demtint://https://tiles.gsj.jp/tiles/elev/land/{z}/{y}/{x}.png?level=0'],
+//         tileSize: 256,
+//         scheme: 'xyz',
+//         maxzoom: 22
+//     }
+// };
+//
+// // レイヤ（最近傍で拡大＝ボケなし）
+// const demTintLayer = {
+//     id: 'oh-dem-tint',
+//     type: 'raster',
+//     source: 'oh-dem-tint-src',
+//     paint: {
+//         'raster-resampling': 'nearest',   // ← 補間禁止（ドット強調）
+//         'raster-fade-duration': 0,
+//         'raster-opacity': 1
+//     }
+// };
 
-// レイヤ（最近傍で拡大＝ボケなし）
-const demTintLayer = {
-    id: 'oh-dem-tint',
-    type: 'raster',
-    source: 'oh-dem-tint-src',
-    paint: {
-        'raster-resampling': 'nearest',   // ← 補間禁止（ドット強調）
-        'raster-fade-duration': 0,
-        'raster-opacity': 1
-    }
-};
-
-layers01.unshift({
-    id: 'oh-dem-tint',
-    label: '<span style="color: red">NEW</span>️プリセット色別標高図',
-    sources: [demTintSrc],
-    layers:  [demTintLayer],
-    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>',
-    ext: {name:'extDemTint'},
-});
+// layers01.unshift({
+//     id: 'oh-dem-tint',
+//     label: '<span style="color: red">NEW</span>️プリセット色別標高図',
+//     sources: [demTintSrc],
+//     layers:  [demTintLayer],
+//     attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（標高PNG）</a>',
+//     ext: {name:'extDemTint'},
+// });
 
 
 //ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー

@@ -7772,6 +7772,8 @@ export default {
             // "sprite": "https://gsi-cyberjapan.github.io/optimal_bvmap/sprite/std",
             // "sprite": "https://tile.openstreetmap.jp/styles/osm-bright-ja/sprite",
             "sprite": "https://maputnik.github.io/osm-liberty/sprites/osm-liberty",
+            // "sprite": "https://kenzkenz.xsrv.jp/open-hinata3/sprite/sprite",
+
             'sources': {
               terrain: gsiTerrainSource,
             },

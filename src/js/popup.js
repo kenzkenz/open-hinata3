@@ -3551,6 +3551,31 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 break
             }
+            case 'oh-tochikukaku-fill':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                console.log(features)
+                if (features.length === 0) return
+                props = features[0].properties
+                let html0 = ''
+                if (html.value.indexOf('tochikukaku') === -1) {
+                    html.value += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div class="tochikukaku" font-weight: normal; color: #333;line-height: 25px;">'
+                    html0 += '<span style="font-size:16px;">' + props.DistType + '</span><br>'
+                    html0 += '<span style="font-size:16px;">' + props.Pref + '</span><br>'
+                    html0 += '<span style="font-size:16px;">' + props.Cityname + '</span><br>'
+                    html0 += '<div>'
+                    html.value += html0
+                }
+                break
+            }
             case 'oh-homusyo-2025-ninizahyo-simbol':
             case 'oh-homusyo-2025-ninizahyo-circle':
             {

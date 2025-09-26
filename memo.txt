@@ -1520,3 +1520,15 @@ tile-join --force --no-tile-size-limit -o combined_fgb_tiles.mbtiles tiles_0_13_
 ポイントの間引きを一切なくす。grok
 tippecanoe -o kizyunten2.pmtiles -f -l point --drop-rate=0 --no-line-simplification --no-tiny-polygon-reduction --no-tile-size-limit kizyunten2.geojson
 
+tippecanoe -o tochikukakuseiri.pmtiles \
+    --no-feature-limit \
+    --no-tile-size-limit \
+    --force \
+    --drop-densest-as-needed \
+    --coalesce-densest-as-needed \
+    --simplification=2 \
+    --simplify-only-low-zooms \
+    --maximum-zoom=14 \
+    --minimum-zoom=0 \
+    --layer=polygon \
+    merged.geojson
