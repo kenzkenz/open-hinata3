@@ -1634,6 +1634,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </div>
 
             <div class="zoom-div" v-if="!s_isPrint">
+              {{ distance }}<br>
               <div v-html="geoQuality"></div>
               zoom={{ zoom.toFixed(2) }} {{ elevation }}<br>
               {{ s_address }}<br>
@@ -2271,6 +2272,72 @@ function fitSimilarity2PExactDown(p1d, p2d, q1, q2){
   return composeAffine([Au,Bu,Cu,Du,Eu,Fu], FLIP_Y); // y_down → 世界
 }
 
+// クリック座標から snapPx ピクセル以内にある “Point / Polygon の頂点” にスナップ
+// 見つからなければ null を返す（= ラインは描かない）
+// layerIds を絞りたい場合は第4引数に配列を渡せます（省略で全レイヤ対象）
+function pickNearestVertex(map, lngLat, snapPx = 16, layerIds = null) {
+  if (!map || !lngLat) return null;
+
+  const p = map.project(lngLat);
+  const bbox = [
+    { x: p.x - snapPx, y: p.y - snapPx },
+    { x: p.x + snapPx, y: p.y + snapPx }
+  ];
+  let features = [];
+  try {
+    features = map.queryRenderedFeatures([bbox[0], bbox[1]], layerIds ? { layers: layerIds } : {});
+  } catch (_) {
+    features = map.queryRenderedFeatures([bbox[0], bbox[1]]);
+  }
+  if (!features || features.length === 0) return null;
+
+  // px距離の最小頂点を拾う
+  let best = null;
+  let bestDist = Infinity;
+
+  const pushCandidate = (coord) => {
+    const pp = map.project({ lng: coord[0], lat: coord[1] });
+    const dx = pp.x - p.x, dy = pp.y - p.y;
+    const d = Math.hypot(dx, dy);
+    if (d < bestDist) {
+      bestDist = d;
+      best = { lng: coord[0], lat: coord[1] };
+    }
+  };
+
+  for (const f of features) {
+    if (!f || !f.geometry) continue;
+    const g = f.geometry;
+    const t = g.type;
+
+    // ポイント系：そのまま候補
+    if (t === 'Point') {
+      pushCandidate(g.coordinates);
+      continue;
+    }
+    if (t === 'MultiPoint') {
+      for (const c of g.coordinates) pushCandidate(c);
+      continue;
+    }
+
+    // ポリゴン系：**頂点のみ**を候補にする（辺の最近点は使わない）
+    if (t === 'Polygon') {
+      for (const ring of g.coordinates) for (const c of ring) pushCandidate(c);
+      continue;
+    }
+    if (t === 'MultiPolygon') {
+      for (const poly of g.coordinates) for (const ring of poly) for (const c of ring) pushCandidate(c);
+      continue;
+    }
+
+    // LineString は今回の要件では対象外（スキップ）
+  }
+
+  if (!best || bestDist > snapPx) return null;
+  return { ...best, __anchor: true, __snapped: true };
+}
+
+
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogMyroom from '@/components/Dialog-myroom'
@@ -2583,6 +2650,7 @@ export default {
     stopSpin: null,
     stopPitch: null,
     showWarpWizard: false,
+    distance: '',
 
 
     // 状態
@@ -2647,7 +2715,7 @@ export default {
       const geo = this.$store.state.geo
       if (geo) {
         const qualityHtml = geo.quality === 'RTK級' ? '<span style="color: blue;">RTK</span>' : geo.quality
-        return `座標品質= ${qualityHtml}（${geo.accuracy.toFixed(2)}m）`
+        return `品質= ${qualityHtml}（${geo.accuracy.toFixed(2)}m）`
       } else {
         return ''
       }
@@ -6364,6 +6432,8 @@ export default {
 
       // ★ 追加：アンカー点も破棄
       this.gpsLineAnchorLngLat = null;
+
+      this.distance = null
     },
 
     // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
@@ -6459,82 +6529,64 @@ export default {
       if (!geo || geo.lat == null || geo.lon == null) return;
 
       // --- ① クリック点（アンカー） ---
-      // アンカーからの再描画呼び出し時は snap を再実行しない
       let p1;
       if (clickLngLat && clickLngLat.__anchor) {
+        // 既存アンカーからの再描画（再スナップしない）
         p1 = { lng: clickLngLat.lng, lat: clickLngLat.lat };
       } else {
-        p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts に
-        // ★ 追加：ラインの“起点”（スナップ後のクリック点）を記憶（以後は再スナップしない）
-        this.gpsLineAnchorLngLat = { lng: p1.lng, lat: p1.lat, __anchor: true };
+        // ★ ここだけ変更：ポイント/ポリゴンの“頂点”にスナップ必須。失敗したら中断
+        //   必要なら this.snapLayerIds（配列）で対象レイヤを絞れます（未設定なら全レイヤ）
+        const snapped = pickNearestVertex(map, clickLngLat, 16, this.snapLayerIds);
+        if (!snapped) return; // 頂点が近くに無い → ラインは引かない
+        p1 = { lng: snapped.lng, lat: snapped.lat };
+        // 起点アンカーとして記憶（以後は再スナップしない）
+        this.gpsLineAnchorLngLat = { ...p1, __anchor: true };
       }
 
       const p2 = { lng: geo.lon, lat: geo.lat };
 
-      // --- ② LineString & 距離 ---
+      // --- ② 以降は既存のまま（ライン生成・距離計算・中点・bearing・描画など） ---
       const line = turf.lineString([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
       const meters = turf.length(line, { units: 'kilometers' }) * 1000;
 
-      // --- ③ 中点・方位（あなたの考えに合わせて bearing 計算） ---
       const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
 
       const toRad = (d) => d * Math.PI / 180;
       const lon1 = toRad(p1.lng), lat1 = toRad(p1.lat);
       const lon2 = toRad(p2.lng), lat2 = toRad(p2.lat);
       const dLon = lon2 - lon1;
-
       const y = Math.sin(dLon) * Math.cos(lat2);
       const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-
-      // 0–360 に正規化
       let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-
-      // 端点向き調整：+90、左向き（90°〜270°）はさらに+180で反転（あなたの最終仕様）
       bearing = (bearing + 90) % 360;
-      if (bearing > 90 && bearing <= 270) {
-        bearing = (bearing + 180) % 360;
-      }
+      if (bearing > 90 && bearing <= 270) bearing = (bearing + 180) % 360;
 
-      // --- ④ ソース/レイヤID（固定名：最小構成） ---
       const LINE_SRC   = 'oh-gps-line-src';
       const LINE_LAYER = 'oh-gps-line';
       const LAB_SRC    = 'oh-gps-line-label-src';
       const LAB_LAYER  = 'oh-gps-line-label';
 
-      // --- ⑤ ライン描画 ---
-      if (map.getSource(LINE_SRC)) {
-        map.getSource(LINE_SRC).setData(line);
-      } else {
-        map.addSource(LINE_SRC, { type: 'geojson', data: line });
-      }
+      if (map.getSource(LINE_SRC)) map.getSource(LINE_SRC).setData(line);
+      else map.addSource(LINE_SRC, { type: 'geojson', data: line });
+
       if (!map.getLayer(LINE_LAYER)) {
-        map.addLayer({
-          id: LINE_LAYER,
-          type: 'line',
-          source: LINE_SRC,
-          paint: { 'line-color': '#00B8D9', 'line-width': 3 }
-        });
+        map.addLayer({ id: LINE_LAYER, type: 'line', source: LINE_SRC, paint: { 'line-color': '#00B8D9', 'line-width': 3 } });
       }
 
-      // --- ⑥ 距離ラベル（中点・bearing を text-rotate へ） ---
-      // const text = (meters < 1000) ? `約${meters.toFixed(1)}m` : `約${(meters/1000).toFixed(2)}km`;
       let text;
-      if (meters < 1) {
-        text = `約${(meters * 100).toFixed(0)}cm`;  // 1m未満はcm表記（四捨五入）
-      } else if (meters < 1000) {
-        text = `約${meters.toFixed(2)}m`;          // mは小数2桁（cm精度）
-      } else {
-        text = `約${(meters/1000).toFixed(2)}km`;  // kmも小数2桁
-      }
+      if (meters < 1) text = `約${(meters * 100).toFixed(0)}cm`;
+      else if (meters < 1000) text = `約${meters.toFixed(2)}m`;
+      else text = `約${(meters/1000).toFixed(2)}km`;
+
+      this.distance = `距離= ${text}`
+
       const labelFC = turf.featureCollection([
         turf.point(mid.geometry.coordinates, { label: text, angle: bearing })
       ]);
 
-      if (map.getSource(LAB_SRC)) {
-        map.getSource(LAB_SRC).setData(labelFC);
-      } else {
-        map.addSource(LAB_SRC, { type: 'geojson', data: labelFC });
-      }
+      if (map.getSource(LAB_SRC)) map.getSource(LAB_SRC).setData(labelFC);
+      else map.addSource(LAB_SRC, { type: 'geojson', data: labelFC });
+
       if (!map.getLayer(LAB_LAYER)) {
         map.addLayer({
           id: LAB_LAYER,
@@ -6546,15 +6598,118 @@ export default {
             'text-allow-overlap': true,
             'text-rotation-alignment': 'map',
             'text-rotate': ['get', 'angle']
-            // 必要なら 'text-keep-upright': false を追加
           },
-          paint: {
-            'text-halo-color': 'white',
-            'text-halo-width': 1.5
-          }
+          paint: { 'text-halo-color': 'white', 'text-halo-width': 1.5 }
         });
       }
     },
+
+
+
+    // drawGpsLine (clickLngLat) {
+    //   const map = this.$store?.state?.map01;
+    //   if (!map) return;
+    //
+    //   const geo = this.$store?.state?.geo;
+    //   if (!geo || geo.lat == null || geo.lon == null) return;
+    //
+    //   // --- ① クリック点（アンカー） ---
+    //   // アンカーからの再描画呼び出し時は snap を再実行しない
+    //   let p1;
+    //   if (clickLngLat && clickLngLat.__anchor) {
+    //     p1 = { lng: clickLngLat.lng, lat: clickLngLat.lat };
+    //   } else {
+    //     p1 = snapIfNeeded(map, clickLngLat, { snapPx: 20 }); // 必要なら snapLayerIds を opts に
+    //     // ★ 追加：ラインの“起点”（スナップ後のクリック点）を記憶（以後は再スナップしない）
+    //     this.gpsLineAnchorLngLat = { lng: p1.lng, lat: p1.lat, __anchor: true };
+    //   }
+    //
+    //   const p2 = { lng: geo.lon, lat: geo.lat };
+    //
+    //   // --- ② LineString & 距離 ---
+    //   const line = turf.lineString([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
+    //   const meters = turf.length(line, { units: 'kilometers' }) * 1000;
+    //
+    //   // --- ③ 中点・方位（あなたの考えに合わせて bearing 計算） ---
+    //   const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
+    //
+    //   const toRad = (d) => d * Math.PI / 180;
+    //   const lon1 = toRad(p1.lng), lat1 = toRad(p1.lat);
+    //   const lon2 = toRad(p2.lng), lat2 = toRad(p2.lat);
+    //   const dLon = lon2 - lon1;
+    //
+    //   const y = Math.sin(dLon) * Math.cos(lat2);
+    //   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    //
+    //   // 0–360 に正規化
+    //   let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    //
+    //   // 端点向き調整：+90、左向き（90°〜270°）はさらに+180で反転（あなたの最終仕様）
+    //   bearing = (bearing + 90) % 360;
+    //   if (bearing > 90 && bearing <= 270) {
+    //     bearing = (bearing + 180) % 360;
+    //   }
+    //
+    //   // --- ④ ソース/レイヤID（固定名：最小構成） ---
+    //   const LINE_SRC   = 'oh-gps-line-src';
+    //   const LINE_LAYER = 'oh-gps-line';
+    //   const LAB_SRC    = 'oh-gps-line-label-src';
+    //   const LAB_LAYER  = 'oh-gps-line-label';
+    //
+    //   // --- ⑤ ライン描画 ---
+    //   if (map.getSource(LINE_SRC)) {
+    //     map.getSource(LINE_SRC).setData(line);
+    //   } else {
+    //     map.addSource(LINE_SRC, { type: 'geojson', data: line });
+    //   }
+    //   if (!map.getLayer(LINE_LAYER)) {
+    //     map.addLayer({
+    //       id: LINE_LAYER,
+    //       type: 'line',
+    //       source: LINE_SRC,
+    //       paint: { 'line-color': '#00B8D9', 'line-width': 3 }
+    //     });
+    //   }
+    //
+    //   // --- ⑥ 距離ラベル（中点・bearing を text-rotate へ） ---
+    //   // const text = (meters < 1000) ? `約${meters.toFixed(1)}m` : `約${(meters/1000).toFixed(2)}km`;
+    //   let text;
+    //   if (meters < 1) {
+    //     text = `約${(meters * 100).toFixed(0)}cm`;  // 1m未満はcm表記（四捨五入）
+    //   } else if (meters < 1000) {
+    //     text = `約${meters.toFixed(2)}m`;          // mは小数2桁（cm精度）
+    //   } else {
+    //     text = `約${(meters/1000).toFixed(2)}km`;  // kmも小数2桁
+    //   }
+    //   const labelFC = turf.featureCollection([
+    //     turf.point(mid.geometry.coordinates, { label: text, angle: bearing })
+    //   ]);
+    //
+    //   if (map.getSource(LAB_SRC)) {
+    //     map.getSource(LAB_SRC).setData(labelFC);
+    //   } else {
+    //     map.addSource(LAB_SRC, { type: 'geojson', data: labelFC });
+    //   }
+    //   if (!map.getLayer(LAB_LAYER)) {
+    //     map.addLayer({
+    //       id: LAB_LAYER,
+    //       type: 'symbol',
+    //       source: LAB_SRC,
+    //       layout: {
+    //         'text-field': ['get', 'label'],
+    //         'text-size': 14,
+    //         'text-allow-overlap': true,
+    //         'text-rotation-alignment': 'map',
+    //         'text-rotate': ['get', 'angle']
+    //         // 必要なら 'text-keep-upright': false を追加
+    //       },
+    //       paint: {
+    //         'text-halo-color': 'white',
+    //         'text-halo-width': 1.5
+    //       }
+    //     });
+    //   }
+    // },
 
     // ---- 追加：クリック（現在地オンの時だけ有効）----
     attachGpsLineClick () {
