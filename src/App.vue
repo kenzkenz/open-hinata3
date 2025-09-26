@@ -6635,7 +6635,7 @@ export default {
 
       this.$_downloadText(
           csv,
-          `track_${new Date().toISOString().replace(/[:.]/g,'-')}.csv`,
+          `track_${this.$_jstStamp()}.csv`,
           'text/csv;charset=utf-8;'
       );
     },
@@ -6656,12 +6656,12 @@ export default {
       if (!rows.length) return;
 
       const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-      const csLabel = (rows[0] && rows[0][idx_cs]) || (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
+      const csLabel  = (rows[0] && rows[0][idx_cs]) || (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
 
       const head = [
         `G00,01,${siteName} 座標`,
         `Z00,座標データ,`,
-        `G01,座標系,${csLabel}`,   // ← EPSG の代わりに表示名
+        `G01,座標系,${csLabel}`,
         `A00,`
       ];
       const pad = (n, w=2) => String(n).padStart(w, '0');
@@ -6669,12 +6669,12 @@ export default {
       let n = 0;
       const a01 = rows.map(r => {
         const ts = r[idx_ts];
-        const Xn = Number(r[idx_x]);  // 北
-        const Ye = Number(r[idx_y]);  // 東
+        const Xn = Number(r[idx_x]);
+        const Ye = Number(r[idx_y]);
         if (!Number.isFinite(Xn) || !Number.isFinite(Ye)) return null;
 
         const d = new Date(ts);
-        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; // 点名=時刻
+        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 
         n += 1;
         return `A01,${n},${ptName},${Xn.toFixed(3)},${Ye.toFixed(3)},,`;
@@ -6683,11 +6683,34 @@ export default {
       if (!a01.length) return;
 
       const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
-      this.$_downloadText(
-          simTxt,
-          `track_${new Date().toISOString().replace(/[:.]/g,'-')}.sim`,
-          'text/plain;charset=utf-8;'
-      );
+
+      // ▼ ここを変更：octet-stream で .sim を強制
+
+      const bytes = new TextEncoder().encode(simTxt);
+      const blob  = new Blob([bytes], { type: 'application/octet-stream' });
+      this.$_downloadBlob(blob, `track_${this.$_jstStamp()}.sim`);
+      },
+
+    // 日本時間(Asia/Tokyo)のタイムスタンプ: 2025-09-27_14-03-05
+    $_jstStamp() {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      }).formatToParts(new Date()).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+      return `${parts.year}-${parts.month}-${parts.day}_${parts.hour}-${parts.minute}-${parts.second}`;
+    },
+
+    $_downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;      // ← ここで .sim を指定
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     },
 
     // 共通DLヘルパー
