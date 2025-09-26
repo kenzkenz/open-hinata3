@@ -8,6 +8,75 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+
+      <!-- 右上フローティングツールバー -->
+      <div v-if="isTracking" class="oh-tools">
+
+        <!-- CSV ダウンロード -->
+        <v-tooltip text="CSVダウンロード" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                :disabled="!csvRows || csvRows.length <= 1"
+                @click="exportTrackCsv"
+                aria-label="CSVダウンロード"
+            >
+              CSV
+<!--              <v-icon size="24">mdi-file-delimited</v-icon>-->
+            </v-btn>
+          </template>
+        </v-tooltip>
+
+        <!-- SIMA ダウンロード -->
+        <v-tooltip text="SIMAダウンロード" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                :disabled="!csvRows || csvRows.length <= 1"
+                @click="exportTrackSima"
+                aria-label="SIMAダウンロード"
+            >
+              SIM
+<!--              <v-icon size="24">mdi-file-table-box</v-icon>-->
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <!-- 記録トグル：停止=赤Stop / 待機=録画アイコン -->
+        <v-tooltip text="記録開始 / 記録停止" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+                v-bind="props"
+                :color="logEnabled ? 'red' : 'primary'"
+                :variant="logEnabled ? 'elevated' : 'tonal'"
+                :class="logEnabled ? 'blink' : ''"
+                icon
+                size="small"
+                @click="toggleTrackLog"
+                :aria-label="logEnabled ? '記録停止' : '記録開始'"
+            >
+              <v-icon size="28">
+                {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}
+              </v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
+      </div>
+
+
+
+
+      <!--      <div class="oh-tools" style="position:absolute;left:10px;top:70px;z-index:3;display:flex;gap:8px;">-->
+<!--        <v-btn icon @click="startTrackLog" :disabled="logEnabled">記録開始</v-btn>-->
+<!--        <v-btn icon @click="stopTrackLog"  :disabled="!logEnabled">記録停止</v-btn>-->
+<!--        <v-btn icon @click="exportTrackCsv"  :disabled="!csvRows || csvRows.length<=1">CSV</v-btn>-->
+<!--        <v-btn icon @click="exportTrackSima" :disabled="!csvRows || csvRows.length<=1">SIMA</v-btn>-->
+<!--      </div>-->
+
+
       <VDialogConfirm
           v-model="s_showConfirm"
           v-bind="confirmProps"
@@ -6417,6 +6486,187 @@ export default {
      * 現在地連続取得を改良
      */
     // ---- 起動（既存置換） ----
+
+    // =========================
+    // ログ制御
+    // =========================
+    toggleTrackLog() {
+      if (this.logEnabled) {
+        this.stopTrackLog();
+      } else {
+        this.startTrackLog();
+      }
+    },
+    startTrackLog() {
+      if (!this.csvRows) {
+        this.csvRows = [[
+          'timestamp','lat','lon','planeX_N','planeY_E','epsg',
+          'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+        ]];
+      }
+      this.logEnabled = true;
+      this.lastLogAt = 0;
+      this.lastLogXY = null;
+      try { this.maybeLogPoint('start'); } catch(_) {}
+    },
+    stopTrackLog() {
+      this.logEnabled = false;
+      try { this.maybeLogPoint('stop'); } catch(_) {}
+    },
+    clearTrackLog() {
+      this.csvRows = null;
+      this.lastLogAt = 0;
+      this.lastLogXY = null;
+    },
+
+    // 現在地を1行追記（間引き付き）
+    maybeLogPoint(eventType = 'point') {
+      if (!this.logEnabled) return;
+
+      const s = this.$store?.state || {};
+      const geo = s.geo; if (!geo) return;
+
+      // EPSG（必須）
+      const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
+      if (!epsg) return;
+
+      // 平面直角XY：現在地は jdpCoordinates を使用（最終仕様）
+      const jdp = s.jdpCoordinates;
+      if (!Array.isArray(jdp) || jdp.length < 2) return;
+      const xN = Number(jdp[1]); // X=北
+      const yE = Number(jdp[0]); // Y=東
+      if (!Number.isFinite(xN) || !Number.isFinite(yE)) return;
+
+      const now = Date.now();
+
+      // 時間間引き
+      if (this.lastLogAt && (now - this.lastLogAt) < this.minLogIntervalMs) return;
+
+      // 距離間引き
+      if (this.lastLogXY) {
+        const dx = xN - this.lastLogXY.x;
+        const dy = yE - this.lastLogXY.y;
+        const dd = Math.hypot(dx, dy);
+        if (dd < this.minLogDistanceM) return;
+      }
+
+      if (!this.csvRows) {
+        this.csvRows = [[
+          'timestamp','lat','lon','planeX_N','planeY_E','epsg',
+          'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+        ]];
+      }
+      this.csvRows.push([
+        new Date(now).toISOString(),
+        geo.lat, geo.lon,
+        xN, yE, epsg,
+        geo.accuracy, geo.altitudeAccuracy, geo.speed, geo.heading, geo.quality,
+        eventType
+      ]);
+
+      this.lastLogAt = now;
+      this.lastLogXY = { x: xN, y: yE };
+    },
+
+    // =========================
+    // ダウンロード（CSV / SIMA）
+    // =========================
+    exportTrackCsv() {
+      if (!this.csvRows || this.csvRows.length <= 1) return;
+
+      // 堅牢なCSVエスケープ（CRも考慮／オブジェクトはJSON化）
+      const csvEscape = (v) => {
+        if (v == null) return '';
+        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+
+      // 行末は CRLF に統一
+      const csv = this.csvRows
+          .map(row => row.map(csvEscape).join(','))
+          .join('\r\n') + '\r\n';
+
+      this.$_downloadText(
+          csv,
+          `track_${new Date().toISOString().replace(/[:.]/g,'-')}.csv`,
+          'text/csv;charset=utf-8;'
+      );
+    },
+
+    // SIMA（共通テキスト A01）: 点名＝時刻(HHMMSS)
+    exportTrackSima(title) {
+      if (!this.csvRows || this.csvRows.length <= 1) return;
+
+      const header = this.csvRows[0];
+      const col = (name) => header.indexOf(name);
+      const idx_ts   = col('timestamp');
+      const idx_x    = col('planeX_N');
+      const idx_y    = col('planeY_E');
+      const idx_epsg = col('epsg');
+
+      const rows = this.csvRows.slice(1);
+      if (!rows.length) return;
+
+      const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
+      const epsg = (rows[0] && rows[0][idx_epsg])
+          ? rows[0][idx_epsg]
+          : (this.$store?.state && (epsgFromZahyokei(this.$store.state.s_zahyokei || this.$store.state.zahyokei, zahyokei))) || '';
+
+      const head = [
+        `G00,01,${siteName} 座標`,
+        `Z00,座標データ,`,
+        `A00,`
+      ];
+      const pad = (n, w=2) => String(n).padStart(w, '0');
+
+      let n = 0;
+      const a01 = rows.map(r => {
+        const ts = r[idx_ts];
+        const Xn = Number(r[idx_x]);  // X=北
+        const Ye = Number(r[idx_y]);  // Y=東
+        if (!Number.isFinite(Xn) || !Number.isFinite(Ye)) return null;
+
+        // 点名＝時刻（HHMMSS）
+        const d = new Date(ts);
+        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+
+        n += 1;
+        const ptNo = n;
+        const X = Xn.toFixed(3);
+        const Y = Ye.toFixed(3);
+        return `A01,${ptNo},${ptName},${X},${Y},,`;
+      }).filter(Boolean);
+
+      if (!a01.length) return;
+
+      const lines = [
+        ...head,
+        ...(epsg ? [`G01,EPSG,${epsg}`] : []), // 任意メタ（読み飛ばし可）
+        ...a01
+      ];
+
+      const simTxt = lines.join('\r\n') + '\r\n';
+      this.$_downloadText(
+          simTxt,
+          `track_${new Date().toISOString().replace(/[:.]/g,'-')}.sim`,
+          'text/plain;charset=utf-8;'
+      );
+    },
+
+    // 共通DLヘルパー
+    $_downloadText(text, filename, mime) {
+      const blob = new Blob([text], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    },
+
+    // =========================
+    // ここから既存の最終版（距離ライン等）
+    // =========================
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
@@ -6450,9 +6700,11 @@ export default {
 
       // 追加：現在地取得オンの時だけクリックで線を引けるようにする
       this.attachGpsLineClick();
+
+      // ログ：開始イベント
+      try { if (this.logEnabled) this.maybeLogPoint('start'); } catch(_) {}
     },
 
-    // ---- 停止（最小） ----
     stopWatchPosition () {
       if (this.watchId !== null) {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
@@ -6468,9 +6720,11 @@ export default {
       this.gpsLineAnchorLngLat = null;
 
       this.distance = null
+
+      // ログ：停止イベント
+      try { if (this.logEnabled) this.maybeLogPoint('stop'); } catch(_) {}
     },
 
-    // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
     saveGeoMetrics (pos) {
       try {
         // 追加：RTK混入抑止のデフォルト初期化（最小）
@@ -6517,7 +6771,6 @@ export default {
         }
         // 直近RTKから1秒以内に来た非RTK級は無視（混入抑制）
         if (quality !== 'RTK級' && this.lastRtkAt && (nowTs - this.lastRtkAt) <= this.rtkWindowMs) {
-          // prevQuality は RTK級のまま維持しておく（品質表示をブレさせない）
           return false; // updateLocation を抑制
         }
         // ここから通常更新
@@ -6525,26 +6778,18 @@ export default {
         console.log(s.geo)
         this.prevQuality = quality;
 
-        // ★ 追加：現在地が更新されたら、アンカーがある場合は距離を再計算して再描画
+        // ログ追記
+        try { this.maybeLogPoint('point'); } catch(_) {}
+
+        // ★ 現在地が更新されたら、アンカーがある場合は距離を再計算して再描画
         try { if (this.gpsLineAnchorLngLat) this.drawGpsLine(this.gpsLineAnchorLngLat); } catch (_) {}
 
         return true; // updateLocation を許可
-
-        // // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
-        // if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
-        //   this.prevQuality = quality;
-        //   return false; // updateLocation を抑制
-        // } else {
-        //   s.geo = geo;
-        //   this.prevQuality = quality;
-        //   return true; // updateLocation を許可
-        // }
       } catch (e) {
         console.warn('[geo] saveGeoMetrics error', e);
       }
     },
 
-    // ---- 精度ラベル ----
     getGeoQualityLabel (acc, altAcc) {
       if (acc == null) return 'unknown';
       if (acc <= 1)  return 'RTK級';
@@ -6554,11 +6799,6 @@ export default {
       return '低';
     },
 
-    // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（スナップ＋距離ラベル）----
-    // クリック点（snap後）と現在地を結ぶラインを描画し、
-    // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画）----
-// ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画）----
-// ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画＋ログ）----
     // ---- クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画＋ログ）----
     drawGpsLine (clickLngLat) {
       const map = this.$store?.state?.map01;
@@ -6568,11 +6808,11 @@ export default {
       const geo = s.geo;
       if (!geo || geo.lat == null || geo.lon == null) return;
 
-      // --- EPSG（必須） ---
+      // EPSG（必須）
       const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
       if (!epsg) return;
 
-      // --- ① アンカー確定（頂点スナップ必須） ---
+      // ① アンカー確定（頂点スナップ必須）
       let p1;                 // WGS84（描画用）
       let anchorProps = null; // スナップ元 properties（XY抽出に使用）
       if (clickLngLat && clickLngLat.__anchor) {
@@ -6584,13 +6824,14 @@ export default {
         p1 = { lng: snapped.lng, lat: snapped.lat };
         anchorProps = snapped.properties || null;
         this.gpsLineAnchorLngLat = { ...p1, __anchor: true, properties: anchorProps };
+        // アンカー確定イベントをログ（任意）
+        try { if (this.logEnabled) this.maybeLogPoint('anchor'); } catch(_) {}
       }
 
-      // --- ② 現在地（WGS84：描画用） ---
+      // ② 現在地（WGS84：描画用）
       const p2 = { lng: geo.lon, lat: geo.lat };
 
-      // --- ③ 距離計算（平面直角のみ） ---
-      // アンカー側：props XY を最優先（空は無効）→ 無ければ WGS84→EPSG 変換（※変換は {x:N, y:E}）
+      // ③ 距離計算（平面直角のみ）
       const fromProps = xyFromProps(anchorProps); // {x,y,_meta} or null
       let p1xy;
       if (fromProps) {
@@ -6601,7 +6842,7 @@ export default {
           featurePropsSample: anchorProps
         });
       } else {
-        p1xy = xyFromLngLat(p1.lng, p1.lat, epsg);
+        p1xy = xyFromLngLat(p1.lng, p1.lat, epsg); // ← {x:N, y:E}
         if (!p1xy) return;
         console.log('[gps-line] 終点(アンカー)XYは WGS84→EPSG 変換で取得(スワップ適用):', {
           lng: p1.lng, lat: p1.lat, epsg,
@@ -6610,19 +6851,18 @@ export default {
         });
       }
 
-      // 現在地側：this.$store.state.jdpCoordinates は [Y, X] 想定 → {x:X, y:Y} に反転
+      // 現在地：jdpCoordinates は [Y, X] → {x:X, y:Y}
       const jdp = this.$store?.state?.jdpCoordinates;
       if (!Array.isArray(jdp) || jdp.length < 2) return;
-      const p2xy = { x: Number(jdp[1]), y: Number(jdp[0]) }; // x=北, y=東 で統一
+      const p2xy = { x: Number(jdp[1]), y: Number(jdp[0]) }; // x=北, y=東
       if (!Number.isFinite(p2xy.x) || !Number.isFinite(p2xy.y)) return;
       console.log('[gps-line] 始点(現在地)XY:', { X: p2xy.x, Y: p2xy.y, jdpCoordinates: jdp });
 
-      // --- ④ 距離（ユークリッド） ---
       const dx = p2xy.x - p1xy.x;
       const dy = p2xy.y - p1xy.y;
       const meters = Math.hypot(dx, dy);
 
-      // --- ⑤ 中点（WGS84）＆ラベル ---
+      // ④ 中点（WGS84）＆ラベル
       const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
 
       let text;
@@ -6632,7 +6872,7 @@ export default {
 
       this.distance = `距離= ${text}`;
 
-      // --- ⑥ 方位（+90°, 左向きは+180°反転）---
+      // ⑤ 方位（+90°, 左向きは+180°反転）
       const toRad = (d) => d * Math.PI / 180;
       const lon1 = toRad(p1.lng), lat1 = toRad(p1.lat);
       const lon2 = toRad(p2.lng), lat2 = toRad(p2.lat);
@@ -6643,7 +6883,7 @@ export default {
       bearing = (bearing + 90) % 360;
       if (bearing > 90 && bearing <= 270) bearing = (bearing + 180) % 360;
 
-      // --- ⑦ WGS84 で描画（従来通り）---
+      // ⑥ WGS84 で描画
       const LINE_SRC   = 'oh-gps-line-src';
       const LINE_LAYER = 'oh-gps-line';
       const LAB_SRC    = 'oh-gps-line-label-src';
@@ -6686,13 +6926,11 @@ export default {
       }
     },
 
-
     // ---- 追加：クリック（現在地オンの時だけ有効）----
     attachGpsLineClick () {
       const map = this.$store?.state?.map01;
       if (!map) return;
 
-      // 既にバインド済みならフラグだけON
       if (this.onMapClickForGpsLine) {
         this.enableGpsLineClick = true;
         return;
@@ -6777,6 +7015,369 @@ export default {
         this.gpsLineAnchorLngLat = null;
       }
     },
+
+
+
+//     startWatchPosition () {
+//       if (!('geolocation' in navigator)) {
+//         console.warn('[geo] navigator.geolocation 未対応');
+//         return;
+//       }
+//       // 二重起動防止
+//       this.stopWatchPosition();
+//
+//       const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 };
+//       this.watchId = navigator.geolocation.watchPosition(
+//           (position) => {
+//             this.geoLastTs = position.timestamp || Date.now();
+//             try {
+//               const isUpdateLocation = this.saveGeoMetrics(position);
+//               if (isUpdateLocation) {
+//                 this.updateLocationAndCoordinates?.(position);
+//               }
+//             } catch (e) {
+//               console.warn('[geo] update/save error', e);
+//             }
+//           },
+//           (error) => {
+//             console.warn('[geo] error', error);
+//             // ※ 最小構成: 自動再起動しない
+//           },
+//           opt
+//       );
+//
+//       this.isTracking = true;
+//       try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
+//
+//       // 追加：現在地取得オンの時だけクリックで線を引けるようにする
+//       this.attachGpsLineClick();
+//     },
+//
+//     // ---- 停止（最小） ----
+//     stopWatchPosition () {
+//       if (this.watchId !== null) {
+//         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
+//         this.watchId = null;
+//       }
+//       this.isTracking = false;
+//
+//       // 追加：クリック無効化＆ライン削除
+//       this.detachGpsLineClick();
+//       this.clearGpsLine();
+//
+//       // ★ 追加：アンカー点も破棄
+//       this.gpsLineAnchorLngLat = null;
+//
+//       this.distance = null
+//     },
+//
+//     // ---- メトリクス保存（EWMA／品質ラベル／RTK級→非RTK級混入抑止） ----
+//     saveGeoMetrics (pos) {
+//       try {
+//         // 追加：RTK混入抑止のデフォルト初期化（最小）
+//         this.rtkWindowMs = (this.rtkWindowMs ?? 1000);
+//         this.lastRtkAt   = (this.lastRtkAt   ?? 0);
+//
+//         const c = pos.coords || {};
+//         const now = pos.timestamp || Date.now();
+//         const s = this.$store?.state; if (!s) return;
+//
+//         const prev = s.geo || {};
+//         const alpha = this.geoAccAvgAlpha;
+//         const ewma = (prevVal, newVal) => {
+//           if (newVal == null || Number.isNaN(newVal)) return prevVal ?? null;
+//           if (prevVal == null) return newVal;
+//           return alpha * newVal + (1 - alpha) * prevVal;
+//         };
+//
+//         const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
+//         const altitudeAccuracy = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+//         const speed = (typeof c.speed === 'number') ? c.speed : null;
+//         const heading = (typeof c.heading === 'number') ? c.heading : null;
+//         const accuracyAvg = ewma(prev.accuracyAvg, accuracy);
+//         const quality = this.getGeoQualityLabel(accuracy, altitudeAccuracy);
+//
+//         const geo = {
+//           time: now,
+//           lat: (typeof c.latitude === 'number') ? c.latitude : prev.lat ?? null,
+//           lon: (typeof c.longitude === 'number') ? c.longitude : prev.lon ?? null,
+//           altitude: (typeof c.altitude === 'number') ? c.altitude : prev.altitude ?? null,
+//           accuracy,
+//           accuracyAvg,
+//           altitudeAccuracy,
+//           speed,
+//           heading,
+//           quality,
+//           source: 'navigator',
+//         };
+//
+//         const nowTs = pos.timestamp || Date.now();
+//         // RTK級を観測したら時刻を記録
+//         if (quality === 'RTK級') {
+//           this.lastRtkAt = nowTs;
+//         }
+//         // 直近RTKから1秒以内に来た非RTK級は無視（混入抑制）
+//         if (quality !== 'RTK級' && this.lastRtkAt && (nowTs - this.lastRtkAt) <= this.rtkWindowMs) {
+//           // prevQuality は RTK級のまま維持しておく（品質表示をブレさせない）
+//           return false; // updateLocation を抑制
+//         }
+//         // ここから通常更新
+//         s.geo = geo;
+//         console.log(s.geo)
+//         this.prevQuality = quality;
+//
+//         // ★ 追加：現在地が更新されたら、アンカーがある場合は距離を再計算して再描画
+//         try { if (this.gpsLineAnchorLngLat) this.drawGpsLine(this.gpsLineAnchorLngLat); } catch (_) {}
+//
+//         return true; // updateLocation を許可
+//
+//         // // RTK級→非RTK級の最初のサンプルをスキップして混入抑制
+//         // if (this.prevQuality === 'RTK級' && quality !== 'RTK級') {
+//         //   this.prevQuality = quality;
+//         //   return false; // updateLocation を抑制
+//         // } else {
+//         //   s.geo = geo;
+//         //   this.prevQuality = quality;
+//         //   return true; // updateLocation を許可
+//         // }
+//       } catch (e) {
+//         console.warn('[geo] saveGeoMetrics error', e);
+//       }
+//     },
+//
+//     // ---- 精度ラベル ----
+//     getGeoQualityLabel (acc, altAcc) {
+//       if (acc == null) return 'unknown';
+//       if (acc <= 1)  return 'RTK級';
+//       if (acc <= 3)  return '高';
+//       if (acc <= 10) return '中';
+//       if (acc <= 30) return '低';
+//       return '低';
+//     },
+//
+//     // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（スナップ＋距離ラベル）----
+//     // クリック点（snap後）と現在地を結ぶラインを描画し、
+//     // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画）----
+// // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画）----
+// // ---- 追加：クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画＋ログ）----
+//     // ---- クリックで「任意点 ↔ 現在地」のライン描画（平面直角で距離算出・WGS84で描画＋ログ）----
+//     drawGpsLine (clickLngLat) {
+//       const map = this.$store?.state?.map01;
+//       if (!map) return;
+//
+//       const s = this.$store?.state || {};
+//       const geo = s.geo;
+//       if (!geo || geo.lat == null || geo.lon == null) return;
+//
+//       // --- EPSG（必須） ---
+//       const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
+//       if (!epsg) return;
+//
+//       // --- ① アンカー確定（頂点スナップ必須） ---
+//       let p1;                 // WGS84（描画用）
+//       let anchorProps = null; // スナップ元 properties（XY抽出に使用）
+//       if (clickLngLat && clickLngLat.__anchor) {
+//         p1 = { lng: clickLngLat.lng, lat: clickLngLat.lat };
+//         anchorProps = clickLngLat.properties || null;
+//       } else {
+//         const snapped = pickNearestVertex(map, clickLngLat, 16, this.snapLayerIds);
+//         if (!snapped) return; // 頂点が近くに無い → 中断
+//         p1 = { lng: snapped.lng, lat: snapped.lat };
+//         anchorProps = snapped.properties || null;
+//         this.gpsLineAnchorLngLat = { ...p1, __anchor: true, properties: anchorProps };
+//       }
+//
+//       // --- ② 現在地（WGS84：描画用） ---
+//       const p2 = { lng: geo.lon, lat: geo.lat };
+//
+//       // --- ③ 距離計算（平面直角のみ） ---
+//       // アンカー側：props XY を最優先（空は無効）→ 無ければ WGS84→EPSG 変換（※変換は {x:N, y:E}）
+//       const fromProps = xyFromProps(anchorProps); // {x,y,_meta} or null
+//       let p1xy;
+//       if (fromProps) {
+//         p1xy = { x: fromProps.x, y: fromProps.y };
+//         console.log('[gps-line] 終点(アンカー)に使用したプロパティ:', {
+//           keyX: fromProps._meta.keyX, keyY: fromProps._meta.keyY,
+//           X: fromProps._meta.valueX,  Y: fromProps._meta.valueY,
+//           featurePropsSample: anchorProps
+//         });
+//       } else {
+//         p1xy = xyFromLngLat(p1.lng, p1.lat, epsg);
+//         if (!p1xy) return;
+//         console.log('[gps-line] 終点(アンカー)XYは WGS84→EPSG 変換で取得(スワップ適用):', {
+//           lng: p1.lng, lat: p1.lat, epsg,
+//           X: p1xy.x,  // 北
+//           Y: p1xy.y   // 東
+//         });
+//       }
+//
+//       // 現在地側：this.$store.state.jdpCoordinates は [Y, X] 想定 → {x:X, y:Y} に反転
+//       const jdp = this.$store?.state?.jdpCoordinates;
+//       if (!Array.isArray(jdp) || jdp.length < 2) return;
+//       const p2xy = { x: Number(jdp[1]), y: Number(jdp[0]) }; // x=北, y=東 で統一
+//       if (!Number.isFinite(p2xy.x) || !Number.isFinite(p2xy.y)) return;
+//       console.log('[gps-line] 始点(現在地)XY:', { X: p2xy.x, Y: p2xy.y, jdpCoordinates: jdp });
+//
+//       // --- ④ 距離（ユークリッド） ---
+//       const dx = p2xy.x - p1xy.x;
+//       const dy = p2xy.y - p1xy.y;
+//       const meters = Math.hypot(dx, dy);
+//
+//       // --- ⑤ 中点（WGS84）＆ラベル ---
+//       const mid = turf.midpoint([p1.lng, p1.lat], [p2.lng, p2.lat]);
+//
+//       let text;
+//       if (meters < 1)         text = `約${(meters * 100).toFixed(0)}cm`;
+//       else if (meters < 1000) text = `約${meters.toFixed(2)}m`;
+//       else                    text = `約${(meters/1000).toFixed(2)}km`;
+//
+//       this.distance = `距離= ${text}`;
+//
+//       // --- ⑥ 方位（+90°, 左向きは+180°反転）---
+//       const toRad = (d) => d * Math.PI / 180;
+//       const lon1 = toRad(p1.lng), lat1 = toRad(p1.lat);
+//       const lon2 = toRad(p2.lng), lat2 = toRad(p2.lat);
+//       const dLon = lon2 - lon1;
+//       const yb = Math.sin(dLon) * Math.cos(lat2);
+//       const xb = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+//       let bearing = (Math.atan2(yb, xb) * 180 / Math.PI + 360) % 360;
+//       bearing = (bearing + 90) % 360;
+//       if (bearing > 90 && bearing <= 270) bearing = (bearing + 180) % 360;
+//
+//       // --- ⑦ WGS84 で描画（従来通り）---
+//       const LINE_SRC   = 'oh-gps-line-src';
+//       const LINE_LAYER = 'oh-gps-line';
+//       const LAB_SRC    = 'oh-gps-line-label-src';
+//       const LAB_LAYER  = 'oh-gps-line-label';
+//
+//       const line = turf.lineString([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
+//       if (map.getSource(LINE_SRC)) map.getSource(LINE_SRC).setData(line);
+//       else map.addSource(LINE_SRC, { type: 'geojson', data: line });
+//
+//       if (!map.getLayer(LINE_LAYER)) {
+//         map.addLayer({
+//           id: LINE_LAYER,
+//           type: 'line',
+//           source: LINE_SRC,
+//           paint: { 'line-color': '#00B8D9', 'line-width': 3 }
+//         });
+//       }
+//
+//       const labelFC = turf.featureCollection([
+//         turf.point(mid.geometry.coordinates, { label: text, angle: bearing })
+//       ]);
+//
+//       if (map.getSource(LAB_SRC)) map.getSource(LAB_SRC).setData(labelFC);
+//       else map.addSource(LAB_SRC, { type: 'geojson', data: labelFC });
+//
+//       if (!map.getLayer(LAB_LAYER)) {
+//         map.addLayer({
+//           id: LAB_LAYER,
+//           type: 'symbol',
+//           source: LAB_SRC,
+//           layout: {
+//             'text-field': ['get', 'label'],
+//             'text-size': 14,
+//             'text-allow-overlap': true,
+//             'text-rotation-alignment': 'map',
+//             'text-rotate': ['get', 'angle']
+//           },
+//           paint: { 'text-halo-color': 'white', 'text-halo-width': 1.5 }
+//         });
+//       }
+//     },
+//
+//
+//     // ---- 追加：クリック（現在地オンの時だけ有効）----
+//     attachGpsLineClick () {
+//       const map = this.$store?.state?.map01;
+//       if (!map) return;
+//
+//       // 既にバインド済みならフラグだけON
+//       if (this.onMapClickForGpsLine) {
+//         this.enableGpsLineClick = true;
+//         return;
+//       }
+//
+//       const bind = () => {
+//         this.enableGpsLineClick = true;
+//         this.onMapClickForGpsLine = (e) => {
+//           if (!this.enableGpsLineClick) return; // 現在地ONの時だけ
+//           if (!e || !e.lngLat) return;
+//           this.drawGpsLine(e.lngLat);
+//         };
+//         map.on('click', this.onMapClickForGpsLine);
+//       };
+//
+//       try {
+//         if (map.isStyleLoaded && map.isStyleLoaded()) bind();
+//         else map.once('load', bind);
+//       } catch (_) {
+//         map.once('load', bind);
+//       }
+//     },
+//
+//     // ---- 追加：クリック無効化 ----
+//     detachGpsLineClick () {
+//       const map = this.$store?.state?.map01;
+//       if (!map) return;
+//       if (this.onMapClickForGpsLine) {
+//         try { map.off('click', this.onMapClickForGpsLine); } catch(_) {}
+//         this.onMapClickForGpsLine = null;
+//       }
+//       this.enableGpsLineClick = false;
+//     },
+//
+//     // ---- 追加：ラインとラベルの掃除（停止時に消す）----
+//     clearGpsLine () {
+//       const map = this.$store?.state?.map01;
+//       if (!map) return;
+//       const LINE_SRC   = 'oh-gps-line-src';
+//       const LINE_LAYER = 'oh-gps-line';
+//       const LAB_SRC    = 'oh-gps-line-label-src';
+//       const LAB_LAYER  = 'oh-gps-line-label';
+//       try { if (map.getLayer(LAB_LAYER)) map.removeLayer(LAB_LAYER); } catch(_) {}
+//       try { if (map.getSource(LAB_SRC)) map.removeSource(LAB_SRC); } catch(_) {}
+//       try { if (map.getLayer(LINE_LAYER)) map.removeLayer(LINE_LAYER); } catch(_) {}
+//       try { if (map.getSource(LINE_SRC)) map.removeSource(LINE_SRC); } catch(_) {}
+//     },
+//
+//     // ---- UIから呼ぶ開始（方位指定つき・最小） ----
+//     async watchPosition (up) {
+//       this.dialogForWatchPosition = false;
+//       if (up === 'h') {
+//         this.isHeadingUp = true;  try { this.compass?.turnOn?.(); } catch(_) {}
+//       } else {
+//         this.isHeadingUp = false; try { this.compass?.turnOff?.(); } catch(_) {}
+//       }
+//       try { this.currentMarker?.remove?.(); } catch(_) {}
+//       this.startWatchPosition();
+//     },
+//
+//     // ---- トグル（最小） ----
+//     async toggleWatchPosition () {
+//       if (this.watchId === null) {
+//         // 開始前に必ずダイアログを開いて方位方式を選ばせる
+//         this.dialogForWatchPosition = true;
+//       } else {
+//         this.isHeadingUp = false;
+//         this.stopWatchPosition();
+//         try { this.centerMarker?.remove?.(); } catch(_) {}
+//         this.centerMarker = null;
+//         try { this.currentMarker?.remove?.(); } catch(_) {}
+//         this.currentMarker = null;
+//         try { this.compass?.turnOff?.(); } catch(_) {}
+//         const map = this.$store?.state?.map01; try { map?.resetNorthPitch?.(); } catch(_) {}
+//         this.$store.state.geo = null;
+//         try { history('現在位置継続取得ストップ(最小)', window.location.href); } catch(_) {}
+//
+//         // 追加：確実に片付け
+//         this.detachGpsLineClick();
+//         this.clearGpsLine();
+//         // ★ 追加：アンカー点も破棄
+//         this.gpsLineAnchorLngLat = null;
+//       }
+//     },
 
 
 
@@ -12109,6 +12710,23 @@ select {
   max-height: 100%;
   overflow: auto;
 }
+
+.oh-tools {
+  position: absolute;
+  left: 10px;
+  bottom: 110px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  font-size: 20px;
+}
+.blink {
+  animation: oh-blink 1s infinite;
+}
+@keyframes oh-blink {
+  50% { filter: brightness(1.25); }
+}
+
 
 /*.v-virtual-scroll__item:first-child {*/
 /*  height: 0 !important;*/
