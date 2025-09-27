@@ -16,7 +16,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="!csvRows || csvRows.length <= 1"
+              :disabled="(!logEnabled) && (!csvRows || csvRows.length <= 1)"
               @click="exportTrackCsv"
               aria-label="CSVダウンロード"
           >
@@ -30,7 +30,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="!csvRows || csvRows.length <= 1"
+              :disabled="(!logEnabled) && (!csvRows || csvRows.length <= 1)"
               @click="exportTrackSima"
               aria-label="SIMAダウンロード"
           >
@@ -44,7 +44,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="!csvRows || csvRows.length <= 1"
+              :disabled="(!logEnabled) && (!csvRows || csvRows.length <= 1)"
               @click="requestClearLog"
               aria-label="ログをクリア"
           >
@@ -56,16 +56,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <MiniTooltip text="記録開始 / 記録停止" :offset-x="0" :offset-y="0">
           <v-btn
               :color="logEnabled ? 'red' : 'primary'"
-              :variant="logEnabled ? 'elevated' : 'tonal'"
               :class="logEnabled ? 'blink' : ''"
               icon
               size="small"
               @click="toggleTrackLog"
               :aria-label="logEnabled ? '記録停止' : '記録開始'"
           >
-            <v-icon size="22">
-              {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}
-            </v-icon>
+<!--            <v-icon size="22">-->
+<!--              {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}-->
+<!--            </v-icon>-->
+            rec
           </v-btn>
         </MiniTooltip>
 
@@ -6531,10 +6531,13 @@ export default {
     },
     startTrackLog() {
       if (!this.csvRows) {
+        // this.csvRows = [[
+        //   'timestamp','lat','lon','X_N','Y_E','座標系',
+        //   'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+        // ]];
         this.csvRows = [[
-          // ← カラム名は任せてもらったので分かりやすく
-          'timestamp','lat','lon','X_N','Y_E','座標系',
-          'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+          'timestamp','lat','lon','X','Y','CRS',
+          'accuracy','quality','eventType'
         ]];
       }
       this.logEnabled = true;
@@ -6550,6 +6553,28 @@ export default {
       this.csvRows = null;
       this.lastLogAt = 0;
       this.lastLogXY = null;
+    },
+    // 日本時間のISO風文字列（例: 2025-09-27T14:03:05+09:00）
+    $_jstIso() {
+      const d = new Date();
+      const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      });
+      const parts = fmt.formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
+      // +09:00 固定で明示（夏時間なし）
+      return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+09:00`;
+    },
+    $_jstLocal() {
+      const p = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Tokyo',
+        year:'numeric',month:'2-digit',day:'2-digit',
+        hour:'2-digit',minute:'2-digit',second:'2-digit',
+        hour12:false
+      }).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});
+      return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
     },
 
     // 現在地を1行追記（間引き付き）
@@ -6583,24 +6608,34 @@ export default {
       }
 
       if (!this.csvRows) {
+        // this.csvRows = [[
+        //   'timestamp','lat','lon','X_N','Y_E','座標系',
+        //   'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+        // ]];
         this.csvRows = [[
-          'timestamp','lat','lon','X_N','Y_E','座標系',
-          'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
+          'timestamp','lat','lon','X','Y','CRS',
+          'accuracy','quality','eventType'
         ]];
       }
-
       this.csvRows.push([
-        new Date(now).toISOString(),
+        this.$_jstLocal(),
         geo.lat, geo.lon,
-        xN, yE, csLabel,               // ← 座標系は表示名
-        geo.accuracy, geo.altitudeAccuracy, geo.speed, geo.heading, geo.quality,
-        eventType
+        xN, yE, csLabel,           // X_N, Y_E, 座標系
+        geo.accuracy,              // accuracy
+        geo.quality,               // quality
+        eventType                  // eventType
       ]);
+      // this.csvRows.push([
+      //   new Date(now).toISOString(),
+      //   geo.lat, geo.lon,
+      //   xN, yE, csLabel,
+      //   geo.accuracy, geo.altitudeAccuracy, geo.speed, geo.heading, geo.quality,
+      //   eventType
+      // ]);
 
       this.lastLogAt = now;
       this.lastLogXY = { x: xN, y: yE };
     },
-
 
     // =========================
     // ダウンロード（CSV / SIMA）
@@ -6635,9 +6670,9 @@ export default {
       const header = this.csvRows[0];
       const col = (name) => header.indexOf(name);
       const idx_ts = col('timestamp');
-      const idx_x  = col('X_N');
-      const idx_y  = col('Y_E');
-      const idx_cs = col('座標系');
+      const idx_x  = col('X');
+      const idx_y  = col('Y');
+      const idx_cs = col('CRS');
 
       const rows = this.csvRows.slice(1);
       if (!rows.length) return;
@@ -6693,8 +6728,6 @@ export default {
       // フォールバック（UTF-8）
       return new TextEncoder().encode(text);
     },
-
-
 
     // 日本時間(Asia/Tokyo)のタイムスタンプ: 2025-09-27_14-03-05
     $_jstStamp() {
@@ -7456,7 +7489,24 @@ export default {
         ({latitude, longitude} = position.coords);
         // map.setCenter([longitude, latitude]);
         // map.setZoom(15);
-        map.flyTo({ center: [longitude, latitude], zoom: map.getZoom() });
+        map.flyTo({ center: [longitude, latitude], zoom: map.getZoom(), animate: true });
+        map.once('moveend', () => {
+          const center = map.getCenter();
+          const centerPoint = map.project([center.lng, center.lat]);
+          // 画面中心地点でのフィーチャークエリ
+          const features = map.queryRenderedFeatures(centerPoint, {
+            layers: ['zones-layer']
+          });
+          if (features.length > 0) {
+            const zoneFeature = features[0];
+            const zone = zoneFeature.properties.zone;
+            this.$store.state.zahyokei = '公共座標' + zone + '系';
+          } else {
+            // console.log('画面中心地点は座標系ゾーンに該当しません。');
+            this.$store.state.zahyokei = '';
+          }
+          this.zoom = map.getZoom()
+        })
       } else {
         const center = map.getCenter();
         longitude = center.lng;
