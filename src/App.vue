@@ -8,7 +8,20 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!-- 右上フローティングツールバー -->
+
+      <div v-if="isKuiuchi" class="oh-tools">
+        <!-- 終了 -->
+        <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              @click="toggleWatchPosition('k')"
+          >
+            終了
+          </v-btn>
+        </MiniTooltip>
+      </div>
+
       <div v-if="isTracking" class="oh-tools">
 
         <!-- 終了 -->
@@ -16,7 +29,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              @click="toggleWatchPosition"
+              @click="toggleWatchPosition('t')"
           >
             終了
           </v-btn>
@@ -517,7 +530,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="dialogForWatchPosition" max-width="500px">
+      <v-dialog persistent v-model="dialogForWatchPosition" max-width="500px">
         <v-card>
           <v-card-title>
             固定or回転
@@ -529,7 +542,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false">Close</v-btn>
+            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false; isKuiuchi = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -1607,7 +1620,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <MiniTooltip text="2画面表示" :offset-x="4" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
               </MiniTooltip>
-                <MiniTooltip text="マイ ルーム" :offset-x="4" :offset-y="-2">
+                <MiniTooltip text="マイルーム" :offset-x="4" :offset-y="-2">
               <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
               </MiniTooltip>
               <!-- <MiniTooltip text="グループ機能">-->
@@ -1630,8 +1643,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </v-fab>
                   </template>
                   <div class="d-flex ga-2 mt-2">
-                    <v-btn icon @click="toggleWatchPosition">追跡</v-btn>
-                    <v-btn icon>杭打</v-btn>
+                    <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
+                    <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
                     <v-btn icon>登録</v-btn>
                   </div>
                 </v-speed-dial>
@@ -2804,6 +2817,7 @@ export default {
     // 状態
     watchId: null,
     isTracking: false,
+    isKuiuchi: false,
     geoLastTs: 0,
 
     // 表示・品質関連
@@ -6824,7 +6838,11 @@ export default {
           opt
       );
 
-      this.isTracking = true;
+      if (this.isKuiuchi) {
+        this.isTracking = false;
+      } else {
+        this.isTracking = true;
+      }
       try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
 
       // 追加：現在地取得オンの時だけクリックで線を引けるようにする
@@ -6839,7 +6857,9 @@ export default {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
         this.watchId = null;
       }
-      this.isTracking = false;
+      // this.isTracking = false;
+      // this.isKuiuchi = false;
+
 
       // 追加：クリック無効化＆ライン削除
       this.detachGpsLineClick();
@@ -7121,11 +7141,20 @@ export default {
     },
 
     // ---- トグル（最小） ----
-    async toggleWatchPosition () {
+    async toggleWatchPosition (mode) {
       if (this.watchId === null) {
         // 開始前に必ずダイアログを開いて方位方式を選ばせる
+        if (mode === 't') {
+          // this.isTracking = true
+          this.isKuiuchi = false
+        } else {
+          this.isTracking = false
+          this.isKuiuchi = true
+        }
         this.dialogForWatchPosition = true;
       } else {
+        this.isTracking = false;
+        this.isKuiuchi = false;
         this.isHeadingUp = false;
         this.stopWatchPosition();
         try { this.centerMarker?.remove?.(); } catch(_) {}
