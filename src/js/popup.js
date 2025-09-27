@@ -370,6 +370,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
             '\n②feature', feature,
             '\n③プロパティ', props
         );
+        if (store.state.isKuiuchi) return;
         console.log('⭐layerId️//' + layerId)
         /**
          * ドロー時はドローレイヤー以外のポップアップを無効化する。

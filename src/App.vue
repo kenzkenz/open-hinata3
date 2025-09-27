@@ -9,7 +9,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
 
-      <div v-if="isKuiuchi" class="oh-tools">
+      <div v-if="s_isKuiuchi" class="oh-tools">
         <!-- 終了 -->
         <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
           <v-btn
@@ -518,7 +518,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <v-card>
           <v-card-title>観測回数設定</v-card-title>
           <v-card-text>
-            <!-- 追加：観測回数のセレクト -->
             <v-select
                 v-model="kansokuCount"
                 :items="kansokuItems"
@@ -528,19 +527,44 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 hide-details="auto"
             />
             <v-btn class="mt-4" @click="kansokuStart">観測開始</v-btn>
+
+            <!-- ★ v-stick-bottom は“スクロールする箱”へ -->
+            <div
+                class="kansoku-list"
+                v-stick-bottom.smooth="{ threshold: 40 }"
+                style="max-height: 220px; overflow:auto; border: 1px solid var(--v-theme-outline); border-radius: 8px; padding: 8px; margin-bottom: 12px;"
+            >
+              <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6;">
+                （観測結果はここに列挙されます）
+              </div>
+              <div
+                  v-else
+                  v-for="(row, idx) in kansokuCsvRows.slice(1)"
+                  :key="idx"
+                  style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px; line-height:1.6; padding:2px 0; border-bottom: 1px dashed rgba(255,255,255,.08);"
+              >
+                {{ row[0] }}, {{ row[1] }}, {{ row[2] }}, {{ row[3] }}, {{ row[4] }}, {{ row[5] }}, {{ row[6] }}, {{ row[7] }}, {{ row[8] }}
+              </div>
+            </div>
+
             <p>観測ポイントは何回でも変更できます。</p>
           </v-card-text>
+
           <v-card-actions>
-            <v-btn color="blue-darken-1" text
-                   @click="dialogForToroku = false;
-                   clearTorokuPoint();
-                   detachTorokuPointClick()"
+            <!-- Vuetify3では text より variant="text" 推奨 -->
+            <v-btn
+                variant="text"
+                color="blue-darken-1"
+                @click="dialogForToroku = false; clearTorokuPoint(); detachTorokuPointClick();"
             >観測終了</v-btn>
+
             <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForToroku = false">Close</v-btn>
+
+            <v-btn variant="text" color="blue-darken-1" @click="dialogForToroku = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
+
 
 
       <v-dialog v-model="s_dialogForVersion" max-width="500px">
@@ -566,13 +590,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
-            <p style="margin-bottom: 20px; color: darkred" v-if="isKuiuchi">「街区基準点」などのポイントをクリックしてください。その地点までの距離を計測します。（ポイント又はポリゴンの頂点をクリックできます。）</p>
+            <p style="margin-bottom: 20px; color: darkred" v-if="s_isKuiuchi">「街区基準点」などのポイントをクリックしてください。その地点までの距離を計測します。（ポイント又はポリゴンの頂点をクリックできます。）</p>
             <v-btn style="margin-left: 0px;" @click="watchPosition('n')">固定</v-btn>
             <v-btn style="margin-left: 10px;" @click="watchPosition('h')">回転</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false; isKuiuchi = false">Close</v-btn>
+            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false; s_isKuiuchi = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -2850,7 +2874,7 @@ export default {
     // 状態
     watchId: null,
     isTracking: false,
-    isKuiuchi: false,
+    // isKuiuchi: false,
     geoLastTs: 0,
 
     // 表示・品質関連
@@ -2888,10 +2912,16 @@ export default {
 
     rtkPng: null,
 
+    kansokuRunning: false,
+    kansokuRemaining: 0,
+    kansokuTimer: null,
+    kansokuCsvRows: null, // [['timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType'], ...]
+
     aaa: null,
   }),
   computed: {
     ...mapState([
+      'isKuiuchi',
       'confirmMessage',
       'confirmProps',
       'showConfirm',
@@ -2925,6 +2955,14 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    s_isKuiuchi: {
+      get() {
+        return this.$store.state.isKuiuchi;
+      },
+      set(value) {
+        this.$store.state.isKuiuchi = value
+      }
+    },
     geoQuality () {
       const geo = this.$store.state.geo
       if (geo) {
@@ -6881,7 +6919,7 @@ export default {
           opt
       );
 
-      if (this.isKuiuchi) {
+      if (this.s_isKuiuchi) {
         this.isTracking = false;
       } else {
         this.isTracking = true;
@@ -7189,15 +7227,15 @@ export default {
         // 開始前に必ずダイアログを開いて方位方式を選ばせる
         if (mode === 't') {
           // this.isTracking = true
-          this.isKuiuchi = false
+          this.s_isKuiuchi = false
         } else {
           this.isTracking = false
-          this.isKuiuchi = true
+          this.s_isKuiuchi = true
         }
         this.dialogForWatchPosition = true;
       } else {
         this.isTracking = false;
-        this.isKuiuchi = false;
+        this.s_isKuiuchi = false;
         this.isHeadingUp = false;
         this.stopWatchPosition();
         try { this.centerMarker?.remove?.(); } catch(_) {}
@@ -7225,7 +7263,7 @@ export default {
       this.enableGpsLineClick  = false;
       this.distance = null;
       this.isTracking = false
-      this.isKuiuchi = false
+      this.s_isKuiuchi = false
 
       // ② ダイアログ表示
       this.$store.dispatch('messageDialog/open', {
@@ -7281,8 +7319,10 @@ export default {
       try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
       // 新たなポイントを打ったらダイアログを再オープン
       this.dialogForToroku = true;
-      // 【重要】何回でも打てるように、ここでは解除しない
-      // this.detachTorokuPointClick();  // ← 削除
+      // ▼ 新しい観測に備えて一覧を初期化
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      this.kansokuCsvRows = null;   // 次回 init でヘッダから作り直す
     },
 
     // 画面にポイントを打つ（GeoJSON + circle レイヤ）
@@ -7317,10 +7357,6 @@ export default {
       }
     },
 
-    kansokuStart() {
-      alert('未実装')
-    },
-
     clearTorokuPoint () {
       const map = this.$store.state.map01; if (!map) return;
       const SRC   = 'oh-toroku-point-src';
@@ -7339,7 +7375,108 @@ export default {
       this.enableTorokuPointClick = false;
     },
 
+    initKansokuCsvIfNeeded() {
+      if (!this.kansokuCsvRows) {
+        this.kansokuCsvRows = [[
+          'timestamp','lat','lon','X','Y','CRS',
+          'accuracy','quality','eventType'
+        ]];
+      }
+    },
 
+    kansokuStart() {
+      if (this.kansokuRunning) return;
+      if (!('geolocation' in navigator)) {
+        console.warn('[kansoku] geolocation 未対応');
+        return;
+      }
+      this.initKansokuCsvIfNeeded();
+      this.kansokuRunning = true;
+      this.kansokuRemaining = Number(this.kansokuCount) || 1;
+
+      // すぐ 1 回、以後 1 秒ごと
+      this.kansokuCollectOnce();
+      this.kansokuTimer = setInterval(() => {
+        this.kansokuCollectOnce();
+      }, 1000);
+    },
+
+    kansokuStop() {
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
+    },
+
+    kansokuCollectOnce() {
+      if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
+        this.kansokuStop();
+        return;
+      }
+
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            try {
+              const c = pos.coords || {};
+              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
+              const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+              const quality  = this.getGeoQualityLabel(accuracy, altAcc);
+
+              // 平面直角XY（優先：store.state.jdpCoordinates [Y, X] → {x:X, y:Y}）
+              const s = this.$store?.state || {};
+              let X = null, Y = null;
+              if (Array.isArray(s.jdpCoordinates) && s.jdpCoordinates.length >= 2) {
+                X = Number(s.jdpCoordinates[1]); // 北
+                Y = Number(s.jdpCoordinates[0]); // 東
+              } else if (lat != null && lon != null) {
+                // フォールバック：緯経度→平面直角（既存ヘルパを利用）
+                const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
+                const xy   = epsg ? xyFromLngLat(lon, lat, epsg) : null;
+                if (xy) { X = xy.x; Y = xy.y; }
+              }
+
+              const csLabel = s.s_zahyokei || s.zahyokei || '';
+              this.initKansokuCsvIfNeeded();
+              this.kansokuCsvRows.push([
+                this.$_jstLocal(),
+                lat, lon,
+                X, Y, csLabel,
+                accuracy,
+                quality,
+                'kansoku' // eventType
+              ]);
+            } catch (e) {
+              console.warn('[kansoku] collect error', e);
+            } finally {
+              this.kansokuRemaining -= 1;
+              if (this.kansokuRemaining <= 0) this.kansokuStop();
+            }
+          },
+          (err) => {
+            console.warn('[kansoku] getCurrentPosition error', err);
+            // エラーでもカウントを進めて止まらないようにする
+            this.kansokuRemaining -= 1;
+            if (this.kansokuRemaining <= 0) this.kansokuStop();
+          },
+          opt
+      );
+    },
+
+    exportKansokuCsv() {
+      if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
+      const csvEscape = (v) => {
+        if (v == null) return '';
+        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const csv = this.kansokuCsvRows.map(r => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
+      this.$_downloadText(csv, `kansoku_${this.$_jstStamp()}.csv`, 'text/csv;charset=utf-8;');
+    },
 
 
 

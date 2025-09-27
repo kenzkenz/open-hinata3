@@ -48,6 +48,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.557,
+    isKuiuchi: false,
     geo: null,
     demTint: null,
     mode: 'step',     // 将来: 'linear' でグラデ
