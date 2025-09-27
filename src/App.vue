@@ -537,6 +537,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
+            <p style="margin-bottom: 20px; color: darkred" v-if="isKuiuchi">「街区基準点」などのポイントをクリックしてください。その地点までの距離を計測します。（ポイント又はポリゴンの頂点をクリックできます。）</p>
             <v-btn style="margin-left: 0px;" @click="watchPosition('n')">固定</v-btn>
             <v-btn style="margin-left: 10px;" @click="watchPosition('h')">回転</v-btn>
           </v-card-text>
