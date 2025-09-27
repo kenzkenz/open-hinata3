@@ -11,6 +11,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!-- 右上フローティングツールバー -->
       <div v-if="isTracking" class="oh-tools">
 
+        <!-- 終了 -->
+        <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              @click="toggleWatchPosition"
+          >
+            終了
+          </v-btn>
+        </MiniTooltip>
+
         <!-- CSV ダウンロード -->
         <MiniTooltip text="CSVダウンロード" :offset-x="0" :offset-y="0">
           <v-btn
@@ -21,7 +32,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               aria-label="CSVダウンロード"
           >
             csv
-<!--            <v-icon size="18">mdi-file-delimited</v-icon>-->
           </v-btn>
         </MiniTooltip>
 
@@ -35,7 +45,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               aria-label="SIMAダウンロード"
           >
             sim
-<!--            <v-icon size="18">mdi-file-table-box</v-icon>-->
           </v-btn>
         </MiniTooltip>
 
@@ -62,9 +71,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               @click="toggleTrackLog"
               :aria-label="logEnabled ? '記録停止' : '記録開始'"
           >
-<!--            <v-icon size="22">-->
-<!--              {{ logEnabled ? 'mdi-stop-circle' : 'mdi-record-circle' }}-->
-<!--            </v-icon>-->
             rec
           </v-btn>
         </MiniTooltip>
@@ -514,12 +520,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog v-model="dialogForWatchPosition" max-width="500px">
         <v-card>
           <v-card-title>
-            orientation
+            固定or回転
           </v-card-title>
           <v-card-text>
             <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
             <v-btn style="margin-left: 0px;" @click="watchPosition('n')">固定</v-btn>
-            <v-btn style="margin-left: 20px;" @click="watchPosition('h')">回転</v-btn>
+            <v-btn style="margin-left: 10px;" @click="watchPosition('h')">回転</v-btn>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -1604,10 +1610,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <MiniTooltip text="マイ ルーム" :offset-x="4" :offset-y="-2">
               <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
               </MiniTooltip>
-<!--              <MiniTooltip text="グループ機能">-->
-<!--                <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
-<!--              </MiniTooltip>-->
-
+              <!-- <MiniTooltip text="グループ機能">-->
+              <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
+              <!--  </MiniTooltip>-->
               <MiniTooltip text="観測" :offset-x="4" :offset-y="-2">
                 <v-speed-dial
                     location="top center"
@@ -1616,12 +1621,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <template v-slot:activator="{ props: activatorProps }">
                     <v-fab
                         v-bind="activatorProps"
-                        :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;"
+                        :size="isSmall ? 'small' : 'default'"
+                        v-if="user1 && mapName === 'map01'"
+                        icon style="margin-left:8px;"
                     >
-                      <v-icon>mdi-ruler-square-compass</v-icon>
+                      観測
+                      <!--  <v-icon>mdi-ruler-square-compass</v-icon>-->
                     </v-fab>
                   </template>
                   <div class="d-flex ga-2 mt-2">
+                    <v-btn icon @click="toggleWatchPosition">追跡</v-btn>
                     <v-btn icon>杭打</v-btn>
                     <v-btn icon>登録</v-btn>
                   </div>
@@ -3070,7 +3079,7 @@ export default {
           [
             { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', disabled: this.isSmall500,  click: this.handlePrint },
             { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
-            { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
+            // { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
             { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 200px;' },
@@ -12560,7 +12569,7 @@ select {
 }
 .fan-menu-0 {
   position: absolute;
-  top:322px;
+  top:258px;
   right:0px;
   z-index: 3
 }
@@ -12864,14 +12873,6 @@ select {
   50% { filter: brightness(1.25); }
 }
 
-
-/*.v-virtual-scroll__item:first-child {*/
-/*  height: 0 !important;*/
-/*  margin: 0 !important;*/
-/*  padding: 0 !important;*/
-/*  overflow: hidden;*/
-/*}*/
-
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }
 }
@@ -12880,7 +12881,7 @@ select {
   /*  top:174px;*/
   /*}*/
   .fan-menu-0 {
-    top:280px;
+    top:226px;
   }
 }
 </style>
