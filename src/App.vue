@@ -514,6 +514,35 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
+      <v-dialog v-model="dialogForToroku" max-width="500px">
+        <v-card>
+          <v-card-title>観測回数設定</v-card-title>
+          <v-card-text>
+            <!-- 追加：観測回数のセレクト -->
+            <v-select
+                v-model="kansokuCount"
+                :items="kansokuItems"
+                label="観測回数（１秒間隔で実行）"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+            />
+            <v-btn class="mt-4" @click="kansokuStart">観測開始</v-btn>
+            <p>観測ポイントは何回でも変更できます。</p>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="blue-darken-1" text
+                   @click="dialogForToroku = false;
+                   clearTorokuPoint();
+                   detachTorokuPointClick()"
+            >観測終了</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" text @click="dialogForToroku = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
       <v-dialog v-model="s_dialogForVersion" max-width="500px">
         <v-card>
           <v-card-title>
@@ -1637,16 +1666,18 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-bind="activatorProps"
                         :size="isSmall ? 'small' : 'default'"
                         v-if="user1 && mapName === 'map01'"
-                        icon style="margin-left:8px;"
+                        icon
+                        style="margin-left:8px;"
+
                     >
-                      観測
-                      <!--  <v-icon>mdi-ruler-square-compass</v-icon>-->
+                       <img :src="rtkPng" alt="" class="btn-img" />
+<!--                        <v-icon>mdi-crosshairs-gps</v-icon>-->
                     </v-fab>
                   </template>
                   <div class="d-flex ga-2 mt-2">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
-                    <v-btn icon>登録</v-btn>
+                    <v-btn icon @click="openTorokuDialog">登録</v-btn>
                   </div>
                 </v-speed-dial>
               </MiniTooltip>
@@ -1823,6 +1854,7 @@ import WarpWizard from '@/components/WarpWizard.vue'
 import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios-map-tuning';
 import Traverse from "@/components/floatingwindow/Traverse";
 import { snapIfNeeded } from '@/js/utils/triangle50'
+import rtkPngUrl from '@/assets/icons/oh-rtk.png'
 
 import {
   addDraw,
@@ -2845,6 +2877,16 @@ export default {
     minLogDistanceM: 0.3,       // 距離間引き（m）
 
     confirmClearLog: false,
+
+    onMapClickForToroku: null,
+    enableTorokuPointClick: false,
+
+    dialogForToroku: false,
+
+    kansokuItems: [10, 20, 50, 100],
+    kansokuCount: 20, // 既定値
+
+    rtkPng: null,
 
     aaa: null,
   }),
@@ -7175,6 +7217,131 @@ export default {
       }
     },
 
+    openTorokuDialog() {
+      // ① 距離測りの後片付け：ライン消去＋モード解除
+      try { this.detachGpsLineClick(); } catch (_) {}
+      try { this.clearGpsLine(); } catch (_) {}
+      this.gpsLineAnchorLngLat = null;
+      this.enableGpsLineClick  = false;
+      this.distance = null;
+      this.isTracking = false
+      this.isKuiuchi = false
+
+      // ② ダイアログ表示
+      this.$store.dispatch('messageDialog/open', {
+        id: 'torokuDialog',
+        title: '観測スタート',
+        contentHtml: '<p>観測する地点をクリックしてください。</p>',
+        options: { maxWidth: 500, showCloseIcon: true }
+      });
+
+      // ③ 観測点のクリック取得を有効化
+      this.attachTorokuPointClick();
+
+      try { this.centerMarker?.remove?.(); } catch(_) {}
+      this.centerMarker = null;
+    },
+    // ===== ここから追加（基準コードの attach/detach 構成を踏襲） =====
+    attachTorokuPointClick () {
+      const map = this.$store.state.map01;
+      if (!map) return;
+
+      // すでにバインド済みならフラグだけON
+      if (this.onMapClickForToroku) {
+        this.enableTorokuPointClick = true;
+        return;
+      }
+
+      const bind = () => {
+        this.enableTorokuPointClick = true;
+        this.onMapClickForToroku = (e) => {
+          if (!this.enableTorokuPointClick) return;
+          if (!e || !e.lngLat) return;
+          this.handleTorokuMapClick(e.lngLat);
+        };
+        map.on('click', this.onMapClickForToroku);
+      };
+
+      try {
+        if (map.isStyleLoaded && map.isStyleLoaded()) bind();
+        else map.once('load', bind);
+      } catch (_) {
+        map.once('load', bind);
+      }
+    },
+
+    handleTorokuMapClick (lngLat) {
+      // 前のポイントは破棄
+      try { this.clearTorokuPoint(); } catch(_) {}
+      // 新しいポイントを描画
+      try { this.plotTorokuPoint(lngLat); } catch(_) {}
+      // ▼ 将来：ここで navigator.geolocation.getCurrentPosition(...) で端末座標も取得予定
+      // ▼ イベントを用意（どちらでも拾えるように2種）
+      try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
+      try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
+      // 新たなポイントを打ったらダイアログを再オープン
+      this.dialogForToroku = true;
+      // 【重要】何回でも打てるように、ここでは解除しない
+      // this.detachTorokuPointClick();  // ← 削除
+    },
+
+    // 画面にポイントを打つ（GeoJSON + circle レイヤ）
+    plotTorokuPoint (lngLat) {
+      const map = this.$store?.state?.map01; if (!map) return;
+
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+
+      const fc = turf.featureCollection([
+        turf.point([lngLat.lng, lngLat.lat], { label: '観測点' })
+      ]);
+
+      if (map.getSource(SRC)) {
+        map.getSource(SRC).setData(fc);
+      } else {
+        map.addSource(SRC, { type: 'geojson', data: fc });
+      }
+
+      if (!map.getLayer(LAYER)) {
+        map.addLayer({
+          id: LAYER,
+          type: 'circle',
+          source: SRC,
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#ff3b30',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+      }
+    },
+
+    kansokuStart() {
+      alert('未実装')
+    },
+
+    clearTorokuPoint () {
+      const map = this.$store.state.map01; if (!map) return;
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+    },
+
+    detachTorokuPointClick () {
+      const map = this.$store.state.map01;
+      if (!map) return;
+      if (this.onMapClickForToroku) {
+        try { map.off('click', this.onMapClickForToroku); } catch(_) {}
+        this.onMapClickForToroku = null;
+      }
+      this.enableTorokuPointClick = false;
+    },
+
+
+
+
 
 
 //     startWatchPosition () {
@@ -11119,6 +11286,7 @@ export default {
     if (window.innerWidth < 500 ) this.fanMenuOffsetX = 0
     // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え
     this.updatePermalink = debounce(this.updatePermalink, 500)
+    this.rtkPng = rtkPngUrl
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -11882,7 +12050,19 @@ html.oh3-embed #map01 {
   z-index: 99999999;
 }
 
+/* v-btn の内容領域をボタン全体に広げる */
+.btn-img-full :deep(.v-btn__content) {
+  width: 100%;
+  height: 100%;
+}
 
+/* 画像をボタンいっぱいにフィット */
+.btn-img {
+  position: absolute;
+  width: 70%;
+  display: block;
+  object-fit: contain;  /* 画像を切らずに収める（切って良いなら cover） */
+}
 @keyframes pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
