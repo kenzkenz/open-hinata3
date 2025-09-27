@@ -1592,22 +1592,44 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <!--左上部メニュー-->
           <div v-if="!isIframe" id="left-top-div">
             <span v-if="!s_isPrint">
-              <MiniTooltip text="メニュー">
+              <MiniTooltip text="メニュー" :offset-x="4" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon @click="btnClickMenu(mapName)" v-if="mapName === 'map01'"><v-icon>mdi-menu</v-icon></v-btn>
               </MiniTooltip>
-              <MiniTooltip text="ログイン">
+              <MiniTooltip text="ログイン" :offset-x="4" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="s_dialogForLogin = !s_dialogForLogin" v-if="mapName === 'map01'"><v-icon>mdi-login</v-icon></v-btn>
               </MiniTooltip>
-                <MiniTooltip text="2画面表示">
-              <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
+              <MiniTooltip text="2画面表示" :offset-x="4" :offset-y="-2">
+                <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
               </MiniTooltip>
-                <MiniTooltip text="マイ ルーム">
+                <MiniTooltip text="マイ ルーム" :offset-x="4" :offset-y="-2">
               <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
               </MiniTooltip>
 <!--              <MiniTooltip text="グループ機能">-->
 <!--                <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
 <!--              </MiniTooltip>-->
-              <MiniTooltip text="レイヤー選択">
+
+              <MiniTooltip text="観測" :offset-x="4" :offset-y="-2">
+                <v-speed-dial
+                    location="top center"
+                    transition="scale-transition"
+                >
+                  <template v-slot:activator="{ props: activatorProps }">
+                    <v-fab
+                        v-bind="activatorProps"
+                        :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;"
+                    >
+                      <v-icon>mdi-ruler-square-compass</v-icon>
+                    </v-fab>
+                  </template>
+                  <div class="d-flex ga-2 mt-2">
+                    <v-btn icon>杭打</v-btn>
+                    <v-btn icon>登録</v-btn>
+                  </div>
+                </v-speed-dial>
+              </MiniTooltip>
+
+
+              <MiniTooltip text="レイヤー選択" :offset-x="4" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
               </MiniTooltip>
             </span>
