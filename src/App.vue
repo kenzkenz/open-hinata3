@@ -514,7 +514,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <v-dialog v-model="dialogForToroku" max-width="500px">
+      <!-- スクロール箱：横スクロールON、縦も保持 -->
+      <v-dialog v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>観測回数設定</v-card-title>
           <v-card-text>
@@ -526,48 +527,64 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 variant="outlined"
                 hide-details="auto"
             />
-            <v-btn class="mt-4" @click="kansokuStart">観測開始</v-btn>
+            <div class="flex items-center gap-2 mt-2">
+              <v-btn class="mt-2" @click="kansokuStart">観測開始</v-btn>
+            </div>
 
-            <!-- ★ v-stick-bottom は“スクロールする箱”へ -->
+
+            <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
             <div
                 class="kansoku-list"
                 v-stick-bottom.smooth="{ threshold: 40 }"
-                style="max-height: 220px; overflow:auto; border: 1px solid var(--v-theme-outline); border-radius: 8px; padding: 8px; margin-bottom: 12px;"
+                style="height:220px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
             >
-              <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6;">
+              <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;">
                 （観測結果はここに列挙されます）
               </div>
+
+
               <div
                   v-else
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
                   :key="idx"
-                  style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px; line-height:1.6; padding:2px 0; border-bottom: 1px dashed rgba(255,255,255,.08);"
+                  :style="{
+                          fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+                          fontSize: '12px',
+                          lineHeight: '1.6',
+                          padding: '2px 8px',
+                          borderBottom: '1px dashed rgba(255,255,255,.08)',
+                          backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+                          whiteSpace: 'nowrap'
+                          }"
               >
-                {{ row[0] }}, {{ row[1] }}, {{ row[2] }}, {{ row[3] }}, {{ row[4] }}, {{ row[5] }}, {{ row[6] }}, {{ row[7] }}, {{ row[8] }}
+                {{ row[0] }},
+                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }},
+                {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }},
+                {{ row[5] }},
+                {{ fmtAcc(row[6]) }},
+                {{ row[7] }},
+                {{ row[8] }}
               </div>
             </div>
-
-            <p>観測ポイントは何回でも変更できます。</p>
+            <div class="flex items-center gap-2 mt-2">
+              <v-btn color="blue-darken-1" text
+                     @click="dialogForToroku = false;
+                   clearTorokuPoint();
+                   detachTorokuPointClick()"
+              >観測終了</v-btn>
+              <v-btn style=" margin-left: 10px;" color="green" @click="downloadCsv">CSVダウンロード</v-btn>
+            </div>
           </v-card-text>
-
-          <v-card-actions>
-            <!-- Vuetify3では text より variant="text" 推奨 -->
-            <v-btn
-                variant="text"
-                color="blue-darken-1"
-                @click="dialogForToroku = false; clearTorokuPoint(); detachTorokuPointClick();"
-            >観測終了</v-btn>
-
-            <v-spacer></v-spacer>
-
-            <v-btn variant="text" color="blue-darken-1" @click="dialogForToroku = false">Close</v-btn>
-          </v-card-actions>
         </v-card>
       </v-dialog>
 
 
 
-      <v-dialog v-model="s_dialogForVersion" max-width="500px">
+
+
+
+
+          <v-dialog v-model="s_dialogForVersion" max-width="500px">
         <v-card>
           <v-card-title>
             バージョンが古くなっています。
@@ -2916,6 +2933,8 @@ export default {
     kansokuRemaining: 0,
     kansokuTimer: null,
     kansokuCsvRows: null, // [['timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType'], ...]
+
+    torokuPointLngLat: null,
 
     aaa: null,
   }),
@@ -7355,6 +7374,9 @@ export default {
           }
         });
       }
+
+      // ★ 追加：赤丸のWGS84を保持
+      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
     },
 
     clearTorokuPoint () {
@@ -7363,6 +7385,7 @@ export default {
       const LAYER = 'oh-toroku-point';
       try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+      this.torokuPointLngLat = null; // ★ 追加
     },
 
     detachTorokuPointClick () {
@@ -7412,7 +7435,12 @@ export default {
 
     kansokuCollectOnce() {
       if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
-        this.kansokuStop();
+        this.kansokuStop(); return;
+      }
+      // ★ 赤丸が未設置なら中断
+      if (!this.torokuPointLngLat) {
+        console.warn('[kansoku] 赤丸(観測点)が未設定です');
+        // カウントは減らさずに再トライできるよう return
         return;
       }
 
@@ -7421,51 +7449,60 @@ export default {
           (pos) => {
             try {
               const c = pos.coords || {};
-              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
               const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
               const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
               const quality  = this.getGeoQualityLabel(accuracy, altAcc);
 
-              // 平面直角XY（優先：store.state.jdpCoordinates [Y, X] → {x:X, y:Y}）
-              const s = this.$store?.state || {};
-              let X = null, Y = null;
-              if (Array.isArray(s.jdpCoordinates) && s.jdpCoordinates.length >= 2) {
-                X = Number(s.jdpCoordinates[1]); // 北
-                Y = Number(s.jdpCoordinates[0]); // 東
-              } else if (lat != null && lon != null) {
-                // フォールバック：緯経度→平面直角（既存ヘルパを利用）
-                const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
-                const xy   = epsg ? xyFromLngLat(lon, lat, epsg) : null;
-                if (xy) { X = xy.x; Y = xy.y; }
+              const nowTs = pos.timestamp || Date.now();
+              if (quality === 'RTK級') {
+                this.lastRtkAt = nowTs;
+              } else if (this.lastRtkAt && (nowTs - this.lastRtkAt) <= this.rtkWindowMs) {
+                // 直近RTK数秒は非RTKを捨てる（カウントも減らさない）
+                return;
               }
 
+              // ★ 記録する座標は「赤丸」の位置（WGS84）
+              const lat = this.torokuPointLngLat.lat;
+              const lon = this.torokuPointLngLat.lng;
+
+              // ★ 平面直角XYは赤丸を投影（propsが無ければ投影）
+              const s = this.$store?.state || {};
+              const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
+              let X = null, Y = null;
+              if (epsg) {
+                const xy = xyFromLngLat(lon, lat, epsg); // {x:N, y:E}
+                if (xy) { X = xy.x; Y = xy.y; }
+              }
               const csLabel = s.s_zahyokei || s.zahyokei || '';
+
               this.initKansokuCsvIfNeeded();
               this.kansokuCsvRows.push([
-                this.$_jstLocal(),
-                lat, lon,
-                X, Y, csLabel,
-                accuracy,
-                quality,
-                'kansoku' // eventType
+                this.$_jstLocal(), // timestamp (JST)
+                lat, lon,          // ★ 赤丸の緯度経度
+                X, Y, csLabel,     // ★ 赤丸の平面直角
+                accuracy,          // 端末測位の精度
+                quality,           // 端末測位の品質ラベル
+                'kansoku'
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
             } finally {
+              // ★ 実際に1件記録できたときだけ減らす設計にしたい場合は、
+              //   上の push 成功時にだけ減らす。ここでは従来どおり減らす:
               this.kansokuRemaining -= 1;
               if (this.kansokuRemaining <= 0) this.kansokuStop();
             }
           },
           (err) => {
             console.warn('[kansoku] getCurrentPosition error', err);
-            // エラーでもカウントを進めて止まらないようにする
             this.kansokuRemaining -= 1;
             if (this.kansokuRemaining <= 0) this.kansokuStop();
           },
           opt
       );
     },
+
+
 
     exportKansokuCsv() {
       if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
@@ -7477,6 +7514,50 @@ export default {
       const csv = this.kansokuCsvRows.map(r => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
       this.$_downloadText(csv, `kansoku_${this.$_jstStamp()}.csv`, 'text/csv;charset=utf-8;');
     },
+
+    // 平面直角（XY）の表示を調整（4桁四捨五入）
+    formatCoordinates(value) {
+      if (typeof value === 'number') {
+        return value.toFixed(value >= 10000 ? 3 : 5);  // 10000以上なら3桁、未満なら5桁
+      }
+      return value;  // 数値でない場合はそのまま返す
+    },
+
+    // 緯度経度(EPSG:4326)は小数第5位まで表示（第6位四捨五入）
+    fmtLL(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toFixed(5) : v;
+    },
+    // 平面直角XYは小数第3位まで表示（第4位四捨五入）
+    fmtXY(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toFixed(3) : v;
+    },
+    // accuracy は小数第2位まで
+    fmtAcc(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n.toFixed(2) : v;
+    },
+
+    // CSVのダウンロード
+    downloadCsv() {
+      if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
+
+      const csv = this.kansokuCsvRows.map(row => row.join(',')).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.href = url;
+      link.download = `kansoku_results_${this.$_jstStamp()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+
+
+
+
+
 
 
 
