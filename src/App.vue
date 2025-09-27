@@ -531,7 +531,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-btn class="mt-2" @click="kansokuStart">観測開始</v-btn>
             </div>
 
-
             <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
             <div
                 class="kansoku-list"
@@ -542,20 +541,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 （観測結果はここに列挙されます）
               </div>
 
-
               <div
                   v-else
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
                   :key="idx"
                   :style="{
-                          fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
-                          fontSize: '12px',
-                          lineHeight: '1.6',
-                          padding: '2px 8px',
-                          borderBottom: '1px dashed rgba(255,255,255,.08)',
-                          backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
-                          whiteSpace: 'nowrap'
-                          }"
+                    fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+                    fontSize: '12px',
+                    lineHeight: '1.6',
+                    padding: '2px 8px',
+                    borderBottom: '1px dashed rgba(255,255,255,.08)',
+                    backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+                    whiteSpace: 'nowrap'
+                    }"
               >
                 {{ row[0] }},
                 {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }},
@@ -566,17 +564,46 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ row[8] }}
               </div>
             </div>
-            <div class="flex items-center gap-2 mt-2">
-              <v-btn color="blue-darken-1" text
-                     @click="dialogForToroku = false;
-                   clearTorokuPoint();
-                   detachTorokuPointClick()"
-              >観測終了</v-btn>
-              <v-btn style=" margin-left: 10px;" color="green" @click="downloadCsv">CSVダウンロード</v-btn>
+
+            <!-- ★ 追加：平均（既存スタイルに影響しない独立ブロック） -->
+            <div
+                v-if="kansokuAverages && kansokuAverages.n > 0"
+                style="margin-top:8px; padding:6px 8px; border:1px dashed var(--v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"
+            >
+              平均（n={{ kansokuAverages.n }}）:
+              lat={{ fmtLL(kansokuAverages.lat) }},
+              lon={{ fmtLL(kansokuAverages.lon) }} |
+              X={{ fmtXY(kansokuAverages.X) }},
+              Y={{ fmtXY(kansokuAverages.Y) }}
             </div>
+
+            <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
+              <v-btn color="blue-darken-1" text
+                     @click="dialogForToroku = false; clearTorokuPoint(); detachTorokuPointClick()">
+                観測終了
+              </v-btn>
+
+              <v-btn style="margin-left: 10px;" color="green" @click="downloadCsv">
+                CSVダウンロード
+              </v-btn>
+
+              <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
+
+              <!-- ★ 文字だけの閉じる -->
+              <v-btn
+                  variant="text"
+                  density="compact"
+                  class="text-none pa-0"
+                  style="min-width:auto; padding:0;"
+                  @click="dialogForToroku = false"
+              >閉じる</v-btn>
+            </div>
+
+
           </v-card-text>
         </v-card>
       </v-dialog>
+
 
 
 
@@ -2974,6 +3001,32 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    kansokuAverages () {
+      const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows.slice(1) : [];
+      if (!rows.length) return { n: 0, lat: null, lon: null, X: null, Y: null };
+
+      let nLL = 0, sumLat = 0, sumLon = 0;
+      let nXY = 0, sumX = 0, sumY = 0;
+
+      for (const r of rows) {
+        const lat = Number(r[1]), lon = Number(r[2]);
+        const X   = Number(r[3]), Y   = Number(r[4]);
+
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          sumLat += lat; sumLon += lon; nLL++;
+        }
+        if (Number.isFinite(X) && Number.isFinite(Y)) {
+          sumX += X; sumY += Y; nXY++;
+        }
+      }
+      return {
+        n: Math.max(nLL, nXY),
+        lat: nLL ? (sumLat / nLL) : null,
+        lon: nLL ? (sumLon / nLL) : null,
+        X:   nXY ? (sumX   / nXY) : null,
+        Y:   nXY ? (sumY   / nXY) : null,
+      };
+    },
     s_isKuiuchi: {
       get() {
         return this.$store.state.isKuiuchi;
@@ -7553,9 +7606,6 @@ export default {
       link.click();
       URL.revokeObjectURL(url);
     },
-
-
-
 
 
 
