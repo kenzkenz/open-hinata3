@@ -531,8 +531,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--            </v-badge>-->
           </v-card-title>
           <v-card-text>
-            <div class="d-flex align-center flex-wrap ga-2">
-              <!-- 左: テキストフィールド -->
+            <div class="oh3-grid-3col">
+              <!-- 左: テキストフィールド（可変） -->
               <v-text-field
                   :disabled="true"
                   v-model="fileName"
@@ -542,9 +542,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   density="compact"
                   hide-details="auto"
                   clearable
-                  class="flex-grow-1"
+                  class="oh3-col-flex"
               />
-              <!-- 右: 観測回数のセレクト（1秒間隔で実行） -->
+              <!-- 中: 観測回数のセレクト（固定幅） -->
               <v-select
                   v-model="kansokuCount"
                   :items="kansokuItems"
@@ -552,9 +552,22 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  style="width: 10px"
+                  class="oh3-col-fixed"
+              />
+              <!-- 右: 0cm〜100cm セレクト（固定幅） -->
+              <v-select
+                  v-model="offsetCm"
+                  :items="offsetCmItems"
+                  item-title="title"
+                  item-value="value"
+                  label="ポール高"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="oh3-col-fixed"
               />
             </div>
+
             <div class="flex items-center gap-2 mt-2">
               <v-btn class="mt-2" @click="kansokuStart">観測開始</v-btn>
             </div>
@@ -2982,6 +2995,9 @@ export default {
 
     kansokuItems: [10, 20, 50, 100],
     kansokuCount: 10, // 既定値
+    // 追加: 0〜100cm のセレクト
+    offsetCm: 0,
+    offsetCmItems: Array.from({ length: 101 }, (_, i) => ({ title: `${i}cm`, value: i })),
 
     rtkPng: null,
 
@@ -12517,6 +12533,36 @@ html.oh3-embed #map01 {
   display: block;
   object-fit: contain;  /* 画像を切らずに収める（切って良いなら cover） */
 }
+
+/* v-dialog の中で左右いっぱいに広がる 3 列。点名が残り幅をすべて受け持つ */
+.oh3-grid-3col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px 220px; /* 左が可変、右2つは固定幅 */
+  align-items: center;
+  gap: 8px;
+}
+/* 点名は可変幅でグリッド領域ぴったりに */
+.oh3-col-flex {
+  width: 100%;
+}
+/* 右2つのセレクトは固定幅。Vuetifyの入力は内部で100%になるので、ラッパーに幅を指定 */
+.oh3-col-fixed {
+  width: 220px;
+}
+
+
+/* 狭い画面では 1 列にフォールバック */
+@media (max-width: 640px) {
+  .oh3-grid-3col {
+    grid-template-columns: 1fr;
+  }
+  .oh3-col-fixed {
+    width: 100%;
+  }
+}
+
+
 @keyframes pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
