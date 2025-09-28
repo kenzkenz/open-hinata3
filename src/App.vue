@@ -514,19 +514,47 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <!-- スクロール箱：横スクロールON、縦も保持 -->
+      <!--  -->
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
-          <v-card-title>観測回数設定</v-card-title>
+          <v-card-title>
+            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>
+            <span v-else>観測</span>
+<!--            <v-badge-->
+<!--                content="終了"-->
+<!--                :model-value="kansokuAverages.n === kansokuCount"-->
+<!--                dot-->
+<!--                color="success"-->
+<!--                offset-x="20"-->
+<!--            >-->
+<!--              <span>観測</span>-->
+<!--            </v-badge>-->
+          </v-card-title>
           <v-card-text>
-            <v-select
-                v-model="kansokuCount"
-                :items="kansokuItems"
-                label="観測回数（１秒間隔で実行）"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-            />
+            <div class="d-flex align-center flex-wrap ga-2">
+              <!-- 左: テキストフィールド -->
+              <v-text-field
+                  :disabled="true"
+                  v-model="fileName"
+                  label="点名"
+                  placeholder=""
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  clearable
+                  class="flex-grow-1"
+              />
+              <!-- 右: 観測回数のセレクト（1秒間隔で実行） -->
+              <v-select
+                  v-model="kansokuCount"
+                  :items="kansokuItems"
+                  label="観測回数（１秒間隔で実行）"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  style="width: 10px"
+              />
+            </div>
             <div class="flex items-center gap-2 mt-2">
               <v-btn class="mt-2" @click="kansokuStart">観測開始</v-btn>
             </div>
@@ -538,7 +566,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 style="height:220px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
             >
               <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;">
-                （観測結果はここに列挙されます）
               </div>
 
               <div
@@ -589,9 +616,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 観測終了
               </v-btn>
 
-              <v-btn style="margin-left: 10px;" color="green" @click="downloadCsv">
-                CSVDL
-              </v-btn>
+              <v-btn color="green" @click="downloadCsv">CSV</v-btn>
+              <v-btn :disabled="true" color="green" @click="downloadCsv">マイルーム</v-btn>
+
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
               <v-btn
@@ -602,7 +629,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @click="dialogForToroku = false"
               >閉じる</v-btn>
             </div>
-
 
           </v-card-text>
         </v-card>
@@ -7315,9 +7341,8 @@ export default {
       this.clearGpsLine();
       // ★ 追加：アンカー点も破棄
       this.gpsLineAnchorLngLat = null;
-      this.dialogForWatchPosition = true;
       if (!isClose) {
-        // 開始前に必ずダイアログを開いて方位方式を選ばせる
+        this.dialogForWatchPosition = true;
         if (mode === 't') {
           // this.isTracking = true
           this.s_isKuiuchi = false
