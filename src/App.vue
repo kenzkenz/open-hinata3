@@ -601,7 +601,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}
                 {{ row[8] }}
                 {{ row[0] }}
-                {{ row[9] }}
+                {{ fmtHumanHeight(row[9]) }}
               </div>
             </div>
 
@@ -7081,29 +7081,17 @@ export default {
         const header = rows[0];
         const idx = (n) => header.indexOf(n);
         const iX  = idx('X'), iY = idx('Y'), iTS = idx('timestamp'), iET = idx('eventType');
-
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        // ★ 標高列（ヘッダが無い場合は row[9] を標高とみなす）
+        // 標高列（無ければ row[9]）
         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
 
         const xs = [], ys = [];
-        const hTxtArr = [];   // 文字列の標高（例: "66.789(HAE)"）も保持
-        const hNumArr = [];   // 数値化できた標高（平均などに使える）
+        const hTxtArr = [];
+        const hNumArr = [];
         let lastTs = '';
 
-        // 数値抽出（":70.928," などゴミ付き対応）
-        const parseNumericLike = (v) => {
-          if (v == null) return null;
-          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim();
-          s = s.replace(/^[\s:=>\u3000：＝＞-]+/, ''); // 先頭ゴミ除去（: = > など）
-          s = s.replace(',', '.');                   // カンマ小数 → ドット小数
-          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-          if (!m) return null;
-          const n = Number(m[0]);
-          return Number.isFinite(n) ? n : null;
-        };
+        const parse = (v) => this.parseNumericLike(v);
 
         for (let r = 1; r < rows.length; r++) {
           const row = rows[r];
@@ -7113,11 +7101,11 @@ export default {
           const vx = Number(row[iX]); if (Number.isFinite(vx)) xs.push(vx);
           const vy = Number(row[iY]); if (Number.isFinite(vy)) ys.push(vy);
 
-          // ★ 標高（UIで表示している row[9] など）を拾う
+          // ★ 標高（UI表示の row[9]）を収集
           if (row.length > iH && row[iH] != null && row[iH] !== '') {
             const hRaw = row[iH];
             hTxtArr.push(hRaw);
-            const hn = parseNumericLike(hRaw);
+            const hn = parse(hRaw);
             if (hn != null) hNumArr.push(hn);
           }
 
@@ -7129,31 +7117,33 @@ export default {
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
-        // 較差 = sqrt( (maxX-minX)^2 + (maxY-minY)^2 )
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs),
             Math.max(...ys) - Math.min(...ys));
 
-        // 点名・時刻
         let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
           name = this.getNextPointName?.() || '';
           this.currentPointName = name;
         }
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
-
-        // ポール高・標高
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // ★ 標高の決定ロジック：
-        //    1) 外部から正高(hOrthometric)が来ていれば最優先で数値
-        //    2) 無ければ「ダイアログで表示している標高」= hTxtArr の最後をそのまま採用（"66.789(HAE)" 等でもOK）
-        //    3) さらに数値が欲しければ hNumArr の平均を使うなど拡張可能（今は不要）
-        let hStore = null;
+        // ★★★ 標高の最終決定：平均を優先 ★★★
+        // 1) 外部から「正高(hOrthometric)」が単一値で入ってくる場合 → その数値（人が分かる標高）
+        // 2) それが無い場合 → row[9] から数値化できたものの “平均” を採用（HAE混在でも平均）
+        // 3) どちらも無ければ最後のUI表示文字列（例: "66.789(HAE)") を退避（CSV側は数値化するのでOK）
+        let hStore = null;           // csv2Points に保存する値（CSV側で数値整形）
+        let hAvgNum = null;          // 数値の平均（将来の拡張用に保持したければ使う）
+
         const eH = Number(this?.externalElevation?.hOrthometric);
         if (Number.isFinite(eH)) {
-          hStore = eH;                         // 数値（正高）
+          hStore = eH;
+          hAvgNum = eH;
+        } else if (hNumArr.length) {
+          hAvgNum = avg(hNumArr);
+          hStore = hAvgNum;          // ← 平均を保存
         } else if (hTxtArr.length) {
-          hStore = hTxtArr[hTxtArr.length-1];  // 文字列でもOK（例: "66.789(HAE)")
+          hStore = hTxtArr[hTxtArr.length - 1]; // 文字列（HAE表示）でも保存
         }
 
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
@@ -7161,7 +7151,7 @@ export default {
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          h: hStore,      // ★ ここに必ず何か入る（外部正高 or ダイアログ表示値）
+          h: hStore,      // ★ ここが「平均標高」(数値) or 文字列（フォールバック）
           pole: poleVal,
           diff,
           ts
@@ -7174,6 +7164,7 @@ export default {
         return false;
       }
     },
+
 
 
 
@@ -8537,6 +8528,27 @@ export default {
       }
     },
 
+// 先頭の実数を抜く（":70.928," や "66.789(HAE)" もOK）
+    parseNumericLike(v) {
+      if (v == null) return null;
+      if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+      let s = String(v).trim();
+      s = s.replace(/^[\s:=>\u3000：＝＞-]+/, ''); // 先頭ゴミ除去
+      s = s.replace(',', '.');
+      const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+      if (!m) return null;
+      const n = Number(m[0]);
+      return Number.isFinite(n) ? n : null;
+    },
+
+// ダイアログ用：人が見やすい表記
+    fmtHumanHeight(v) {
+      if (v == null || v === '') return '';
+      const n = this.parseNumericLike(v);
+      if (n == null) return '';
+      const isHAE = (typeof v === 'string') && /\(HAE\)/i.test(v);
+      return isHAE ? `${n.toFixed(3)} m（楕円体高）` : `${n.toFixed(3)} m`;
+    },
 
 
 
