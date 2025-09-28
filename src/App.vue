@@ -6756,14 +6756,6 @@ export default {
      */
     // ---- 起動（既存置換） ----
     // ★ 新メソッド：現在地に赤丸を置いて登録フローに入る
-// ★ Paste BOTH methods directly inside your existing `methods: { ... }` block.
-// Do NOT add another `methods:` or `export default` wrapper.
-
-// 1) 現在地で赤丸を置く（navigator 取得→描画→品質保存）
-// ★ Paste BOTH methods directly inside your existing `methods: { ... }` block.
-// Do NOT add another `methods:` or `export default` wrapper.
-
-// 1) 現在地で赤丸を置く（navigator 取得→描画→品質保存）
     startTorokuHere () {
       // cleanup
       try { this.detachGpsLineClick(); } catch (e) {}
@@ -6856,7 +6848,7 @@ export default {
       );
     },
 
-// 2) 赤丸を描画する（堅牢版・turf不要）。既存の plotTorokuPoint をこれに置換。
+    // 2) 赤丸を描画する（堅牢版・turf不要）。既存の plotTorokuPoint をこれに置換。
     plotTorokuPoint (lngLat) {
       var map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
       if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
@@ -6927,11 +6919,7 @@ export default {
       }
     },
 
-
-// --- 点名プレフィックス（tenmaiPrefix）: 入力→バリデーション→保存／復帰 ---
-// ※この3メソッドを methods: { ... } に貼るだけでOK（ライフサイクルで復帰は created/mounted で呼ぶ）。
-
-// 1) 起動時に localStorage から復帰
+    // 1) 起動時に localStorage から復帰
     loadTenmaiPrefixFromStorage() {
       try {
         var v = localStorage.getItem('tenmaiPrefix');
@@ -6947,7 +6935,7 @@ export default {
       } catch (_) {}
     },
 
-// 2) 入力イベントで検証＆保存（Vuetify2: @input、Vuetify3: @update:modelValue）
+    // 2) 入力イベントで検証＆保存（Vuetify2: @input、Vuetify3: @update:modelValue）
     handleTenmaiPrefixInput(v) {
       // Vuetify2 の @input だと Event が来ることがあるので吸収
       if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
@@ -6974,16 +6962,16 @@ export default {
       try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
     },
 
-// 3) 検証（サニタイズはしない。引っ掛かったらエラー通知＆未保存）
+    // 3) 検証（サニタイズはしない。引っ掛かったらエラー通知＆未保存）
     isValidTenmaiPrefix(v) {
       // 1〜12 文字、半角英数字・ハイフン・アンダースコアのみ
       return /^[0-9A-Za-z_-]{1,12}$/.test(String(v));
     },
 
 
-// --- 連番点名（例: 'OH1','OH2'）を自動採番して保存する ---
-// ベース文字列: this.tenmaiPrefix を使用（未設定→'P'）。
-// カウンタ: localStorage('tenmaiSeq') に永続化。prefix が変わったら 0 にリセット。
+    // --- 連番点名（例: 'OH1','OH2'）を自動採番して保存する ---
+    // ベース文字列: this.tenmaiPrefix を使用（未設定→'P'）。
+    // カウンタ: localStorage('tenmaiSeq') に永続化。prefix が変わったら 0 にリセット。
     getNextPointName() {
       var base = (this.tenmaiPrefix != null && this.tenmaiPrefix !== '') ? String(this.tenmaiPrefix) : 'P';
       if (!/^[0-9A-Za-z_-]{1,12}$/.test(base)) {
@@ -7004,7 +6992,7 @@ export default {
       return base + String(seq);
     },
 
-// 連番カウンタをクリア（次の採番は 1 から）
+    // 連番カウンタをクリア（次の採番は 1 から）
     resetPointSequence () {
       try {
         // 現在の prefix を保持（未設定なら 'P' を採用し直す）
@@ -7046,51 +7034,64 @@ export default {
 //  - 点名は currentPointName（未設定なら getNextPointName() をフォールバック採番）
     commitCsv2Point() {
       try {
-        // 1) ヘッダ位置の特定
-        var rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
+        const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
-        var header = rows[0];
-        var idx = function(name){ var i = header.indexOf(name); return i >= 0 ? i : -1; };
-        var iX = idx('X');
-        var iY = idx('Y');
-        var iTS = idx('timestamp'); // 既存CSVの時刻列（JST文字列想定）
+
+        const header = rows[0];
+        const idx = (name) => header.indexOf(name);
+        const iX = idx('X');
+        const iY = idx('Y');
+        const iTS = idx('timestamp');
+        const iET = idx('eventType'); // 'kansoku' を絞る
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        // 2) 本体行を抽出（数値に限定）
-        var xs = [], ys = [], lastTs = '';
-        for (var r = 1; r < rows.length; r++) {
-          var row = rows[r];
-          var vx = Number(row[iX]);
-          var vy = Number(row[iY]);
+        const xs = [];
+        const ys = [];
+        let lastTs = '';
+
+        for (let r = 1; r < rows.length; r++) {
+          const row = rows[r];
+          // この地点の連続観測行だけ採用（平均行や他イベントは除外）
+          const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
+          if (et !== 'kansoku') continue;
+
+          const vx = Number(row[iX]);
+          const vy = Number(row[iY]);
           if (Number.isFinite(vx)) xs.push(vx);
           if (Number.isFinite(vy)) ys.push(vy);
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
-        if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
 
-        var avg = function(arr){ return arr.reduce(function(a,b){return a+b;},0) / arr.length; };
-        var Xavg = avg(xs);
-        var Yavg = avg(ys);
+        if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY in this run'); return false; }
 
-        // 3) 点名・観測日時を決定
-        var name = this.currentPointName;
+        const avg = (arr) => arr.reduce((a,b)=>a+b,0) / arr.length;
+        const Xavg = avg(xs);
+        const Yavg = avg(ys);
+
+        // 点名（なければ採番）
+        let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
           try { name = this.getNextPointName ? this.getNextPointName() : ''; } catch(_) {}
           this.currentPointName = name || '';
         }
-        var ts = lastTs || (this.$_jstLocal ? this.$_jstLocal() : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-        // 4) 保存配列へ追加
+        const ts = lastTs || (this.$_jstLocal ? this.$_jstLocal()
+            : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
-        this.csv2Points.push({ name: String(name||''), X: Xavg, Y: Yavg, ts: ts });
-        this.persistCsv2Points();
+        this.csv2Points.push({ name: String(name || ''), X: Xavg, Y: Yavg, ts });
+
+        // 永続化
+        try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch(_) {}
+
         return true;
       } catch (e) {
         console.warn('[csv2] commit error', e);
         return false;
       }
     },
+
 
 // 新CSVをダウンロード（列名は日本語）：
 //  点名, XY座標, 標高, ポール高, 較差, 観測日時
@@ -7109,7 +7110,6 @@ export default {
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-          // ダブルクォート / CR / LF を含む場合は CSV ルールでクォート＆二重化
           return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
         };
 
@@ -7118,7 +7118,7 @@ export default {
           const p = list[i] || {};
           rows.push([
             esc(p.name || ''),        // 点名
-            esc(fmtXY(p.X, p.Y)),     // XY座標（"X,Y" 形式、小数3桁）
+            esc(fmtXY(p.X, p.Y)),     // XY座標（"X,Y" 形式・小数3桁）
             '',                       // 標高（空）
             '',                       // ポール高（空）
             '',                       // 較差（空）
@@ -7126,9 +7126,7 @@ export default {
           ]);
         }
 
-        // 改行は CRLF に統一
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-
         const stamp = this.$_jstStamp
             ? this.$_jstStamp()
             : new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
@@ -7148,12 +7146,24 @@ export default {
     },
 
 
+
 // 記憶を消す（新CSV用の全地点データを削除）
     clearCsv2Points() {
       this.csv2Points = [];
       try { localStorage.removeItem('csv2_points'); } catch(_) {}
     },
 
+    kansokuStop() {
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
+
+      // ★ この地点の観測が終わったタイミングで“1行だけ”記録
+      try { this.commitCsv2Point(); } catch (e) { console.warn('[csv2] commit on stop error', e); }
+    },
 
 
     // =========================
@@ -7954,14 +7964,14 @@ export default {
       }, 1000);
     },
 
-    kansokuStop() {
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
-      }
-    },
+    // kansokuStop() {
+    //   this.kansokuRunning = false;
+    //   this.kansokuRemaining = 0;
+    //   if (this.kansokuTimer) {
+    //     clearInterval(this.kansokuTimer);
+    //     this.kansokuTimer = null;
+    //   }
+    // },
 
     /**
      * ラベル（例: 公共座標2系）が無ければ 経度から自動推定
@@ -12188,6 +12198,14 @@ export default {
     }
 
     try { this.loadTenmaiPrefixFromStorage(); } catch(_) {}
+
+    try {
+      const raw = localStorage.getItem('csv2_points');
+      this.csv2Points = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
+    } catch (_) {
+      this.csv2Points = [];
+    }
 
   },
   beforeUnmount() {
