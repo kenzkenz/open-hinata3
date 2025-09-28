@@ -3013,6 +3013,8 @@ export default {
 
     externalElevation: null, // { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN: number|null }
 
+    torokuAnimMs: 700,        // センタリングのアニメ時間(ms)
+    torokuDialogDelayMs: 1000, // moveend後に待つ時間(ms)
 
     aaa: null,
   }),
@@ -6761,83 +6763,121 @@ export default {
     // ★ 新メソッド：現在地に赤丸を置いて登録フローに入る
     startTorokuHere () {
       // cleanup
-      try { this.detachGpsLineClick(); } catch (e) {}
-      try { this.clearGpsLine(); } catch (e) {}
+      try { this.detachGpsLineClick(); } catch {}
+      try { this.clearGpsLine(); } catch {}
       this.gpsLineAnchorLngLat = null;
       this.enableGpsLineClick  = false;
       this.distance = null;
       this.isTracking = false;
       this.s_isKuiuchi = false;
 
+      // 既存タイマーをクリア（多重起動対策）
+      try { if (this._torokuDialogTimer) { clearTimeout(this._torokuDialogTimer); this._torokuDialogTimer = null; } } catch {}
+      this._torokuDialogOpened = false;
+
       if (!(navigator && navigator.geolocation)) {
         console.warn('[startTorokuHere] geolocation not supported');
         return;
       }
 
-      var _this = this;
+      const _this = this;
       if (typeof _this.rtkWindowMs !== 'number') _this.rtkWindowMs = 1000;
       if (typeof _this.lastRtkAt   !== 'number') _this.lastRtkAt   = 0;
 
-      var opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+
       navigator.geolocation.getCurrentPosition(
           function success (pos) {
             try {
-              var c = pos && pos.coords ? pos.coords : {};
-              var lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              var lon = (typeof c.longitude === 'number') ? c.longitude : null;
+              const c   = pos && pos.coords ? pos.coords : {};
+              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
               if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
                 console.warn('[startTorokuHere] invalid geolocation coords', c);
                 return;
               }
-              var acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              var altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-              var q      = _this.getGeoQualityLabel(acc, altAcc);
 
-              var nowTs = pos.timestamp || Date.now();
+              const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+              const q      = _this.getGeoQualityLabel(acc, altAcc);
+
+              const nowTs = pos.timestamp || Date.now();
               if (q === 'RTK級') {
                 _this.lastRtkAt = nowTs;
               } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
-                // skip non-RTK right after RTK
-                return;
+                return; // 直近RTK直後の非RTKは無視
               }
 
               // 1) 赤丸を現在地に描画
-              try { _this.clearTorokuPoint(); } catch (e) {}
-              _this.plotTorokuPoint({ lng: lon, lat: lat });
-              _this.torokuPointLngLat = { lng: lon, lat: lat };
+              try { _this.clearTorokuPoint(); } catch {}
+              _this.plotTorokuPoint({ lng: lon, lat });
+              _this.torokuPointLngLat = { lng: lon, lat };
 
-              // 2) 画面中心へ即ジャンプ（アニメ無し）
-              var map = (_this.$store && _this.$store.state && _this.$store.state.map01) ? _this.$store.state.map01 : _this.map01;
-              try {
-                if (map && map.jumpTo) map.jumpTo({ center: [lon, lat], zoom: map.getZoom ? map.getZoom() : undefined, bearing: map.getBearing ? map.getBearing() : undefined, pitch: map.getPitch ? map.getPitch() : undefined });
-                else if (map && map.easeTo) map.easeTo({ center: [lon, lat], duration: 0 });
-              } catch (_) {}
-
-              // 3) クオリティをローカル保存
-              var meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
+              // 2) クオリティをローカル保存
+              const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
               _this.torokuPointMeta      = meta;
               _this.torokuPointQuality   = meta.quality;
               _this.torokuPointQualityAt = meta.at;
 
-              // 4) イベント発火（従来互換）
-              try { _this.$emit && _this.$emit('toroku-point', { lng: lon, lat: lat }); } catch(e) {}
-              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat: lat } } })); } catch(e) {}
-
-              // ★ 連番点名を生成して保持（例: OH1, OH2）
+              // 3) 連番点名を先に採番
               try {
-                var __pn = (_this.getNextPointName && _this.getNextPointName());
-                if (__pn) {
-                  if (_this.$set) _this.$set(_this, 'currentPointName', __pn);
-                  else _this.currentPointName = __pn;
+                const pn = _this.getNextPointName?.();
+                if (pn) {
+                  _this.$set ? _this.$set(_this, 'currentPointName', pn) : (_this.currentPointName = pn);
                 }
-              } catch (_) {}
+              } catch {}
 
-              // 5) ダイアログをオープン＆観測用の初期化
-              _this.dialogForToroku = true;
-              _this.kansokuRunning = false;
-              _this.kansokuRemaining = 0;
-              _this.kansokuCsvRows = null; // 次回 init でヘッダから作り直す
+              // 4) イベント発火（互換）
+              try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
+              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
 
+              // 5) アニメでセンタリング → moveend 後に少し待ってからダイアログを開く
+              const map =
+                  (_this.$store && _this.$store.state && _this.$store.state.map01)
+                      ? _this.$store.state.map01
+                      : _this.map01;
+
+              const ANIM_MS  = Number.isFinite(Number(_this.torokuAnimMs)) ? Number(_this.torokuAnimMs) : 700;   // アニメ時間
+              const DELAY_MS = Number.isFinite(Number(_this.torokuDialogDelayMs)) ? Number(_this.torokuDialogDelayMs) : 1000; // moveend後の待機
+
+              const openDialogOnce = () => {
+                if (_this._torokuDialogOpened) return;
+                _this._torokuDialogOpened = true;
+                // 観測用の初期化
+                _this.kansokuRunning   = false;
+                _this.kansokuRemaining = 0;
+                _this.kansokuCsvRows   = null;
+                // 実オープン
+                _this.dialogForToroku  = true;
+              };
+
+              const armAfterAnim = () => {
+                // フォールバック：moveendが来なくても開く
+                const fallbackMs = ANIM_MS + DELAY_MS + 300;
+                _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
+
+                const onEnd = () => {
+                  try { map.off('moveend', onEnd); } catch {}
+                  _this._torokuDialogTimer = setTimeout(openDialogOnce, DELAY_MS);
+                };
+                try { map.on('moveend', onEnd); } catch {}
+              };
+
+              try {
+                if (map && map.easeTo) {
+                  map.easeTo({ center: [lon, lat], duration: ANIM_MS });
+                  _this._torokuDialogOpened = false;
+                  armAfterAnim();
+                } else if (map && map.jumpTo) {
+                  map.jumpTo({ center: [lon, lat] });
+                  _this._torokuDialogOpened = false;
+                  _this._torokuDialogTimer = setTimeout(openDialogOnce, 600); // 簡易フォールバック
+                } else {
+                  openDialogOnce();
+                }
+              } catch {
+                openDialogOnce();
+              }
             } catch (e) {
               console.warn('[startTorokuHere] success handler error', e);
             }
@@ -6848,6 +6888,7 @@ export default {
           opt
       );
     },
+
 
     // 2) 赤丸を描画する（堅牢版・turf不要）。既存の plotTorokuPoint をこれに置換。
     plotTorokuPoint (lngLat) {
