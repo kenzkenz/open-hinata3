@@ -1787,7 +1787,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div class="d-flex ga-2 mt-2">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
-                    <v-btn icon @click="openTorokuDialog">登録</v-btn>
+                    <v-btn icon @click="startTorokuHere">登録</v-btn>
                   </div>
                 </v-speed-dial>
               </MiniTooltip>
@@ -3007,6 +3007,10 @@ export default {
     kansokuCsvRows: null, // [['timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType'], ...]
 
     torokuPointLngLat: null,
+
+    // 観測点メタを保持
+    torokuPointQuality: null, // 'RTK級' など
+    torokuPointQualityAt: null, // 記録時刻（ms）
 
     aaa: null,
   }),
@@ -6752,6 +6756,169 @@ export default {
      * 現在地連続取得を改良
      */
     // ---- 起動（既存置換） ----
+    // ★ 新メソッド：現在地に赤丸を置いて登録フローに入る
+// ★ Paste BOTH methods directly inside your existing `methods: { ... }` block.
+// Do NOT add another `methods:` or `export default` wrapper.
+
+// 1) 現在地で赤丸を置く（navigator 取得→描画→品質保存）
+// ★ Paste BOTH methods directly inside your existing `methods: { ... }` block.
+// Do NOT add another `methods:` or `export default` wrapper.
+
+// 1) 現在地で赤丸を置く（navigator 取得→描画→品質保存）
+    startTorokuHere () {
+      // cleanup
+      try { this.detachGpsLineClick(); } catch (e) {}
+      try { this.clearGpsLine(); } catch (e) {}
+      this.gpsLineAnchorLngLat = null;
+      this.enableGpsLineClick  = false;
+      this.distance = null;
+      this.isTracking = false;
+      this.s_isKuiuchi = false;
+
+      if (!(navigator && navigator.geolocation)) {
+        console.warn('[startTorokuHere] geolocation not supported');
+        return;
+      }
+
+      var _this = this;
+      if (typeof _this.rtkWindowMs !== 'number') _this.rtkWindowMs = 1000;
+      if (typeof _this.lastRtkAt   !== 'number') _this.lastRtkAt   = 0;
+
+      var opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      navigator.geolocation.getCurrentPosition(
+          function success (pos) {
+            try {
+              var c = pos && pos.coords ? pos.coords : {};
+              var lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+              var lon = (typeof c.longitude === 'number') ? c.longitude : null;
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                console.warn('[startTorokuHere] invalid geolocation coords', c);
+                return;
+              }
+              var acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              var altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+              var q      = _this.getGeoQualityLabel(acc, altAcc);
+
+              var nowTs = pos.timestamp || Date.now();
+              if (q === 'RTK級') {
+                _this.lastRtkAt = nowTs;
+              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
+                // skip non-RTK right after RTK
+                return;
+              }
+
+              // 1) 赤丸を現在地に描画
+              try { _this.clearTorokuPoint(); } catch (e) {}
+              _this.plotTorokuPoint({ lng: lon, lat: lat });
+              _this.torokuPointLngLat = { lng: lon, lat: lat };
+
+              // 2) 画面中心へ即ジャンプ（アニメ無し）
+              var map = (_this.$store && _this.$store.state && _this.$store.state.map01) ? _this.$store.state.map01 : _this.map01;
+              try {
+                if (map && map.jumpTo) map.jumpTo({ center: [lon, lat], zoom: map.getZoom ? map.getZoom() : undefined, bearing: map.getBearing ? map.getBearing() : undefined, pitch: map.getPitch ? map.getPitch() : undefined });
+                else if (map && map.easeTo) map.easeTo({ center: [lon, lat], duration: 0 });
+              } catch (_) {}
+
+              // 3) クオリティをローカル保存
+              var meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
+              _this.torokuPointMeta      = meta;
+              _this.torokuPointQuality   = meta.quality;
+              _this.torokuPointQualityAt = meta.at;
+
+              // 4) イベント発火（従来互換）
+              try { _this.$emit && _this.$emit('toroku-point', { lng: lon, lat: lat }); } catch(e) {}
+              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat: lat } } })); } catch(e) {}
+
+              // 5) ダイアログをオープン＆観測用の初期化
+              _this.dialogForToroku = true;
+              _this.kansokuRunning = false;
+              _this.kansokuRemaining = 0;
+              _this.kansokuCsvRows = null; // 次回 init でヘッダから作り直す
+            } catch (e) {
+              console.warn('[startTorokuHere] success handler error', e);
+            }
+          },
+          function error (err) {
+            console.warn('[startTorokuHere] getCurrentPosition error', err);
+          },
+          opt
+      );
+    },
+
+// 2) 赤丸を描画する（堅牢版・turf不要）。既存の plotTorokuPoint をこれに置換。
+    plotTorokuPoint (lngLat) {
+      var map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+      if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
+      if (!lngLat || typeof lngLat.lng !== 'number' || typeof lngLat.lat !== 'number') {
+        console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
+      }
+
+      var SRC   = 'oh-toroku-point-src';
+      var LAYER = 'oh-toroku-point';
+      var data  = {
+        type: 'FeatureCollection',
+        features: [ { type: 'Feature', properties: { label: '観測点' }, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } } ]
+      };
+
+      function place () {
+        try {
+          if (map.getSource(SRC)) map.getSource(SRC).setData(data);
+          else map.addSource(SRC, { type: 'geojson', data: data });
+        } catch (e) {
+          try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch (_) {}
+          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch (_) {}
+          map.addSource(SRC, { type: 'geojson', data: data });
+        }
+
+        if (!map.getLayer(LAYER)) {
+          try {
+            map.addLayer({
+              id: LAYER,
+              type: 'circle',
+              source: SRC,
+              paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff3b30',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff'
+              }
+            });
+          } catch (e) {
+            try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch (_) {}
+            map.addLayer({
+              id: LAYER,
+              type: 'circle',
+              source: SRC,
+              paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff3b30',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff'
+              }
+            });
+          }
+        }
+
+        // keep WGS84
+        this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
+        console.log('[plotTorokuPoint] plotted at', this.torokuPointLngLat);
+      }
+
+      try {
+        var loaded = false;
+        if (typeof map.isStyleLoaded === 'function') loaded = map.isStyleLoaded();
+        else if (typeof map.loaded === 'function') loaded = map.loaded();
+        else loaded = true;
+        if (loaded) place.call(this);
+        else map.once('load', place.bind(this));
+      } catch (_) {
+        map.once('load', place.bind(this));
+      }
+    },
+
+
+
+
 
     // =========================
     // ログ制御
@@ -7472,39 +7639,39 @@ export default {
     },
 
     // 画面にポイントを打つ（GeoJSON + circle レイヤ）
-    plotTorokuPoint (lngLat) {
-      const map = this.$store?.state?.map01; if (!map) return;
-
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-
-      const fc = turf.featureCollection([
-        turf.point([lngLat.lng, lngLat.lat], { label: '観測点' })
-      ]);
-
-      if (map.getSource(SRC)) {
-        map.getSource(SRC).setData(fc);
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: fc });
-      }
-
-      if (!map.getLayer(LAYER)) {
-        map.addLayer({
-          id: LAYER,
-          type: 'circle',
-          source: SRC,
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#ff3b30',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
-      }
-
-      // ★ 追加：赤丸のWGS84を保持
-      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-    },
+    // plotTorokuPoint (lngLat) {
+    //   const map = this.$store?.state?.map01; if (!map) return;
+    //
+    //   const SRC   = 'oh-toroku-point-src';
+    //   const LAYER = 'oh-toroku-point';
+    //
+    //   const fc = turf.featureCollection([
+    //     turf.point([lngLat.lng, lngLat.lat], { label: '観測点' })
+    //   ]);
+    //
+    //   if (map.getSource(SRC)) {
+    //     map.getSource(SRC).setData(fc);
+    //   } else {
+    //     map.addSource(SRC, { type: 'geojson', data: fc });
+    //   }
+    //
+    //   if (!map.getLayer(LAYER)) {
+    //     map.addLayer({
+    //       id: LAYER,
+    //       type: 'circle',
+    //       source: SRC,
+    //       paint: {
+    //         'circle-radius': 6,
+    //         'circle-color': '#ff3b30',
+    //         'circle-stroke-width': 2,
+    //         'circle-stroke-color': '#ffffff'
+    //       }
+    //     });
+    //   }
+    //
+    //   // ★ 追加：赤丸のWGS84を保持
+    //   this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
+    // },
 
     clearTorokuPoint () {
       const map = this.$store.state.map01; if (!map) return;
@@ -7560,76 +7727,104 @@ export default {
       }
     },
 
+    /**
+     * ラベル（例: 公共座標2系）が無ければ 経度から自動推定
+     */
     kansokuCollectOnce() {
       if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
         this.kansokuStop(); return;
       }
-      // ★ 赤丸が未設置なら中断
       if (!this.torokuPointLngLat) {
         console.warn('[kansoku] 赤丸(観測点)が未設定です');
-        // カウントは減らさずに再トライできるよう return
         return;
       }
 
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      var _this = this;
+      var opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+
+      // ラベル→EPSG。無ければ lon/lat から自動（JGD2011 平面直角）
+      function epsgFromLabelOrAuto(lat, lon) {
+        try {
+          var label = (_this.$store && _this.$store.state)
+              ? (_this.$store.state.s_zahyokei || _this.$store.state.zahyokei || '')
+              : '';
+          var m = /公共座標\s*(\d+)系/.exec(label);
+          if (m) {
+            var z = Number(m[1]);
+            if (z >= 1 && z <= 19) return 6668 + z; // 6669..6687
+          }
+          // 経度から最寄り中央経線を選ぶ（129,131,133,...,165）
+          var zAuto = Math.round((lon - 129) / 2) + 1;
+          if (zAuto < 1) zAuto = 1;
+          if (zAuto > 19) zAuto = 19;
+          return 6668 + zAuto;
+        } catch (e) { return null; }
+      }
+
       navigator.geolocation.getCurrentPosition(
-          (pos) => {
+          function (pos) {
             try {
-              const c = pos.coords || {};
-              const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-              const quality  = this.getGeoQualityLabel(accuracy, altAcc);
+              var c = pos.coords || {};
+              var accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              var altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+              var quality  = _this.getGeoQualityLabel(accuracy, altAcc);
 
-              const nowTs = pos.timestamp || Date.now();
+              var nowTs = pos.timestamp || Date.now();
               if (quality === 'RTK級') {
-                this.lastRtkAt = nowTs;
-              } else if (this.lastRtkAt && (nowTs - this.lastRtkAt) <= this.rtkWindowMs) {
-                // 直近RTK数秒は非RTKを捨てる（カウントも減らさない）
-                return;
+                _this.lastRtkAt = nowTs;
+              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= (_this.rtkWindowMs || 1000)) {
+                return; // 直近RTK後の非RTKは捨てる
               }
 
-              // ★ 記録する座標は「赤丸」の位置（WGS84）
-              const lat = this.torokuPointLngLat.lat;
-              const lon = this.torokuPointLngLat.lng;
+              // ★ 記録する座標は「赤丸」のWGS84
+              var lat = _this.torokuPointLngLat.lat;
+              var lon = _this.torokuPointLngLat.lng;
 
-              // ★ 平面直角XYは赤丸を投影（propsが無ければ投影）
-              const s = this.$store?.state || {};
-              const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
-              let X = null, Y = null;
+              // ★ 平面直角XYを確実に出す
+              var epsg = epsgFromLabelOrAuto(lat, lon);
+              var X = null, Y = null, csLabel = '';
               if (epsg) {
-                const xy = xyFromLngLat(lon, lat, epsg); // {x:N, y:E}
-                if (xy) { X = xy.x; Y = xy.y; }
+                try {
+                  if (typeof proj4 !== 'function') console.warn('[kansoku] proj4 未ロードです');
+                  var out = proj4('EPSG:4326', 'EPSG:' + epsg, [lon, lat]); // → [E, N]
+                  // OH3 の期待に合わせて X=北, Y=東
+                  if (out && Number.isFinite(out[0]) && Number.isFinite(out[1])) {
+                    Y = out[0]; // 東
+                    X = out[1]; // 北
+                  }
+                  var zone = epsg - 6668;
+                  csLabel = '公共座標' + zone + '系';
+                } catch (e) {
+                  console.warn('[kansoku] proj4 transform failed', e);
+                }
+              } else {
+                console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
               }
-              const csLabel = s.s_zahyokei || s.zahyokei || '';
 
-              this.initKansokuCsvIfNeeded();
-              this.kansokuCsvRows.push([
-                this.$_jstLocal(), // timestamp (JST)
-                lat, lon,          // ★ 赤丸の緯度経度
-                X, Y, csLabel,     // ★ 赤丸の平面直角
-                accuracy,          // 端末測位の精度
-                quality,           // 端末測位の品質ラベル
+              _this.initKansokuCsvIfNeeded();
+              _this.kansokuCsvRows.push([
+                _this.$_jstLocal(), // timestamp (JST)
+                lat, lon,           // 赤丸WGS84
+                X, Y, csLabel,      // 平面直角（X=北, Y=東）
+                accuracy,
+                quality,
                 'kansoku'
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
             } finally {
-              // ★ 実際に1件記録できたときだけ減らす設計にしたい場合は、
-              //   上の push 成功時にだけ減らす。ここでは従来どおり減らす:
-              this.kansokuRemaining -= 1;
-              if (this.kansokuRemaining <= 0) this.kansokuStop();
+              _this.kansokuRemaining -= 1;
+              if (_this.kansokuRemaining <= 0) _this.kansokuStop();
             }
           },
-          (err) => {
+          function (err) {
             console.warn('[kansoku] getCurrentPosition error', err);
-            this.kansokuRemaining -= 1;
-            if (this.kansokuRemaining <= 0) this.kansokuStop();
+            _this.kansokuRemaining -= 1;
+            if (_this.kansokuRemaining <= 0) _this.kansokuStop();
           },
           opt
       );
     },
-
-
 
     exportKansokuCsv() {
       if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
@@ -7752,8 +7947,6 @@ export default {
 
       this.clearTorokuPoint();
       this.detachTorokuPointClick()
-
-
     },
 
 
