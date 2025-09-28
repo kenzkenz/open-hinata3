@@ -531,15 +531,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div class="oh3-grid-3col">
               <!-- 左: テキストフィールド（可変） -->
               <v-text-field
-                  v-model="tenmaiPrefix"
+                  v-model="tenmai"
                   label="点名"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
                   clearable
                   class="oh3-col-flex"
-                  :error-messages="tenmaiPrefixError"
-                  @update:modelValue="handleTenmaiPrefixInput"
+                  :error-messages="tenmaiError"
+                  @update:modelValue="handleTenmeiInput"
                   :disabled="kansokuRunning"
               />
               <!-- 中: 観測回数のセレクト（固定幅） -->
@@ -3010,8 +3010,8 @@ export default {
     torokuPointQuality: null, // 'RTK級' など
     torokuPointQualityAt: null, // 記録時刻（ms）
 
-    tenmaiPrefix: 'oh-',        // 入力値
-    tenmaiPrefixError: '',   // エラーメッセージ表示用
+    tenmai: '',        // 入力値
+    tenmaiError: '',   // エラーメッセージ表示用
 
     currentPointName: '',
 
@@ -6967,18 +6967,11 @@ export default {
     },
 
     // 1) 起動時に localStorage から復帰
-    loadTenmaiPrefixFromStorage() {
+    loadTenmeiFromStorage() {
       try {
-        var v = localStorage.getItem('tenmaiPrefix');
-        if (v == null) return;
-        // そのまま使う前にバリデーション（不正ならエラー表示しつつフィールドは空）
-        if (this.isValidTenmaiPrefix(v)) {
-          this.tenmaiPrefix = v;
-          this.tenmaiPrefixError = '';
-        } else {
-          this.tenmaiPrefix = '';
-          this.tenmaiPrefixError = '保存済みのプレフィックスが不正です。再設定してください。';
-        }
+        const v = localStorage.getItem('tenmei') || '';
+        this.tenmei = String(v);
+        this.tenmeiError = '';
       } catch (_) {}
     },
 
@@ -7189,10 +7182,6 @@ export default {
         return false;
       }
     },
-
-
-
-
 
     // 新CSVをダウンロード（列名は日本語）：
     //  点名, XY座標, 標高, ポール高, 較差, 観測日時
@@ -7566,7 +7555,6 @@ export default {
       }
       // this.isTracking = false;
       // this.isKuiuchi = false;
-
 
       // 追加：クリック無効化＆ライン削除
       this.detachGpsLineClick();
@@ -7980,6 +7968,21 @@ export default {
     },
 
     kansokuStart() {
+      // ★ 先頭で点名チェック
+      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
+      if (!raw) {
+        alert('点名を入力してください。');  // から文字 → 警告して中止
+        this.tenmeiError = '点名は必須です';
+        return;
+      }
+      const unique = this.ensureUniqueTenmei(raw);
+      if (unique !== raw) {
+        // すでに使われている → 自動連番を付与してセット
+        this.tenmei = unique;
+        try { localStorage.setItem('tenmei', unique); } catch (_) {}
+      }
+      // 観測中の表示用に currentPointName に採用
+      this.currentPointName = this.tenmei;
       if (this.kansokuRunning) return;
       if (!('geolocation' in navigator)) {
         console.warn('[kansoku] geolocation 未対応');
@@ -8409,6 +8412,52 @@ export default {
       const isHAE = (typeof v === 'string') && /\(HAE\)/i.test(v);
       return isHAE ? `${n.toFixed(3)} m（楕円体高）` : `${n.toFixed(3)} m`;
     },
+
+    handleTenmeiInput(v) {
+      // Vuetify の @update:modelValue でも Event が来ることがある
+      if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
+      let s = (v == null) ? '' : String(v).trim();
+
+      // 最小の安全対策：CSV崩しや改行を防ぐ（削除）
+      s = s.replace(/[\r\n]/g, '').replace(/,/g, '');
+
+      this.tenmei = s;
+      this.tenmeiError = '';
+      try { localStorage.setItem('tenmei', s); } catch (_) {}
+    },
+
+    ensureUniqueTenmei(base) {
+      const name = (base || '').trim();
+      if (!name) return ''; // 空はここでは弾かない（呼び元でアラート）
+
+      // 既に使った点名の集合（新CSVの記録から）
+      const used = new Set(
+          Array.isArray(this.csv2Points)
+              ? this.csv2Points.map(p => (p && p.name) ? String(p.name) : '').filter(Boolean)
+              : []
+      );
+
+      if (!used.has(name)) return name;
+
+      // 末尾に自然数連番を付与（name, name1, name2, ...）
+      let i = 1;
+      while (used.has(name + String(i))) i += 1;
+      return name + String(i);
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -12414,7 +12463,7 @@ export default {
       });
     }
 
-    try { this.loadTenmaiPrefixFromStorage(); } catch(_) {}
+    try { this.loadTenmeiFromStorage(); } catch(_) {}
 
     try {
       const raw = localStorage.getItem('csv2_points');
