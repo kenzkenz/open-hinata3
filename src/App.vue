@@ -7073,25 +7073,41 @@ export default {
 // 観測終了時に「現在の観測点」の平均 XY と点名・時刻を記録する
 //  - kansokuCsvRows の中身（今回の点の観測）から X/Y の平均を計算
 //  - 点名は currentPointName（未設定なら getNextPointName() をフォールバック採番）
+// 各地点の平均値を確定して「人向けの標高表記」を含めて保存する
     commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
 
         const header = rows[0];
-        const idx = (n) => header.indexOf(n);
-        const iX  = idx('X'), iY = idx('Y'), iTS = idx('timestamp'), iET = idx('eventType');
+        const col = (name) => header.indexOf(name);
+        const iX  = col('X');
+        const iY  = col('Y');
+        const iTS = col('timestamp');
+        const iET = col('eventType');
+
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        // 標高列（無ければ row[9]）
+        // 標高列（なければ row[9] を既定として扱う）
         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
 
         const xs = [], ys = [];
-        const hTxtArr = [];
-        const hNumArr = [];
+        const hTxtArr = [];   // そのままの文字列（"66.789(HAE)" 等）
+        const hNumArr = [];   // 数値化できた標高
         let lastTs = '';
 
-        const parse = (v) => this.parseNumericLike(v);
+        const parseNumericLike = (v) => {
+          if (this.parseNumericLike) return this.parseNumericLike(v);
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          let s = String(v).trim()
+              .replace(/^[\s:=>\u3000：＝＞-]+/,'') // 先頭ゴミ除去
+              .replace(',', '.');
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          if (!m) return null;
+          const n = Number(m[0]);
+          return Number.isFinite(n) ? n : null;
+        };
 
         for (let r = 1; r < rows.length; r++) {
           const row = rows[r];
@@ -7101,11 +7117,10 @@ export default {
           const vx = Number(row[iX]); if (Number.isFinite(vx)) xs.push(vx);
           const vy = Number(row[iY]); if (Number.isFinite(vy)) ys.push(vy);
 
-          // ★ 標高（UI表示の row[9]）を収集
           if (row.length > iH && row[iH] != null && row[iH] !== '') {
-            const hRaw = row[iH];
-            hTxtArr.push(hRaw);
-            const hn = parse(hRaw);
+            const raw = row[iH];
+            hTxtArr.push(raw);
+            const hn = parseNumericLike(raw);
             if (hn != null) hNumArr.push(hn);
           }
 
@@ -7117,33 +7132,37 @@ export default {
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
+        // 較差 = √((maxX-minX)^2 + (maxY-minY)^2)
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs),
             Math.max(...ys) - Math.min(...ys));
 
+        // 点名
         let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
           name = this.getNextPointName?.() || '';
           this.currentPointName = name;
         }
+
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+
+        // ポール高（cm）
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // ★★★ 標高の最終決定：平均を優先 ★★★
-        // 1) 外部から「正高(hOrthometric)」が単一値で入ってくる場合 → その数値（人が分かる標高）
-        // 2) それが無い場合 → row[9] から数値化できたものの “平均” を採用（HAE混在でも平均）
-        // 3) どちらも無ければ最後のUI表示文字列（例: "66.789(HAE)") を退避（CSV側は数値化するのでOK）
-        let hStore = null;           // csv2Points に保存する値（CSV側で数値整形）
-        let hAvgNum = null;          // 数値の平均（将来の拡張用に保持したければ使う）
-
+        // 人向けの標高表記を決定：
+        // 1) 外部から正高（hOrthometric）が来ていれば「xx.xxx m」
+        // 2) 無ければ row[9] 群を数値化して平均。"(HAE)" が含まれていれば「xx.xxx m（楕円体高）」、無ければ「xx.xxx m」
         const eH = Number(this?.externalElevation?.hOrthometric);
-        if (Number.isFinite(eH)) {
-          hStore = eH;
-          hAvgNum = eH;
+        const hasOrtho = Number.isFinite(eH);
+        const hadHAE = hTxtArr.some(t => typeof t === 'string' && /\(HAE\)/i.test(t));
+
+        let hDisp = '';
+        if (hasOrtho) {
+          hDisp = `${eH.toFixed(3)} m`;
         } else if (hNumArr.length) {
-          hAvgNum = avg(hNumArr);
-          hStore = hAvgNum;          // ← 平均を保存
-        } else if (hTxtArr.length) {
-          hStore = hTxtArr[hTxtArr.length - 1]; // 文字列（HAE表示）でも保存
+          const avgH = avg(hNumArr);
+          hDisp = hadHAE ? `${avgH.toFixed(3)} m（楕円体高）` : `${avgH.toFixed(3)} m`;
+        } else {
+          hDisp = ''; // 出せない場合は空欄
         }
 
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
@@ -7151,7 +7170,7 @@ export default {
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          h: hStore,      // ★ ここが「平均標高」(数値) or 文字列（フォールバック）
+          hDisp,                    // ★ CSV はこの文字列をそのまま出力する
           pole: poleVal,
           diff,
           ts
@@ -7168,6 +7187,7 @@ export default {
 
 
 
+
     // 新CSVをダウンロード（列名は日本語）：
     //  点名, XY座標, 標高, ポール高, 較差, 観測日時
     //  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
@@ -7176,30 +7196,16 @@ export default {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
         const header = ['点名','X','Y','標高','ポール高','較差','観測日時'];
 
-// 先頭の実数を抜く（":70.928," など対応）
         const parseNumericLike = (v) => {
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim();
-          s = s.replace(/^[\s:=>\u3000：＝＞-]+/, '');
-          s = s.replace(',', '.');
+          let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-          if (!m) return null;
-          const n = Number(m[0]);
+          const n = m ? Number(m[0]) : NaN;
           return Number.isFinite(n) ? n : null;
         };
-
-        const fmt3 = (v) => {
-          const n = parseNumericLike(v);
-          return n == null ? '' : n.toFixed(3);
-        };
-        const fmtH = fmt3;          // 標高も小数3桁で
-        const fmtPole = (v) => {
-          const n = parseNumericLike(v);
-          return n == null ? '' : n.toFixed(1);
-        };
-        const fmtDiff = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // 較差 m
-
+        const fmt3   = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
+        const fmtPole= (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(1); };
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -7209,11 +7215,20 @@ export default {
         const rows = [header];
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
+          // ★ 標高は人向け文字列をそのまま
+          let hOut = '';
+          if (p.hDisp) {
+            hOut = String(p.hDisp);                 // 例: "62.123 m（楕円体高）" or "62.123 m"
+          } else if (p.h != null) {
+            const n = parseNumericLike(p.h);
+            hOut = (n == null) ? '' : `${n.toFixed(3)} m`;
+          }
+
           rows.push([
             esc(p.name || ''),     // 点名
             esc(fmt3(p.X)),        // X
             esc(fmt3(p.Y)),        // Y
-            esc(fmtH(p.h)),        // ★ 標高（数値化して3桁。数値化できなければ空欄）
+            esc(hOut),             // ★ 標高（人向け表示）
             esc(fmtPole(p.pole)),  // ポール高
             esc(fmt3(p.diff)),     // 較差
             esc(p.ts || '')        // 観測日時
@@ -7223,8 +7238,7 @@ export default {
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
         const fname = `観測点一覧_${stamp}.csv`;
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fname;
@@ -7234,8 +7248,6 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
-
-
 
     // 記憶を消す（新CSV用の全地点データを削除）
     clearCsv2Points() {
