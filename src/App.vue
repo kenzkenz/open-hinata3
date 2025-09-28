@@ -7954,60 +7954,76 @@ export default {
         return;
       }
 
-      var _this = this;
-      var opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      const _this = this;
 
-      // ラベル→EPSG。無ければ lon/lat から自動（JGD2011 平面直角）
+      // ラベル(公共座標◯系)→EPSG。無ければ経度から自動（JGD2011 平面直角）
       function epsgFromLabelOrAuto(lat, lon) {
         try {
-          var label = (_this.$store && _this.$store.state)
+          const label = (_this.$store && _this.$store.state)
               ? (_this.$store.state.s_zahyokei || _this.$store.state.zahyokei || '')
               : '';
-          var m = /公共座標\s*(\d+)系/.exec(label);
+          const m = /公共座標\s*(\d+)系/.exec(label);
           if (m) {
-            var z = Number(m[1]);
+            const z = Number(m[1]);
             if (z >= 1 && z <= 19) return 6668 + z; // 6669..6687
           }
-          // 経度から最寄り中央経線を選ぶ（129,131,133,...,165）
-          var zAuto = Math.round((lon - 129) / 2) + 1;
+          // 経度から最寄り中央経線を選ぶ（129,131,...,165）
+          let zAuto = Math.round((lon - 129) / 2) + 1;
           if (zAuto < 1) zAuto = 1;
           if (zAuto > 19) zAuto = 19;
           return 6668 + zAuto;
-        } catch (e) { return null; }
+        } catch {
+          return null;
+        }
       }
 
       navigator.geolocation.getCurrentPosition(
-          function (pos) {
+          (pos) => {
             try {
-              var c = pos.coords || {};
-              var accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              var altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-              var quality  = _this.getGeoQualityLabel(accuracy, altAcc);
+              const c = pos.coords || {};
+              const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+              const quality  = _this.getGeoQualityLabel(accuracy, altAcc);
 
-              var nowTs = pos.timestamp || Date.now();
+              const nowTs = pos.timestamp || Date.now();
               if (quality === 'RTK級') {
                 _this.lastRtkAt = nowTs;
               } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= (_this.rtkWindowMs || 1000)) {
-                return; // 直近RTK後の非RTKは捨てる
+                return; // 直近RTK後の非RTKは捨てる（カウントは finally で減る）
               }
 
-              // ★ 記録する座標は「赤丸」のWGS84
-              var lat = _this.torokuPointLngLat.lat;
-              var lon = _this.torokuPointLngLat.lng;
+              // ★ 記録座標は端末の測位結果（WGS84）。取れなければ赤丸をフォールバック
+              let lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+              let lon = (typeof c.longitude === 'number') ? c.longitude : null;
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                if (_this.torokuPointLngLat) {
+                  lat = _this.torokuPointLngLat.lat;
+                  lon = _this.torokuPointLngLat.lng;
+                } else {
+                  console.warn('[kansoku] invalid device coords and no anchor');
+                  return;
+                }
+              }
 
-              // ★ 平面直角XYを確実に出す
-              var epsg = epsgFromLabelOrAuto(lat, lon);
-              var X = null, Y = null, csLabel = '';
+              // ★ 平面直角XYのゾーン決定：赤丸優先 → 無ければ端末座標から自動
+              const baseLon = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lng))
+                  ? _this.torokuPointLngLat.lng : lon;
+              const baseLat = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lat))
+                  ? _this.torokuPointLngLat.lat : lat;
+
+              const epsg = epsgFromLabelOrAuto(baseLat, baseLon);
+
+              let X = null, Y = null, csLabel = '';
               if (epsg) {
                 try {
                   if (typeof proj4 !== 'function') console.warn('[kansoku] proj4 未ロードです');
-                  var out = proj4('EPSG:4326', 'EPSG:' + epsg, [lon, lat]); // → [E, N]
-                  // OH3 の期待に合わせて X=北, Y=東
+                  const out = proj4('EPSG:4326', 'EPSG:' + epsg, [lon, lat]); // → [E, N]
                   if (out && Number.isFinite(out[0]) && Number.isFinite(out[1])) {
                     Y = out[0]; // 東
                     X = out[1]; // 北
                   }
-                  var zone = epsg - 6668;
+                  const zone = epsg - 6668;
                   csLabel = '公共座標' + zone + '系';
                 } catch (e) {
                   console.warn('[kansoku] proj4 transform failed', e);
@@ -8019,7 +8035,7 @@ export default {
               _this.initKansokuCsvIfNeeded();
               _this.kansokuCsvRows.push([
                 _this.$_jstLocal(), // timestamp (JST)
-                lat, lon,           // 赤丸WGS84
+                lat, lon,           // 端末WGS84
                 X, Y, csLabel,      // 平面直角（X=北, Y=東）
                 accuracy,
                 quality,
@@ -8032,7 +8048,7 @@ export default {
               if (_this.kansokuRemaining <= 0) _this.kansokuStop();
             }
           },
-          function (err) {
+          (err) => {
             console.warn('[kansoku] getCurrentPosition error', err);
             _this.kansokuRemaining -= 1;
             if (_this.kansokuRemaining <= 0) _this.kansokuStop();
@@ -8040,6 +8056,7 @@ export default {
           opt
       );
     },
+
 
     exportKansokuCsv() {
       if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
