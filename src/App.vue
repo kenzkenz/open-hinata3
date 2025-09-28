@@ -7826,38 +7826,6 @@ export default {
         }
       }
     },
-    // async toggleWatchPosition (mode) {
-    //   if (this.watchId === null) {
-    //     // 開始前に必ずダイアログを開いて方位方式を選ばせる
-    //     if (mode === 't') {
-    //       // this.isTracking = true
-    //       this.s_isKuiuchi = false
-    //     } else {
-    //       this.isTracking = false
-    //       this.s_isKuiuchi = true
-    //     }
-    //     this.dialogForWatchPosition = true;
-    //   } else {
-    //     this.isTracking = false;
-    //     this.s_isKuiuchi = false;
-    //     this.isHeadingUp = false;
-    //     this.stopWatchPosition();
-    //     try { this.centerMarker?.remove?.(); } catch(_) {}
-    //     this.centerMarker = null;
-    //     try { this.currentMarker?.remove?.(); } catch(_) {}
-    //     this.currentMarker = null;
-    //     try { this.compass?.turnOff?.(); } catch(_) {}
-    //     const map = this.$store?.state?.map01; try { map?.resetNorthPitch?.(); } catch(_) {}
-    //     this.$store.state.geo = null;
-    //     try { history('現在位置継続取得ストップ(最小)', window.location.href); } catch(_) {}
-    //
-    //     // 追加：確実に片付け
-    //     this.detachGpsLineClick();
-    //     this.clearGpsLine();
-    //     // ★ 追加：アンカー点も破棄
-    //     this.gpsLineAnchorLngLat = null;
-    //   }
-    // },
 
     openTorokuDialog() {
       // ① 距離測りの後片付け：ライン消去＋モード解除
@@ -8221,12 +8189,12 @@ export default {
       this.externalElevation = { hType, hMeters, geoidN, hOrthometric: hOrtho };
     },
 
-// 受け取りリセット
+    // 受け取りリセット
     clearExternalElevation() {
       this.externalElevation = null;
     },
 
-// どこかの mounted() などで一回だけバインド
+    // どこかの mounted() などで一回だけバインド
     bindExternalElevationListener() {
       const handler = (ev) => {
         try {
