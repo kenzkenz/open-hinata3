@@ -7079,10 +7079,22 @@ export default {
         const ts = lastTs || (this.$_jstLocal ? this.$_jstLocal()
             : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-        if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
-        this.csv2Points.push({ name: String(name || ''), X: Xavg, Y: Yavg, ts });
 
-        // 永続化
+        // 4) 保存配列へ追加（ポール高も地点ごとに保存）
+        if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
+
+// ★ これを用意して…
+        const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
+
+        this.csv2Points.push({
+          name: String(name || ''),
+          X: Xavg,
+          Y: Yavg,
+          ts,
+          pole: poleVal   // ★ 短縮記法ではなく明示
+        });
+
+// 永続化
         try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch(_) {}
 
         return true;
@@ -7093,9 +7105,9 @@ export default {
     },
 
 
-// 新CSVをダウンロード（列名は日本語）：
-//  点名, XY座標, 標高, ポール高, 較差, 観測日時
-//  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
+    // 新CSVをダウンロード（列名は日本語）：
+    //  点名, XY座標, 標高, ポール高, 較差, 観測日時
+    //  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
@@ -7106,7 +7118,12 @@ export default {
           const y = Number.isFinite(Number(Y)) ? Number(Y).toFixed(3) : '';
           return (x !== '' || y !== '') ? (x + ',' + y) : '';
         };
-
+        const fmtPole = (v) => {
+          if (!Number.isFinite(Number(v))) return '';
+          // cmをそのまま出したいなら以下（小数1桁例）：
+          return Number(v).toFixed(1);
+          // mで出したいなら： return (Number(v)/100).toFixed(3);
+        };
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -7120,7 +7137,7 @@ export default {
             esc(p.name || ''),        // 点名
             esc(fmtXY(p.X, p.Y)),     // XY座標（"X,Y" 形式・小数3桁）
             '',                       // 標高（空）
-            '',                       // ポール高（空）
+            esc(fmtPole(p.pole)),       // ★ ポール高（地点ごと）
             '',                       // 較差（空）
             esc(p.ts || '')           // 観測日時
           ]);
