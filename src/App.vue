@@ -518,17 +518,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>
-            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>
-            <span v-else>観測</span>
-<!--            <v-badge-->
-<!--                content="終了"-->
-<!--                :model-value="kansokuAverages.n === kansokuCount"-->
-<!--                dot-->
-<!--                color="success"-->
-<!--                offset-x="20"-->
-<!--            >-->
-<!--              <span>観測</span>-->
-<!--            </v-badge>-->
+            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
+              観測終了-点名{{ currentPointName }}
+            </span>
+            <span v-else>
+              観測-点名{{ currentPointName }}
+            </span>
+<!--            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>-->
+<!--            <span v-else>観測</span>-->
           </v-card-title>
           <v-card-text>
             <div class="oh3-grid-3col">
@@ -625,12 +622,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
               <v-btn color="blue-darken-1" text
-                     @click="dialogForToroku = false; clearTorokuPoint(); detachTorokuPointClick()">
+                     @click="dialogForToroku = false;
+                     clearTorokuPoint();
+                     detachTorokuPointClick()
+                     resetPointSequence()">
                 観測終了
               </v-btn>
 
-              <v-btn color="green" @click="downloadCsv">CSV</v-btn>
-              <v-btn :disabled="true" color="green" @click="downloadCsv">マイルーム</v-btn>
+              <v-btn color="green" @click="downloadCsv2">CSV</v-btn>
 
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
@@ -648,13 +647,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </v-dialog>
 
 
-
-
-
-
-
-
-          <v-dialog v-model="s_dialogForVersion" max-width="500px">
+      <v-dialog v-model="s_dialogForVersion" max-width="500px">
         <v-card>
           <v-card-title>
             バージョンが古くなっています。
@@ -3014,6 +3007,8 @@ export default {
 
     tenmaiPrefix: 'oh-',        // 入力値
     tenmaiPrefixError: '',   // エラーメッセージ表示用
+
+    currentPointName: '',
 
     aaa: null,
   }),
@@ -6832,11 +6827,23 @@ export default {
               try { _this.$emit && _this.$emit('toroku-point', { lng: lon, lat: lat }); } catch(e) {}
               try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat: lat } } })); } catch(e) {}
 
+              // ★ 連番点名を生成して保持（例: OH1, OH2）
+              try {
+                var __pn = (_this.getNextPointName && _this.getNextPointName());
+                if (__pn) {
+                  if (_this.$set) _this.$set(_this, 'currentPointName', __pn);
+                  else _this.currentPointName = __pn;
+                }
+              } catch (_) {}
+
               // 5) ダイアログをオープン＆観測用の初期化
               _this.dialogForToroku = true;
               _this.kansokuRunning = false;
               _this.kansokuRemaining = 0;
               _this.kansokuCsvRows = null; // 次回 init でヘッダから作り直す
+
+
+
             } catch (e) {
               console.warn('[startTorokuHere] success handler error', e);
             }
@@ -6920,16 +6927,15 @@ export default {
     },
 
 
-    // --- 点名プレフィックス（tenmaiPrefix）: 入力→バリデーション→保存／復帰 ---
+// --- 点名プレフィックス（tenmaiPrefix）: 入力→バリデーション→保存／復帰 ---
 // ※この3メソッドを methods: { ... } に貼るだけでOK（ライフサイクルで復帰は created/mounted で呼ぶ）。
-
 
 // 1) 起動時に localStorage から復帰
     loadTenmaiPrefixFromStorage() {
       try {
         var v = localStorage.getItem('tenmaiPrefix');
         if (v == null) return;
-// そのまま使う前にバリデーション（不正ならエラー表示しつつフィールドは空）
+        // そのまま使う前にバリデーション（不正ならエラー表示しつつフィールドは空）
         if (this.isValidTenmaiPrefix(v)) {
           this.tenmaiPrefix = v;
           this.tenmaiPrefixError = '';
@@ -6940,42 +6946,78 @@ export default {
       } catch (_) {}
     },
 
-
 // 2) 入力イベントで検証＆保存（Vuetify2: @input、Vuetify3: @update:modelValue）
     handleTenmaiPrefixInput(v) {
-// Vuetify2 の @input だと Event が来ることがあるので吸収
+      // Vuetify2 の @input だと Event が来ることがあるので吸収
       if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
       v = (v == null) ? '' : String(v).trim();
 
-
       if (v === '') {
-// 空は許容：エラー解除し、ストレージもクリア
+        // 空は許容：エラー解除し、ストレージもクリア
         this.tenmaiPrefix = '';
         this.tenmaiPrefixError = '';
         try { localStorage.removeItem('tenmaiPrefix'); } catch(_) {}
         return;
       }
 
-
       if (!this.isValidTenmaiPrefix(v)) {
         this.tenmaiPrefixError = '英数字、ハイフン、アンダースコアのみ（最大12文字）で入力してください。';
-// 入力欄自体は更新してもいいが、保存はしない
+        // 入力欄自体は更新してもいいが、保存はしない
         this.tenmaiPrefix = v;
         return;
       }
 
-
-// OK: 反映して保存
+      // OK: 反映して保存
       this.tenmaiPrefix = v;
       this.tenmaiPrefixError = '';
       try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
     },
 
-
 // 3) 検証（サニタイズはしない。引っ掛かったらエラー通知＆未保存）
     isValidTenmaiPrefix(v) {
-// 1〜12 文字、半角英数字・ハイフン・アンダースコアのみ
+      // 1〜12 文字、半角英数字・ハイフン・アンダースコアのみ
       return /^[0-9A-Za-z_-]{1,12}$/.test(String(v));
+    },
+
+
+// --- 連番点名（例: 'OH1','OH2'）を自動採番して保存する ---
+// ベース文字列: this.tenmaiPrefix を使用（未設定→'P'）。
+// カウンタ: localStorage('tenmaiSeq') に永続化。prefix が変わったら 0 にリセット。
+    getNextPointName() {
+      var base = (this.tenmaiPrefix != null && this.tenmaiPrefix !== '') ? String(this.tenmaiPrefix) : 'P';
+      if (!/^[0-9A-Za-z_-]{1,12}$/.test(base)) {
+        this.tenmaiPrefixError = '英数字・ハイフン・アンダースコア（1〜12文字）で設定してください。';
+        // バリデーションNGでも動作は止めず、フォールバックで 'P' を使う
+        base = 'P';
+      }
+      var lastBase = null;
+      try { lastBase = localStorage.getItem('tenmaiPrefix'); } catch(_) {}
+      if (lastBase !== base) {
+        try { localStorage.setItem('tenmaiPrefix', base); } catch(_) {}
+        try { localStorage.setItem('tenmaiSeq', '0'); } catch(_) {}
+      }
+      var seq = 0;
+      try { seq = Number(localStorage.getItem('tenmaiSeq')) || 0; } catch(_) { seq = 0; }
+      seq += 1;
+      try { localStorage.setItem('tenmaiSeq', String(seq)); } catch(_) {}
+      return base + String(seq);
+    },
+
+// 連番カウンタをクリア（次の採番は 1 から）
+    resetPointSequence () {
+      try {
+        // 現在の prefix を保持（未設定なら 'P' を採用し直す）
+        var base = (this.tenmaiPrefix != null && this.tenmaiPrefix !== '') ? String(this.tenmaiPrefix) : null;
+        if (base) {
+          // 正常な prefix は保存しておく（prefixは維持）
+          localStorage.setItem('tenmaiPrefix', base);
+        }
+        // 連番だけ 0 に戻す → 次回 getNextPointName() で 1 から
+        localStorage.setItem('tenmaiSeq', '0');
+      } catch (_) {}
+
+      // 画面側の表示をリセット（任意）
+      this.currentPointName = '';
     },
 
 
