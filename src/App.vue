@@ -646,7 +646,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
 
               <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
-              <v-btn color="indigo" @click="exportCsv2Sima">SIMA</v-btn>
+              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">>SIMA</v-btn>
 
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
