@@ -7081,7 +7081,7 @@ export default {
 
         const header = rows[0];
         const idx = (n) => header.indexOf(n);
-        const iX = idx('X'), iY = idx('Y'), iTS = idx('timestamp'), iET = idx('eventType');
+        const iX  = idx('X'), iY = idx('Y'), iTS = idx('timestamp'), iET = idx('eventType');
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
@@ -7097,24 +7097,27 @@ export default {
         }
         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
 
-        const avg = (arr) => arr.reduce((a,b)=>a+b,0) / arr.length;
+        const avg = (a) => a.reduce((s,v)=>s+v,0)/a.length;
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
-        // 点名
+        // ★ 較差（= sqrt( (maxX-minX)^2 + (maxY-minY)^2 ) ）
+        const maxX = Math.max(...xs), minX = Math.min(...xs);
+        const maxY = Math.max(...ys), minY = Math.min(...ys);
+        const diff = Math.hypot(maxX - minX, maxY - minY);  // m
+
+        // 点名・時刻
         let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
           name = this.getNextPointName?.() || '';
           this.currentPointName = name;
         }
-
-        // 観測日時
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-        // ポール高（既存仕様）
+        // ポール高（任意）
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // ★ 標高（正高m）。ロガーから受け取れてなければ null
+        // 標高（正高, m）
         const hOrtho = (this.externalElevation && Number.isFinite(Number(this.externalElevation.hOrthometric)))
             ? Number(this.externalElevation.hOrthometric)
             : null;
@@ -7124,8 +7127,9 @@ export default {
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          h: hOrtho,   // ★ 人に分かる標高（正高, m）/ 無ければ null
+          h: hOrtho,
           pole: poleVal,
+          diff,          // ★ 較差[m]
           ts
         });
 
@@ -7138,61 +7142,55 @@ export default {
     },
 
 
-
     // 新CSVをダウンロード（列名は日本語）：
     //  点名, XY座標, 標高, ポール高, 較差, 観測日時
     //  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
+        const header = ['点名','X','Y','標高','ポール高','較差','観測日時'];
 
-        const header = ['点名','XY座標','標高','ポール高','較差','観測日時'];
-
-        const fmtXY   = (X, Y) => {
-          const x = Number.isFinite(Number(X)) ? Number(X).toFixed(3) : '';
-          const y = Number.isFinite(Number(Y)) ? Number(Y).toFixed(3) : '';
-          return (x !== '' || y !== '') ? (x + ',' + y) : '';
-        };
-        const fmtH    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // m（正高）
-        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '';  // cm
+        const fmt3    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
+        const fmtH    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // 標高 m
+        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '';  // ポール高 cm
+        const fmtDiff = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // 較差 m
 
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
         };
 
         const rows = [header];
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
           rows.push([
-            esc(p.name || ''),        // 点名
-            esc(fmtXY(p.X, p.Y)),     // XY座標（"X,Y" 形式・小数3桁）
-            '',                       // 標高（空）
-            esc(fmtPole(p.pole)),       // ★ ポール高（地点ごと）
-            '',                       // 較差（空）
-            esc(p.ts || '')           // 観測日時
+            esc(p.name || ''),     // 点名
+            esc(fmt3(p.X)),        // X
+            esc(fmt3(p.Y)),        // Y
+            esc(fmtH(p.h)),        // 標高
+            esc(fmtPole(p.pole)),  // ポール高
+            esc(fmtDiff(p.diff)),  // ★ 較差
+            esc(p.ts || '')        // 観測日時
           ]);
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-        const stamp = this.$_jstStamp
-            ? this.$_jstStamp()
-            : new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
+        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
         const fname = `観測点一覧_${stamp}.csv`;
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fname;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 0);
       } catch (e) {
         console.warn('[csv2] download error', e);
       }
     },
+
+
 
     // 記憶を消す（新CSV用の全地点データを削除）
     clearCsv2Points() {
