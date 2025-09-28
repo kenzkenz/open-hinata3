@@ -534,15 +534,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div class="oh3-grid-3col">
               <!-- 左: テキストフィールド（可変） -->
               <v-text-field
-                  :disabled="true"
-                  v-model="fileName"
-                  label="点名"
-                  placeholder=""
+                  v-model="tenmaiPrefix"
+                  label="点名プレフィックス"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
                   clearable
                   class="oh3-col-flex"
+                  :error-messages="tenmaiPrefixError"
+                  @update:modelValue="handleTenmaiPrefixInput"
               />
               <!-- 中: 観測回数のセレクト（固定幅） -->
               <v-select
@@ -3011,6 +3011,9 @@ export default {
     // 観測点メタを保持
     torokuPointQuality: null, // 'RTK級' など
     torokuPointQualityAt: null, // 記録時刻（ms）
+
+    tenmaiPrefix: 'oh-',        // 入力値
+    tenmaiPrefixError: '',   // エラーメッセージ表示用
 
     aaa: null,
   }),
@@ -6916,6 +6919,64 @@ export default {
       }
     },
 
+
+    // --- 点名プレフィックス（tenmaiPrefix）: 入力→バリデーション→保存／復帰 ---
+// ※この3メソッドを methods: { ... } に貼るだけでOK（ライフサイクルで復帰は created/mounted で呼ぶ）。
+
+
+// 1) 起動時に localStorage から復帰
+    loadTenmaiPrefixFromStorage() {
+      try {
+        var v = localStorage.getItem('tenmaiPrefix');
+        if (v == null) return;
+// そのまま使う前にバリデーション（不正ならエラー表示しつつフィールドは空）
+        if (this.isValidTenmaiPrefix(v)) {
+          this.tenmaiPrefix = v;
+          this.tenmaiPrefixError = '';
+        } else {
+          this.tenmaiPrefix = '';
+          this.tenmaiPrefixError = '保存済みのプレフィックスが不正です。再設定してください。';
+        }
+      } catch (_) {}
+    },
+
+
+// 2) 入力イベントで検証＆保存（Vuetify2: @input、Vuetify3: @update:modelValue）
+    handleTenmaiPrefixInput(v) {
+// Vuetify2 の @input だと Event が来ることがあるので吸収
+      if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
+      v = (v == null) ? '' : String(v).trim();
+
+
+      if (v === '') {
+// 空は許容：エラー解除し、ストレージもクリア
+        this.tenmaiPrefix = '';
+        this.tenmaiPrefixError = '';
+        try { localStorage.removeItem('tenmaiPrefix'); } catch(_) {}
+        return;
+      }
+
+
+      if (!this.isValidTenmaiPrefix(v)) {
+        this.tenmaiPrefixError = '英数字、ハイフン、アンダースコアのみ（最大12文字）で入力してください。';
+// 入力欄自体は更新してもいいが、保存はしない
+        this.tenmaiPrefix = v;
+        return;
+      }
+
+
+// OK: 反映して保存
+      this.tenmaiPrefix = v;
+      this.tenmaiPrefixError = '';
+      try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
+    },
+
+
+// 3) 検証（サニタイズはしない。引っ掛かったらエラー通知＆未保存）
+    isValidTenmaiPrefix(v) {
+// 1〜12 文字、半角英数字・ハイフン・アンダースコアのみ
+      return /^[0-9A-Za-z_-]{1,12}$/.test(String(v));
+    },
 
 
 
@@ -11950,6 +12011,9 @@ export default {
         initialScrollTop = 0;
       });
     }
+
+    try { this.loadTenmaiPrefixFromStorage(); } catch(_) {}
+
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
