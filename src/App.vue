@@ -528,7 +528,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <!--            <span v-else>観測</span>-->
           </v-card-title>
           <v-card-text>
-            <div class="oh3-grid-3col">
+            <div class="oh3-grid-4col">
               <!-- 左: テキストフィールド（可変） -->
               <v-text-field
                   v-model="tenmei"
@@ -546,11 +546,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-select
                   v-model="kansokuCount"
                   :items="kansokuItems"
-                  label="観測回数（１秒間隔で実行）"
+                  label="観測回数"
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
                   class="oh3-col-fixed"
+                  :disabled="kansokuRunning"
+              />
+              <!-- ★ 新規: 間隔（秒, 0.1刻み） -->
+              <v-text-field
+                  v-model.number="sampleIntervalSec"
+                  type="number"
+                  label="間隔（秒, 0.1刻み）"
+                  variant="outlined"
+                  density="compact"
+                  hide-details="auto"
+                  class="oh3-col-fixed"
+                  :step="0.1"
+                  :min="0.1"
+                  :max="60"
                   :disabled="kansokuRunning"
               />
               <!-- 右: 0cm〜100cm セレクト（固定幅） -->
@@ -3019,6 +3033,8 @@ export default {
 
     torokuAnimMs: 700,        // センタリングのアニメ時間(ms)
     torokuDialogDelayMs: 1000, // moveend後に待つ時間(ms)
+
+    sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
 
     aaa: null,
   }),
@@ -7992,9 +8008,11 @@ export default {
 
       // すぐ 1 回、以後 1 秒ごと
       this.kansokuCollectOnce();
+      const stepSec = Number(this.sampleIntervalSec);
+      const intervalMs = Math.max(100, Math.round((Number.isFinite(stepSec) ? stepSec : 1) * 1000));
       this.kansokuTimer = setInterval(() => {
         this.kansokuCollectOnce();
-      }, 1000);
+      }, intervalMs);
     },
 
     /**
@@ -13270,13 +13288,20 @@ html.oh3-embed #map01 {
   align-items: center;
   gap: 8px;
 }
+.oh3-grid-4col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 150px 150px; /* 左が可変、右3つは固定幅 */
+  align-items: center;
+  gap: 8px;
+}
 /* 点名は可変幅でグリッド領域ぴったりに */
 .oh3-col-flex {
   width: 100%;
 }
 /* 右2つのセレクトは固定幅。Vuetifyの入力は内部で100%になるので、ラッパーに幅を指定 */
 .oh3-col-fixed {
-  width: 220px;
+  width: 150px;
 }
 
 
