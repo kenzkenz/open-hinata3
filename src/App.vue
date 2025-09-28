@@ -514,7 +514,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </template>
       </v-snackbar>
 
-      <!--  -->
+
+
+      <!-- 観測  -->
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>
@@ -524,8 +526,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <span v-else>
         観測-{{ currentPointName }}
       </span>
-            <!--            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>-->
-            <!--            <span v-else>観測</span>-->
           </v-card-title>
           <v-card-text>
             <div class="oh3-grid-4col">
@@ -581,11 +581,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :disabled="kansokuRunning"
               />
             </div>
-
             <div class="flex items-center gap-2 mt-2">
               <v-btn class="mt-2" @click="kansokuStart" :disabled="kansokuRunning">観測開始</v-btn>
             </div>
-
             <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
             <div
                 class="kansoku-list"
@@ -594,7 +592,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
             >
               <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;">
               </div>
-
               <div
                   v-else
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
@@ -621,7 +618,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtHumanHeight(row[9]) }}
               </div>
             </div>
-
             <!-- ★ 追加：平均（既存スタイルに影響しない独立ブロック） -->
             <div
                 v-if="kansokuAverages && kansokuAverages.n > 0"
@@ -633,7 +629,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <!--              lat={{ fmtLL(kansokuAverages.lat) }},-->
               <!--              lon={{ fmtLL(kansokuAverages.lon) }}-->
             </div>
-
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
               <v-btn color="blue-darken-1" text
                      @click="dialogForToroku = false;
@@ -644,10 +639,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                      :disabled="kansokuRunning">
                 観測終了
               </v-btn>
-
               <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
-              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">>SIMA</v-btn>
-
+              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
               <v-btn
@@ -659,7 +652,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :disabled="kansokuRunning"
               >閉じる</v-btn>
             </div>
-
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -1780,6 +1772,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <!-- <MiniTooltip text="グループ機能">-->
               <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
               <!--  </MiniTooltip>-->
+
               <MiniTooltip text="観測" :offset-x="4" :offset-y="-2">
                 <v-speed-dial
                     location="top center"
@@ -1797,14 +1790,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                        <img :src="rtkPng" alt="" class="btn-img" />
                     </v-fab>
                   </template>
-                  <div class="d-flex ga-2 mt-2">
+                  <div class="d-flex ga-2 mt-2 fab-actions">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
-                    <v-btn icon @click="startTorokuHere">登録</v-btn>
+                    <v-btn icon @click="startTorokuHere">観測</v-btn>
                   </div>
                 </v-speed-dial>
               </MiniTooltip>
-
 
               <MiniTooltip text="レイヤー選択" :offset-x="4" :offset-y="-2">
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickLayer(mapName)"><v-icon>mdi-layers</v-icon></v-btn>
@@ -14411,6 +14403,25 @@ select {
 .blink {
   animation: oh-blink 1s infinite;
 }
+
+/* 初期状態：少し下＋小さく＋透明 */
+.oh-sd .fab-actions > .v-btn {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  transition: opacity .18s ease, transform .22s ease;
+}
+
+/* 開いたとき（Vuetifyが付与するクラス） */
+.oh-sd.v-speed-dial--active .fab-actions > .v-btn {
+  opacity: 1;
+  transform: none;
+}
+
+/* 段階的に出す（stagger） */
+.oh-sd .fab-actions > .v-btn:nth-child(1) { transition-delay: .03s; }
+.oh-sd .fab-actions > .v-btn:nth-child(2) { transition-delay: .08s; }
+.oh-sd .fab-actions > .v-btn:nth-child(3) { transition-delay: .13s; }
+
 @keyframes oh-blink {
   50% { filter: brightness(1.25); }
 }
