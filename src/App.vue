@@ -518,21 +518,21 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>
-            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
-              観測終了-点名{{ currentPointName }}
-            </span>
+      <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
+        観測終了-点名{{ currentPointName }}
+      </span>
             <span v-else>
-              観測-点名{{ currentPointName }}
-            </span>
-<!--            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>-->
-<!--            <span v-else>観測</span>-->
+        観測-点名{{ currentPointName }}
+      </span>
+            <!--            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>-->
+            <!--            <span v-else>観測</span>-->
           </v-card-title>
           <v-card-text>
             <div class="oh3-grid-3col">
               <!-- 左: テキストフィールド（可変） -->
               <v-text-field
                   v-model="tenmaiPrefix"
-                  label="点名プレフィックス"
+                  label="点名"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
@@ -540,6 +540,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   class="oh3-col-flex"
                   :error-messages="tenmaiPrefixError"
                   @update:modelValue="handleTenmaiPrefixInput"
+                  :disabled="kansokuRunning"
               />
               <!-- 中: 観測回数のセレクト（固定幅） -->
               <v-select
@@ -550,6 +551,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   variant="outlined"
                   hide-details="auto"
                   class="oh3-col-fixed"
+                  :disabled="kansokuRunning"
               />
               <!-- 右: 0cm〜100cm セレクト（固定幅） -->
               <v-select
@@ -562,11 +564,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   variant="outlined"
                   hide-details="auto"
                   class="oh3-col-fixed"
+                  :disabled="kansokuRunning"
               />
             </div>
 
             <div class="flex items-center gap-2 mt-2">
-              <v-btn class="mt-2" @click="kansokuStart">観測開始</v-btn>
+              <v-btn class="mt-2" @click="kansokuStart" :disabled="kansokuRunning">観測開始</v-btn>
             </div>
 
             <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
@@ -583,22 +586,22 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
                   :key="idx"
                   :style="{
-                    fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
-                    fontSize: '12px',
-                    lineHeight: '1.6',
-                    padding: '2px 8px',
-                    borderBottom: '1px dashed rgba(255,255,255,.08)',
-                    backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
-                    whiteSpace: 'nowrap'
-                    }"
+              fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+              fontSize: '12px',
+              lineHeight: '1.6',
+              padding: '2px 8px',
+              borderBottom: '1px dashed rgba(255,255,255,.08)',
+              backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+              whiteSpace: 'nowrap'
+              }"
               >
-                <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
-                  {{ row[7] }}
-                </span>
+          <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
+            {{ row[7] }}
+          </span>
                 {{ fmtAcc(row[6]) }}
                 {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
                 {{ row[5] }}
-                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}
+                <!--                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}-->
                 {{ row[8] }}
                 {{ row[0] }}
                 {{ fmtHumanHeight(row[9]) }}
@@ -612,23 +615,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
             >
               平均（n={{ kansokuAverages.n }}）:
               X={{ fmtXY(kansokuAverages.X) }},
-              Y={{ fmtXY(kansokuAverages.Y) }} |
-              lat={{ fmtLL(kansokuAverages.lat) }},
-              lon={{ fmtLL(kansokuAverages.lon) }}
-
+              Y={{ fmtXY(kansokuAverages.Y) }}
+              <!--              lat={{ fmtLL(kansokuAverages.lat) }},-->
+              <!--              lon={{ fmtLL(kansokuAverages.lon) }}-->
             </div>
 
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
               <v-btn color="blue-darken-1" text
                      @click="dialogForToroku = false;
-                     clearTorokuPoint();
-                     detachTorokuPointClick()
-                     resetPointSequence()
-                     clearCsv2Points()">
+               clearTorokuPoint();
+               detachTorokuPointClick()
+               resetPointSequence()
+               clearCsv2Points()"
+                     :disabled="kansokuRunning">
                 観測終了
               </v-btn>
 
-              <v-btn color="green" @click="downloadCsv2">CSV</v-btn>
+              <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
 
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
@@ -638,12 +641,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   class="text-none pa-0"
                   style="min-width:auto; padding:0;"
                   @click="dialogForToroku = false"
+                  :disabled="kansokuRunning"
               >閉じる</v-btn>
             </div>
 
           </v-card-text>
         </v-card>
       </v-dialog>
+
+
 
 
       <v-dialog v-model="s_dialogForVersion" max-width="500px">
@@ -7289,10 +7295,6 @@ export default {
     },
     startTrackLog() {
       if (!this.csvRows) {
-        // this.csvRows = [[
-        //   'timestamp','lat','lon','X_N','Y_E','座標系',
-        //   'accuracy','altitudeAccuracy','speed','heading','quality','eventType'
-        // ]];
         this.csvRows = [[
           'timestamp','lat','lon','X','Y','CRS',
           'accuracy','quality','eventType'
@@ -7383,14 +7385,6 @@ export default {
         geo.quality,               // quality
         eventType                  // eventType
       ]);
-      // this.csvRows.push([
-      //   new Date(now).toISOString(),
-      //   geo.lat, geo.lon,
-      //   xN, yE, csLabel,
-      //   geo.accuracy, geo.altitudeAccuracy, geo.speed, geo.heading, geo.quality,
-      //   eventType
-      // ]);
-
       this.lastLogAt = now;
       this.lastLogXY = { x: xN, y: yE };
     },
@@ -8392,152 +8386,6 @@ export default {
           if (d) this.setExternalElevation(d);
         };
       } catch (e) { console.warn('[elev] BroadcastChannel not available', e); }
-    },
-
-    /* ===== 標高ログ収集（DL用） ===== */
-
-// 収集開始（CustomEvent / BroadcastChannel / postMessage を監視して配列に貯める）
-    enableElevationCapture() {
-      // バッファ初期化（最大1000件）
-      if (!Array.isArray(this._elevCap)) this._elevCap = [];
-      this._elevCapMax = 1000;
-
-      const stamp = () => (this.$_jstLocal?.() ?? new Date().toISOString());
-
-      const pushCap = (via, payload, extra = {}) => {
-        try {
-          this._elevCap.unshift({
-            at: stamp(),
-            via,
-            payload,
-            ...extra
-          });
-          if (this._elevCap.length > this._elevCapMax) this._elevCap.pop();
-        } catch (e) { console.warn('[ELEV-CAP] push error', e); }
-      };
-
-      // 既存があれば外して付け直し
-      try { if (this._elevCapCE) window.removeEventListener('oh3:elevation', this._elevCapCE); } catch {}
-      try { if (this._elevCapPM) window.removeEventListener('message', this._elevCapPM); } catch {}
-      try { if (this._elevCapBC) { this._elevCapBC.close?.(); this._elevCapBC = null; } } catch {}
-
-      // A) CustomEvent('oh3:elevation', {detail:{...}})
-      this._elevCapCE = (ev) => {
-        pushCap('CustomEvent', ev?.detail ?? {});
-      };
-      window.addEventListener('oh3:elevation', this._elevCapCE);
-
-      // B) BroadcastChannel('oh3-elevation')（同一オリジン別タブ）
-      try {
-        this._elevCapBC = new BroadcastChannel('oh3-elevation');
-        this._elevCapBC.onmessage = (ev) => {
-          pushCap('BroadcastChannel', ev?.data ?? {});
-        };
-      } catch (e) {
-        console.warn('[ELEV-CAP] BroadcastChannel unavailable', e);
-      }
-
-      // C) postMessage（iframe / WebView / 拡張）
-      this._elevCapPM = (ev) => {
-        const d = ev?.data;
-        // elevation らしいものだけ拾う（ノイズ削減）
-        const txt = JSON.stringify(d || {}).toLowerCase();
-        if (d?.type === 'oh3:elevation' || /elev|msl|ellipsoid|geoid|height|alt/.test(txt)) {
-          pushCap('postMessage', d, { origin: ev.origin });
-        }
-      };
-      window.addEventListener('message', this._elevCapPM);
-
-      console.log('[ELEV-CAP] enabled');
-    },
-
-// 収集停止
-    disableElevationCapture() {
-      try { if (this._elevCapCE) window.removeEventListener('oh3:elevation', this._elevCapCE); } catch {}
-      try { if (this._elevCapPM) window.removeEventListener('message', this._elevCapPM); } catch {}
-      try { if (this._elevCapBC) { this._elevCapBC.close?.(); this._elevCapBC = null; } } catch {}
-      this._elevCapCE = null; this._elevCapPM = null; this._elevCapBC = null;
-      console.log('[ELEV-CAP] disabled');
-    },
-
-// バッファ消去
-    clearElevationCapture() {
-      this._elevCap = [];
-      console.log('[ELEV-CAP] cleared');
-    },
-
-// JSONでダウンロード（推奨：一番確実に情報を渡せる）
-    downloadElevationCaptureJson() {
-      try {
-        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0,14);
-        const report = {
-          meta: {
-            createdAt: this.$_jstIso?.() ?? new Date().toISOString(),
-            userAgent: navigator.userAgent,
-            page: location.href
-          },
-          currentState: {
-            externalElevation: this.externalElevation ?? null,
-            pointElevation: this.pointElevation ?? null
-          },
-          samples: Array.isArray(this._elevCap) ? this._elevCap : []
-        };
-        const json = JSON.stringify(report, null, 2);
-        if (this.$_downloadText) {
-          this.$_downloadText(json, `elevation_log_${stamp}.json`, 'application/json;charset=utf-8;');
-        } else {
-          const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `elevation_log_${stamp}.json`;
-          document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(a.href), 0);
-        }
-      } catch (e) {
-        console.warn('[ELEV-CAP] download json error', e);
-      }
-    },
-
-// CSVでダウンロード（人が見やすい簡易版）
-    downloadElevationCaptureCsv() {
-      try {
-        const cap = Array.isArray(this._elevCap) ? this._elevCap : [];
-        const header = ['at','via','origin','hType','hMeters','geoidN','hOrthometric','raw'];
-        const esc = (v) => {
-          if (v == null) return '';
-          const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-        };
-        const rows = [header];
-        for (let i = 0; i < cap.length; i++) {
-          const it = cap[i] || {};
-          const p  = it.payload || {};
-          rows.push([
-            esc(it.at || ''),
-            esc(it.via || ''),
-            esc(it.origin || ''),
-            esc(p.hType ?? p.type ?? ''),                        // 可能ならそのまま
-            esc((p.hMeters != null) ? p.hMeters : p.height ?? p.altitude ?? ''),
-            esc((p.geoidN != null) ? p.geoidN : p.geoid ?? p.geoidSeparation ?? ''),
-            esc((p.hOrthometric != null) ? p.hOrthometric : ''), // 正高が出ていれば
-            esc(p)                                               // 生ペイロード
-          ]);
-        }
-        const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0,14);
-        if (this.$_downloadText) {
-          this.$_downloadText(csv, `elevation_log_${stamp}.csv`, 'text/csv;charset=utf-8;');
-        } else {
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `elevation_log_${stamp}.csv`;
-          document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(a.href), 0);
-        }
-      } catch (e) {
-        console.warn('[ELEV-CAP] download csv error', e);
-      }
     },
 
 // 先頭の実数を抜く（":70.928," や "66.789(HAE)" もOK）
