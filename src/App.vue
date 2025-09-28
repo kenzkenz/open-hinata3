@@ -3011,6 +3011,9 @@ export default {
 
     currentPointName: '',
 
+    externalElevation: null, // { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN: number|null }
+
+
     aaa: null,
   }),
   computed: {
@@ -6835,8 +6838,6 @@ export default {
               _this.kansokuRemaining = 0;
               _this.kansokuCsvRows = null; // 次回 init でヘッダから作り直す
 
-
-
             } catch (e) {
               console.warn('[startTorokuHere] success handler error', e);
             }
@@ -7038,65 +7039,56 @@ export default {
         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
 
         const header = rows[0];
-        const idx = (name) => header.indexOf(name);
-        const iX = idx('X');
-        const iY = idx('Y');
-        const iTS = idx('timestamp');
-        const iET = idx('eventType'); // 'kansoku' を絞る
+        const idx = (n) => header.indexOf(n);
+        const iX = idx('X'), iY = idx('Y'), iTS = idx('timestamp'), iET = idx('eventType');
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        const xs = [];
-        const ys = [];
+        const xs = [], ys = [];
         let lastTs = '';
-
         for (let r = 1; r < rows.length; r++) {
           const row = rows[r];
-          // この地点の連続観測行だけ採用（平均行や他イベントは除外）
           const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
           if (et !== 'kansoku') continue;
-
-          const vx = Number(row[iX]);
-          const vy = Number(row[iY]);
-          if (Number.isFinite(vx)) xs.push(vx);
-          if (Number.isFinite(vy)) ys.push(vy);
+          const vx = Number(row[iX]); if (Number.isFinite(vx)) xs.push(vx);
+          const vy = Number(row[iY]); if (Number.isFinite(vy)) ys.push(vy);
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
-
-        if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY in this run'); return false; }
+        if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
 
         const avg = (arr) => arr.reduce((a,b)=>a+b,0) / arr.length;
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
-        // 点名（なければ採番）
+        // 点名
         let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
-          try { name = this.getNextPointName ? this.getNextPointName() : ''; } catch(_) {}
-          this.currentPointName = name || '';
+          name = this.getNextPointName?.() || '';
+          this.currentPointName = name;
         }
 
-        const ts = lastTs || (this.$_jstLocal ? this.$_jstLocal()
-            : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+        // 観測日時
+        const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-
-        // 4) 保存配列へ追加（ポール高も地点ごとに保存）
-        if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
-
-// ★ これを用意して…
+        // ポール高（既存仕様）
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
+        // ★ 標高（正高m）。ロガーから受け取れてなければ null
+        const hOrtho = (this.externalElevation && Number.isFinite(Number(this.externalElevation.hOrthometric)))
+            ? Number(this.externalElevation.hOrthometric)
+            : null;
+
+        if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          ts,
-          pole: poleVal   // ★ 短縮記法ではなく明示
+          h: hOrtho,   // ★ 人に分かる標高（正高, m）/ 無ければ null
+          pole: poleVal,
+          ts
         });
 
-// 永続化
-        try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch(_) {}
-
+        localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
         return true;
       } catch (e) {
         console.warn('[csv2] commit error', e);
@@ -7105,25 +7097,24 @@ export default {
     },
 
 
+
     // 新CSVをダウンロード（列名は日本語）：
     //  点名, XY座標, 標高, ポール高, 較差, 観測日時
     //  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
+
         const header = ['点名','XY座標','標高','ポール高','較差','観測日時'];
 
-        const fmtXY = (X, Y) => {
+        const fmtXY   = (X, Y) => {
           const x = Number.isFinite(Number(X)) ? Number(X).toFixed(3) : '';
           const y = Number.isFinite(Number(Y)) ? Number(Y).toFixed(3) : '';
           return (x !== '' || y !== '') ? (x + ',' + y) : '';
         };
-        const fmtPole = (v) => {
-          if (!Number.isFinite(Number(v))) return '';
-          // cmをそのまま出したいなら以下（小数1桁例）：
-          return Number(v).toFixed(1);
-          // mで出したいなら： return (Number(v)/100).toFixed(3);
-        };
+        const fmtH    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // m（正高）
+        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '';  // cm
+
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -7162,9 +7153,7 @@ export default {
       }
     },
 
-
-
-// 記憶を消す（新CSV用の全地点データを削除）
+    // 記憶を消す（新CSV用の全地点データを削除）
     clearCsv2Points() {
       this.csv2Points = [];
       try { localStorage.removeItem('csv2_points'); } catch(_) {}
@@ -7901,41 +7890,6 @@ export default {
       this.kansokuCsvRows = null;   // 次回 init でヘッダから作り直す
     },
 
-    // 画面にポイントを打つ（GeoJSON + circle レイヤ）
-    // plotTorokuPoint (lngLat) {
-    //   const map = this.$store?.state?.map01; if (!map) return;
-    //
-    //   const SRC   = 'oh-toroku-point-src';
-    //   const LAYER = 'oh-toroku-point';
-    //
-    //   const fc = turf.featureCollection([
-    //     turf.point([lngLat.lng, lngLat.lat], { label: '観測点' })
-    //   ]);
-    //
-    //   if (map.getSource(SRC)) {
-    //     map.getSource(SRC).setData(fc);
-    //   } else {
-    //     map.addSource(SRC, { type: 'geojson', data: fc });
-    //   }
-    //
-    //   if (!map.getLayer(LAYER)) {
-    //     map.addLayer({
-    //       id: LAYER,
-    //       type: 'circle',
-    //       source: SRC,
-    //       paint: {
-    //         'circle-radius': 6,
-    //         'circle-color': '#ff3b30',
-    //         'circle-stroke-width': 2,
-    //         'circle-stroke-color': '#ffffff'
-    //       }
-    //     });
-    //   }
-    //
-    //   // ★ 追加：赤丸のWGS84を保持
-    //   this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-    // },
-
     clearTorokuPoint () {
       const map = this.$store.state.map01; if (!map) return;
       const SRC   = 'oh-toroku-point-src';
@@ -7980,15 +7934,6 @@ export default {
         this.kansokuCollectOnce();
       }, 1000);
     },
-
-    // kansokuStop() {
-    //   this.kansokuRunning = false;
-    //   this.kansokuRemaining = 0;
-    //   if (this.kansokuTimer) {
-    //     clearInterval(this.kansokuTimer);
-    //     this.kansokuTimer = null;
-    //   }
-    // },
 
     /**
      * ラベル（例: 公共座標2系）が無ければ 経度から自動推定
@@ -8210,6 +8155,55 @@ export default {
 
       this.clearTorokuPoint();
       this.detachTorokuPointClick()
+    },
+
+    // ドロガーからの標高を受け取って内部形式に正規化
+    setExternalElevation(payload) {
+      // payload: { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN?: number }
+      if (!payload || !Number.isFinite(Number(payload.hMeters))) {
+        console.warn('[elev] invalid payload', payload); return;
+      }
+      const hType = (payload.hType === 'ellipsoidal') ? 'ellipsoidal' : 'orthometric';
+      const hMeters = Number(payload.hMeters);
+      const geoidN = Number.isFinite(Number(payload.geoidN)) ? Number(payload.geoidN) : null;
+
+      // 人が分かる標高＝正高(m)に統一
+      // 正高 = 楕円体高 - ジオイド高N
+      let hOrtho = null;
+      if (hType === 'orthometric') {
+        hOrtho = hMeters;
+      } else if (hType === 'ellipsoidal' && geoidN != null) {
+        hOrtho = hMeters - geoidN;
+      } else {
+        // 楕円体高だがNが無い → 保留（CSVでは空欄）
+        hOrtho = null;
+      }
+
+      this.externalElevation = { hType, hMeters, geoidN, hOrthometric: hOrtho };
+    },
+
+// 受け取りリセット
+    clearExternalElevation() {
+      this.externalElevation = null;
+    },
+
+// どこかの mounted() などで一回だけバインド
+    bindExternalElevationListener() {
+      const handler = (ev) => {
+        try {
+          const d = ev?.detail || {};
+          // 例: window.dispatchEvent(new CustomEvent('oh3:elevation', { detail: { hType:'ellipsoidal', hMeters: 75.432, geoidN: 36.1 } }))
+          this.setExternalElevation(d);
+        } catch (e) { console.warn('[elev] event parse error', e); }
+      };
+      window.addEventListener('oh3:elevation', handler);
+      this._elevHandler = handler;
+    },
+    unbindExternalElevationListener() {
+      if (this._elevHandler) {
+        window.removeEventListener('oh3:elevation', this._elevHandler);
+        this._elevHandler = null;
+      }
     },
 
 
@@ -12223,6 +12217,8 @@ export default {
     } catch (_) {
       this.csv2Points = [];
     }
+
+     this.bindExternalElevationListener()
 
   },
   beforeUnmount() {
