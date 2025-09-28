@@ -625,7 +625,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                      @click="dialogForToroku = false;
                      clearTorokuPoint();
                      detachTorokuPointClick()
-                     resetPointSequence()">
+                     resetPointSequence()
+                     clearCsv2Points()">
                 観測終了
               </v-btn>
 
@@ -7020,6 +7021,138 @@ export default {
       this.currentPointName = '';
     },
 
+// ===================== 新CSV（各地点の平均値）関連 =====================
+// 永続メモリ：this.csv2Points = [{ name, X, Y, ts }]
+// LocalStorage Key
+//   - csv2_points : JSON.stringify of the array above
+
+// 起動時に復帰（created/mounted で呼ぶ）
+    loadCsv2PointsFromStorage() {
+      try {
+        var raw = localStorage.getItem('csv2_points');
+        if (!raw) { this.csv2Points = []; return; }
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) this.csv2Points = arr; else this.csv2Points = [];
+      } catch (_) { this.csv2Points = []; }
+    },
+
+// 永続化
+    persistCsv2Points() {
+      try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points || [])); } catch(_) {}
+    },
+
+// 観測終了時に「現在の観測点」の平均 XY と点名・時刻を記録する
+//  - kansokuCsvRows の中身（今回の点の観測）から X/Y の平均を計算
+//  - 点名は currentPointName（未設定なら getNextPointName() をフォールバック採番）
+    commitCsv2Point() {
+      try {
+        // 1) ヘッダ位置の特定
+        var rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
+        if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
+        var header = rows[0];
+        var idx = function(name){ var i = header.indexOf(name); return i >= 0 ? i : -1; };
+        var iX = idx('X');
+        var iY = idx('Y');
+        var iTS = idx('timestamp'); // 既存CSVの時刻列（JST文字列想定）
+
+        if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
+
+        // 2) 本体行を抽出（数値に限定）
+        var xs = [], ys = [], lastTs = '';
+        for (var r = 1; r < rows.length; r++) {
+          var row = rows[r];
+          var vx = Number(row[iX]);
+          var vy = Number(row[iY]);
+          if (Number.isFinite(vx)) xs.push(vx);
+          if (Number.isFinite(vy)) ys.push(vy);
+          if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
+        }
+        if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
+
+        var avg = function(arr){ return arr.reduce(function(a,b){return a+b;},0) / arr.length; };
+        var Xavg = avg(xs);
+        var Yavg = avg(ys);
+
+        // 3) 点名・観測日時を決定
+        var name = this.currentPointName;
+        if (!name || typeof name !== 'string') {
+          try { name = this.getNextPointName ? this.getNextPointName() : ''; } catch(_) {}
+          this.currentPointName = name || '';
+        }
+        var ts = lastTs || (this.$_jstLocal ? this.$_jstLocal() : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+
+        // 4) 保存配列へ追加
+        if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
+        this.csv2Points.push({ name: String(name||''), X: Xavg, Y: Yavg, ts: ts });
+        this.persistCsv2Points();
+        return true;
+      } catch (e) {
+        console.warn('[csv2] commit error', e);
+        return false;
+      }
+    },
+
+// 新CSVをダウンロード（列名は日本語）：
+//  点名, XY座標, 標高, ポール高, 較差, 観測日時
+//  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
+    downloadCsv2() {
+      try {
+        const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
+        const header = ['点名','XY座標','標高','ポール高','較差','観測日時'];
+
+        const fmtXY = (X, Y) => {
+          const x = Number.isFinite(Number(X)) ? Number(X).toFixed(3) : '';
+          const y = Number.isFinite(Number(Y)) ? Number(Y).toFixed(3) : '';
+          return (x !== '' || y !== '') ? (x + ',' + y) : '';
+        };
+
+        const esc = (v) => {
+          if (v == null) return '';
+          const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+          // ダブルクォート / CR / LF を含む場合は CSV ルールでクォート＆二重化
+          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        };
+
+        const rows = [header];
+        for (let i = 0; i < list.length; i++) {
+          const p = list[i] || {};
+          rows.push([
+            esc(p.name || ''),        // 点名
+            esc(fmtXY(p.X, p.Y)),     // XY座標（"X,Y" 形式、小数3桁）
+            '',                       // 標高（空）
+            '',                       // ポール高（空）
+            '',                       // 較差（空）
+            esc(p.ts || '')           // 観測日時
+          ]);
+        }
+
+        // 改行は CRLF に統一
+        const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
+
+        const stamp = this.$_jstStamp
+            ? this.$_jstStamp()
+            : new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
+        const fname = `観測点一覧_${stamp}.csv`;
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 0);
+      } catch (e) {
+        console.warn('[csv2] download error', e);
+      }
+    },
+
+
+// 記憶を消す（新CSV用の全地点データを削除）
+    clearCsv2Points() {
+      this.csv2Points = [];
+      try { localStorage.removeItem('csv2_points'); } catch(_) {}
+    },
 
 
 
