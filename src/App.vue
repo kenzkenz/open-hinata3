@@ -616,7 +616,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
                 {{ row[5] }}
                 <!--                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}-->
-                {{ row[8] }}
+<!--                {{ row[8] }}-->
                 {{ row[0] }}
                 {{ fmtHumanHeight(row[9]) }}
               </div>
