@@ -594,16 +594,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
                   {{ row[7] }}
-                </span>,
-                {{ fmtAcc(row[6]) }},
-
-                {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }},
-                {{ row[5] }},
-                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }},
+                </span>
+                {{ fmtAcc(row[6]) }}
+                {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
+                {{ row[5] }}
+                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}
                 {{ row[8] }}
-
-                {{ row[0] }},
-
+                {{ row[0] }}
+                {{ row[9] }}
               </div>
             </div>
 
@@ -6799,6 +6797,7 @@ export default {
 
               const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
               const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+
               const q      = _this.getGeoQualityLabel(acc, altAcc);
 
               const nowTs = pos.timestamp || Date.now();
@@ -7085,14 +7084,43 @@ export default {
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
+        // ★ 標高列（ヘッダが無い場合は row[9] を標高とみなす）
+        const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
+
         const xs = [], ys = [];
+        const hTxtArr = [];   // 文字列の標高（例: "66.789(HAE)"）も保持
+        const hNumArr = [];   // 数値化できた標高（平均などに使える）
         let lastTs = '';
+
+        // 数値抽出（":70.928," などゴミ付き対応）
+        const parseNumericLike = (v) => {
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          let s = String(v).trim();
+          s = s.replace(/^[\s:=>\u3000：＝＞-]+/, ''); // 先頭ゴミ除去（: = > など）
+          s = s.replace(',', '.');                   // カンマ小数 → ドット小数
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          if (!m) return null;
+          const n = Number(m[0]);
+          return Number.isFinite(n) ? n : null;
+        };
+
         for (let r = 1; r < rows.length; r++) {
           const row = rows[r];
           const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
           if (et !== 'kansoku') continue;
+
           const vx = Number(row[iX]); if (Number.isFinite(vx)) xs.push(vx);
           const vy = Number(row[iY]); if (Number.isFinite(vy)) ys.push(vy);
+
+          // ★ 標高（UIで表示している row[9] など）を拾う
+          if (row.length > iH && row[iH] != null && row[iH] !== '') {
+            const hRaw = row[iH];
+            hTxtArr.push(hRaw);
+            const hn = parseNumericLike(hRaw);
+            if (hn != null) hNumArr.push(hn);
+          }
+
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
@@ -7101,10 +7129,9 @@ export default {
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
-        // ★ 較差（= sqrt( (maxX-minX)^2 + (maxY-minY)^2 ) ）
-        const maxX = Math.max(...xs), minX = Math.min(...xs);
-        const maxY = Math.max(...ys), minY = Math.min(...ys);
-        const diff = Math.hypot(maxX - minX, maxY - minY);  // m
+        // 較差 = sqrt( (maxX-minX)^2 + (maxY-minY)^2 )
+        const diff = Math.hypot(Math.max(...xs) - Math.min(...xs),
+            Math.max(...ys) - Math.min(...ys));
 
         // 点名・時刻
         let name = this.currentPointName;
@@ -7114,22 +7141,29 @@ export default {
         }
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-        // ポール高（任意）
+        // ポール高・標高
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // 標高（正高, m）
-        const hOrtho = (this.externalElevation && Number.isFinite(Number(this.externalElevation.hOrthometric)))
-            ? Number(this.externalElevation.hOrthometric)
-            : null;
+        // ★ 標高の決定ロジック：
+        //    1) 外部から正高(hOrthometric)が来ていれば最優先で数値
+        //    2) 無ければ「ダイアログで表示している標高」= hTxtArr の最後をそのまま採用（"66.789(HAE)" 等でもOK）
+        //    3) さらに数値が欲しければ hNumArr の平均を使うなど拡張可能（今は不要）
+        let hStore = null;
+        const eH = Number(this?.externalElevation?.hOrthometric);
+        if (Number.isFinite(eH)) {
+          hStore = eH;                         // 数値（正高）
+        } else if (hTxtArr.length) {
+          hStore = hTxtArr[hTxtArr.length-1];  // 文字列でもOK（例: "66.789(HAE)")
+        }
 
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          h: hOrtho,
+          h: hStore,      // ★ ここに必ず何か入る（外部正高 or ダイアログ表示値）
           pole: poleVal,
-          diff,          // ★ 較差[m]
+          diff,
           ts
         });
 
@@ -7142,6 +7176,7 @@ export default {
     },
 
 
+
     // 新CSVをダウンロード（列名は日本語）：
     //  点名, XY座標, 標高, ポール高, 較差, 観測日時
     //  今は 点名 / XY座標 / 観測日時 のみ値を入れ、他は空欄
@@ -7150,9 +7185,28 @@ export default {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
         const header = ['点名','X','Y','標高','ポール高','較差','観測日時'];
 
-        const fmt3    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
-        const fmtH    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // 標高 m
-        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(1) : '';  // ポール高 cm
+// 先頭の実数を抜く（":70.928," など対応）
+        const parseNumericLike = (v) => {
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          let s = String(v).trim();
+          s = s.replace(/^[\s:=>\u3000：＝＞-]+/, '');
+          s = s.replace(',', '.');
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          if (!m) return null;
+          const n = Number(m[0]);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const fmt3 = (v) => {
+          const n = parseNumericLike(v);
+          return n == null ? '' : n.toFixed(3);
+        };
+        const fmtH = fmt3;          // 標高も小数3桁で
+        const fmtPole = (v) => {
+          const n = parseNumericLike(v);
+          return n == null ? '' : n.toFixed(1);
+        };
         const fmtDiff = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';  // 較差 m
 
         const esc = (v) => {
@@ -7168,9 +7222,9 @@ export default {
             esc(p.name || ''),     // 点名
             esc(fmt3(p.X)),        // X
             esc(fmt3(p.Y)),        // Y
-            esc(fmtH(p.h)),        // 標高
+            esc(fmtH(p.h)),        // ★ 標高（数値化して3桁。数値化できなければ空欄）
             esc(fmtPole(p.pole)),  // ポール高
-            esc(fmtDiff(p.diff)),  // ★ 較差
+            esc(fmt3(p.diff)),     // 較差
             esc(p.ts || '')        // 観測日時
           ]);
         }
@@ -7918,9 +7972,12 @@ export default {
 
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
+        // this.kansokuCsvRows = [[
+        //   'timestamp','lat','lon','X','Y','CRS',
+        //   'accuracy','quality','eventType'
+        // ]];
         this.kansokuCsvRows = [[
-          'timestamp','lat','lon','X','Y','CRS',
-          'accuracy','quality','eventType'
+        'timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType','標高'
         ]];
       }
     },
@@ -7954,8 +8011,8 @@ export default {
         return;
       }
 
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
       const _this = this;
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
 
       // ラベル(公共座標◯系)→EPSG。無ければ経度から自動（JGD2011 平面直角）
       function epsgFromLabelOrAuto(lat, lon) {
@@ -8006,7 +8063,7 @@ export default {
                 }
               }
 
-              // ★ 平面直角XYのゾーン決定：赤丸優先 → 無ければ端末座標から自動
+              // 平面直角XYのゾーン決定：赤丸優先 → 無ければ端末座標から自動
               const baseLon = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lng))
                   ? _this.torokuPointLngLat.lng : lon;
               const baseLat = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lat))
@@ -8032,6 +8089,44 @@ export default {
                 console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
               }
 
+              // ==== 標高（正高）ロジック（altitudeが文字列でも吸収） ====
+              const toNum = (v) => {
+                if (typeof v === 'number') return v;
+                if (typeof v === 'string') {
+                  const s = v.replace(',', '.').trim();
+                  const n = Number(s);
+                  return Number.isFinite(n) ? n : NaN;
+                }
+                return NaN;
+              };
+
+              // 端末の楕円体高(HAE) 候補（文字列対応）
+              const hae = toNum(c.altitude);
+
+              // 正高の最優先：ドロガーからの正規化済み hOrthometric
+              let hOut = '';
+              const pH = Number(_this?.pointElevation?.hOrthometric);
+              const eH = Number(_this?.externalElevation?.hOrthometric);
+              if (Number.isFinite(pH)) {
+                hOut = pH;
+              } else if (Number.isFinite(eH)) {
+                hOut = eH;
+              } else if (Number.isFinite(hae)) {
+                // HAEしかない → Nがあれば 正高 = HAE - N
+                const pN = Number(_this?.pointElevation?.geoidN);
+                const eN = Number(_this?.externalElevation?.geoidN);
+                const geoidN = Number.isFinite(pN) ? pN : (Number.isFinite(eN) ? eN : NaN);
+                if (Number.isFinite(geoidN)) {
+                  hOut = hae - geoidN; // 正高
+                } else {
+                  // デバッグ可視化：正高が算出不能なら HAE を表示（不要になれば '' に戻す）
+                  hOut = `${hae.toFixed(3)}(HAE)`;
+                }
+              } else {
+                hOut = '';
+              }
+              // ==== 標高ここまで ====
+
               _this.initKansokuCsvIfNeeded();
               _this.kansokuCsvRows.push([
                 _this.$_jstLocal(), // timestamp (JST)
@@ -8039,7 +8134,8 @@ export default {
                 X, Y, csLabel,      // 平面直角（X=北, Y=東）
                 accuracy,
                 quality,
-                'kansoku'
+                'kansoku',
+                hOut                 // ★ row[9] 標高(正高m or "xxx(HAE)")
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -8056,6 +8152,8 @@ export default {
           opt
       );
     },
+
+
 
 
     exportKansokuCsv() {
@@ -8183,52 +8281,264 @@ export default {
 
     // ドロガーからの標高を受け取って内部形式に正規化
     setExternalElevation(payload) {
-      // payload: { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN?: number }
-      if (!payload || !Number.isFinite(Number(payload.hMeters))) {
-        console.warn('[elev] invalid payload', payload); return;
-      }
-      const hType = (payload.hType === 'ellipsoidal') ? 'ellipsoidal' : 'orthometric';
-      const hMeters = Number(payload.hMeters);
-      const geoidN = Number.isFinite(Number(payload.geoidN)) ? Number(payload.geoidN) : null;
-
-      // 人が分かる標高＝正高(m)に統一
-      // 正高 = 楕円体高 - ジオイド高N
-      let hOrtho = null;
-      if (hType === 'orthometric') {
-        hOrtho = hMeters;
-      } else if (hType === 'ellipsoidal' && geoidN != null) {
-        hOrtho = hMeters - geoidN;
-      } else {
-        // 楕円体高だがNが無い → 保留（CSVでは空欄）
-        hOrtho = null;
-      }
-
-      this.externalElevation = { hType, hMeters, geoidN, hOrthometric: hOrtho };
-    },
-
-    // 受け取りリセット
-    clearExternalElevation() {
-      this.externalElevation = null;
+      const norm = this.extractElevationFrom(payload);
+      if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
+      this.externalElevation = norm;
+      // 任意の可視化ログ
+      try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
     },
 
     // どこかの mounted() などで一回だけバインド
     bindExternalElevationListener() {
       const handler = (ev) => {
-        try {
-          const d = ev?.detail || {};
-          // 例: window.dispatchEvent(new CustomEvent('oh3:elevation', { detail: { hType:'ellipsoidal', hMeters: 75.432, geoidN: 36.1 } }))
-          this.setExternalElevation(d);
-        } catch (e) { console.warn('[elev] event parse error', e); }
+        const d = ev?.detail || {};
+        this.setExternalElevation(d);
       };
+      if (this._elevHandler) window.removeEventListener('oh3:elevation', this._elevHandler);
       window.addEventListener('oh3:elevation', handler);
       this._elevHandler = handler;
     },
+
+
     unbindExternalElevationListener() {
       if (this._elevHandler) {
         window.removeEventListener('oh3:elevation', this._elevHandler);
         this._elevHandler = null;
       }
     },
+
+    // 任意のオブジェクトから標高を抽出して正高(hOrthometric)に正規化
+    extractElevationFrom(payload) {
+      if (!payload || typeof payload !== 'object') return null;
+
+      // ありがちなキーを総当り（大文字小文字ゆるめ）
+      const pick = (...names) => {
+        for (const k of names) {
+          for (const key of Object.keys(payload)) {
+            if (key.toLowerCase() === k.toLowerCase()) return payload[key];
+          }
+        }
+        return undefined;
+      };
+
+      // いろんな別名を受ける（m想定）
+      // 例: orthometricHeight, orthometric, h, H, elevation, height, altMSL, z
+      let hOrtho = pick('hOrthometric','orthometricHeight','orthometric','h_msl','msl','elevation','height','altMSL','z','H','h');
+
+      // 楕円体高（例: ellipsoidal, hae, altEllipsoid, GPS高度）
+      // 例: ellipsoidalHeight, ellipsoidal, hae, alt, altitude, altEllipsoid
+      let hEll  = pick('hEllipsoidal','ellipsoidalHeight','ellipsoidal','hae','alt','altitude','altEllipsoid');
+
+      // ジオイド高 N（m）
+      let geoidN = pick('geoidN','N','geoid','geoidSeparation','geoidSep');
+
+      // 数値化（カンマ小数にも対応）
+      const toNum = (v) => {
+        if (v == null) return NaN;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+          const s = v.replace(',', '.').trim();
+          const n = Number(s);
+          return Number.isFinite(n) ? n : NaN;
+        }
+        return NaN;
+      };
+      const nOrtho = toNum(hOrtho);
+      const nEll   = toNum(hEll);
+      const nN     = toNum(geoidN);
+
+      // 直接 正高（MSL）で来ていたらそれを使う
+      if (Number.isFinite(nOrtho)) {
+        return { hType: 'orthometric', hMeters: nOrtho, geoidN: Number.isFinite(nN) ? nN : null, hOrthometric: nOrtho };
+      }
+
+      // 楕円体高＋ジオイドN なら 正高 = HAE - N
+      if (Number.isFinite(nEll) && Number.isFinite(nN)) {
+        const h = nEll - nN;
+        return { hType: 'ellipsoidal', hMeters: nEll, geoidN: nN, hOrthometric: h };
+      }
+
+      // どれでもない
+      return null;
+    },
+
+    bindElevationPostMessage() {
+      const onMsg = (ev) => {
+        const d = ev?.data || {};
+        // 1) 明示の type
+        if (d && d.type === 'oh3:elevation') return this.setExternalElevation(d);
+
+        // 2) 位置パケットに標高が同梱されているケース（lat/lon と一緒に h/hOrthometric など）
+        if (d && (d.lat != null || d.longitude != null)) {
+          const maybe = this.extractElevationFrom(d);
+          if (maybe) this.setExternalElevation(maybe);
+        }
+      };
+      if (this._elevPM) window.removeEventListener('message', this._elevPM);
+      window.addEventListener('message', onMsg);
+      this._elevPM = onMsg;
+    },
+
+    bindElevationBroadcast() {
+      try {
+        if (this._elevBC) { this._elevBC.close(); this._elevBC = null; }
+        this._elevBC = new BroadcastChannel('oh3-elevation');
+        this._elevBC.onmessage = (ev) => {
+          const d = ev?.data || {};
+          // elevation専用 or 位置同梱どちらでも対応
+          if (d) this.setExternalElevation(d);
+        };
+      } catch (e) { console.warn('[elev] BroadcastChannel not available', e); }
+    },
+
+    /* ===== 標高ログ収集（DL用） ===== */
+
+// 収集開始（CustomEvent / BroadcastChannel / postMessage を監視して配列に貯める）
+    enableElevationCapture() {
+      // バッファ初期化（最大1000件）
+      if (!Array.isArray(this._elevCap)) this._elevCap = [];
+      this._elevCapMax = 1000;
+
+      const stamp = () => (this.$_jstLocal?.() ?? new Date().toISOString());
+
+      const pushCap = (via, payload, extra = {}) => {
+        try {
+          this._elevCap.unshift({
+            at: stamp(),
+            via,
+            payload,
+            ...extra
+          });
+          if (this._elevCap.length > this._elevCapMax) this._elevCap.pop();
+        } catch (e) { console.warn('[ELEV-CAP] push error', e); }
+      };
+
+      // 既存があれば外して付け直し
+      try { if (this._elevCapCE) window.removeEventListener('oh3:elevation', this._elevCapCE); } catch {}
+      try { if (this._elevCapPM) window.removeEventListener('message', this._elevCapPM); } catch {}
+      try { if (this._elevCapBC) { this._elevCapBC.close?.(); this._elevCapBC = null; } } catch {}
+
+      // A) CustomEvent('oh3:elevation', {detail:{...}})
+      this._elevCapCE = (ev) => {
+        pushCap('CustomEvent', ev?.detail ?? {});
+      };
+      window.addEventListener('oh3:elevation', this._elevCapCE);
+
+      // B) BroadcastChannel('oh3-elevation')（同一オリジン別タブ）
+      try {
+        this._elevCapBC = new BroadcastChannel('oh3-elevation');
+        this._elevCapBC.onmessage = (ev) => {
+          pushCap('BroadcastChannel', ev?.data ?? {});
+        };
+      } catch (e) {
+        console.warn('[ELEV-CAP] BroadcastChannel unavailable', e);
+      }
+
+      // C) postMessage（iframe / WebView / 拡張）
+      this._elevCapPM = (ev) => {
+        const d = ev?.data;
+        // elevation らしいものだけ拾う（ノイズ削減）
+        const txt = JSON.stringify(d || {}).toLowerCase();
+        if (d?.type === 'oh3:elevation' || /elev|msl|ellipsoid|geoid|height|alt/.test(txt)) {
+          pushCap('postMessage', d, { origin: ev.origin });
+        }
+      };
+      window.addEventListener('message', this._elevCapPM);
+
+      console.log('[ELEV-CAP] enabled');
+    },
+
+// 収集停止
+    disableElevationCapture() {
+      try { if (this._elevCapCE) window.removeEventListener('oh3:elevation', this._elevCapCE); } catch {}
+      try { if (this._elevCapPM) window.removeEventListener('message', this._elevCapPM); } catch {}
+      try { if (this._elevCapBC) { this._elevCapBC.close?.(); this._elevCapBC = null; } } catch {}
+      this._elevCapCE = null; this._elevCapPM = null; this._elevCapBC = null;
+      console.log('[ELEV-CAP] disabled');
+    },
+
+// バッファ消去
+    clearElevationCapture() {
+      this._elevCap = [];
+      console.log('[ELEV-CAP] cleared');
+    },
+
+// JSONでダウンロード（推奨：一番確実に情報を渡せる）
+    downloadElevationCaptureJson() {
+      try {
+        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0,14);
+        const report = {
+          meta: {
+            createdAt: this.$_jstIso?.() ?? new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            page: location.href
+          },
+          currentState: {
+            externalElevation: this.externalElevation ?? null,
+            pointElevation: this.pointElevation ?? null
+          },
+          samples: Array.isArray(this._elevCap) ? this._elevCap : []
+        };
+        const json = JSON.stringify(report, null, 2);
+        if (this.$_downloadText) {
+          this.$_downloadText(json, `elevation_log_${stamp}.json`, 'application/json;charset=utf-8;');
+        } else {
+          const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `elevation_log_${stamp}.json`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 0);
+        }
+      } catch (e) {
+        console.warn('[ELEV-CAP] download json error', e);
+      }
+    },
+
+// CSVでダウンロード（人が見やすい簡易版）
+    downloadElevationCaptureCsv() {
+      try {
+        const cap = Array.isArray(this._elevCap) ? this._elevCap : [];
+        const header = ['at','via','origin','hType','hMeters','geoidN','hOrthometric','raw'];
+        const esc = (v) => {
+          if (v == null) return '';
+          const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        };
+        const rows = [header];
+        for (let i = 0; i < cap.length; i++) {
+          const it = cap[i] || {};
+          const p  = it.payload || {};
+          rows.push([
+            esc(it.at || ''),
+            esc(it.via || ''),
+            esc(it.origin || ''),
+            esc(p.hType ?? p.type ?? ''),                        // 可能ならそのまま
+            esc((p.hMeters != null) ? p.hMeters : p.height ?? p.altitude ?? ''),
+            esc((p.geoidN != null) ? p.geoidN : p.geoid ?? p.geoidSeparation ?? ''),
+            esc((p.hOrthometric != null) ? p.hOrthometric : ''), // 正高が出ていれば
+            esc(p)                                               // 生ペイロード
+          ]);
+        }
+        const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
+        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0,14);
+        if (this.$_downloadText) {
+          this.$_downloadText(csv, `elevation_log_${stamp}.csv`, 'text/csv;charset=utf-8;');
+        } else {
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `elevation_log_${stamp}.csv`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 0);
+        }
+      } catch (e) {
+        console.warn('[ELEV-CAP] download csv error', e);
+      }
+    },
+
+
+
 
 
     // downloadCsv() {
@@ -12244,12 +12554,13 @@ export default {
 
      this.bindExternalElevationListener()
 
+     this.bindElevationPostMessage()
+
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
-
 
     // ---- GPSライン描画 用の状態 ----
     this.gpsLineIds = this.gpsLineIds ?? {
