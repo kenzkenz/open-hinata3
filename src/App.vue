@@ -646,6 +646,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
 
               <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
+              <v-btn color="indigo" @click="exportCsv2Sima">SIMA</v-btn>
 
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
@@ -8502,6 +8503,50 @@ export default {
       return cand;
     },
 
+    // === 新規: 平均点リスト(csv2Points)を SIMA(A01) で出力 ===
+    exportCsv2Sima(title) {
+      try {
+        const pts = Array.isArray(this.csv2Points) ? this.csv2Points : [];
+        if (!pts.length) { console.warn('[sima] csv2Points empty'); return; }
+
+        // ヘッダ（座標系ラベルは store から）
+        const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
+        const csLabel  = (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
+
+        const head = [
+          `G00,01,${siteName} 座標`,
+          `Z00,座標データ,`,
+          `G01,座標系,${csLabel}`,
+          `A00,`
+        ];
+
+        const fmt3 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
+
+        let n = 0;
+        const a01 = pts.map(p => {
+          const name = (p && p.name) ? String(p.name) : '';
+          const X = fmt3(p?.X);
+          const Y = fmt3(p?.Y);
+          const H = fmt3(p?.h); // 正高があれば m、小数3桁。無ければ空欄
+          if (!name || !X || !Y) return null; // 必須欠けはスキップ
+          n += 1;
+          // A01,連番,点名,X,Y,H,
+          return `A01,${n},${name},${X},${Y},${H},`;
+        }).filter(Boolean);
+
+        if (!a01.length) { console.warn('[sima] no valid rows'); return; }
+
+        const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
+
+        // Shift_JIS で .sim ダウンロード（既存ヘルパー利用）
+        const sjisBytes = this.$_toShiftJisBytes(simTxt);
+        const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
+        const stamp     = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
+        this.$_downloadBlob(blob, `観測点_${stamp}.sim`);
+      } catch (e) {
+        console.warn('[sima] export error', e);
+      }
+    },
 
 
 
