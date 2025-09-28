@@ -515,7 +515,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </v-snackbar>
 
       <!-- スクロール箱：横スクロールON、縦も保持 -->
-      <v-dialog v-model="dialogForToroku" max-width="850px" :retain-focus="false">
+      <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>観測回数設定</v-card-title>
           <v-card-text>
@@ -555,13 +555,18 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     whiteSpace: 'nowrap'
                     }"
               >
-                {{ row[0] }},
-                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }},
+                <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
+                  {{ row[7] }}
+                </span>,
+                {{ fmtAcc(row[6]) }},
+
                 {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }},
                 {{ row[5] }},
-                {{ fmtAcc(row[6]) }},
-                {{ row[7] }},
+                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }},
                 {{ row[8] }}
+
+                {{ row[0] }},
+
               </div>
             </div>
 
@@ -571,10 +576,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 style="margin-top:8px; padding:6px 8px; border:1px dashed var(--v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"
             >
               平均（n={{ kansokuAverages.n }}）:
-              lat={{ fmtLL(kansokuAverages.lat) }},
-              lon={{ fmtLL(kansokuAverages.lon) }} |
               X={{ fmtXY(kansokuAverages.X) }},
-              Y={{ fmtXY(kansokuAverages.Y) }}
+              Y={{ fmtXY(kansokuAverages.Y) }} |
+              lat={{ fmtLL(kansokuAverages.lat) }},
+              lon={{ fmtLL(kansokuAverages.lon) }}
+
             </div>
 
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
@@ -584,11 +590,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
 
               <v-btn style="margin-left: 10px;" color="green" @click="downloadCsv">
-                CSVダウンロード
+                CSVDL
               </v-btn>
-
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
-
               <!-- ★ 文字だけの閉じる -->
               <v-btn
                   variant="text"
@@ -1736,7 +1740,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-if="user1 && mapName === 'map01'"
                         icon
                         style="margin-left:8px;"
-
+                        @click="zahyoGet"
                     >
                        <img :src="rtkPng" alt="" class="btn-img" />
 <!--                        <v-icon>mdi-crosshairs-gps</v-icon>-->
@@ -2952,7 +2956,7 @@ export default {
     dialogForToroku: false,
 
     kansokuItems: [10, 20, 50, 100],
-    kansokuCount: 20, // 既定値
+    kansokuCount: 10, // 既定値
 
     rtkPng: null,
 
@@ -7596,16 +7600,106 @@ export default {
     downloadCsv() {
       if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
 
-      const csv = this.kansokuCsvRows.map(row => row.join(',')).join('\r\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      const header = this.kansokuCsvRows[0] || [];
+      const col = (name) => header.indexOf(name);
 
-      link.href = url;
-      link.download = `kansoku_results_${this.$_jstStamp()}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
+      const iLat = col('lat');
+      const iLon = col('lon');
+      const iX   = col('X');
+      const iY   = col('Y');
+      const iAcc = col('accuracy');
+
+      const fmt5 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(5) : '';
+      const fmt3 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
+      const fmt2 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '';
+
+      // 1) 本体行を丸めてコピー
+      const body = this.kansokuCsvRows.slice(1).map(row => {
+        const r = row.slice();
+        if (iLat >= 0) r[iLat] = fmt5(r[iLat]); // EPSG:4326
+        if (iLon >= 0) r[iLon] = fmt5(r[iLon]);
+        if (iX   >= 0) r[iX]   = fmt3(r[iX]);   // 平面直角
+        if (iY   >= 0) r[iY]   = fmt3(r[iY]);
+        if (iAcc >= 0) r[iAcc] = fmt2(r[iAcc]); // accuracy
+        return r;
+      });
+
+      // 2) 平均を算出して平均行を作成
+      const nums = (idx) => body.map(r => Number(r[idx])).filter(n => Number.isFinite(n));
+      const avg = (arr) => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : null;
+
+      const avgLat = iLat>=0 ? avg(nums(iLat)) : null;
+      const avgLon = iLon>=0 ? avg(nums(iLon)) : null;
+      const avgX   = iX  >=0 ? avg(nums(iX))   : null;
+      const avgY   = iY  >=0 ? avg(nums(iY))   : null;
+      const avgAcc = iAcc>=0 ? avg(nums(iAcc)) : null;
+
+      const avgRow = header.map((h, idx) => {
+        if (idx === 0) return '平均';
+        if (idx === iLat) return fmt5(avgLat);
+        if (idx === iLon) return fmt5(avgLon);
+        if (idx === iX)   return fmt3(avgX);
+        if (idx === iY)   return fmt3(avgY);
+        if (idx === iAcc) return fmt2(avgAcc);
+        if (h === 'eventType') return 'avg';
+        return '';
+      });
+
+      // 3) エスケープ＋CRLFで出力
+      const csvEscape = (v) => {
+        if (v == null) return '';
+        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+
+      const outRows = [header, ...body, avgRow];
+      const csv = outRows.map(r => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `kansoku_${this.$_jstStamp ? this.$_jstStamp() : Date.now()}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 0);
     },
+
+    zahyoGet() {
+      const map = this.map01
+      const center = map.getCenter();
+      const centerPoint = map.project([center.lng, center.lat]);
+      // 画面中心地点でのフィーチャークエリ
+      const features = map.queryRenderedFeatures(centerPoint, {
+        layers: ['zones-layer']
+      });
+      if (features.length > 0) {
+        const zoneFeature = features[0];
+        const zone = zoneFeature.properties.zone;
+        this.$store.state.zahyokei = '公共座標' + zone + '系';
+      } else {
+        // console.log('画面中心地点は座標系ゾーンに該当しません。');
+        this.$store.state.zahyokei = '';
+      }
+
+      this.clearTorokuPoint();
+      this.detachTorokuPointClick()
+
+
+    },
+
+
+    // downloadCsv() {
+    //   if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
+    //
+    //   const csv = this.kansokuCsvRows.map(row => row.join(',')).join('\r\n');
+    //   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    //   const link = document.createElement('a');
+    //   const url = URL.createObjectURL(blob);
+    //
+    //   link.href = url;
+    //   link.download = `kansoku_results_${this.$_jstStamp()}.csv`;
+    //   link.click();
+    //   URL.revokeObjectURL(url);
+    // },
 
 
 
@@ -11555,6 +11649,44 @@ export default {
     // this.updatePermalink をデフォルト 500ms のデバウンス版に差し替え
     this.updatePermalink = debounce(this.updatePermalink, 500)
     this.rtkPng = rtkPngUrl
+
+    if (this.$store.state.isAndroid){
+      let startY;
+      let isTouching = false;
+      let currentTarget = null;
+      let initialScrollTop = 0;
+      document.addEventListener('touchstart', (e) => {
+        const target = e.target.closest('.toroku-div');
+        if (target) {
+          startY = e.touches[0].clientY;
+          initialScrollTop = target.scrollTop;
+          isTouching = true;
+          currentTarget = target;
+          target.style.overflowY = 'auto';
+          target.style.touchAction = 'manipulation';
+          e.stopPropagation();
+        }
+      }, { passive: true, capture: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!isTouching || !currentTarget) return;
+        const moveY = e.touches[0].clientY;
+        const deltaY = startY - moveY;
+        currentTarget.scrollTop += deltaY;
+        startY = moveY;
+        e.preventDefault();
+        e.stopPropagation();
+      }, { passive: true, capture: true });
+
+      document.addEventListener('touchend', () => {
+        if (currentTarget) {
+          currentTarget.style.overflowY = '';
+        }
+        currentTarget = null;
+        isTouching = false;
+        initialScrollTop = 0;
+      });
+    }
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
