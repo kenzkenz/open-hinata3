@@ -531,14 +531,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div class="oh3-grid-3col">
               <!-- 左: テキストフィールド（可変） -->
               <v-text-field
-                  v-model="tenmai"
+                  v-model="tenmei"
                   label="点名"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
                   clearable
                   class="oh3-col-flex"
-                  :error-messages="tenmaiError"
+                  :error-messages="tenmeiError"
                   @update:modelValue="handleTenmeiInput"
                   :disabled="kansokuRunning"
               />
@@ -3010,8 +3010,8 @@ export default {
     torokuPointQuality: null, // 'RTK級' など
     torokuPointQualityAt: null, // 記録時刻（ms）
 
-    tenmai: '',        // 入力値
-    tenmaiError: '',   // エラーメッセージ表示用
+    tenmei: '',        // 入力値
+    tenmeiError: '',   // エラーメッセージ表示用
 
     currentPointName: '',
 
@@ -6824,14 +6824,6 @@ export default {
               _this.torokuPointQuality   = meta.quality;
               _this.torokuPointQualityAt = meta.at;
 
-              // 3) 連番点名を先に採番
-              try {
-                const pn = _this.getNextPointName?.();
-                if (pn) {
-                  _this.$set ? _this.$set(_this, 'currentPointName', pn) : (_this.currentPointName = pn);
-                }
-              } catch {}
-
               // 4) イベント発火（互換）
               try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
               try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
@@ -7976,10 +7968,16 @@ export default {
         return;
       }
       const unique = this.ensureUniqueTenmei(raw);
+      // ★ 重複なら自動連番を適用し、tenmei と localStorage を即更新
       if (unique !== raw) {
-        // すでに使われている → 自動連番を付与してセット
         this.tenmei = unique;
         try { localStorage.setItem('tenmei', unique); } catch (_) {}
+      } else {
+        // 重複でない通常時も保存を最新にしておく
+        try {
+          localStorage.setItem('tenmei', raw);
+        } catch (_) {
+        }
       }
       // 観測中の表示用に currentPointName に採用
       this.currentPointName = this.tenmei;
@@ -8426,9 +8424,10 @@ export default {
       try { localStorage.setItem('tenmei', s); } catch (_) {}
     },
 
+// 置き換え：末尾数を理解して最小の空きを採番
     ensureUniqueTenmei(base) {
       const name = (base || '').trim();
-      if (!name) return ''; // 空はここでは弾かない（呼び元でアラート）
+      if (!name) return ''; // 空はここでは止めない（呼び元でアラート）
 
       // 既に使った点名の集合（新CSVの記録から）
       const used = new Set(
@@ -8439,11 +8438,21 @@ export default {
 
       if (!used.has(name)) return name;
 
-      // 末尾に自然数連番を付与（name, name1, name2, ...）
-      let i = 1;
-      while (used.has(name + String(i))) i += 1;
-      return name + String(i);
+      // 末尾の数字を抽出（"宮崎市生目台12" → root="宮崎市生目台", start=12）
+      const m = name.match(/^(.*?)(\d+)$/);
+      const root = m ? m[1] : name;
+      // 数字が付いていない場合は 1 から、付いている場合は +1 から
+      let n = m ? (parseInt(m[2], 10) + 1) : 1;
+
+      // 既存と被らない最小の番号を探す
+      let cand = root + String(n);
+      while (used.has(cand)) {
+        n += 1;
+        cand = root + String(n);
+      }
+      return cand;
     },
+
 
 
 
