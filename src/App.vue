@@ -519,10 +519,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <v-card>
           <v-card-title>
       <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
-        観測終了-点名{{ currentPointName }}
+        観測終了-{{ currentPointName }}
       </span>
             <span v-else>
-        観測-点名{{ currentPointName }}
+        観測-{{ currentPointName }}
       </span>
             <!--            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">観測終了</span>-->
             <!--            <span v-else>観測</span>-->
@@ -557,7 +557,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-text-field
                   v-model.number="sampleIntervalSec"
                   type="number"
-                  label="間隔（秒, 0.1刻み）"
+                  label="間隔（秒）"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
@@ -567,17 +567,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :max="60"
                   :disabled="kansokuRunning"
               />
-              <!-- 右: 0cm〜100cm セレクト（固定幅） -->
-              <v-select
-                  v-model="offsetCm"
-                  :items="offsetCmItems"
-                  item-title="title"
-                  item-value="value"
-                  label="ポール高"
-                  density="compact"
+              <v-text-field
+                  v-model.number="offsetCm"
+                  type="number"
+                  label="ポール高（m）"
                   variant="outlined"
+                  density="compact"
                   hide-details="auto"
                   class="oh3-col-fixed"
+                  :step="0.01"
+                  :min="0.00"
+                  :max="300"
                   :disabled="kansokuRunning"
               />
             </div>
@@ -3009,7 +3009,7 @@ export default {
     kansokuCount: 10, // 既定値
     // 追加: 0〜100cm のセレクト
     offsetCm: 0,
-    offsetCmItems: Array.from({ length: 101 }, (_, i) => ({ title: `${i}cm`, value: i })),
+    // offsetCmItems: Array.from({ length: 101 }, (_, i) => ({ title: `${i}cm`, value: i })),
 
     rtkPng: null,
 
@@ -6830,8 +6830,8 @@ export default {
               }
 
               // 1) 赤丸を現在地に描画
-              try { _this.clearTorokuPoint(); } catch {}
-              _this.plotTorokuPoint({ lng: lon, lat });
+              // _this.plotTorokuPoint({ lng: lon, lat });
+              _this.plotTorokuPoint({ lng: lon, lat: lat }, /*label*/'', { deferLabel: true });
               _this.torokuPointLngLat = { lng: lon, lat };
 
               // 2) クオリティをローカル保存
@@ -6904,75 +6904,82 @@ export default {
 
 
     // 2) 赤丸を描画する（堅牢版・turf不要）。既存の plotTorokuPoint をこれに置換。
-    plotTorokuPoint (lngLat) {
-      var map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+    // 既存置換：追加式・蓄積型
+// 置換：追加式・蓄積型（ラベル保留対応）
+    plotTorokuPoint (lngLat, label, opts = {}) {
+      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
       if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
       if (!lngLat || typeof lngLat.lng !== 'number' || typeof lngLat.lat !== 'number') {
         console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
       }
 
-      var SRC   = 'oh-toroku-point-src';
-      var LAYER = 'oh-toroku-point';
-      var data  = {
-        type: 'FeatureCollection',
-        features: [ { type: 'Feature', properties: { label: '観測点' }, geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] } } ]
-      };
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
 
-      function place () {
-        try {
-          if (map.getSource(SRC)) map.getSource(SRC).setData(data);
-          else map.addSource(SRC, { type: 'geojson', data: data });
-        } catch (e) {
-          try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch (_) {}
-          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch (_) {}
-          map.addSource(SRC, { type: 'geojson', data: data });
-        }
+      if (!this._torokuFC) {
+        this._torokuFC = { type:'FeatureCollection', features: [] };
+      }
 
-        if (!map.getLayer(LAYER)) {
-          try {
-            map.addLayer({
-              id: LAYER,
-              type: 'circle',
-              source: SRC,
-              paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff3b30',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
-          } catch (e) {
-            try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch (_) {}
-            map.addLayer({
-              id: LAYER,
-              type: 'circle',
-              source: SRC,
-              paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff3b30',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
+      const wantDefer = opts && opts.deferLabel === true;
+      const text = wantDefer ? '' : (label || this.currentPointName || this.tenmei || ''); // 未確定なら空
+
+      // 一意な簡易IDを付与（後でラベル更新対象を特定するため）
+      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
+
+      this._torokuFC.features.push({
+        type: 'Feature',
+        properties: {
+          id: fid,
+          label: text,
+          name: text,
+          pendingLabel: wantDefer ? true : false
+        },
+        geometry: { type: 'Point', coordinates: [lngLat.lng, lngLat.lat] }
+      });
+
+      if (map.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
+      else map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+
+      if (!map.getLayer(LAYER)) {
+        map.addLayer({
+          id: LAYER,
+          type: 'circle',
+          source: SRC,
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#ff3b30',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
           }
-        }
-
-        // keep WGS84
-        this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-        console.log('[plotTorokuPoint] plotted at', this.torokuPointLngLat);
+        });
       }
 
-      try {
-        var loaded = false;
-        if (typeof map.isStyleLoaded === 'function') loaded = map.isStyleLoaded();
-        else if (typeof map.loaded === 'function') loaded = map.loaded();
-        else loaded = true;
-        if (loaded) place.call(this);
-        else map.once('load', place.bind(this));
-      } catch (_) {
-        map.once('load', place.bind(this));
+      if (!map.getLayer(LAB)) {
+        map.addLayer({
+          id: LAB,
+          type: 'symbol',
+          source: SRC,
+          layout: {
+            'text-field': ['get', 'label'],
+            'text-size': 16,
+            'text-offset': [0, 0.5],
+            'text-anchor': 'top',
+            'text-allow-overlap': true
+          },
+          paint: {
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.0
+          }
+        });
       }
+
+      // 最新赤丸は従来どおり保持
+      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
+      this._lastTorokuFeatureId = fid; // 直近のIDも保持しておく（保険）
     },
+
+
 
     // 1) 起動時に localStorage から復帰
     loadTenmeiFromStorage() {
@@ -7208,7 +7215,7 @@ export default {
           return Number.isFinite(n) ? n : null;
         };
         const fmt3   = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
-        const fmtPole= (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(1); };
+        const fmtPole= (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -7928,10 +7935,8 @@ export default {
     },
 
     handleTorokuMapClick (lngLat) {
-      // 前のポイントは破棄
-      try { this.clearTorokuPoint(); } catch(_) {}
       // 新しいポイントを描画
-      try { this.plotTorokuPoint(lngLat); } catch(_) {}
+      try { this.plotTorokuPoint(lngLat, /*label*/'', { deferLabel: true }); } catch(_) {}
       // ▼ 将来：ここで navigator.geolocation.getCurrentPosition(...) で端末座標も取得予定
       // ▼ イベントを用意（どちらでも拾えるように2種）
       try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
@@ -7948,7 +7953,9 @@ export default {
       const map = this.$store.state.map01; if (!map) return;
       const SRC   = 'oh-toroku-point-src';
       const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
       try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
+      try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
       this.torokuPointLngLat = null; // ★ 追加
     },
@@ -7997,6 +8004,30 @@ export default {
       }
       // 観測中の表示用に currentPointName に採用
       this.currentPointName = this.tenmei;
+
+      // ★★★ ここで「直近の pendingLabel=true の赤点」に確定ラベルを反映
+      try {
+        const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+        const SRC = 'oh-toroku-point-src';
+        if (this._torokuFC && Array.isArray(this._torokuFC.features) && this._torokuFC.features.length) {
+          // 後ろから探索して、最初の pending を確定
+          for (let i = this._torokuFC.features.length - 1; i >= 0; i--) {
+            const f = this._torokuFC.features[i];
+            if (f?.properties?.pendingLabel) {
+              f.properties.label = this.currentPointName;
+              f.properties.name  = this.currentPointName;
+              f.properties.pendingLabel = false;
+              if (map && map.getSource && map.getSource(SRC)) {
+                map.getSource(SRC).setData(this._torokuFC);
+              }
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[label] apply on start failed', e);
+      }
+
       if (this.kansokuRunning) return;
       if (!('geolocation' in navigator)) {
         console.warn('[kansoku] geolocation 未対応');
@@ -13308,6 +13339,9 @@ html.oh3-embed #map01 {
 /* 狭い画面では 1 列にフォールバック */
 @media (max-width: 640px) {
   .oh3-grid-3col {
+    grid-template-columns: 1fr;
+  }
+  .oh3-grid-4col {
     grid-template-columns: 1fr;
   }
   .oh3-col-fixed {
