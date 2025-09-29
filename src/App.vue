@@ -582,7 +582,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
             </div>
             <div class="flex items-center gap-2 mt-2">
-              <v-btn class="mt-2" @click="kansokuStart" :disabled="kansokuRunning">観測開始</v-btn>
+              <v-btn class="mt-2" @click="kansokuStart" :disabled="torokuDisabled">観測開始</v-btn>
             </div>
             <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
             <div
@@ -2999,7 +2999,7 @@ export default {
 
     dialogForToroku: false,
 
-    kansokuItems: [10, 20, 50, 100],
+    kansokuItems: [1, 10, 20, 50, 100],
     kansokuCount: 10, // 既定値
     // 追加: 0〜100cm のセレクト
     offsetCm: 0,
@@ -3029,6 +3029,8 @@ export default {
     torokuDialogDelayMs: 1000, // moveend後に待つ時間(ms)
 
     sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
+
+    torokuDisabled: false,   // ★ ダイアログCloseで復帰
 
     aaa: null,
   }),
@@ -7314,6 +7316,7 @@ export default {
         this.tenmeiError = '点名は必須です';
         return;
       }
+      this.torokuDisabled = true;
       const unique = this.ensureUniqueTenmei(raw);
       if (unique !== raw) {
         this.tenmei = unique;
@@ -12339,6 +12342,11 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    dialogForToroku(val) {
+      if (val === true) {
+        this.torokuDisabled = false;
+      }
+    },
     // sampleIntervalSec(val) {
     //   if (val > 0.5) return
     //   const fixed = this.clampInterval(val);
