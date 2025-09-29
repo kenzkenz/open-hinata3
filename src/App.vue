@@ -7702,8 +7702,7 @@ export default {
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        // 列名だけ変更
-        const header = ['点名','X','Y','正高（アンテナ位置）','アンテナ高','正高','較差','観測日時'];
+        const header = ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','XY較差','観測日時'];
 
         const parseNumericLike = (v) => {
           if (v == null) return null;
@@ -7713,8 +7712,8 @@ export default {
           const n = m ? Number(m[0]) : NaN;
           return Number.isFinite(n) ? n : null;
         };
-        const fmt3   = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
-        const fmtPole= (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
+        const fmt3    = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
+        const fmtPole = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -7725,33 +7724,32 @@ export default {
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
 
-          // 正高（アンテナ位置）= 既存の「標高」相当（hDisp優先→h）
-          let hAntPosNum = null;
-          if (p.hDisp) {
-            hAntPosNum = parseNumericLike(p.hDisp);
+          // 正高（アンテナ位置）: これまでの「標高」相当（数値のみ）
+          let hAntennaPos = null;
+          if (p.hDisp != null && p.hDisp !== '') {
+            hAntennaPos = parseNumericLike(p.hDisp);
           } else if (p.h != null) {
-            hAntPosNum = parseNumericLike(p.h);
+            hAntennaPos = parseNumericLike(p.h);
           }
-          const hAntPosOut = (hAntPosNum == null) ? '' : hAntPosNum.toFixed(3); // 単位なし
 
-          // アンテナ高 = 既存のポール高
-          const antennaNum = parseNumericLike(p.pole);
-          const antennaOut = (antennaNum == null) ? '' : antennaNum.toFixed(2);
+          // アンテナ高（= これまでのポール高）
+          const antennaHigh = parseNumericLike(p.pole);
 
           // 正高 = 正高（アンテナ位置） - アンテナ高
-          const hGroundOut = (hAntPosNum != null && antennaNum != null)
-              ? (hAntPosNum - antennaNum).toFixed(3)
-              : '';
+          let hOrthometric = null;
+          if (Number.isFinite(hAntennaPos) && Number.isFinite(antennaHigh)) {
+            hOrthometric = hAntennaPos - antennaHigh;
+          }
 
           rows.push([
-            esc(p.name || ''),   // 点名
-            esc(fmt3(p.X)),      // X
-            esc(fmt3(p.Y)),      // Y
-            esc(hAntPosOut),     // 正高（アンテナ位置）
-            esc(antennaOut),     // アンテナ高
-            esc(hGroundOut),     // 正高
-            esc(fmt3(p.diff)),   // 較差
-            esc(p.ts || '')      // 観測日時
+            esc(p.name || ''),          // 点名
+            esc(fmt3(p.X)),             // X
+            esc(fmt3(p.Y)),             // Y
+            esc(fmt3(hOrthometric)),    // 正高
+            esc(fmtPole(antennaHigh)),  // 高（アンテナ高）
+            esc(fmt3(hAntennaPos)),     // 正高（アンテナ位置）
+            esc(fmt3(p.diff)),          // XY較差
+            esc(p.ts || '')             // 観測日時
           ]);
         }
 
@@ -7768,6 +7766,7 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
 
 
 // 平均点リスト（csv2Points）→ SIMA(A01) 出力
