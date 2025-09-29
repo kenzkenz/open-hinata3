@@ -13945,8 +13945,8 @@ select {
 }
 
 .oh-tools {
-  position: absolute;
-  left: 10px;
+  //position: absolute;
+  //left: 10px;
   bottom: 110px;
   z-index: 3;
   display: flex;

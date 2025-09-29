@@ -1,7 +1,7 @@
 <template>
   <div class="oh-warp-root" v-show="isOpen">
     <div class="oh-toolbar">
-      <div class="oh-title"></div>
+      <div class="oh-title">
       <div class="oh-tools compact">
         <!-- プレビュー：トグル（入/出） -->
         <MiniTooltip :text="previewMode ? 'プレビュー終了' : 'プレビュー'" :offset-x="0" :offset-y="0">
@@ -73,6 +73,7 @@
         </MiniTooltip>
 
         <v-divider vertical class="mx-1"/>
+      </div>
 
         <!-- GCPテーブル表示/非表示 -->
         <!--        <MiniTooltip :text="showGcpPanel ? 'GCPテーブルを隠す' : 'GCPテーブルを表示'" :offset-x="0" :offset-y="0">-->
