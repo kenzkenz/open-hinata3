@@ -7301,7 +7301,7 @@ export default {
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
         this.kansokuCsvRows = [[
-          'timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType','標高'
+          'timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType','標高','楕円体高' // ← 末尾に追加
         ]];
       }
     },
@@ -7531,7 +7531,8 @@ export default {
                 accuracy,
                 quality,
                 'kansoku',
-                hOut                 // ★ row[9] 標高(正高m or "xxx(HAE)")
+                hOut,                 // ★ row[9] 標高(正高m or "xxx(HAE)")
+                Number.isFinite(hae) ? hae.toFixed(3) : ''  // ★ ここを追加：楕円体高（m・数値のみ）
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -7608,20 +7609,22 @@ export default {
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
+        // 既存：標高列（見つからなければ index=9 を高さ扱い）
+        const iH   = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
+        // 新規：楕円体高
+        const iHAE = header.indexOf('楕円体高');
 
         const xs = [], ys = [];
-        const hTxtArr = [];
-        const hNumArr = [];
+        const hTxtArr = [];   // 表示用に生テキストも保持
+        const hNumArr = [];   // 正高の数値
+        const haeArr  = [];   // 楕円体高の数値
         let lastTs = '';
 
         const parseNumericLike = (v) => {
           if (this.parseNumericLike) return this.parseNumericLike(v);
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞-]+/,'')
-              .replace(',', '.');
+          let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           if (!m) return null;
           const n = Number(m[0]);
@@ -7643,6 +7646,11 @@ export default {
             if (hn != null) hNumArr.push(hn);
           }
 
+          if (iHAE >= 0 && row[iHAE] != null && row[iHAE] !== '') {
+            const hn = parseNumericLike(row[iHAE]);
+            if (hn != null) haeArr.push(hn);
+          }
+
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
@@ -7661,10 +7669,9 @@ export default {
         }
 
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
-
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // 正高が来ていればそれを優先、無ければ HAE の可視化付き
+        // 正高の表示文字列決定（従来どおり）
         const eH = Number(this?.externalElevation?.hOrthometric);
         const hasOrtho = Number.isFinite(eH);
         const hadHAE = hTxtArr.some(t => typeof t === 'string' && /\(HAE\)/i.test(t));
@@ -7675,19 +7682,21 @@ export default {
         } else if (hNumArr.length) {
           const avgH = avg(hNumArr);
           hDisp = hadHAE ? `${avgH.toFixed(3)} m（楕円体高）` : `${avgH.toFixed(3)} m`;
-        } else {
-          hDisp = '';
         }
+
+        // ★ 追加：楕円体高の平均（数値のみ、なければ null）
+        const haeAvg = haeArr.length ? avg(haeArr) : null;
 
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          hDisp,
-          pole: poleVal,
+          hDisp,         // 正高（人向け表示）
+          pole: poleVal, // アンテナ高
           diff,
-          ts
+          ts,
+          hae: haeAvg    // ★ 追加：楕円体高の平均（数値）
         });
 
         localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
@@ -7698,13 +7707,14 @@ export default {
       }
     },
 
+
 // 平均点リストをCSVで出力（人向け標高表記のまま）
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        const header = ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','XY較差','座標系','観測日時'];
+        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','観測日時']; // ← 楕円体高を追加
 
-        // ① 座標系ラベル決定：store を優先、無ければ経度から自動
+        // 座標系ラベル：store優先→無ければ経度から推定
         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
         let csLabel = storeLabel;
         if (!csLabel) {
@@ -7715,7 +7725,7 @@ export default {
             if (z < 1) z = 1;
             if (z > 19) z = 19;
             csLabel = `公共座標${z}系`;
-          } // 取得不能なら空欄のまま
+          }
         }
 
         const parseNumericLike = (v) => {
@@ -7738,7 +7748,7 @@ export default {
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
 
-          // 正高（アンテナ位置）: これまでの「標高」相当（数値のみ）
+          // 正高（アンテナ位置）= 旧 hDisp/h の数値化
           let hAntennaPos = null;
           if (p.hDisp != null && p.hDisp !== '') {
             hAntennaPos = parseNumericLike(p.hDisp);
@@ -7746,7 +7756,7 @@ export default {
             hAntennaPos = parseNumericLike(p.h);
           }
 
-          // アンテナ高（= これまでのポール高）
+          // アンテナ高
           const antennaHigh = parseNumericLike(p.pole);
 
           // 正高 = 正高（アンテナ位置） - アンテナ高
@@ -7755,16 +7765,20 @@ export default {
             hOrthometric = hAntennaPos - antennaHigh;
           }
 
+          // ★ 追加：楕円体高（平均）をそのまま数値出力
+          const haeOut = fmt3(p.hae);
+
           rows.push([
-            esc(p.name || ''),          // 点名
-            esc(fmt3(p.X)),             // X
-            esc(fmt3(p.Y)),             // Y
-            esc(fmt3(hOrthometric)),    // 正高
-            esc(fmtPole(antennaHigh)),  // アンテナ高
-            esc(fmt3(hAntennaPos)),     // 正高（アンテナ位置）
-            esc(fmt3(p.diff)),          // XY較差
-            esc(csLabel),               // 座標系（例: 公共座標2系）※全行同一
-            esc(p.ts || '')             // 観測日時
+            esc(p.name || ''),       // 点名
+            esc(fmt3(p.X)),          // X
+            esc(fmt3(p.Y)),          // Y
+            esc(fmt3(hOrthometric)), // 正高
+            esc(fmtPole(antennaHigh)), // アンテナ高
+            esc(fmt3(hAntennaPos)),  // 正高（アンテナ位置）
+            esc(haeOut),             // ★ 楕円体高
+            esc(fmt3(p.diff)),       // XY較差
+            esc(csLabel),            // 座標系
+            esc(p.ts || '')          // 観測日時
           ]);
         }
 
@@ -7781,9 +7795,6 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
-
-
-
 
 
 // 平均点リスト（csv2Points）→ SIMA(A01) 出力
@@ -8495,7 +8506,7 @@ export default {
 
 
 
-
+    // ここまで
 
 
 
