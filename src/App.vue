@@ -7702,7 +7702,21 @@ export default {
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        const header = ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','XY較差','観測日時'];
+        const header = ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','XY較差','座標系','観測日時'];
+
+        // ① 座標系ラベル決定：store を優先、無ければ経度から自動
+        const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
+        let csLabel = storeLabel;
+        if (!csLabel) {
+          let lon = null;
+          try { lon = this.$store?.state?.map01?.getCenter?.().lng ?? this.map01?.getCenter?.().lng ?? null; } catch (_) {}
+          if (Number.isFinite(lon)) {
+            let z = Math.round((lon - 129) / 2) + 1;
+            if (z < 1) z = 1;
+            if (z > 19) z = 19;
+            csLabel = `公共座標${z}系`;
+          } // 取得不能なら空欄のまま
+        }
 
         const parseNumericLike = (v) => {
           if (v == null) return null;
@@ -7746,9 +7760,10 @@ export default {
             esc(fmt3(p.X)),             // X
             esc(fmt3(p.Y)),             // Y
             esc(fmt3(hOrthometric)),    // 正高
-            esc(fmtPole(antennaHigh)),  // 高（アンテナ高）
+            esc(fmtPole(antennaHigh)),  // アンテナ高
             esc(fmt3(hAntennaPos)),     // 正高（アンテナ位置）
             esc(fmt3(p.diff)),          // XY較差
+            esc(csLabel),               // 座標系（例: 公共座標2系）※全行同一
             esc(p.ts || '')             // 観測日時
           ]);
         }
@@ -7766,6 +7781,8 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
+
 
 
 
