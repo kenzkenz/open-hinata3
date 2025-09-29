@@ -563,7 +563,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   hide-details="auto"
                   class="oh3-col-fixed"
                   :step="0.1"
-                  :min="0.1"
+                  :min="1.0"
                   :max="60"
                   :disabled="kansokuRunning"
               />
@@ -7356,6 +7356,8 @@ export default {
 
       // 1回即時 + 以後は間隔設定に従う
       this.kansokuCollectOnce();
+      // ここで実行時に必ず矯正
+      this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec);
       const stepSec = Number(this.sampleIntervalSec);
       const intervalMs = Math.max(100, Math.round((Number.isFinite(stepSec) ? stepSec : 1) * 1000));
       this.kansokuTimer = setInterval(() => {
@@ -7700,7 +7702,8 @@ export default {
     downloadCsv2() {
       try {
         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        const header = ['点名','X','Y','標高','ポール高','較差','観測日時'];
+        // 列名だけ変更
+        const header = ['点名','X','Y','正高（アンテナ位置）','アンテナ高','正高','較差','観測日時'];
 
         const parseNumericLike = (v) => {
           if (v == null) return null;
@@ -7721,30 +7724,40 @@ export default {
         const rows = [header];
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
-          // ★ 標高は人向け文字列をそのまま → 数値だけに正規化
-          let hOut = '';
+
+          // 正高（アンテナ位置）= 既存の「標高」相当（hDisp優先→h）
+          let hAntPosNum = null;
           if (p.hDisp) {
-            const n = parseNumericLike(p.hDisp);
-            hOut = (n == null) ? '' : n.toFixed(3);   // ← 単位なし
+            hAntPosNum = parseNumericLike(p.hDisp);
           } else if (p.h != null) {
-            const n = parseNumericLike(p.h);
-            hOut = (n == null) ? '' : n.toFixed(3);   // ← 単位なし
+            hAntPosNum = parseNumericLike(p.h);
           }
+          const hAntPosOut = (hAntPosNum == null) ? '' : hAntPosNum.toFixed(3); // 単位なし
+
+          // アンテナ高 = 既存のポール高
+          const antennaNum = parseNumericLike(p.pole);
+          const antennaOut = (antennaNum == null) ? '' : antennaNum.toFixed(2);
+
+          // 正高 = 正高（アンテナ位置） - アンテナ高
+          const hGroundOut = (hAntPosNum != null && antennaNum != null)
+              ? (hAntPosNum - antennaNum).toFixed(3)
+              : '';
 
           rows.push([
-            esc(p.name || ''),
-            esc(fmt3(p.X)),
-            esc(fmt3(p.Y)),
-            esc(hOut),
-            esc(fmtPole(p.pole)),
-            esc(fmt3(p.diff)),
-            esc(p.ts || '')
+            esc(p.name || ''),   // 点名
+            esc(fmt3(p.X)),      // X
+            esc(fmt3(p.Y)),      // Y
+            esc(hAntPosOut),     // 正高（アンテナ位置）
+            esc(antennaOut),     // アンテナ高
+            esc(hGroundOut),     // 正高
+            esc(fmt3(p.diff)),   // 較差
+            esc(p.ts || '')      // 観測日時
           ]);
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-        const fname = `観測点一覧_${stamp}.csv`;
+        const fname = `観測点_${stamp}.csv`;
         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -7755,6 +7768,7 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
 
 // 平均点リスト（csv2Points）→ SIMA(A01) 出力
     exportCsv2Sima(title) {
@@ -8438,6 +8452,26 @@ export default {
       document.body.appendChild(a);
       a.click();
       a.remove();
+    },
+// 入力間隔の正規化（丸め→クランプ）
+    clampInterval(val) {
+      const MIN = 1.0;    // 下限
+      const MAX = 60;     // 上限
+      const STEP = 0.1;   // ステップ
+
+      let n = Number(val);
+      if (!Number.isFinite(n)) n = MIN;
+
+      // STEP に丸め（0.1刻み）
+      n = Math.round(n / STEP) * STEP;
+
+      // 下限/上限クランプ
+      if (n < MIN) n = MIN;
+      if (n > MAX) n = MAX;
+
+      // 浮動小数誤差対策（0.30000000004 など）
+      n = Number(n.toFixed(3));
+      return n;
     },
 
 
@@ -12278,6 +12312,11 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    // sampleIntervalSec(val) {
+    //   if (val > 0.5) return
+    //   const fixed = this.clampInterval(val);
+    //   if (fixed !== val) this.sampleIntervalSec = fixed;
+    // },
     tempLineCoordsGuide: {
       handler: function () {
         const length = dedupeCoords(this.tempLineCoordsGuide).length
