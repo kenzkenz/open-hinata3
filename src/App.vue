@@ -7598,6 +7598,7 @@ export default {
     },
 
 // 観測終了時：平均XY/標高の人向け表記を1行追記
+// 観測終了時：平均XY/標高の人向け表記を1行追記し、直近の赤点にCSV相当の配列を埋め込む
     commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
@@ -7612,22 +7613,21 @@ export default {
 
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
-        // 既存：標高列（見つからなければ index=9 を高さ扱い）
-        const iH   = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
-        // 新規：楕円体高
-        const iHAE = header.indexOf('楕円体高');
+        // 標高列（なければ row[9] 既定）
+        const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
 
         const xs = [], ys = [];
-        const hTxtArr = [];   // 表示用に生テキストも保持
-        const hNumArr = [];   // 正高の数値
-        const haeArr  = [];   // 楕円体高の数値
+        const hTxtArr = [];   // "66.789(HAE)" など生テキスト
+        const hNumArr = [];   // 数値化できた標高（m）
         let lastTs = '';
 
         const parseNumericLike = (v) => {
           if (this.parseNumericLike) return this.parseNumericLike(v);
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
+          let s = String(v).trim()
+              .replace(/^[\s:=>\u3000：＝＞-]+/,'')
+              .replace(',', '.');
           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           if (!m) return null;
           const n = Number(m[0]);
@@ -7649,11 +7649,6 @@ export default {
             if (hn != null) hNumArr.push(hn);
           }
 
-          if (iHAE >= 0 && row[iHAE] != null && row[iHAE] !== '') {
-            const hn = parseNumericLike(row[iHAE]);
-            if (hn != null) haeArr.push(hn);
-          }
-
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
@@ -7662,9 +7657,11 @@ export default {
         const Xavg = avg(xs);
         const Yavg = avg(ys);
 
+        // 較差 = √((maxX-minX)^2 + (maxY-minY)^2)
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs),
             Math.max(...ys) - Math.min(...ys));
 
+        // 点名
         let name = this.currentPointName;
         if (!name || typeof name !== 'string') {
           name = this.getNextPointName?.() || '';
@@ -7672,10 +7669,12 @@ export default {
         }
 
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+
+        // アンテナ高（= 既存の offsetCm を cm と仮定）
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
-        // 正高の表示文字列決定（従来どおり）
-        const eH = Number(this?.externalElevation?.hOrthometric);
+        // “人向け表示”の正高（アンテナ位置） hDisp を決定
+        const eH = Number(this?.externalElevation?.hOrthometric); // 外部からの正高
         const hasOrtho = Number.isFinite(eH);
         const hadHAE = hTxtArr.some(t => typeof t === 'string' && /\(HAE\)/i.test(t));
 
@@ -7685,24 +7684,89 @@ export default {
         } else if (hNumArr.length) {
           const avgH = avg(hNumArr);
           hDisp = hadHAE ? `${avgH.toFixed(3)} m（楕円体高）` : `${avgH.toFixed(3)} m`;
+        } else {
+          hDisp = '';
         }
 
-        // ★ 追加：楕円体高の平均（数値のみ、なければ null）
-        const haeAvg = haeArr.length ? avg(haeArr) : null;
-
+        // === 平均点リストに追記（画面一覧＆永続化用） ===
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          hDisp,         // 正高（人向け表示）
-          pole: poleVal, // アンテナ高
+          hDisp,                    // “人向け”の正高（アンテナ位置）
+          pole: poleVal,            // アンテナ高（cm想定→出力時に m 換算していない場合はそのまま）
           diff,
-          ts,
-          hae: haeAvg    // ★ 追加：楕円体高の平均（数値）
+          ts
         });
-
         localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
+
+        // === ここから：仮設置→本命の赤丸へ置換し、プロパティ付与 ==================
+        // 座標系ラベル：store を優先／無ければ経度から自動推定
+        const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
+        let csLabel = storeLabel;
+        if (!csLabel) {
+          const lon = Number(this.torokuPointLngLat?.lng);
+          if (Number.isFinite(lon)) {
+            let z = Math.round((lon - 129) / 2) + 1;
+            if (z < 1) z = 1;
+            if (z > 19) z = 19;
+            csLabel = `公共座標${z}系`;
+          } else {
+            csLabel = '';
+          }
+        }
+
+        // 数値整形（CSVと整合させるため）
+        const fmt3    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
+        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '';
+
+        // 正高（アンテナ位置）の数値化
+        const parseNumericLikeLocal = (v) => {
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          const s = String(v).trim().replace(',', '.');
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          if (!m) return null;
+          const n = Number(m[0]);
+          return Number.isFinite(n) ? n : null;
+        };
+        const hAntennaPosNum = (() => {
+          const n1 = parseNumericLikeLocal(hDisp);
+          if (n1 != null) return n1;
+          const n2 = Number(this?.externalElevation?.hOrthometric);
+          return Number.isFinite(n2) ? n2 : null;
+        })();
+
+        const antennaHighNum =
+            Number.isFinite(Number(poleVal)) ? Number(poleVal) : null;
+
+        const hOrthometricNum =
+            (Number.isFinite(hAntennaPosNum) && Number.isFinite(antennaHighNum))
+                ? (hAntennaPosNum - antennaHighNum)
+                : null;
+
+        // 地図上の本命赤丸に埋める “CSV相当1行”（downloadCsv2 の列順に合わせる）
+        // ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','XY較差','座標系','観測日時']
+        const rowArray = [
+          String(name || ''),      // 点名
+          fmt3(Xavg),              // X
+          fmt3(Yavg),              // Y
+          fmt3(hOrthometricNum),   // 正高（= アンテナ位置高 - アンテナ高）
+          fmtPole(antennaHighNum), // アンテナ高
+          fmt3(hAntennaPosNum),    // 正高（アンテナ位置）
+          fmt3(diff),              // XY較差
+          String(csLabel || ''),   // 座標系
+          String(ts || '')         // 観測日時
+        ];
+
+        // 仮設置赤丸を削除 → 同座標に本命赤丸を新規作成（label と oh3_csv2_row を一度に付与）
+        try {
+          this.confirmTorokuPointAtCurrent(name, rowArray);
+        } catch (e) {
+          console.warn('[csv2] confirm point replace failed', e);
+        }
+
         return true;
       } catch (e) {
         console.warn('[csv2] commit error', e);
@@ -8502,6 +8566,104 @@ export default {
       // 浮動小数誤差対策（0.30000000004 など）
       n = Number(n.toFixed(3));
       return n;
+    },
+// 仮設置赤丸を削除し、同じ座標へ本命赤丸を新規作成して label / oh3_csv2_row を付与
+    confirmTorokuPointAtCurrent(name, rowArray) {
+      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
+
+      // 座標は「最後に打った仮設置」か「torokuPointLngLat」から取得
+      let lng = null, lat = null;
+
+      if (this._torokuFC && Array.isArray(this._torokuFC.features) && this._torokuFC.features.length) {
+        // pendingLabel=true のもの or _lastTorokuFeatureId を優先して拾う
+        let idx = -1;
+        if (this._lastTorokuFeatureId) {
+          idx = this._torokuFC.features.findIndex(f => f?.properties?.id === this._lastTorokuFeatureId);
+        }
+        if (idx < 0) {
+          idx = this._torokuFC.features.findIndex(f => f?.properties?.pendingLabel === true);
+        }
+        if (idx < 0) {
+          // なければ最後尾
+          idx = this._torokuFC.features.length - 1;
+        }
+
+        const f = this._torokuFC.features[idx];
+        if (f && f.geometry && Array.isArray(f.geometry.coordinates)) {
+          lng = Number(f.geometry.coordinates[0]);
+          lat = Number(f.geometry.coordinates[1]);
+        }
+
+        // 仮設置の赤丸を削除
+        if (idx >= 0) {
+          this._torokuFC.features.splice(idx, 1);
+        }
+      }
+
+      // 念のためフォールバック
+      if ((!Number.isFinite(lng) || !Number.isFinite(lat)) && this.torokuPointLngLat) {
+        lng = this.torokuPointLngLat.lng;
+        lat = this.torokuPointLngLat.lat;
+      }
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        console.warn('[toroku] confirm failed: no coordinate');
+        return;
+      }
+
+      // 本命赤丸を作成（label と oh3_csv2_row を付与）
+      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
+      const feature = {
+        type: 'Feature',
+        properties: {
+          id: fid,
+          label: String(name || ''),
+          name:  String(name || ''),
+          pendingLabel: false,
+          oh3_csv2_row: JSON.stringify(rowArray) // ← CSV相当を1プロパティに格納
+        },
+        geometry: { type: 'Point', coordinates: [lng, lat] }
+      };
+
+      if (!this._torokuFC) this._torokuFC = { type:'FeatureCollection', features: [] };
+      this._torokuFC.features.push(feature);
+      this._lastTorokuFeatureId = fid;
+
+      // 反映
+      if (map && map.getSource && map.getSource(SRC)) {
+        map.getSource(SRC).setData(this._torokuFC);
+      } else if (map) {
+        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+        if (!map.getLayer(LAYER)) {
+          map.addLayer({
+            id: LAYER, type: 'circle', source: SRC,
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#ff3b30',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+        }
+        if (!map.getLayer(LAB)) {
+          map.addLayer({
+            id: LAB, type: 'symbol', source: SRC,
+            layout: {
+              'text-field': ['get', 'label'],
+              'text-size': 16,
+              'text-offset': [0, 0.5],
+              'text-anchor': 'top',
+              'text-allow-overlap': true
+            },
+            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+          });
+        }
+      }
+
+      // 最新の“本命”座標を保持
+      this.torokuPointLngLat = { lng, lat };
     },
 
 
