@@ -37,6 +37,7 @@
     "glob": "^11.0.2",
     "html2canvas": "^1.4.1",
     "iconv-lite": "^0.6.3",
+    "japan-geoid": "^0.4.2",
     "json-loader": "^0.5.7",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

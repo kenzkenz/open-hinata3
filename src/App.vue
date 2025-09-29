@@ -1970,6 +1970,7 @@ import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios
 import Traverse from "@/components/floatingwindow/Traverse";
 import { snapIfNeeded } from '@/js/utils/triangle50'
 import rtkPngUrl from '@/assets/icons/oh-rtk.png'
+import { ensureGeoid, calcOrthometric } from '@/geoid';
 
 import {
   addDraw,
@@ -7378,6 +7379,7 @@ export default {
       const _this = this;
       const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
 
+      // ラベル(公共座標◯系)→EPSG。無ければ経度から自動（JGD2011 平面直角）
       function epsgFromLabelOrAuto(lat, lon) {
         try {
           const label = (_this.$store && _this.$store.state)
@@ -7388,6 +7390,7 @@ export default {
             const z = Number(m[1]);
             if (z >= 1 && z <= 19) return 6668 + z; // 6669..6687
           }
+          // 経度から最寄り中央経線を選ぶ（129,131,...,165）
           let zAuto = Math.round((lon - 129) / 2) + 1;
           if (zAuto < 1) zAuto = 1;
           if (zAuto > 19) zAuto = 19;
@@ -7398,7 +7401,7 @@ export default {
       }
 
       navigator.geolocation.getCurrentPosition(
-          (pos) => {
+          async (pos) => {
             try {
               const c = pos.coords || {};
               const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
@@ -7409,10 +7412,10 @@ export default {
               if (quality === 'RTK級') {
                 _this.lastRtkAt = nowTs;
               } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= (_this.rtkWindowMs || 1000)) {
-                return; // 直近RTK後の非RTKは捨てる
+                return; // 直近RTK後の非RTKは捨てる（カウントは finally で減る）
               }
 
-              // 端末WGS84（無ければ赤丸をフォールバック）
+              // ★ 記録座標は端末の測位結果（WGS84）。取れなければ赤丸をフォールバック
               let lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
               let lon = (typeof c.longitude === 'number') ? c.longitude : null;
               if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -7425,7 +7428,7 @@ export default {
                 }
               }
 
-              // 平面直角のEPSGを決めて変換
+              // 平面直角XYのゾーン決定：赤丸優先 → 無ければ端末座標から自動
               const baseLon = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lng))
                   ? _this.torokuPointLngLat.lng : lon;
               const baseLat = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lat))
@@ -7451,7 +7454,7 @@ export default {
                 console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
               }
 
-              // 標高（正高優先。なければHAE表示）
+              // ==== 標高（正高）ロジック（altitudeが文字列でも吸収） ====
               const toNum = (v) => {
                 if (typeof v === 'number') return v;
                 if (typeof v === 'string') {
@@ -7461,8 +7464,11 @@ export default {
                 }
                 return NaN;
               };
+
+              // 端末の楕円体高(HAE) 候補（文字列対応）
               const hae = toNum(c.altitude);
 
+              // 正高の最優先：ドロガーからの正規化済み hOrthometric
               let hOut = '';
               const pH = Number(_this?.pointElevation?.hOrthometric);
               const eH = Number(_this?.externalElevation?.hOrthometric);
@@ -7471,17 +7477,23 @@ export default {
               } else if (Number.isFinite(eH)) {
                 hOut = eH;
               } else if (Number.isFinite(hae)) {
-                const pN = Number(_this?.pointElevation?.geoidN);
-                const eN = Number(_this?.externalElevation?.geoidN);
-                const geoidN = Number.isFinite(pN) ? pN : (Number.isFinite(eN) ? eN : NaN);
-                if (Number.isFinite(geoidN)) {
-                  hOut = hae - geoidN; // 正高
-                } else {
-                  hOut = `${hae.toFixed(3)}(HAE)`; // 楕円体高の見える化
+                // HAEしかない → Nがあれば 正高 = HAE - N（japan-geoid を使用）
+                try {
+                  // ※ calcOrthometric は '@/geoid' から import 済みを想定
+                  const H = await calcOrthometric(lon, lat, hae);
+                  if (Number.isFinite(H)) {
+                    hOut = H; // 数値[m]
+                  } else {
+                    // デバッグ可視化：正高が算出不能なら HAE を表示
+                    hOut = `${hae.toFixed(3)}(HAE)`;
+                  }
+                } catch {
+                  hOut = `${hae.toFixed(3)}(HAE)`;
                 }
               } else {
                 hOut = '';
               }
+              // ==== 標高ここまで ====
 
               _this.initKansokuCsvIfNeeded();
               _this.kansokuCsvRows.push([
@@ -7491,7 +7503,7 @@ export default {
                 accuracy,
                 quality,
                 'kansoku',
-                hOut                 // row[9] 標高（正高m or "xxx(HAE)")
+                hOut                 // ★ row[9] 標高(正高m or "xxx(HAE)")
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -7508,6 +7520,8 @@ export default {
           opt
       );
     },
+
+
 
 // 観測停止：タイマー停止＋この地点の平均を1行だけ記録
     kansokuStop() {
@@ -12036,6 +12050,9 @@ export default {
      this.bindExternalElevationListener()
 
      this.bindElevationPostMessage()
+
+    // fire-and-forget（初回計算前にWasmを温める）
+    ensureGeoid().catch(e => console.warn('[geoid] init failed', e));
 
   },
   beforeUnmount() {
