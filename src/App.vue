@@ -570,7 +570,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <v-text-field
                   v-model.number="offsetCm"
                   type="number"
-                  label="ポール高（m）"
+                  label="アンテナ高（m）"
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
@@ -7493,6 +7493,32 @@ export default {
               } else {
                 hOut = '';
               }
+
+              // --- 追加：マイナス値は空欄にする（非ドロガー時の誤計算対策・既存ロジックは不変更）---
+              // --- 追加：出力を数値のみ（m なし）に正規化。負値は空欄にする ---
+              const parseNumericLike = (v) => {
+                if (v == null) return null;
+                if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+                const s = String(v).trim().replace(',', '.');
+                const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+                if (!m) return null;
+                const n = Number(m[0]);
+                return Number.isFinite(n) ? n : null;
+              };
+
+              // ここまでで hOut は数値または文字列("xx.xxx(HAE)" 等)の可能性
+              let hNum = parseNumericLike(hOut);
+
+              // マイナス値は空欄扱い（非ドロガー時の誤計算対策）
+              if (hNum != null && hNum < 0) {
+                hOut = '';
+              } else if (hNum != null) {
+                // 数値として成立 → 小数3桁に揃えて “単位なし” で出力
+                hOut = hNum.toFixed(3);
+              } else {
+                // 数値化できない（例: "xx(HAE)" など）は空欄に倒す
+                hOut = '';
+              }
               // ==== 標高ここまで ====
 
               _this.initKansokuCsvIfNeeded();
@@ -7695,12 +7721,14 @@ export default {
         const rows = [header];
         for (let i = 0; i < list.length; i++) {
           const p = list[i] || {};
+          // ★ 標高は人向け文字列をそのまま → 数値だけに正規化
           let hOut = '';
           if (p.hDisp) {
-            hOut = String(p.hDisp);
+            const n = parseNumericLike(p.hDisp);
+            hOut = (n == null) ? '' : n.toFixed(3);   // ← 単位なし
           } else if (p.h != null) {
             const n = parseNumericLike(p.h);
-            hOut = (n == null) ? '' : `${n.toFixed(3)} m`;
+            hOut = (n == null) ? '' : n.toFixed(3);   // ← 単位なし
           }
 
           rows.push([
@@ -8330,10 +8358,14 @@ export default {
 // 標高の人間向け表記（"m" + 楕円体高注記）
     fmtHumanHeight(v) {
       if (v == null || v === '') return '';
+      // すでに数値 or 数値文字列なら 3桁固定の数値だけ返す
+      const nDirect = Number(v);
+      if (Number.isFinite(nDirect)) return nDirect.toFixed(3);
+
       const n = this.parseNumericLike(v);
       if (n == null) return '';
-      const isHAE = (typeof v === 'string') && /\(HAE\)/i.test(v);
-      return isHAE ? `${n.toFixed(3)} m（楕円体高）` : `${n.toFixed(3)} m`;
+      // "(HAE)" 等が入っていてもここでは数値だけを返す
+      return n.toFixed(3);
     },
 
 // JSTのISO風（+09:00 明示）
