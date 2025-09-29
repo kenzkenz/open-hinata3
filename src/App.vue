@@ -1790,7 +1790,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                        <img :src="rtkPng" alt="" class="btn-img" />
                     </v-fab>
                   </template>
-                  <div class="d-flex ga-2 mt-2 fab-actions">
+                  <div key="00" class="d-flex ga-2 mt-2 fab-actions">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
                     <v-btn icon @click="startTorokuHere">観測</v-btn>
