@@ -15,7 +15,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              @click="onJobEndClick"
+              @click="onJobEndClick(true)"
           aria-label="業務を終了"
           >
             終了
@@ -6916,7 +6916,7 @@ export default {
 
       this.currentJobId   = id;
       this.currentJobName = name;
-      this.closeJobPicker?.();
+      // this.closeJobPicker?.();
 
       await this.loadPointsForJob(id);
     },
@@ -7192,6 +7192,10 @@ export default {
         return;
       }
 
+
+      this.onJobEndClick(false)
+
+
       const fd = new FormData();
       fd.append('action','jobs.create');
       fd.append('user_id',this.userId);
@@ -7236,12 +7240,42 @@ export default {
       } catch {}
     },
 
-    onJobEndClick() {
-      // TODO: 業務終了の実処理を実装
-      // 例: 赤丸/状態クリア → isJobMenu=false など
-      this.jobPickerOpen = false
-      this.isJobMenu = false
+    onJobEndClick(isCleanup) {
+      if (isCleanup) {
+        this.jobPickerOpen = false;
+        this.isJobMenu = false;
+      }
+
+      // 観測の停止（タイマー/状態）
+      try {
+        if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
+      } catch {}
+      this.kansokuRunning   = false;
+      this.kansokuRemaining = 0;
+
+      // 赤丸（レイヤ/ソース）全クリア
+      try { this.clearTorokuPoint(); } catch {}
+      this._torokuFC = { type: 'FeatureCollection', features: [] };
+      this._lastTorokuFeatureId = null;
+      this.torokuPointLngLat = null;
+
+      // ダイアログ/CSV一時データも掃除（ローカル保存はしない運用のため）
+      this.kansokuCsvRows = null;
+      this.csv2Points = [];
+
+      // 現在のJOB選択を解除（ストレージにも反映）
+      this.currentJobId = null;
+      this.currentJobName = '';
+      try {
+        localStorage.removeItem('oh3_current_job_id');
+        localStorage.removeItem('oh3_current_job_name');
+      } catch {}
+
+      // 任意：イベント通知（必要ならフック）
+      try { this.$emit?.('job-ended'); } catch {}
+      try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
     },
+
     onOpenJobPicker() {
       // TODO: Job Picker ダイアログを開く
       this.jobPickerOpen = true
