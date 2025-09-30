@@ -3,7 +3,7 @@ require_once "pwd.php"; // DB接続情報を含むファイル
 header("Content-Type: application/json");
 
 // 最小版（user_id は VARCHAR(255) 前提）
-// 対応: jobs.create / jobs.list / jobs.delete
+// 対応: jobs.create / jobs.list / jobs.delete / job_points.create / job_points.list
 // action 未指定のときは疎通用の ping を返すだけ。
 
 if (!isset($pdo) || !($pdo instanceof PDO)) {
@@ -14,7 +14,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-$action = isset($_POST['action']) ? (string)$_POST['action'] : '';
+$action = isset($_POST['action']) ? trim((string)$_POST['action']) : '';
 
 if ($action === '') {
     echo json_encode([
@@ -81,11 +81,7 @@ try {
             exit;
         }
 
-        default:
-            echo json_encode(['ok'=>false,'error'=>'未知の action: '.$action], JSON_UNESCAPED_UNICODE);
-            exit;
-
-        // 追加: job_points.create
+        // -------------------- job_points.create --------------------
         case 'job_points.create': {
             $job_id   = (int)($_POST['job_id'] ?? 0);
             $user_id  = trim((string)($_POST['user_id'] ?? ''));
@@ -94,23 +90,28 @@ try {
                 echo json_encode(['ok'=>false,'error'=>'job_id / user_id / point_name は必須']); exit;
             }
 
-            $x_north         = $_POST['x_north']         ?? null;
-            $y_east          = $_POST['y_east']          ?? null;
-            $h_orthometric   = $_POST['h_orthometric']   ?? null;
-            $antenna_height  = $_POST['antenna_height']  ?? null;
-            $h_at_antenna    = $_POST['h_at_antenna']    ?? null;
-            $hae_ellipsoidal = $_POST['hae_ellipsoidal'] ?? null;
-            $xy_diff         = $_POST['xy_diff']         ?? null;
-            $crs_label       = $_POST['crs_label']       ?? null;
-            $observed_at     = $_POST['observed_at']     ?? null; // "YYYY-MM-DD HH:MM:SS"
+            // 任意項目は空文字なら NULL 扱い
+            $nz = function($v){ return (isset($v) && $v !== '') ? $v : null; };
+
+            $x_north         = $nz($_POST['x_north']         ?? null);
+            $y_east          = $nz($_POST['y_east']          ?? null);
+            $lng             = $nz($_POST['lng']             ?? null); // ★ 追加
+            $lat             = $nz($_POST['lat']             ?? null); // ★ 追加
+            $h_orthometric   = $nz($_POST['h_orthometric']   ?? null);
+            $antenna_height  = $nz($_POST['antenna_height']  ?? null);
+            $h_at_antenna    = $nz($_POST['h_at_antenna']    ?? null);
+            $hae_ellipsoidal = $nz($_POST['hae_ellipsoidal'] ?? null);
+            $xy_diff         = $nz($_POST['xy_diff']         ?? null);
+            $crs_label       = $nz($_POST['crs_label']       ?? null);
+            $observed_at     = $nz($_POST['observed_at']     ?? null); // "YYYY-MM-DD HH:MM:SS"
 
             $sql = 'INSERT INTO job_points
-    (job_id,user_id,point_name,x_north,y_east,h_orthometric,antenna_height,h_at_antenna,hae_ellipsoidal,xy_diff,crs_label,observed_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)';
+                (job_id,user_id,point_name,x_north,y_east,lng,lat,h_orthometric,antenna_height,h_at_antenna,hae_ellipsoidal,xy_diff,crs_label,observed_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $job_id,$user_id,$pname,
-                $x_north,$y_east,$h_orthometric,$antenna_height,$h_at_antenna,
+                $x_north,$y_east,$lng,$lat,$h_orthometric,$antenna_height,$h_at_antenna,
                 $hae_ellipsoidal,$xy_diff,$crs_label,$observed_at
             ]);
 
@@ -119,7 +120,7 @@ try {
             echo json_encode(['ok'=>true,'data'=>$row], JSON_UNESCAPED_UNICODE); exit;
         }
 
-        // 追加: job_points.list（job_id 指定で昇順）
+        // -------------------- job_points.list（job_id 指定で昇順） --------------------
         case 'job_points.list': {
             $job_id = (int)($_POST['job_id'] ?? 0);
             if ($job_id <= 0) { echo json_encode(['ok'=>false,'error'=>'job_id は必須']); exit; }
@@ -129,9 +130,12 @@ try {
             echo json_encode(['ok'=>true,'data'=>$rows], JSON_UNESCAPED_UNICODE); exit;
         }
 
+        // -------------------- default --------------------
+        default:
+            echo json_encode(['ok'=>false,'error'=>'未知の action: '.$action], JSON_UNESCAPED_UNICODE);
+            exit;
     }
 } catch (PDOException $e) {
-    // 一意制約（uk_user_jobname）違反はメッセージ化
     if (strpos($e->getMessage(), '1062') !== false) {
         echo json_encode(['ok'=>false,'error'=>'重複：同一 user_id に同名の job_name が存在します'], JSON_UNESCAPED_UNICODE);
         exit;
