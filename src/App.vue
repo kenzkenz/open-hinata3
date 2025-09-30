@@ -3160,7 +3160,7 @@ export default {
     currentJobId: null,
     currentJobName: '',
 
-
+    useServerOnly: true,
 
     aaa: null,
   }),
@@ -8064,36 +8064,36 @@ export default {
       try { this.commitCsv2Point(); } catch (e) { console.warn('[csv2] commit on stop error', e); }
     },
 
-// 観測CSVをそのまま出力（各サンプル）
-    exportKansokuCsv() {
-      if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
-      const csvEscape = (v) => {
-        if (v == null) return '';
-        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      };
-      const csv = this.kansokuCsvRows.map(r => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
-      this.$_downloadText(csv, `kansoku_${this.$_jstStamp()}.csv`, 'text/csv;charset=utf-8;');
-    },
-
-    /* =========================================================
-     * ⑤ 観測点の平均一覧（csv2Points）: 保存・出力
-     * =======================================================*/
-
-// 起動時に平均点リストを復元
-    loadCsv2PointsFromStorage() {
-      try {
-        var raw = localStorage.getItem('csv2_points');
-        if (!raw) { this.csv2Points = []; return; }
-        var arr = JSON.parse(raw);
-        if (Array.isArray(arr)) this.csv2Points = arr; else this.csv2Points = [];
-      } catch (_) { this.csv2Points = []; }
-    },
-
-// 永続化（平均点リスト）
-    persistCsv2Points() {
-      try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points || [])); } catch(_) {}
-    },
+// // 観測CSVをそのまま出力（各サンプル）
+//     exportKansokuCsv() {
+//       if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
+//       const csvEscape = (v) => {
+//         if (v == null) return '';
+//         const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+//         return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+//       };
+//       const csv = this.kansokuCsvRows.map(r => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
+//       this.$_downloadText(csv, `kansoku_${this.$_jstStamp()}.csv`, 'text/csv;charset=utf-8;');
+//     },
+//
+//     /* =========================================================
+//      * ⑤ 観測点の平均一覧（csv2Points）: 保存・出力
+//      * =======================================================*/
+//
+// // 起動時に平均点リストを復元
+//     loadCsv2PointsFromStorage() {
+//       try {
+//         var raw = localStorage.getItem('csv2_points');
+//         if (!raw) { this.csv2Points = []; return; }
+//         var arr = JSON.parse(raw);
+//         if (Array.isArray(arr)) this.csv2Points = arr; else this.csv2Points = [];
+//       } catch (_) { this.csv2Points = []; }
+//     },
+//
+// // 永続化（平均点リスト）
+//     persistCsv2Points() {
+//       try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points || [])); } catch(_) {}
+//     },
 
 // 観測終了時：平均XY/標高の人向け表記を1行追記
 // 観測終了時：平均XY/標高の人向け表記を1行追記し、直近の赤点にCSV相当の配列を埋め込む
@@ -8214,8 +8214,9 @@ export default {
           lat: Number(this?.torokuPointLngLat?.lat),
           lng: Number(this?.torokuPointLngLat?.lng),
         });
-        localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
-
+        if (!this.useServerOnly) {
+          localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
+        }
         // === ここから：仮設置→本命の赤丸へ置換し、プロパティ付与 ==================
         // 座標系ラベル：store を優先／無ければ経度から自動推定
         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
@@ -8349,33 +8350,46 @@ export default {
       }
     },
 
-
-
 // 平均点リストをCSVで出力（人向け標高表記のまま）
-    downloadCsv2() {
+    async downloadCsv2() {
       try {
-        const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
-
-        // 座標系ラベル：store優先→無ければ経度から推定
-        const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
-        let csLabel = storeLabel;
-        if (!csLabel) {
-          let lon = null;
-          try { lon = this.$store?.state?.map01?.getCenter?.().lng ?? this.map01?.getCenter?.().lng ?? null; } catch (_) {}
-          if (Number.isFinite(lon)) {
-            let z = Math.round((lon - 129) / 2) + 1;
-            if (z < 1) z = 1;
-            if (z > 19) z = 19;
-            csLabel = `公共座標${z}系`;
-          }
+        if (!this.currentJobId) {
+          alert('ジョブが未選択です');
+          return;
         }
+
+        // ---- サーバからこのジョブの観測点を取得（ローカル保存しない）----
+        const fd = new FormData();
+        fd.append('action', 'job_points.list');
+        fd.append('job_id', String(this.currentJobId));
+
+        let res, payload;
+        try {
+          res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+            method: 'POST',
+            body: fd,
+          });
+          payload = await res.json();
+        } catch (e) {
+          console.error('[downloadCsv2] fetch失敗', e);
+          alert('サーバーから観測点を取得できませんでした');
+          return;
+        }
+        const list = Array.isArray(payload?.data) ? payload.data : [];
+        if (list.length === 0) {
+          alert('このジョブの観測点はありません');
+          return;
+        }
+
+        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
 
         const parseNumericLike = (v) => {
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
-          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          const m = String(v).trim()
+              .replace(/^[\s:=>\u3000：＝＞-]+/, '')
+              .replace(',', '.')
+              .match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           const n = m ? Number(m[0]) : NaN;
           return Number.isFinite(n) ? n : null;
         };
@@ -8389,46 +8403,22 @@ export default {
         };
 
         const rows = [header];
-        for (let i = 0; i < list.length; i++) {
-          const p = list[i] || {};
 
-          // 正高（アンテナ位置）= 旧 hDisp/h の数値化
-          let hAntennaPos = null;
-          if (p.hDisp != null && p.hDisp !== '') {
-            hAntennaPos = parseNumericLike(p.hDisp);
-          } else if (p.h != null) {
-            hAntennaPos = parseNumericLike(p.h);
-          }
-
-          // アンテナ高
-          const antennaHigh = parseNumericLike(p.pole);
-
-          // 正高 = 正高（アンテナ位置） - アンテナ高
-          let hOrthometric = null;
-          if (Number.isFinite(hAntennaPos) && Number.isFinite(antennaHigh)) {
-            hOrthometric = hAntennaPos - antennaHigh;
-          }
-
-          // 楕円体高（commit側の p.hae を使用）
-          const haeOut = fmt3(p.hae);
-
-          // ★ 緯度・経度（commit側で p.lat / p.lng を持たせた）
-          const latOut = fmtDeg8(p.lat);
-          const lngOut = fmtDeg8(p.lng);
-
+        // サーバのスキーマでそのままCSV行を構成
+        for (const r of list) {
           rows.push([
-            esc(p.name || ''),           // 点名
-            esc(fmt3(p.X)),              // X
-            esc(fmt3(p.Y)),              // Y
-            esc(fmt3(hOrthometric)),     // 標高
-            esc(fmtPole(antennaHigh)),   // アンテナ高
-            esc(fmt3(hAntennaPos)),      // 標高（アンテナ位置）
-            esc(haeOut),                 // 楕円体高
-            esc(fmt3(p.diff)),           // XY較差
-            esc(csLabel),                // 座標系（共通ラベル）
-            esc(latOut),                 // ★ 緯度
-            esc(lngOut),                 // ★ 経度
-            esc(p.ts || '')              // 観測日時
+            esc(String(r.point_name ?? '')),   // 点名
+            esc(fmt3(r.x_north)),              // X
+            esc(fmt3(r.y_east)),               // Y
+            esc(fmt3(r.h_orthometric)),        // 標高
+            esc(fmtPole(r.antenna_height)),    // アンテナ高
+            esc(fmt3(r.h_at_antenna)),         // 標高（アンテナ位置）
+            esc(fmt3(r.hae_ellipsoidal)),      // 楕円体高
+            esc(fmt3(r.xy_diff)),              // XY較差
+            esc(String(r.crs_label ?? '')),    // 座標系
+            esc(fmtDeg8(r.lat)),               // 緯度
+            esc(fmtDeg8(r.lng)),               // 経度
+            esc(String(r.observed_at ?? ''))   // 観測日時
           ]);
         }
 
@@ -8436,6 +8426,7 @@ export default {
         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
         const fname = `観測点_${stamp}.csv`;
         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fname;
@@ -8445,6 +8436,101 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
+
+//     downloadCsv2() {
+//       try {
+//         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
+//         const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
+//
+//         // 座標系ラベル：store優先→無ければ経度から推定
+//         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
+//         let csLabel = storeLabel;
+//         if (!csLabel) {
+//           let lon = null;
+//           try { lon = this.$store?.state?.map01?.getCenter?.().lng ?? this.map01?.getCenter?.().lng ?? null; } catch (_) {}
+//           if (Number.isFinite(lon)) {
+//             let z = Math.round((lon - 129) / 2) + 1;
+//             if (z < 1) z = 1;
+//             if (z > 19) z = 19;
+//             csLabel = `公共座標${z}系`;
+//           }
+//         }
+//
+//         const parseNumericLike = (v) => {
+//           if (v == null) return null;
+//           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+//           let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
+//           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+//           const n = m ? Number(m[0]) : NaN;
+//           return Number.isFinite(n) ? n : null;
+//         };
+//         const fmt3    = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
+//         const fmtPole = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
+//         const fmtDeg8 = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(8); };
+//         const esc = (v) => {
+//           if (v == null) return '';
+//           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+//           return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+//         };
+//
+//         const rows = [header];
+//         for (let i = 0; i < list.length; i++) {
+//           const p = list[i] || {};
+//
+//           // 正高（アンテナ位置）= 旧 hDisp/h の数値化
+//           let hAntennaPos = null;
+//           if (p.hDisp != null && p.hDisp !== '') {
+//             hAntennaPos = parseNumericLike(p.hDisp);
+//           } else if (p.h != null) {
+//             hAntennaPos = parseNumericLike(p.h);
+//           }
+//
+//           // アンテナ高
+//           const antennaHigh = parseNumericLike(p.pole);
+//
+//           // 正高 = 正高（アンテナ位置） - アンテナ高
+//           let hOrthometric = null;
+//           if (Number.isFinite(hAntennaPos) && Number.isFinite(antennaHigh)) {
+//             hOrthometric = hAntennaPos - antennaHigh;
+//           }
+//
+//           // 楕円体高（commit側の p.hae を使用）
+//           const haeOut = fmt3(p.hae);
+//
+//           // ★ 緯度・経度（commit側で p.lat / p.lng を持たせた）
+//           const latOut = fmtDeg8(p.lat);
+//           const lngOut = fmtDeg8(p.lng);
+//
+//           rows.push([
+//             esc(p.name || ''),           // 点名
+//             esc(fmt3(p.X)),              // X
+//             esc(fmt3(p.Y)),              // Y
+//             esc(fmt3(hOrthometric)),     // 標高
+//             esc(fmtPole(antennaHigh)),   // アンテナ高
+//             esc(fmt3(hAntennaPos)),      // 標高（アンテナ位置）
+//             esc(haeOut),                 // 楕円体高
+//             esc(fmt3(p.diff)),           // XY較差
+//             esc(csLabel),                // 座標系（共通ラベル）
+//             esc(latOut),                 // ★ 緯度
+//             esc(lngOut),                 // ★ 経度
+//             esc(p.ts || '')              // 観測日時
+//           ]);
+//         }
+//
+//         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
+//         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
+//         const fname = `観測点_${stamp}.csv`;
+//         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+//         const a = document.createElement('a');
+//         a.href = URL.createObjectURL(blob);
+//         a.download = fname;
+//         document.body.appendChild(a); a.click(); a.remove();
+//         setTimeout(() => URL.revokeObjectURL(a.href), 0);
+//       } catch (e) {
+//         console.warn('[csv2] download error', e);
+//       }
+//     },
 
 
 
