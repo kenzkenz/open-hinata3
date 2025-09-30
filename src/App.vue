@@ -7026,6 +7026,33 @@ export default {
     /* =========================================================
      * ① 外部標高（ドロガー）受け取り・正規化まわり
      * =======================================================*/
+    // === 数値ユーティリティ（唯一の入口） =========================
+    parseNumberLike(v) {
+      if (v == null) return null;
+      if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+
+      // 文字列 → 先頭ゴミ除去（±は残す）→ 小数点カンマをドットへ
+      const s = String(v).trim()
+          .replace(/^[\s:=>\u3000：＝＞]+/, '')   // 符号(-/+)は消さない
+          .replace(',', '.');
+
+      const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+      if (!m) return null;
+
+      const n = Number(m[0]);
+      return Number.isFinite(n) ? n : null;
+    },
+
+// 固定小数（数値でなければ空文字を返す）
+// 例: toFixed3(value) -> "12.345" or ""
+    toFixedN(v, n = 3) {
+      const x = this.parseNumberLike(v);
+      return x == null ? '' : x.toFixed(n);
+    },
+    toFixed3(v) { return this.toFixedN(v, 3); },
+    toFixed2(v) { return this.toFixedN(v, 2); },
+    toFixed8(v) { return this.toFixedN(v, 8); },
+
     clearPendingTorokuPoints () {
       const map = (this.$store?.state?.map01) || this.map01;
       const SRC = 'oh-toroku-point-src';
@@ -8190,6 +8217,20 @@ export default {
         return;
       }
 
+      // 共通パーサ/フォーマッタ（グローバル実装があればそれを使う）
+      const parse = this.parseNumberLike || ((v) => {
+        if (v == null) return null;
+        if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+        // 先頭のゴミは削るが ± は残す
+        const s = String(v).trim()
+            .replace(/^[\s:=>\u3000：＝＞]+/, '')
+            .replace(',', '.');
+        const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+        const n = m ? Number(m[0]) : NaN;
+        return Number.isFinite(n) ? n : null;
+      });
+      const fix3 = this.toFixed3 || ((n) => (Number.isFinite(n) ? n.toFixed(3) : ''));
+
       const _this = this;
       const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
 
@@ -8204,8 +8245,7 @@ export default {
             const z = Number(m[1]);
             if (z >= 1 && z <= 19) return 6668 + z; // 6669..6687
           }
-          // 経度から最寄り中央経線を選ぶ（129,131,...,165）
-          let zAuto = Math.round((lon - 129) / 2) + 1;
+          let zAuto = Math.round((lon - 129) / 2) + 1; // 129,131,...,165
           if (zAuto < 1) zAuto = 1;
           if (zAuto > 19) zAuto = 19;
           return 6668 + zAuto;
@@ -8268,19 +8308,9 @@ export default {
                 console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
               }
 
-              // ==== 標高（正高）ロジック（altitudeが文字列でも吸収） ====
-              const toNum = (v) => {
-                if (typeof v === 'number') return v;
-                if (typeof v === 'string') {
-                  const s = v.replace(',', '.').trim();
-                  const n = Number(s);
-                  return Number.isFinite(n) ? n : NaN;
-                }
-                return NaN;
-              };
-
-              // 端末の楕円体高(HAE) 候補（文字列対応）
-              const hae = toNum(c.altitude);
+              // ==== 標高（正高） ====
+              // 端末の楕円体高(HAE)（文字列もOK・符号保持）
+              const haeN = parse(c.altitude);
 
               // 正高の最優先：ドロガーからの正規化済み hOrthometric
               let hOut = '';
@@ -8290,63 +8320,44 @@ export default {
                 hOut = pH;
               } else if (Number.isFinite(eH)) {
                 hOut = eH;
-              } else if (Number.isFinite(hae)) {
-                // HAEしかない → Nがあれば 正高 = HAE - N（japan-geoid を使用）
+              } else if (Number.isFinite(haeN)) {
+                // HAEしかない → Nがあれば 正高 = HAE - N（japan-geoid）
                 try {
-                  // ※ calcOrthometric は '@/geoid' から import 済みを想定
-                  const H = await calcOrthometric(lon, lat, hae);
+                  const H = await calcOrthometric(lon, lat, haeN);
                   if (Number.isFinite(H)) {
                     hOut = H; // 数値[m]
                   } else {
-                    // デバッグ可視化：正高が算出不能なら HAE を表示
-                    hOut = `${hae.toFixed(3)}(HAE)`;
+                    hOut = `${fix3(haeN)}(HAE)`; // 算出不能なら HAE を表示
                   }
                 } catch {
-                  hOut = `${hae.toFixed(3)}(HAE)`;
+                  hOut = `${fix3(haeN)}(HAE)`;
                 }
               } else {
                 hOut = '';
               }
 
-              // --- 追加：マイナス値は空欄にする（非ドロガー時の誤計算対策・既存ロジックは不変更）---
-              // --- 追加：出力を数値のみ（m なし）に正規化。負値は空欄にする ---
-              const parseNumericLike = (v) => {
-                if (v == null) return null;
-                if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-                const m = String(v).trim()
-                    .replace(/^[\s:=>\u3000：＝＞]+/, '')   // ← 符号は残す
-                    .replace(',', '.')
-                    .match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-                const n = m ? Number(m[0]) : NaN;
-                return Number.isFinite(n) ? n : null;
-              };
-
-
-              // ここまでで hOut は数値または文字列("xx.xxx(HAE)" 等)の可能性
-              let hNum = parseNumericLike(hOut);
-
-              // マイナス値は空欄扱い（非ドロガー時の誤計算対策）
+              // ここまでで hOut は数値 or "xx.xxx(HAE)" の可能性 → 数値化して整形
+              let hNum = parse(hOut);
               if (hNum != null && hNum < 0) {
+                // マイナスは空欄（仕様）
                 hOut = '';
               } else if (hNum != null) {
-                // 数値として成立 → 小数3桁に揃えて “単位なし” で出力
-                hOut = hNum.toFixed(3);
+                hOut = fix3(hNum); // 数値のみ
               } else {
-                // 数値化できない（例: "xx(HAE)" など）は空欄に倒す
-                hOut = '';
+                hOut = ''; // 数値化不能は空欄
               }
               // ==== 標高ここまで ====
 
               _this.initKansokuCsvIfNeeded();
               _this.kansokuCsvRows.push([
-                _this.$_jstLocal(), // timestamp (JST)
-                lat, lon,           // 端末WGS84
-                X, Y, csLabel,      // 平面直角（X=北, Y=東）
+                _this.$_jstLocal(),           // timestamp (JST)
+                lat, lon,                     // 端末WGS84
+                X, Y, csLabel,                // 平面直角（X=北, Y=東）
                 accuracy,
                 quality,
                 'kansoku',
-                hOut,                 // ★ row[9] 標高(正高m or "xxx(HAE)")
-                Number.isFinite(hae) ? hae.toFixed(3) : ''  // ★ ここを追加：楕円体高（m・数値のみ）
+                hOut,                         // 標高（正高m or ""）
+                Number.isFinite(haeN) ? fix3(haeN) : '' // 楕円体高（数値のみ）
               ]);
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -8363,6 +8374,7 @@ export default {
           opt
       );
     },
+
 
 
 
@@ -8415,19 +8427,33 @@ export default {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
 
+        // 共通パーサ/フォーマッタ（外部定義があればそれを使用）
+        const parse = this.parseNumberLike || ((v) => {
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          const s = String(v).trim()
+              // 先頭の余計な記号は削るが ± は残す（※ここで '-' を絶対に削らない）
+              .replace(/^[\s:=>\u3000：＝＞]+/, '')
+              .replace(',', '.');
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          const n = m ? Number(m[0]) : NaN;
+          return Number.isFinite(n) ? n : null;
+        });
+        const fix3 = this.toFixed3 || ((n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(3) : ''));
+        const fix2 = this.toFixed2 || ((n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(2) : ''));
+
         const header = rows[0];
         const col = (name) => header.indexOf(name);
         const iX  = col('X');
         const iY  = col('Y');
         const iTS = col('timestamp');
         const iET = col('eventType');
-
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
         // 標高列（なければ row[9] 既定）
         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
 
-        // 楕円体高(HAE) 列の候補を探索（CSVにも出す／DBにも送る）
+        // 楕円体高(HAE) 列の候補
         const iHAE = (() => {
           const names = ['楕円体高','hae','ellipsoidal','hEllipsoidal','h_ellipsoidal','ellipsoidal_height'];
           for (const n of names) { const idx = col(n); if (idx >= 0) return idx; }
@@ -8440,37 +8466,24 @@ export default {
         const haeNumArr = []; // 楕円体高（数値）
         let lastTs = '';
 
-        const parseNumericLike = (v) => {
-          if (this.parseNumericLike) return this.parseNumericLike(v);
-          if (v == null) return null;
-          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          let s = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞]+/, '')  // ← マイナスは残す
-              .replace(',', '.');
-          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-          if (!m) return null;
-          const n = Number(m[0]);
-          return Number.isFinite(n) ? n : null;
-        };
-
         for (let r = 1; r < rows.length; r++) {
           const row = rows[r];
           const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
           if (et !== 'kansoku') continue;
 
-          const vx = Number(row[iX]); if (Number.isFinite(vx)) xs.push(vx);
-          const vy = Number(row[iY]); if (Number.isFinite(vy)) ys.push(vy);
+          // XY は parse で符号保持して数値化
+          const vx = parse(row[iX]); if (vx != null) xs.push(vx);
+          const vy = parse(row[iY]); if (vy != null) ys.push(vy);
 
           if (row.length > iH && row[iH] != null && row[iH] !== '') {
             const raw = row[iH];
             hTxtArr.push(raw);
-            const hn = parseNumericLike(raw);
+            const hn = parse(raw);
             if (hn != null) hNumArr.push(hn);
           }
 
-          // 楕円体高(HAE)
           if (iHAE >= 0 && row[iHAE] != null && row[iHAE] !== '') {
-            const haeN = parseNumericLike(row[iHAE]);
+            const haeN = parse(row[iHAE]);
             if (haeN != null) haeNumArr.push(haeN);
           }
 
@@ -8483,8 +8496,7 @@ export default {
         const Yavg = avg(ys);
 
         // 較差 = √((maxX-minX)^2 + (maxY-minY)^2)
-        const diff = Math.hypot(Math.max(...xs) - Math.min(...xs),
-            Math.max(...ys) - Math.min(...ys));
+        const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
 
         // 点名
         let name = this.currentPointName;
@@ -8513,25 +8525,24 @@ export default {
           hDisp = '';
         }
 
-        // === 平均点リストに追記（画面一覧＆永続化用） ===
+        // === 平均点リストに追記（画面一覧用） ===
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
           X: Xavg,
           Y: Yavg,
-          hDisp,                    // “人向け”の正高（アンテナ位置）
-          pole: poleVal,            // アンテナ高（cm想定）
+          hDisp,                 // “人向け”の正高（アンテナ位置）
+          pole: poleVal,         // アンテナ高（cm想定）
           diff,
           ts,
-          // ★ 追記: CSV/DB用の数値も一緒に持たせる
           lat: Number(this?.torokuPointLngLat?.lat),
           lng: Number(this?.torokuPointLngLat?.lng),
         });
         if (!this.useServerOnly) {
-          localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points));
+          try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch {}
         }
-        // === ここから：仮設置→本命の赤丸へ置換し、プロパティ付与 ==================
-        // 座標系ラベル：store を優先／無ければ経度から自動推定
+
+        // 座標系ラベル：store 優先／無ければ経度から自動推定
         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
         let csLabel = storeLabel;
         if (!csLabel) {
@@ -8546,22 +8557,9 @@ export default {
           }
         }
 
-        // 数値整形（CSVと整合させるため）
-        const fmt3    = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
-        const fmtPole = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '';
-
-        // 正高（アンテナ位置）の数値化
-        const parseNumericLikeLocal = (v) => {
-          if (v == null) return null;
-          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          const s = String(v).trim().replace(',', '.');
-          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/); // ← \d（バックスラッシュは1つ）
-          if (!m) return null;
-          const n = Number(m[0]);
-          return Number.isFinite(n) ? n : null;
-        };
+        // 正高（アンテナ位置）の数値化（符号保持）
         const hAntennaPosNum = (() => {
-          const n1 = parseNumericLikeLocal(hDisp);
+          const n1 = parse(hDisp);
           if (n1 != null) return n1;
           const n2 = Number(this?.externalElevation?.hOrthometric);
           return Number.isFinite(n2) ? n2 : null;
@@ -8585,21 +8583,21 @@ export default {
         // === CSV相当：12列 ===
         // ['点名','X','Y','正高','アンテナ高','正高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時']
         const rowArray = [
-          String(name || ''),                // 点名
-          fmt3(Xavg),                        // X
-          fmt3(Yavg),                        // Y
-          fmt3(hOrthometricNum),             // 正高（= アンテナ位置高 - アンテナ高）
-          fmtPole(antennaHighNum),           // アンテナ高
-          fmt3(hAntennaPosNum),              // 正高（アンテナ位置）
-          fmt3(haeEllipsoidalNum),           // 楕円体高
-          fmt3(diff),                        // XY較差
-          String(csLabel || ''),             // 座標系
+          String(name || ''),          // 点名
+          fix3(Xavg),                  // X（符号保持）
+          fix3(Yavg),                  // Y（符号保持）
+          fix3(hOrthometricNum),       // 正高
+          fix2(antennaHighNum),        // アンテナ高
+          fix3(hAntennaPosNum),        // 正高（アンテナ位置）
+          fix3(haeEllipsoidalNum),     // 楕円体高
+          fix3(diff),                  // XY較差
+          String(csLabel || ''),       // 座標系
           Number.isFinite(lat) ? lat.toFixed(8) : '', // 緯度
           Number.isFinite(lng) ? lng.toFixed(8) : '', // 経度
-          String(ts || '')                   // 観測日時
+          String(ts || '')             // 観測日時
         ];
 
-        // 仮設置赤丸を削除 → 同座標に本命赤丸を新規作成（label と oh3_csv2_row を一度に付与）
+        // 仮設置→本命の赤丸へ置換し、oh3_csv2_row を付与
         try {
           this.confirmTorokuPointAtCurrent(name, rowArray);
         } catch (e) {
@@ -8624,24 +8622,21 @@ export default {
             fd.append('job_id', String(jobId));
             fd.append('user_id', String(userId));
             fd.append('point_name', String(name || ''));
-            fd.append('x_north', Number.isFinite(Xavg) ? String(Xavg) : '');
-            fd.append('y_east', Number.isFinite(Yavg) ? String(Yavg) : '');
-            fd.append('lng', Number.isFinite(lng) ? String(lng) : '');
-            fd.append('lat', Number.isFinite(lat) ? String(lat) : '');
-            fd.append('h_orthometric', Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
-            fd.append('antenna_height', Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
+            fd.append('x_north',      Number.isFinite(Xavg) ? String(Xavg) : '');
+            fd.append('y_east',       Number.isFinite(Yavg) ? String(Yavg) : '');
+            fd.append('lng',          Number.isFinite(lng) ? String(lng) : '');
+            fd.append('lat',          Number.isFinite(lat) ? String(lat) : '');
+            fd.append('h_orthometric',Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
+            fd.append('antenna_height',Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
             fd.append('h_at_antenna', Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
-            fd.append('hae_ellipsoidal', Number.isFinite(haeEllipsoidalNum) ? String(haeEllipsoidalNum) : '');
-            fd.append('xy_diff', Number.isFinite(diff) ? String(diff) : '');
-            fd.append('crs_label', String(csLabel || ''));
-            fd.append('observed_at', _toSql(ts));
+            fd.append('hae_ellipsoidal',Number.isFinite(haeEllipsoidalNum) ? String(haeEllipsoidalNum) : '');
+            fd.append('xy_diff',      Number.isFinite(diff) ? String(diff) : '');
+            fd.append('crs_label',    String(csLabel || ''));
+            fd.append('observed_at',  _toSql(ts));
 
             (async () => {
               try {
-                const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-                  method: 'POST',
-                  body: fd,
-                });
+                const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (!data?.ok) console.warn('[job_points.create] server error:', data);
               } catch (err) {
@@ -8662,6 +8657,7 @@ export default {
         return false;
       }
     },
+
 
 // 平均点リストをCSVで出力（人向け標高表記のまま）
     async downloadCsv2() {
@@ -8696,20 +8692,9 @@ export default {
 
         const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
 
-        const parseNumericLike = (v) => {
-          if (v == null) return null;
-          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          const m = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞]+/, '')   // ← 符号は残す
-              .replace(',', '.')
-              .match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-          const n = m ? Number(m[0]) : NaN;
-          return Number.isFinite(n) ? n : null;
-        };
-
-        const fmt3    = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
-        const fmtPole = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
-        const fmtDeg8 = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(8); };
+        const fmt3    = (v) => this.toFixed3(v);
+        const fmtPole = (v) => this.toFixed2(v);
+        const fmtDeg8 = (v) => this.toFixed8(v);
         const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
@@ -9371,17 +9356,7 @@ export default {
     },
 
 // 値から先頭の実数を抜く（":70.928," / "66.789(HAE)" など）
-    parseNumericLike(v) {
-      if (v == null) return null;
-      if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-      let s = String(v).trim();
-      s = s.replace(/^[\s:=>\u3000：＝＞]+/, ''); // ← 符号は残す
-      s = s.replace(',', '.');
-      const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-      if (!m) return null;
-      const n = Number(m[0]);
-      return Number.isFinite(n) ? n : null;
-    },
+
 
 
 // 標高の人間向け表記（"m" + 楕円体高注記）
@@ -9391,7 +9366,7 @@ export default {
       const nDirect = Number(v);
       if (Number.isFinite(nDirect)) return nDirect.toFixed(3);
 
-      const n = this.parseNumericLike(v);
+      const n = this.parseNumberLike(v);
       if (n == null) return '';
       // "(HAE)" 等が入っていてもここでは数値だけを返す
       return n.toFixed(3);
