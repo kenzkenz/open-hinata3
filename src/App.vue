@@ -15,7 +15,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              color="red"
               @click="onJobEndClick"
           aria-label="業務を終了"
           >
@@ -42,12 +41,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              color="teal"
               :disabled="torokuBusy || kansokuRunning"
               @click="onAddObservationPoint"
           aria-label="観測地点を新規追加"
           >
-            new
+            追加
 <!--          <v-icon size="18">mdi-crosshairs-gps</v-icon>-->
           </v-btn>
         </MiniTooltip>
@@ -142,23 +140,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-divider />
 
           <v-card-text>
-            <!-- 既存ジョブ一覧（シンプル） -->
-            <div class="mb-3" v-if="jobList && jobList.length">
-              <div class="text-caption mb-2">既存のジョブ</div>
-              <v-list density="compact" nav>
-                <v-list-item
-                    v-for="j in jobList"
-                    :key="j.id"
-                    :title="j.name"
-                    @click="pickExistingJob(j)"
-                />
-              </v-list>
-            </div>
-
-            <v-divider class="my-3" />
-
-            <!-- 新規ジョブ -->
-            <div>
+            <!-- 新規ジョブ（上） -->
+            <div class="mb-4">
               <div class="text-caption mb-2">新規ジョブを作成</div>
               <div class="d-flex ga-2">
                 <v-text-field
@@ -173,6 +156,37 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
               <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
             </div>
+
+            <v-divider class="my-3" />
+
+            <!-- 既存ジョブ（下） -->
+            <div v-if="jobList && jobList.length">
+              <div class="text-caption mb-2">既存のジョブ</div>
+              <v-list density="compact" nav>
+                <v-list-item
+                    v-for="job in jobList"
+                    :key="job.id"
+                    :title="job.name"
+                    @click="pickExistingJob(job)"
+                >
+                  <template #append>
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        aria-label="ジョブを削除"
+                        @click.stop="deleteJob(job)"
+                    >
+                      <v-icon size="16">mdi-close</v-icon>
+                    </v-btn>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
+
+            <div v-else class="text-medium-emphasis text-caption">
+              既存のジョブはありません。
+            </div>
           </v-card-text>
 
           <v-card-actions class="justify-end">
@@ -180,6 +194,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
+
 
 
 
@@ -3141,10 +3156,17 @@ export default {
     jobName: '',              // 新規用
     jobNameError: '',         // バリデーション表示
 
+    // 現在選択中（UIで使う想定）
+    currentJobId: null,
+    currentJobName: '',
+
+
+
     aaa: null,
   }),
   computed: {
     ...mapState([
+      'userId',
       'isKuiuchi',
       'confirmMessage',
       'confirmProps',
@@ -6887,34 +6909,194 @@ export default {
     /* =========================================================
      * ① 外部標高（ドロガー）受け取り・正規化まわり
      * =======================================================*/
-    // 開く・閉じる（外からも触れる想定）
-    openJobPicker() { this.jobPickerOpen = true; },
-    closeJobPicker() { this.jobPickerOpen = false; },
+    async deleteJob(job) {
+      const id = String(job?.id ?? job?.job_id ?? '');
+      if (!id) return;
+      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
 
-    // 既存ジョブを選択（イベント名だけ決めておく）
-    pickExistingJob(job) {
-      try { this.$emit?.('job-picked', job); } catch {}
-      this.jobPickerOpen = false;
+      const fd = new FormData();
+      fd.append('action', 'jobs.delete');
+      fd.append('job_id', id);
+
+      try {
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd,
+        });
+        const data = await res.json(); // 最小：JSON前提
+
+        if (!data?.ok) {
+          alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
+          return;
+        }
+
+        // 成功：一覧から削除
+        this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
+
+        // 選択中ならクリア
+        if (String(this.currentJobId) === id) {
+          this.currentJobId = null;
+          this.currentJobName = '';
+        }
+      } catch (e) {
+        console.error('[jobs.delete] 失敗', e);
+        alert('削除に失敗しました：' + (e?.message || e));
+      }
     },
 
-    // 新規ジョブの作成（超簡易バリデーションだけ）
-    createNewJob() {
-      const name = (this.jobName || '').trim();
-      if (!name) { this.jobNameError = 'ジョブ名を入力してください'; return; }
-      this.jobNameError = '';
+    async refreshJobs() {
+      const fd = new FormData();
+      fd.append('action', 'jobs.list');
+      fd.append('user_id', this.userId);
+      let res;
+      try {
+        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd,
+        });
+      } catch (e) {
+        console.error('[jobs.list] ネットワーク失敗', e);
+        alert('ジョブ一覧の取得に失敗しました: ' + (e?.message || e));
+        return;
+      }
+      // 本文を読む（JSON/テキストどちらでも）
+      const ct = res.headers.get('content-type') || '';
+      let data;
+      try {
+        data = ct.includes('application/json') ? await res.json() : JSON.parse(await res.text());
+      } catch (e) {
+        console.error('[jobs.list] JSON解析失敗', e);
+        alert('ジョブ一覧の解析に失敗しました');
+        return;
+      }
+      if (!data?.ok) {
+        const msg = data?.error || 'サーバーエラー';
+        alert('ジョブ一覧の取得に失敗しました：' + msg);
+        console.error('[jobs.list] server says:', data);
+        return;
+      }
+      console.log(JSON.stringify(data, null, 2));
+      // サーバスキーマ → UIスキーマに最小変換
+      const toUi = (r) => ({ id: String(r.job_id), name: r.job_name, createdAt: r.created_at });
+      this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
+    },
 
-      // 最小：その場で仮ID払い出し（後で置き換えてOK）
-      const job = { id: 'job_' + Date.now(), name };
 
-      // 既存リストにも反映（任意）
-      this.jobList.unshift(job);
+// --- 既存の createNewJob() の成功時の末尾にこの1行を追加 ---
+    async onJobCreatedSuccess() {
+      await this.refreshJobs();
+    },
 
-      // イベント通知（後でフローに接続）
-      try { this.$emit?.('job-created', job); } catch {}
+// （参考）あなたの既存 createNewJob() の最後に onJobCreatedSuccess() を呼ぶと同期できる
+// createNewJob() 内の成功分岐の末尾：
+// await this.onJobCreatedSuccess()
 
-      // 片付け
-      this.jobName = '';
+
+
+
+    // removeJob(job) {
+    //   if (!job) return;
+    //   const idx = this.jobList.findIndex(x => x.id === job.id);
+    //   if (idx >= 0) {
+    //     this.jobList.splice(idx, 1);
+    //
+    //     // 選択中を消した場合は選択もクリア
+    //     if (this.currentJobId === job.id) {
+    //       this.currentJobId = null;
+    //       this.currentJobName = '';
+    //       try {
+    //         localStorage.removeItem('oh3_current_job_id');
+    //         localStorage.removeItem('oh3_current_job_name');
+    //       } catch {}
+    //     }
+    //
+    //     this.persistJobsToStorage();
+    //     // 必要ならイベント通知
+    //     this.$emit?.('job-removed', { id: job.id, name: job.name });
+    //     window.dispatchEvent(new CustomEvent('oh3:job:removed', { detail: { id: job.id, name: job.name }}));
+    //   }
+    // },
+    // === Job Picker ===
+    openJobPicker() {
+      this.jobPickerOpen = true;
+      this.refreshJobs();
+    },
+    closeJobPicker() {
       this.jobPickerOpen = false;
+      this.jobName = '';
+      this.jobNameError = '';
+    },
+
+    pickExistingJob(job) {
+      if (!job) return;
+      this.currentJobId = job.id;
+      this.currentJobName = job.name;
+      this.closeJobPicker();
+
+      // ここで“既存ジョブを選択した”イベントを通知（画面左下メニューの開閉などに使う）
+      // 必要に応じてどちらか/両方
+      this.$emit?.('job-picked', { id: job.id, name: job.name });
+      window.dispatchEvent(new CustomEvent('oh3:job:picked', { detail: { id: job.id, name: job.name }}));
+    },
+
+    async createNewJob() {
+// 最小バリデーション
+      this.jobNameError = '';
+      const job_name = (this.jobName || '').trim();
+      if (!job_name) {
+        this.jobNameError = 'ジョブ名を入力してください';
+        return;
+      }
+      if (job_name.length > 64) {
+        this.jobNameError = '64文字以内で入力してください';
+        return;
+      }
+      const exists = this.jobList.some(j => j.name === job_name)
+      if (exists) {
+        this.jobNameError = '同名のジョブが存在します';
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append('action','jobs.create');
+      fd.append('user_id',this.userId);
+      fd.append('job_name',job_name);
+      // fd.append('note','任意メモ');
+      const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
+      console.log(await r.json());
+
+      await this.onJobCreatedSuccess()
+
+      alert('左下の「追加」ボタンをクリックしてください。')
+      this.jobPickerOpen = false
+
+    },
+
+    // === Storage（UIだけの擬似DB） ===
+    loadJobsFromStorage() {
+      try {
+        const raw = localStorage.getItem('oh3_jobs');
+        const arr = raw ? JSON.parse(raw) : [];
+        this.jobList = Array.isArray(arr) ? arr : [];
+      } catch {
+        this.jobList = [];
+      }
+      // 直近選択の復元（任意）
+      try {
+        const curId = localStorage.getItem('oh3_current_job_id');
+        const curName = localStorage.getItem('oh3_current_job_name');
+        if (curId && curName) {
+          this.currentJobId = curId;
+          this.currentJobName = curName;
+        }
+      } catch {}
+    },
+    persistJobsToStorage() {
+      try { localStorage.setItem('oh3_jobs', JSON.stringify(this.jobList || [])); } catch {}
+      try {
+        if (this.currentJobId)  localStorage.setItem('oh3_current_job_id', this.currentJobId);
+        if (this.currentJobName) localStorage.setItem('oh3_current_job_name', this.currentJobName);
+      } catch {}
     },
 
     onJobEndClick() {
@@ -12471,6 +12653,9 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
+    // 既存ジョブをローカルから復元（まだサーバなし）
+    this.loadJobsFromStorage();
 
     // ---- GPSライン描画 用の状態 ----
     this.gpsLineIds = this.gpsLineIds ?? {
