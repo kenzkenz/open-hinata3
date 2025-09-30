@@ -78,20 +78,6 @@ try {
             exit;
         }
 
-//        // -------------------- jobs.list --------------------
-//        case 'jobs.list': {
-//            $user_id = isset($_POST['user_id']) ? trim((string)$_POST['user_id']) : '';
-//            if ($user_id !== '') {
-//                $stmt = $pdo->prepare('SELECT * FROM jobs WHERE user_id=? ORDER BY job_id DESC');
-//                $stmt->execute([$user_id]);
-//                $rows = $stmt->fetchAll();
-//            } else {
-//                $rows = $pdo->query('SELECT * FROM jobs ORDER BY job_id DESC')->fetchAll();
-//            }
-//            echo json_encode(['ok'=>true,'data'=>$rows], JSON_UNESCAPED_UNICODE);
-//            exit;
-//        }
-
         // -------------------- jobs.delete --------------------
         case 'jobs.delete': {
             $job_id = (int)($_POST['job_id'] ?? 0);
@@ -152,6 +138,15 @@ try {
             $stmt->execute([$job_id]);
             $rows = $stmt->fetchAll();
             echo json_encode(['ok'=>true,'data'=>$rows], JSON_UNESCAPED_UNICODE); exit;
+        }
+
+        // 追加: job_points.delete（point_id で1件削除）
+        case 'job_points.delete': {
+            $point_id = (int)($_POST['point_id'] ?? 0);
+            if ($point_id <= 0) { echo json_encode(['ok'=>false,'error'=>'point_id は必須']); exit; }
+            $stmt = $pdo->prepare('DELETE FROM job_points WHERE point_id=?');
+            $stmt->execute([$point_id]);
+            echo json_encode(['ok'=>true,'data'=>['deleted_id'=>$point_id]], JSON_UNESCAPED_UNICODE); exit;
         }
 
         // -------------------- default --------------------

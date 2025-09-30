@@ -136,10 +136,18 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!-- Job Picker -->
       <v-dialog v-model="jobPickerOpen" max-width="520">
         <v-card>
-          <v-card-title class="text-h6">ジョブ選択</v-card-title>
+          <v-card-title class="d-flex align-center text-h6">
+            ジョブ選択
+            <v-spacer></v-spacer>
+            <span v-if="currentJobName" class="text-subtitle-2">
+              現在のジョブ名：{{ currentJobName }}
+            </span>
+          </v-card-title>
+
           <v-divider />
 
-          <v-card-text>
+          <!-- ★ ダイアログ本文も伸びすぎ防止 -->
+          <v-card-text style="max-height: 70vh; overflow-y: auto;">
             <!-- 新規ジョブ（上） -->
             <div class="mb-4">
               <div class="text-caption mb-2">新規ジョブを作成</div>
@@ -162,43 +170,84 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <!-- 既存ジョブ（下） -->
             <div v-if="jobList && jobList.length">
               <div class="text-caption mb-2">既存のジョブ</div>
-              <v-list density="compact" nav>
-                <v-list-item
-                    v-for="job in jobList"
-                    :key="job.id"
-                    :title="job.name"
-                    @click="pickExistingJob(job)"
-                >
-                  <template #append>
-                    <!-- 件数バッジ（0は非表示にしたい場合は v-if="job.count > 0"） -->
-                    <v-chip
-                        v-if="Number(job.count) > 0"
-                        size="small"
-                        variant="flat"
-                        color="red"
-                        class="rounded-pill mr-1"
-                        style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
-                    >
-                      {{ job.count }}
-                    </v-chip>
 
-                    <!-- 削除ボタン -->
-                    <v-btn
-                        icon
-                        size="x-small"
-                        variant="text"
-                        aria-label="ジョブを削除"
-                        @click.stop="deleteJob(job)"
-                    >
-                      <v-icon size="16">mdi-close</v-icon>
-                    </v-btn>
-                  </template>
-                </v-list-item>
-              </v-list>
+              <!-- ★ スクロール枠（高さ制限＋縦スクロール） -->
+              <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--v-theme-outline); border-radius: 8px;">
+                <v-list density="compact" nav>
+                  <v-list-item
+                      v-for="job in jobList"
+                      :key="job.id"
+                      :title="job.name"
+                      @click="pickExistingJob(job)"
+                  >
+                    <template #append>
+                      <!-- 件数バッジ -->
+                      <v-chip
+                          v-if="Number(job.count) > 0"
+                          size="small"
+                          variant="flat"
+                          color="red"
+                          class="rounded-pill mr-1"
+                          style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
+                      >
+                        {{ job.count }}
+                      </v-chip>
+
+                      <!-- 削除ボタン -->
+                      <v-btn
+                          icon
+                          size="x-small"
+                          variant="text"
+                          aria-label="ジョブを削除"
+                          @click.stop="deleteJob(job)"
+                      >
+                        <v-icon size="16">mdi-close</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </div>
             </div>
 
+            <!-- ↓ 選択中ジョブのポイント一覧 -->
+            <div v-if="currentJobId && pointsForCurrentJob && pointsForCurrentJob.length" class="mt-3">
+              <v-divider class="my-2" />
+              <div class="d-flex align-center justify-space-between mb-1">
+                <div class="text-caption">
+                  <span v-if="currentJobName">{{ currentJobName }}のポイント</span>
+                  （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）
+                </div>
+                <v-btn icon size="x-small" variant="text" @click.stop="loadPointsForJob(currentJobId)">
+                  <v-icon size="16">mdi-refresh</v-icon>
+                </v-btn>
+              </div>
 
-            <div v-else class="text-medium-emphasis text-caption">
+              <!-- ★ スクロール枠（ポイント側も） -->
+              <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--v-theme-outline); border-radius: 8px;">
+                <v-list density="compact" nav>
+                  <v-list-item
+                      v-for="pt in pointsForCurrentJob"
+                      :key="pt.point_id"
+                      :title="pt.point_name"
+                      @click="focusPointOnMap(pt)"
+                  >
+                    <template #subtitle>
+                <span v-if="Number.isFinite(+pt.lat) && Number.isFinite(+pt.lng)">
+                  {{ (+pt.lat).toFixed(5) }}, {{ (+pt.lng).toFixed(5) }}
+                </span>
+                    </template>
+                    <template #append>
+                      <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
+                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </div>
+            </div>
+
+            <!-- ★ “ジョブが無い”表示は jobList が空の時だけ -->
+            <div v-else-if="!jobList || !jobList.length" class="text-medium-emphasis text-caption">
               既存のジョブはありません。
             </div>
           </v-card-text>
@@ -640,13 +689,20 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!-- 観測  -->
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
-          <v-card-title>
-            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
-              観測終了-{{ currentJobName }}-{{ currentPointName }}
-            </span>
-            <span v-else>
-              {{ currentJobName }}-{{ currentPointName }}
-            </span>
+          <v-card-title class="d-flex align-center">
+            <span>現在のジョブ名：{{ currentJobName }}</span>
+<!--            <v-spacer />-->
+<!--            <span>点名：{{ currentPointName }}</span>-->
+            <v-spacer />
+            <v-chip
+                v-if="kansokuAverages?.n === kansokuCount"
+                color="red"
+                variant="flat"
+                size="small"
+                class="font-weight-bold"
+            >
+              観測終了
+            </v-chip>
           </v-card-title>
           <v-card-text>
             <div class="oh3-grid-4col">
@@ -751,15 +807,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <!--              lon={{ fmtLL(kansokuAverages.lon) }}-->
             </div>
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
-              <v-btn color="blue-darken-1" text
-                     @click="dialogForToroku = false;
-               clearTorokuPoint();
-               detachTorokuPointClick()
-               resetPointSequence()
-               clearCsv2Points()"
-                     :disabled="kansokuRunning">
-                観測終了
-              </v-btn>
+<!--              <v-btn color="blue-darken-1" text-->
+<!--                     @click="dialogForToroku = false;-->
+<!--               clearTorokuPoint();-->
+<!--               detachTorokuPointClick()-->
+<!--               resetPointSequence()-->
+<!--               clearCsv2Points()"-->
+<!--                     :disabled="kansokuRunning">-->
+<!--                観測終了-->
+<!--              </v-btn>-->
               <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
               <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
@@ -3174,6 +3230,9 @@ export default {
     currentJobName: '',
 
     useServerOnly: true,
+
+    pointsForCurrentJob: [],   // ← 新設：現在選択中ジョブのポイント一覧
+
 
     aaa: null,
   }),
@@ -6922,8 +6981,148 @@ export default {
     /* =========================================================
      * ① 外部標高（ドロガー）受け取り・正規化まわり
      * =======================================================*/
+    // 既存ポイントを地図中央に & 赤丸も出す（flyは使わない）
+    async deletePoint(pt) {
+      const pointId = String(pt?.point_id ?? pt?.id ?? '');
+      if (!pointId) return;
+
+      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt?.point_name ?? pt?.name ?? ''}`)) return;
+
+      const fd = new FormData();
+      fd.append('action', 'job_points.delete');
+      fd.append('point_id', pointId);
+
+      try {
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd,
+        });
+        const data = await res.json();
+        if (!data?.ok) {
+          alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
+          return;
+        }
+
+        // 1) 一覧から除去
+        this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
+            x => String(x.point_id ?? x.id) !== pointId
+        );
+
+        // 2) 地図からも除去（座標一致でフィルタ）
+        try {
+          const map = (this.$store?.state?.map01) || this.map01;
+          const SRC = 'oh-toroku-point-src';
+          const lng = Number(pt?.lng), lat = Number(pt?.lat);
+          if (this._torokuFC && Number.isFinite(lng) && Number.isFinite(lat)) {
+            const eps = 1e-9;
+            this._torokuFC.features = (this._torokuFC.features || []).filter(f => {
+              const c = f?.geometry?.coordinates || [];
+              return !(Math.abs(c[0] - lng) < eps && Math.abs(c[1] - lat) < eps);
+            });
+            if (map?.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
+          }
+        } catch (e) {
+          console.warn('[deletePoint] map update failed', e);
+        }
+      } catch (e) {
+        console.error('[job_points.delete] 失敗', e);
+        alert('削除に失敗しました：' + (e?.message || e));
+      }
+    },
+
+    focusPointOnMap(pt) {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+
+        const lng = Number(pt?.lng);
+        const lat = Number(pt?.lat);
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+          console.warn('[focusPointOnMap] invalid lng/lat', pt);
+          return;
+        }
+
+        // 1点でも fitBounds（duration:0 で瞬間移動）
+        try {
+          if (window.mapboxgl?.LngLatBounds) {
+            const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
+            map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
+          } else {
+            map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
+          }
+        } catch (e) {
+          console.warn('[focusPointOnMap] fitBounds failed', e);
+        }
+
+        // 点名は point_name/name のどちらか
+        const label = String(pt?.point_name ?? pt?.name ?? '');
+        // 既存の plot をそのまま利用（複数描画OK）
+        this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
+      } catch (e) {
+        console.warn('[focusPointOnMap] error', e);
+      }
+    },
+
+    // async deletePoint(pt) {
+    //   const id = Number(pt?.point_id);
+    //   if (!Number.isFinite(id) || id <= 0) return;
+    //   if (!confirm(`このポイントを削除しますか？\n点名: ${pt.point_name}`)) return;
+    //
+    //   const fd = new FormData();
+    //   fd.append('action', 'job_points.delete');
+    //   fd.append('point_id', String(id));
+    //
+    //   let data;
+    //   try {
+    //     const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+    //       method: 'POST', body: fd
+    //     });
+    //     data = await res.json();
+    //   } catch (e) {
+    //     alert('ポイント削除に失敗しました（通信エラー）');
+    //     console.error('[job_points.delete] network', e);
+    //     return;
+    //   }
+    //   if (!data?.ok) {
+    //     alert('ポイント削除に失敗しました：' + (data?.error || 'サーバーエラー'));
+    //     return;
+    //   }
+    //
+    //   // 1) 一覧から除去
+    //   this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(x => Number(x.point_id) !== id);
+    //
+    //   // 2) 地図から除去（_torokuFC の properties.label/座標で一致削除）
+    //   try {
+    //     const SRC = 'oh-toroku-point-src';
+    //     if (this._torokuFC && Array.isArray(this._torokuFC.features)) {
+    //       // 座標一致または点名一致で消す（両方試す）
+    //       const lng = Number(pt.lng), lat = Number(pt.lat);
+    //       const name = String(pt.point_name || '');
+    //       this._torokuFC.features = this._torokuFC.features.filter(f => {
+    //         const c = f?.geometry?.coordinates || [];
+    //         const sameLL = Number(c[0]) === lng && Number(c[1]) === lat;
+    //         const sameName = (f?.properties?.name || f?.properties?.label) === name;
+    //         return !(sameLL || sameName);
+    //       });
+    //       const map = (this.$store?.state?.map01) || this.map01;
+    //       if (map?.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
+    //     }
+    //   } catch (e) {
+    //     console.warn('[points] remove feature failed (continue)', e);
+    //   }
+    //
+    //   // 3) バッジの件数もデクリメント
+    //   try {
+    //     const jid = String(this.currentJobId || '');
+    //     if (jid && this.jobPointCounts && typeof this.jobPointCounts[jid] === 'number') {
+    //       this.jobPointCounts = { ...this.jobPointCounts, [jid]: Math.max(0, this.jobPointCounts[jid]-1) };
+    //     }
+    //   } catch {}
+    // },
+
     // ---- 既存ジョブを選択（✕と同じリスト上の行から発火）----
     async pickExistingJob(job) {
+      this.pointsForCurrentJob = [];
       const id   = String(job?.id ?? job?.job_id ?? '');
       const name = String(job?.name ?? job?.job_name ?? '');
       if (!id) return;
@@ -6955,6 +7154,9 @@ export default {
         alert('観測点の取得に失敗しました');
         return;
       }
+
+      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
+
 
       // alert(JSON.stringify(data));
 
@@ -7182,18 +7384,6 @@ export default {
       this.jobNameError = '';
     },
 
-    // pickExistingJob(job) {
-    //   if (!job) return;
-    //   this.currentJobId = job.id;
-    //   this.currentJobName = job.name;
-    //   this.closeJobPicker();
-    //
-    //   // ここで“既存ジョブを選択した”イベントを通知（画面左下メニューの開閉などに使う）
-    //   // 必要に応じてどちらか/両方
-    //   this.$emit?.('job-picked', { id: job.id, name: job.name });
-    //   window.dispatchEvent(new CustomEvent('oh3:job:picked', { detail: { id: job.id, name: job.name }}));
-    // },
-
     async createNewJob() {
       // 最小バリデーション
       this.jobNameError = '';
@@ -7294,6 +7484,9 @@ export default {
       // 任意：イベント通知（必要ならフック）
       try { this.$emit?.('job-ended'); } catch {}
       try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
+
+      this.pointsForCurrentJob = [];
+
     },
 
     onOpenJobPicker() {
@@ -13873,28 +14066,6 @@ html.oh3-embed #map01 {
   .oh3-col-fixed {
     width: 100%;
   }
-}
-
-.job-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-}
-.job-name { flex: 1; min-width: 0; }
-
-.job-badge{
-  min-width: 20px; height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;             /* 丸(可変幅) */
-  background: #ff3b30;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 20px;
 }
 
 @keyframes pulse {
