@@ -170,6 +170,19 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     @click="pickExistingJob(job)"
                 >
                   <template #append>
+                    <!-- 件数バッジ（0は非表示にしたい場合は v-if="job.count > 0"） -->
+                    <v-chip
+                        v-if="Number(job.count) > 0"
+                        size="small"
+                        variant="flat"
+                        color="red"
+                        class="rounded-pill mr-1"
+                        style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
+                    >
+                      {{ job.count }}
+                    </v-chip>
+
+                    <!-- 削除ボタン -->
                     <v-btn
                         icon
                         size="x-small"
@@ -183,6 +196,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 </v-list-item>
               </v-list>
             </div>
+
 
             <div v-else class="text-medium-emphasis text-caption">
               既存のジョブはありません。
@@ -7112,7 +7126,13 @@ export default {
       }
       console.log(JSON.stringify(data, null, 2));
       // サーバスキーマ → UIスキーマに最小変換
-      const toUi = (r) => ({ id: String(r.job_id), name: r.job_name, createdAt: r.created_at });
+      // const toUi = (r) => ({ id: String(r.job_id), name: r.job_name, createdAt: r.created_at });
+      const toUi = (r) => ({
+        id: String(r.job_id),
+        name: r.job_name,
+        createdAt: r.created_at,
+        count: Number(r.point_count ?? 0),   // ★ 追加
+      });
       this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
     },
 
@@ -13842,7 +13862,6 @@ html.oh3-embed #map01 {
   width: 150px;
 }
 
-
 /* 狭い画面では 1 列にフォールバック */
 @media (max-width: 640px) {
   .oh3-grid-3col {
@@ -13856,6 +13875,27 @@ html.oh3-embed #map01 {
   }
 }
 
+.job-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+}
+.job-name { flex: 1; min-width: 0; }
+
+.job-badge{
+  min-width: 20px; height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;             /* 丸(可変幅) */
+  background: #ff3b30;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 20px;
+}
 
 @keyframes pulse {
   0% { transform: scale(1); }

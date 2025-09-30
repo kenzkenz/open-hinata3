@@ -53,20 +53,44 @@ try {
             echo json_encode(['ok'=>true,'data'=>$row], JSON_UNESCAPED_UNICODE);
             exit;
         }
-
-        // -------------------- jobs.list --------------------
+// -------------------- jobs.list --------------------
         case 'jobs.list': {
             $user_id = isset($_POST['user_id']) ? trim((string)$_POST['user_id']) : '';
+
+            $sql = "SELECT j.*, COALESCE(p.cnt,0) AS point_count
+            FROM jobs j
+            LEFT JOIN (
+              SELECT job_id, COUNT(*) AS cnt
+              FROM job_points
+              GROUP BY job_id
+            ) p ON p.job_id = j.job_id";
+
+            $order = " ORDER BY j.job_id DESC";
+
             if ($user_id !== '') {
-                $stmt = $pdo->prepare('SELECT * FROM jobs WHERE user_id=? ORDER BY job_id DESC');
+                $stmt = $pdo->prepare($sql . " WHERE j.user_id=? " . $order);
                 $stmt->execute([$user_id]);
                 $rows = $stmt->fetchAll();
             } else {
-                $rows = $pdo->query('SELECT * FROM jobs ORDER BY job_id DESC')->fetchAll();
+                $rows = $pdo->query($sql . $order)->fetchAll();
             }
             echo json_encode(['ok'=>true,'data'=>$rows], JSON_UNESCAPED_UNICODE);
             exit;
         }
+
+//        // -------------------- jobs.list --------------------
+//        case 'jobs.list': {
+//            $user_id = isset($_POST['user_id']) ? trim((string)$_POST['user_id']) : '';
+//            if ($user_id !== '') {
+//                $stmt = $pdo->prepare('SELECT * FROM jobs WHERE user_id=? ORDER BY job_id DESC');
+//                $stmt->execute([$user_id]);
+//                $rows = $stmt->fetchAll();
+//            } else {
+//                $rows = $pdo->query('SELECT * FROM jobs ORDER BY job_id DESC')->fetchAll();
+//            }
+//            echo json_encode(['ok'=>true,'data'=>$rows], JSON_UNESCAPED_UNICODE);
+//            exit;
+//        }
 
         // -------------------- jobs.delete --------------------
         case 'jobs.delete': {
