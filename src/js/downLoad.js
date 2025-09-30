@@ -4761,7 +4761,10 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
 
     try {
         let phpUrl = "https://kenzkenz.net/myphp/upload.php"
-        if (!worldFile) phpUrl = "https://kenzkenz.net/myphp/upload1file.php"
+        if (!worldFile) {
+            phpUrl = "https://kenzkenz.net/myphp/upload1file.php"
+        }
+        // alert(phpUrl)
         const response = await fetch(phpUrl, {
             method: "POST",
             body: formData,

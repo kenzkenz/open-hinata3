@@ -8,8 +8,54 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
+      <!-- 既存の isTracking ブロックの直下に追加 -->
+      <div v-if="isJobMenu" class="oh-left-bottom-tools mt-2">
+        <!-- 業務を終了 -->
+        <MiniTooltip text="業務を終了" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              color="red"
+              @click="onJobEndClick"
+          aria-label="業務を終了"
+          >
+            終了
+<!--          <v-icon size="18">mdi-flag-checkered</v-icon>-->
+          </v-btn>
+        </MiniTooltip>
 
-      <div v-if="s_isKuiuchi" class="oh-tools">
+        <!-- Job Picker を開く -->
+        <MiniTooltip text="業務を選ぶ / 変更する" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              color="primary"
+              @click="onOpenJobPicker"
+          aria-label="Job Picker を開く"
+          >
+          <v-icon size="18">mdi-briefcase-search-outline</v-icon>
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- 観測地点 新規追加 -->
+        <MiniTooltip text="観測地点を新規追加" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              color="teal"
+              :disabled="torokuBusy || kansokuRunning"
+              @click="onAddObservationPoint"
+          aria-label="観測地点を新規追加"
+          >
+            new
+<!--          <v-icon size="18">mdi-crosshairs-gps</v-icon>-->
+          </v-btn>
+        </MiniTooltip>
+      </div>
+
+
+
+      <div v-if="s_isKuiuchi" class="oh-left-bottom-tools">
         <!-- 終了 -->
         <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
           <v-btn
@@ -22,8 +68,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
       </div>
 
-      <div v-if="isTracking" class="oh-tools">
-
+      <div v-if="isTracking" class="oh-left-bottom-tools">
         <!-- 終了 -->
         <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
           <v-btn
@@ -90,6 +135,53 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       </div>
 
+      <!-- Job Picker -->
+      <v-dialog v-model="jobPickerOpen" max-width="520">
+        <v-card>
+          <v-card-title class="text-h6">ジョブ選択</v-card-title>
+          <v-divider />
+
+          <v-card-text>
+            <!-- 既存ジョブ一覧（シンプル） -->
+            <div class="mb-3" v-if="jobList && jobList.length">
+              <div class="text-caption mb-2">既存のジョブ</div>
+              <v-list density="compact" nav>
+                <v-list-item
+                    v-for="j in jobList"
+                    :key="j.id"
+                    :title="j.name"
+                    @click="pickExistingJob(j)"
+                />
+              </v-list>
+            </div>
+
+            <v-divider class="my-3" />
+
+            <!-- 新規ジョブ -->
+            <div>
+              <div class="text-caption mb-2">新規ジョブを作成</div>
+              <div class="d-flex ga-2">
+                <v-text-field
+                    v-model.trim="jobName"
+                    label="ジョブ名"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                    class="flex-1-1"
+                />
+                <v-btn color="primary" @click="createNewJob">作成</v-btn>
+              </div>
+              <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
+            </div>
+          </v-card-text>
+
+          <v-card-actions class="justify-end">
+            <v-btn variant="text" @click="closeJobPicker">閉じる</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
 
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
@@ -108,7 +200,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </v-dialog>
 
 
-      <!--      <div class="oh-tools" style="position:absolute;left:10px;top:70px;z-index:3;display:flex;gap:8px;">-->
+      <!--      <div class="oh-left-bottom-tools" style="position:absolute;left:10px;top:70px;z-index:3;display:flex;gap:8px;">-->
 <!--        <v-btn icon @click="startTrackLog" :disabled="logEnabled">記録開始</v-btn>-->
 <!--        <v-btn icon @click="stopTrackLog"  :disabled="!logEnabled">記録停止</v-btn>-->
 <!--        <v-btn icon @click="exportTrackCsv"  :disabled="!csvRows || csvRows.length<=1">CSV</v-btn>-->
@@ -1782,7 +1874,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     <v-fab
                         v-bind="activatorProps"
                         :size="isSmall ? 'small' : 'default'"
-                        v-if="user1 && mapName === 'map01'"
+                        v-if="mapName === 'map01'"
                         icon
                         style="margin-left:8px;"
                         @click="zahyoGet"
@@ -1793,7 +1885,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
-                    <v-btn icon @click="startTorokuHere">観測</v-btn>
+                    <v-btn icon @click="startTorokuHere">旧観測</v-btn>
+                    <v-btn icon
+                           @click="isJobMenu = true;
+                           isKuiuchi = false;
+                           isTracking = false
+                           openJobPicker()"
+                    >観測</v-btn>
+
                   </div>
                 </v-speed-dial>
               </MiniTooltip>
@@ -3031,6 +3130,16 @@ export default {
     sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
 
     torokuDisabled: false,   // ★ ダイアログCloseで復帰
+
+    isJobMenu: false,     // ← 左下メニューの表示制御（isなんとか）
+    torokuBusy: false,    // ←（多重観測防止）
+
+    jobPickerOpen: false,    // Job Picker の v-model
+    jobPickerBusy: false,    // ← 先頭アンダースコア禁止版（多重オープン防止）
+
+    jobList: [],              // 既存ジョブ（最小構成）
+    jobName: '',              // 新規用
+    jobNameError: '',         // バリデーション表示
 
     aaa: null,
   }),
@@ -6778,6 +6887,51 @@ export default {
     /* =========================================================
      * ① 外部標高（ドロガー）受け取り・正規化まわり
      * =======================================================*/
+    // 開く・閉じる（外からも触れる想定）
+    openJobPicker() { this.jobPickerOpen = true; },
+    closeJobPicker() { this.jobPickerOpen = false; },
+
+    // 既存ジョブを選択（イベント名だけ決めておく）
+    pickExistingJob(job) {
+      try { this.$emit?.('job-picked', job); } catch {}
+      this.jobPickerOpen = false;
+    },
+
+    // 新規ジョブの作成（超簡易バリデーションだけ）
+    createNewJob() {
+      const name = (this.jobName || '').trim();
+      if (!name) { this.jobNameError = 'ジョブ名を入力してください'; return; }
+      this.jobNameError = '';
+
+      // 最小：その場で仮ID払い出し（後で置き換えてOK）
+      const job = { id: 'job_' + Date.now(), name };
+
+      // 既存リストにも反映（任意）
+      this.jobList.unshift(job);
+
+      // イベント通知（後でフローに接続）
+      try { this.$emit?.('job-created', job); } catch {}
+
+      // 片付け
+      this.jobName = '';
+      this.jobPickerOpen = false;
+    },
+
+    onJobEndClick() {
+      // TODO: 業務終了の実処理を実装
+      // 例: 赤丸/状態クリア → isJobMenu=false など
+      this.jobPickerOpen = false
+      this.isJobMenu = false
+    },
+    onOpenJobPicker() {
+      // TODO: Job Picker ダイアログを開く
+      this.jobPickerOpen = true
+    },
+    onAddObservationPoint() {
+      // TODO: 観測地点新規追加の実処理（後で startTorokuHere 等を呼ぶ）
+    },
+
+
 
 // ドロガーからの標高を受け取って内部形式に正規化
     setExternalElevation(payload) {
@@ -12504,6 +12658,22 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    async isJobMenu(v) {
+      if (v) {
+        if (this.jobPickerBusy || this.jobPickerOpen) return;
+        this.jobPickerBusy = true;
+        try {
+          this.jobPickerOpen = true;
+          await this.$nextTick();
+          this.$refs.jobPicker?.focus?.(); // 任意
+        } finally {
+          // 連打対策：描画完了後に即解除
+          setTimeout(() => { this.jobPickerBusy = false; }, 0);
+        }
+      } else {
+        this.jobPickerOpen = false; // メニュー閉じたらPickerも閉じる
+      }
+    },
     dialogForToroku(val) {
       if (val === true) {
         this.torokuDisabled = false;
@@ -14141,9 +14311,9 @@ select {
   overflow: auto;
 }
 
-.oh-tools {
-  //position: absolute;
-  //left: 10px;
+.oh-left-bottom-tools {
+  position: absolute;
+  left: 10px;
   bottom: 110px;
   z-index: 3;
   display: flex;
