@@ -42,7 +42,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               :disabled="torokuBusy || kansokuRunning"
-              @click="onAddObservationPoint"
+              @click="startTorokuHere"
           aria-label="観測地点を新規追加"
           >
             追加
@@ -627,12 +627,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title>
-      <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
-        観測終了-{{ currentPointName }}
-      </span>
+            <span v-if="kansokuAverages.n === kansokuCount" style="color: green">
+              観測終了-{{ currentJobName }}-{{ currentPointName }}
+            </span>
             <span v-else>
-        観測-{{ currentPointName }}
-      </span>
+              {{ currentJobName }}-{{ currentPointName }}
+            </span>
           </v-card-title>
           <v-card-text>
             <div class="oh3-grid-4col">
@@ -1900,7 +1900,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
                     <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
                     <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
-                    <v-btn icon @click="startTorokuHere">旧観測</v-btn>
                     <v-btn icon
                            @click="isJobMenu = true;
                            isKuiuchi = false;
@@ -7247,9 +7246,7 @@ export default {
       // TODO: Job Picker ダイアログを開く
       this.jobPickerOpen = true
     },
-    onAddObservationPoint() {
-      // TODO: 観測地点新規追加の実処理（後で startTorokuHere 等を呼ぶ）
-    },
+
 
 
 
