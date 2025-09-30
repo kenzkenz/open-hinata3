@@ -7710,14 +7710,6 @@ export default {
         console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
       }
 
-      // スタイルロード待ち（未ロードだと addLayer が無視される）
-      if (!map.isStyleLoaded || !map.isStyleLoaded()) {
-        await new Promise(resolve => {
-          const onLoad = () => { map.off('load', onLoad); resolve(); };
-          map.on('load', onLoad);
-        });
-      }
-
       const SRC   = 'oh-toroku-point-src';
       const LAYER = 'oh-toroku-point';
       const LAB   = 'oh-toroku-point-label';
@@ -7751,6 +7743,7 @@ export default {
       } else {
         map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
       }
+      console.log(this._torokuFC)
 
       // レイヤー（なければ作成）
       if (!map.getLayer(LAYER)) {
