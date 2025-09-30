@@ -9,7 +9,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
     <v-main>
 
       <!-- 既存の isTracking ブロックの直下に追加 -->
-      <div v-if="isJobMenu" class="oh-left-bottom-tools mt-2">
+      <div v-if="isJobMenu"
+           class="oh-left-bottom-tools mt-2"
+           style="display:flex; flex-direction:column;">
+        <!-- 1行目：現在のジョブ -->
+        <div class="mb-1" style="font-size:16px;">
+          現在のジョブ：{{ currentJobName || '未選択' }}
+        </div>
+        <!-- 2行目：ボタンを横並び -->
+        <div class="d-flex align-center" style="gap:6px;">
         <!-- 業務を終了 -->
         <MiniTooltip text="業務を終了" :offset-x="0" :offset-y="0">
           <v-btn
@@ -32,7 +40,34 @@ import SakuraEffect from './components/SakuraEffect.vue';
               @click="onOpenJobPicker"
           aria-label="Job Picker を開く"
           >
-          <v-icon size="18">mdi-briefcase-search-outline</v-icon>
+            リスト
+<!--          <v-icon size="18">mdi-briefcase-search-outline</v-icon>-->
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- CSV -->
+        <MiniTooltip text="CSVをダウンロード" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+              @click="downloadCsv2"
+              aria-label="CSVをダウンロード"
+          >
+            csv
+          </v-btn>
+        </MiniTooltip>
+
+        <!-- SIMA -->
+        <MiniTooltip text="SIMをダウンロード" :offset-x="0" :offset-y="0">
+          <v-btn
+              icon
+              size="small"
+              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+              @click="exportCsv2Sima"
+              aria-label="SIMをダウンロード"
+          >
+            SIMA
           </v-btn>
         </MiniTooltip>
 
@@ -41,14 +76,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="torokuBusy || kansokuRunning"
+              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
               @click="startTorokuHere"
           aria-label="観測地点を新規追加"
           >
             追加
-<!--          <v-icon size="18">mdi-crosshairs-gps</v-icon>-->
           </v-btn>
         </MiniTooltip>
+        </div>
       </div>
 
 
@@ -134,14 +169,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
       </div>
 
       <!-- Job Picker -->
-      <v-dialog v-model="jobPickerOpen" max-width="520">
+      <v-dialog v-model="jobPickerOpen" max-width="520" persistent>
         <v-card>
           <v-card-title class="d-flex align-center text-h6">
-            ジョブ選択
-            <v-spacer></v-spacer>
-            <span v-if="currentJobName" class="text-subtitle-2">
-              現在のジョブ名：{{ currentJobName }}
+            <span v-if="!currentJobName">ジョブ選択</span>
+            <span v-else>
+              現在のジョブ: {{ currentJobName }}
             </span>
+            <v-spacer></v-spacer>
+            <!-- トグル（小さめのチップ） -->
+            <v-chip
+                size="small"
+                variant="outlined"
+                class="cursor-pointer"
+                @click="showAllJobs = !showAllJobs"
+            >
+              {{ showAllJobs ? '全件表示' : '選択中のみ' }}
+            </v-chip>
           </v-card-title>
 
           <v-divider />
@@ -175,13 +219,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--v-theme-outline); border-radius: 8px;">
                 <v-list density="compact" nav>
                   <v-list-item
-                      v-for="job in jobList"
+                      v-for="job in visibleJobs"
                       :key="job.id"
                       :title="job.name"
                       @click="pickExistingJob(job)"
                   >
                     <template #append>
-                      <!-- 件数バッジ -->
                       <v-chip
                           v-if="Number(job.count) > 0"
                           size="small"
@@ -192,15 +235,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       >
                         {{ job.count }}
                       </v-chip>
-
-                      <!-- 削除ボタン -->
-                      <v-btn
-                          icon
-                          size="x-small"
-                          variant="text"
-                          aria-label="ジョブを削除"
-                          @click.stop="deleteJob(job)"
-                      >
+                      <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">
                         <v-icon size="16">mdi-close</v-icon>
                       </v-btn>
                     </template>
@@ -231,11 +266,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       :title="pt.point_name"
                       @click="focusPointOnMap(pt)"
                   >
+                    <!-- 緯度経度 → XY（X=北, Y=東）へ変更 -->
                     <template #subtitle>
-                <span v-if="Number.isFinite(+pt.lat) && Number.isFinite(+pt.lng)">
-                  {{ (+pt.lat).toFixed(5) }}, {{ (+pt.lng).toFixed(5) }}
+                <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                  X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
                 </span>
                     </template>
+
                     <template #append>
                       <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
                         <v-icon size="16">mdi-trash-can-outline</v-icon>
@@ -257,6 +294,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
+
 
 
 
@@ -690,7 +728,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title class="d-flex align-center">
-            <span>現在のジョブ名：{{ currentJobName }}</span>
+            <span>現在のジョブ：{{ currentJobName }}</span>
 <!--            <v-spacer />-->
 <!--            <span>点名：{{ currentPointName }}</span>-->
             <v-spacer />
@@ -816,8 +854,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                     :disabled="kansokuRunning">-->
 <!--                観測終了-->
 <!--              </v-btn>-->
-              <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>
-              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>
+<!--              <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>-->
+<!--              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>-->
               <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
               <!-- ★ 文字だけの閉じる -->
               <v-btn
@@ -1959,7 +1997,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     <v-fab
                         v-bind="activatorProps"
                         :size="isSmall ? 'small' : 'default'"
-                        v-if="mapName === 'map01'"
+                        v-if="user1 && mapName === 'map01'"
                         icon
                         style="margin-left:8px;"
                         @click="zahyoGet"
@@ -3233,6 +3271,8 @@ export default {
 
     pointsForCurrentJob: [],   // ← 新設：現在選択中ジョブのポイント一覧
 
+    showAllJobs: false, // ←追加：基本はfalse = 選択中のみ表示
+
 
     aaa: null,
   }),
@@ -3273,6 +3313,11 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    visibleJobs() {
+      if (this.showAllJobs) return this.jobList || [];
+      if (!this.currentJobId) return this.jobList || []; // 未選択時は全部見せる
+      return (this.jobList || []).filter(j => String(j.id) === String(this.currentJobId));
+    },
     kansokuAverages () {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows.slice(1) : [];
       if (!rows.length) return { n: 0, lat: null, lon: null, X: null, Y: null };
@@ -6981,6 +7026,28 @@ export default {
     /* =========================================================
      * ① 外部標高（ドロガー）受け取り・正規化まわり
      * =======================================================*/
+    clearPendingTorokuPoints () {
+      const map = (this.$store?.state?.map01) || this.map01;
+      const SRC = 'oh-toroku-point-src';
+
+      if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return;
+
+      const beforeIds = new Set(this._torokuFC.features.map(f => f?.properties?.id));
+      // pending だけ除去
+      this._torokuFC.features = this._torokuFC.features.filter(
+          f => !(f?.properties?.pendingLabel === true)
+      );
+
+      // 反映
+      try { map?.getSource(SRC)?.setData(this._torokuFC); } catch {}
+
+      // 直近IDが消えたならリセット
+      if (this._lastTorokuFeatureId && !this._torokuFC.features.some(f => f?.properties?.id === this._lastTorokuFeatureId)) {
+        this._lastTorokuFeatureId = null;
+      }
+      // 観測中の仮座標もクリア（次回観測で誤用しないため）
+      this.torokuPointLngLat = null;
+    },
     // 既存ポイントを地図中央に & 赤丸も出す（flyは使わない）
     async deletePoint(pt) {
       const pointId = String(pt?.point_id ?? pt?.id ?? '');
@@ -7731,8 +7798,8 @@ export default {
       } else {
         this.$store.state.zahyokei = '';
       }
-      this.clearTorokuPoint();
-      this.detachTorokuPointClick()
+      // this.clearTorokuPoint();
+      // this.detachTorokuPointClick()
     },
 
 // 観測ダイアログを開く（事前に距離測りのUIを片付け）
@@ -8246,12 +8313,14 @@ export default {
               const parseNumericLike = (v) => {
                 if (v == null) return null;
                 if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-                const s = String(v).trim().replace(',', '.');
-                const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-                if (!m) return null;
-                const n = Number(m[0]);
+                const m = String(v).trim()
+                    .replace(/^[\s:=>\u3000：＝＞]+/, '')   // ← 符号は残す
+                    .replace(',', '.')
+                    .match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+                const n = m ? Number(m[0]) : NaN;
                 return Number.isFinite(n) ? n : null;
               };
+
 
               // ここまでで hOut は数値または文字列("xx.xxx(HAE)" 等)の可能性
               let hNum = parseNumericLike(hOut);
@@ -8376,7 +8445,7 @@ export default {
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
           let s = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞-]+/,'')
+              .replace(/^[\s:=>\u3000：＝＞]+/, '')  // ← マイナスは残す
               .replace(',', '.');
           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           if (!m) return null;
@@ -8631,12 +8700,13 @@ export default {
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
           const m = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞-]+/, '')
+              .replace(/^[\s:=>\u3000：＝＞]+/, '')   // ← 符号は残す
               .replace(',', '.')
               .match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           const n = m ? Number(m[0]) : NaN;
           return Number.isFinite(n) ? n : null;
         };
+
         const fmt3    = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
         const fmtPole = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
         const fmtDeg8 = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(8); };
@@ -8681,111 +8751,35 @@ export default {
       }
     },
 
-
-//     downloadCsv2() {
-//       try {
-//         const list   = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-//         const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
-//
-//         // 座標系ラベル：store優先→無ければ経度から推定
-//         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
-//         let csLabel = storeLabel;
-//         if (!csLabel) {
-//           let lon = null;
-//           try { lon = this.$store?.state?.map01?.getCenter?.().lng ?? this.map01?.getCenter?.().lng ?? null; } catch (_) {}
-//           if (Number.isFinite(lon)) {
-//             let z = Math.round((lon - 129) / 2) + 1;
-//             if (z < 1) z = 1;
-//             if (z > 19) z = 19;
-//             csLabel = `公共座標${z}系`;
-//           }
-//         }
-//
-//         const parseNumericLike = (v) => {
-//           if (v == null) return null;
-//           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-//           let s = String(v).trim().replace(/^[\s:=>\u3000：＝＞-]+/,'').replace(',', '.');
-//           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-//           const n = m ? Number(m[0]) : NaN;
-//           return Number.isFinite(n) ? n : null;
-//         };
-//         const fmt3    = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(3); };
-//         const fmtPole = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(2); };
-//         const fmtDeg8 = (v) => { const n = parseNumericLike(v); return n == null ? '' : n.toFixed(8); };
-//         const esc = (v) => {
-//           if (v == null) return '';
-//           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-//           return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-//         };
-//
-//         const rows = [header];
-//         for (let i = 0; i < list.length; i++) {
-//           const p = list[i] || {};
-//
-//           // 正高（アンテナ位置）= 旧 hDisp/h の数値化
-//           let hAntennaPos = null;
-//           if (p.hDisp != null && p.hDisp !== '') {
-//             hAntennaPos = parseNumericLike(p.hDisp);
-//           } else if (p.h != null) {
-//             hAntennaPos = parseNumericLike(p.h);
-//           }
-//
-//           // アンテナ高
-//           const antennaHigh = parseNumericLike(p.pole);
-//
-//           // 正高 = 正高（アンテナ位置） - アンテナ高
-//           let hOrthometric = null;
-//           if (Number.isFinite(hAntennaPos) && Number.isFinite(antennaHigh)) {
-//             hOrthometric = hAntennaPos - antennaHigh;
-//           }
-//
-//           // 楕円体高（commit側の p.hae を使用）
-//           const haeOut = fmt3(p.hae);
-//
-//           // ★ 緯度・経度（commit側で p.lat / p.lng を持たせた）
-//           const latOut = fmtDeg8(p.lat);
-//           const lngOut = fmtDeg8(p.lng);
-//
-//           rows.push([
-//             esc(p.name || ''),           // 点名
-//             esc(fmt3(p.X)),              // X
-//             esc(fmt3(p.Y)),              // Y
-//             esc(fmt3(hOrthometric)),     // 標高
-//             esc(fmtPole(antennaHigh)),   // アンテナ高
-//             esc(fmt3(hAntennaPos)),      // 標高（アンテナ位置）
-//             esc(haeOut),                 // 楕円体高
-//             esc(fmt3(p.diff)),           // XY較差
-//             esc(csLabel),                // 座標系（共通ラベル）
-//             esc(latOut),                 // ★ 緯度
-//             esc(lngOut),                 // ★ 経度
-//             esc(p.ts || '')              // 観測日時
-//           ]);
-//         }
-//
-//         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-//         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-//         const fname = `観測点_${stamp}.csv`;
-//         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-//         const a = document.createElement('a');
-//         a.href = URL.createObjectURL(blob);
-//         a.download = fname;
-//         document.body.appendChild(a); a.click(); a.remove();
-//         setTimeout(() => URL.revokeObjectURL(a.href), 0);
-//       } catch (e) {
-//         console.warn('[csv2] download error', e);
-//       }
-//     },
-
-
-
 // 平均点リスト（csv2Points）→ SIMA(A01) 出力
-    exportCsv2Sima(title) {
+// サーバーの points（現在のジョブ）だけで SIMA(A01) を出力
+    async exportCsv2Sima(title) {
       try {
-        const pts = Array.isArray(this.csv2Points) ? this.csv2Points : [];
-        if (!pts.length) { console.warn('[sima] csv2Points empty'); return; }
+        // 1) ジョブ必須
+        const jobId = this.currentJobId;
+        if (!jobId) { alert('ジョブを選択してください'); return; }
 
+        // 2) points をサーバーから用意（手元に無ければ取得）
+        let rows = Array.isArray(this.pointsForCurrentJob) ? this.pointsForCurrentJob : [];
+        if (!rows.length) {
+          const fd = new FormData();
+          fd.append('action', 'job_points.list');
+          fd.append('job_id', String(jobId));
+          const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
+          const data = await res.json();
+          if (!data?.ok || !Array.isArray(data.data)) {
+            alert('ポイントの取得に失敗しました'); return;
+          }
+          rows = data.data;
+        }
+        if (!rows.length) { alert('このジョブにポイントがありません'); return; }
+
+        // 3) ヘッダなど
         const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-        const csLabel  = (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
+        const csLabel  = String(rows[0]?.crs_label
+            ?? this.$store?.state?.s_zahyokei
+            ?? this.$store?.state?.zahyokei
+            ?? '');
 
         const head = [
           `G00,01,${siteName} 座標`,
@@ -8796,29 +8790,41 @@ export default {
 
         const fmt3 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
 
+        // 4) A01 行をサーバーデータから生成
         let n = 0;
-        const a01 = pts.map(p => {
-          const name = (p && p.name) ? String(p.name) : '';
-          const X = fmt3(p?.X);
-          const Y = fmt3(p?.Y);
-          const H = fmt3(p?.h); // 正高があれば m、小数3桁。無ければ空欄
-          if (!name || !X || !Y) return null;
+        const a01 = rows.map(r => {
+          const name = String(r.point_name ?? '');
+          const X = fmt3(r.x_north); // 北
+          const Y = fmt3(r.y_east);  // 東
+          // 正高は h_orthometric を優先。無ければ (h_at_antenna - antenna_height)
+          let H = null;
+          if (Number.isFinite(Number(r.h_orthometric))) {
+            H = fmt3(r.h_orthometric);
+          } else if (Number.isFinite(Number(r.h_at_antenna)) && Number.isFinite(Number(r.antenna_height))) {
+            H = fmt3(Number(r.h_at_antenna) - Number(r.antenna_height));
+          } else {
+            H = ''; // 空欄
+          }
+
+          if (!name || !X || !Y) return null; // 必須欠落はスキップ
           n += 1;
           return `A01,${n},${name},${X},${Y},${H},`;
         }).filter(Boolean);
 
         if (!a01.length) { console.warn('[sima] no valid rows'); return; }
 
-        const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
-
+        // 5) まとめて書き出し（SJIS変換は既存ユーティリティを使用）
+        const simTxt   = [...head, ...a01].join('\r\n') + '\r\n';
         const sjisBytes = this.$_toShiftJisBytes(simTxt);
         const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
         const stamp     = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
         this.$_downloadBlob(blob, `観測点_${stamp}.sim`);
       } catch (e) {
         console.warn('[sima] export error', e);
+        alert('SIMA出力に失敗しました');
       }
     },
+
 
 // 平均点リストのクリア
     clearCsv2Points() {
@@ -9369,13 +9375,14 @@ export default {
       if (v == null) return null;
       if (typeof v === 'number') return Number.isFinite(v) ? v : null;
       let s = String(v).trim();
-      s = s.replace(/^[\s:=>\u3000：＝＞-]+/, '');
+      s = s.replace(/^[\s:=>\u3000：＝＞]+/, ''); // ← 符号は残す
       s = s.replace(',', '.');
       const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
       if (!m) return null;
       const n = Number(m[0]);
       return Number.isFinite(n) ? n : null;
     },
+
 
 // 標高の人間向け表記（"m" + 楕円体高注記）
     fmtHumanHeight(v) {
@@ -13438,8 +13445,11 @@ export default {
       }
     },
     dialogForToroku(val) {
-      if (val === true) {
+      if (val) {
         this.torokuDisabled = false;
+      } else {
+        // ダイアログを閉じたら仮設置だけ掃除
+        this.clearPendingTorokuPoints();
       }
     },
     // sampleIntervalSec(val) {
