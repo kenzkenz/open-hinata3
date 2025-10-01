@@ -336,10 +336,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
-      <!-- 1) 大画面用のホスト（枠だけ） -->
+      <!--JOBリスト -->
       <FloatingWindow
           windowId="job-picker"
-          title=""
+          title="JOBリスト"
           type="normal"
           :is-modal="isSmall500"
           :resizable="true"
@@ -966,7 +966,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div
                 class="kansoku-list"
                 v-stick-bottom.smooth="{ threshold: 40 }"
-                style="height:220px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
+                style="height:180px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
             >
               <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;"></div>
 
@@ -996,21 +996,29 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </div>
 
             <!-- 平均表示 -->
-            <div
-                v-if="kansokuAverages && kansokuAverages.n > 0"
-                style="margin-top:8px; padding:6px 8px; border:1px dashed var(--v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"
-            >
-              平均（n={{ kansokuAverages.n }}）:
-              X={{ fmtXY(kansokuAverages.X) }},
-              Y={{ fmtXY(kansokuAverages.Y) }}
-            </div>
+<!--            <div-->
+<!--                v-if="kansokuAverages && kansokuAverages.n > 0"-->
+<!--                style="margin-top:8px; padding:6px 8px; border:1px dashed var(&#45;&#45;v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"-->
+<!--            >-->
+<!--              平均（n={{ kansokuAverages.n }}）:-->
+<!--              X={{ fmtXY(kansokuAverages.X) }},-->
+<!--              Y={{ fmtXY(kansokuAverages.Y) }}-->
+<!--            </div>-->
 
             <!-- ▼▼ 追加：保存/破棄の判断カード（高さのブレは出さない） ▼▼ -->
+<!--            <v-alert-->
+<!--                v-if="pendingObservation"-->
+<!--                type="warning"-->
+<!--                variant="tonal"-->
+<!--                class="mt-3"-->
+<!--            >-->
             <v-alert
                 v-if="pendingObservation"
                 type="warning"
                 variant="tonal"
-                class="mt-3"
+                density="compact"
+                class="mt-2 py-1 px-2"
+                style="font-size:14px; line-height:1.2;"
             >
               <div class="text-body-2" style="color:#c00; font-weight:700;">観測結果</div>
               <div class="mt-1" style="color:#c00;">
@@ -7235,39 +7243,6 @@ export default {
     /**
      * 現在地連続取得を改良
      */
-    onDiscardKansoku () {
-      if (this.kansokuPhase !== 'await') return;
-
-      // 行・平均など計測結果を全部破棄
-      this._resetKansokuSession();
-
-      // 点名はそのまま、すぐ次を計測できる
-      this.kansokuPhase = 'idle';
-    },
-
-    async onSaveKansoku () {
-      if (this.kansokuPhase !== 'await') return;
-
-      const ok = await this.commitCsv2Point(); // ← 既存関数をそのまま利用
-      if (!ok) {
-        alert('保存に失敗しました');
-        return;
-      }
-
-      // 次点名を採番して入力欄に反映（ご要望どおり）
-      try {
-        const next = this.getNextPointName?.();
-        if (next) {
-          this.tenmei = next;
-          this.currentPointName = next;
-          try { localStorage.setItem('tenmei', next); } catch {}
-        }
-      } catch {}
-
-      // セッションを完全リセットして再スタート可能に
-      this._resetKansokuSession();
-      this.kansokuPhase = 'idle';
-    },
 
     jobPickerFWOpen() {
       this.$store.dispatch('showFloatingWindow', 'job-picker');
@@ -7281,17 +7256,6 @@ export default {
       this.kansokuCsvRows   = null;
       this.kansokuAverages  = null;
     },
-    kansokuStartState () {
-      // ここに “開始できない理由” を順に追加
-      if (this.kansokuRunning) return { ok:false, reason:'測位中です' };
-      if (!this.currentJobId)  return { ok:false, reason:'ジョブ未選択' };
-      if (!this.torokuPointLngLat) return { ok:false, reason:'観測点(赤丸)が未設定' };
-      const name = (this.tenmei || '').trim();
-      if (!name) return { ok:false, reason:'点名が未入力' };
-      if (!('geolocation' in navigator)) return { ok:false, reason:'この端末は測位に未対応' };
-      return { ok:true, reason:'' };
-    },
-
     summarizeObservationLight() {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
       if (!rows || rows.length <= 1) return null;
@@ -7443,11 +7407,6 @@ export default {
     openJobPicker() {
       this.jobPickerOpen = true;
       this.refreshJobs();
-    },
-    closeJobPicker() {
-      this.jobPickerOpen = false;
-      this.jobName = '';
-      this.jobNameError = '';
     },
     async createNewJob() {
       this.jobNameError = '';
@@ -7776,13 +7735,6 @@ export default {
           this.currentJobId = curId;
           this.currentJobName = curName;
         }
-      } catch {}
-    },
-    persistJobsToStorage() {
-      try { localStorage.setItem('oh3_jobs', JSON.stringify(this.jobList || [])); } catch {}
-      try {
-        if (this.currentJobId)  localStorage.setItem('oh3_current_job_id', this.currentJobId);
-        if (this.currentJobName) localStorage.setItem('oh3_current_job_name', this.currentJobName);
       } catch {}
     },
 
@@ -14055,7 +14007,8 @@ html.oh3-embed #map01 {
 .fw-fit .fw-body {
   flex: 1 1 auto;
   min-height: 0;     /* ← これが超重要（子のoverflowを効かせる）*/
-  overflow: auto;    /* 本文全体がスクロール（推奨）*/
+  //overflow: auto;    /* 本文全体がスクロール（推奨）*/
+  overflow: hidden;
 }
 
 /* 個別のスクロール枠が欲しいとき： */
@@ -14074,10 +14027,10 @@ html.oh3-embed #map01 {
 
 /* とりあえずこれで凌ぐ。数値を変えて調整する必要あり */
 .fw-fit .job-list-full {
-  max-height: calc(100cqh - 80px);
+  max-height: calc(100cqh - 200px);
 }
 .fw-fit .point-list-full {
-  max-height: calc(100cqh - 120px);
+  max-height: calc(100cqh - 370px);
 }
 
 
