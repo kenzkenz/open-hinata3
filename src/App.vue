@@ -339,7 +339,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!--JOBリスト -->
       <FloatingWindow
           windowId="job-picker"
-          title="JOBリスト"
+          title="ジョブリスト"
           type="normal"
           :is-modal="isSmall500"
           :resizable="true"
@@ -1020,22 +1020,27 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 class="mt-2 py-1 px-2"
                 style="font-size:14px; line-height:1.2;"
             >
-              <div class="text-body-2" style="color:#c00; font-weight:700;">観測結果</div>
+              <div class="text-body-2" style="color:#c00; font-weight:700;">測位結果</div>
+
+              <!-- ★ 追加：点名 -->
+              <div class="mt-1" style="color:#c00;">
+                点名：{{ (currentPointName || tenmei || '').trim() || '未設定' }}
+              </div>
+
               <div class="mt-1" style="color:#c00;">
                 較差：XY={{ pendingObservation.diffTxt }}m
               </div>
               <div class="mt-1" style="color:#c00;">
                 平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
               </div>
-              <!-- ★ 追加：標高（CSVの標高列の平均）。あれば表示 -->
               <div v-if="pendingObservation.HavgTxt" class="mt-1" style="color:#c00;">
                 H={{ pendingObservation.HavgTxt }}m
               </div>
-              <!-- ★ 追加：アンテナ高（m） -->
               <div class="mt-1" style="color:#c00;">
                 アンテナ高：{{ toFixed2(offsetCm) }} m
               </div>
             </v-alert>
+
             <!-- ▲▲ ここまで追加 ▲▲ -->
 
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
@@ -8128,6 +8133,24 @@ export default {
       // 念のため二重ガード
       if (this.kansokuPhase !== 'idle') return;
 
+
+      // すでに観測中は二重起動させない
+      if (this.kansokuPhase === 'observing') return;
+
+      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
+
+      // === ここを最小変更：空なら採番せず中断 ===
+      if (!raw) {
+        this.tenmeiError = '点名は必須です';
+        alert('点名を入力してください');
+        return;
+      }
+      // ユーザー入力をそのまま使う（採番もしない）
+      try { localStorage.setItem('tenmei', raw); } catch (_) {}
+      this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw;
+
+
+
       // セッション初期化と準備
       this._resetKansokuSession();
       this.initKansokuCsvIfNeeded();
@@ -8370,11 +8393,20 @@ export default {
 
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
 
+        // let name = this.currentPointName;
+        // if (!name || typeof name !== 'string') {
+        //   name = this.getNextPointName?.() || '';
+        //   this.currentPointName = name;
+        // }
+
         let name = this.currentPointName;
-        if (!name || typeof name !== 'string') {
-          name = this.getNextPointName?.() || '';
-          this.currentPointName = name;
+        if (!name || typeof name !== 'string' || !name.trim()) {
+          console.warn('[csv2] point name missing');
+          alert('点名が未設定のため保存できません');
+          return false; // ← ここで打ち切る
         }
+
+
 
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 

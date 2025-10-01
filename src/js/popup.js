@@ -3622,7 +3622,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
-                const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
+                const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','測位日時'];
                 const row = JSON.parse(props.oh3_csv2_row);
                 const rec = Object.fromEntries(header.map((k, i) => [k, (i < row.length ? row[i] : null)]));
                 console.log(rec)
@@ -3631,7 +3631,7 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                     html0 += key + '=' + rec[key] + '<br>'
                 })
                 if (html.value.indexOf('zahyo') === -1) {
-                    html.value += '<div class="layer-label-div">観測された座標</div>'
+                    html.value += '<div class="layer-label-div">座標等</div>'
                     html0 += '<div style="width: 200px; class="zahyo" font-weight: normal; color: #333;line-height: 25px;">'
                     // html0 += '<button style="margin-bottom: 5px; height: 30px; font-size: medium; width: 100%;" class="ninnzahyo-zip-remove pyramid-btn">削除</button>'
                     html0 += '<div>'
