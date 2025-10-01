@@ -71,14 +71,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-btn>
         </MiniTooltip>
 
-        <!-- 観測地点 新規追加 -->
-        <MiniTooltip text="観測地点を新規追加" :offset-x="0" :offset-y="0">
+        <!-- 測位地点 新規追加 -->
+        <MiniTooltip text="測位地点を新規追加" :offset-x="0" :offset-y="0">
           <v-btn
               icon
               size="small"
               :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
               @click="startTorokuHere"
-          aria-label="観測地点を新規追加"
+          aria-label="測位地点を新規追加"
           >
             追加
           </v-btn>
@@ -871,7 +871,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
-      <!-- 観測  -->
+      <!-- 測位  -->
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
         <v-card>
           <v-card-title class="d-flex align-center">
@@ -886,7 +886,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 size="small"
                 class="font-weight-bold"
             >
-              観測終了
+              測位終了
             </v-chip>
           </v-card-title>
           <v-card-text>
@@ -904,11 +904,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @update:modelValue="handleTenmeiInput"
                   :disabled="kansokuRunning"
               />
-              <!-- 中: 観測回数のセレクト（固定幅） -->
+              <!-- 中: 測位回数のセレクト（固定幅） -->
               <v-select
                   v-model="kansokuCount"
                   :items="kansokuItems"
-                  label="観測回数"
+                  label="測位回数"
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
@@ -944,7 +944,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
             </div>
             <div class="flex items-center gap-2 mt-2">
-              <v-btn class="mt-2" @click="kansokuStart" :disabled="torokuDisabled">観測開始</v-btn>
+              <v-btn class="mt-2" @click="kansokuStart" :disabled="torokuDisabled">測位開始</v-btn>
             </div>
             <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
             <div
@@ -999,7 +999,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--               resetPointSequence()-->
 <!--               clearCsv2Points()"-->
 <!--                     :disabled="kansokuRunning">-->
-<!--                観測終了-->
+<!--                測位終了-->
 <!--              </v-btn>-->
 <!--              <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>-->
 <!--              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>-->
@@ -2135,7 +2135,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
               <!--  </MiniTooltip>-->
 
-              <MiniTooltip text="観測" :offset-x="4" :offset-y="-2">
+              <MiniTooltip text="測位" :offset-x="4" :offset-y="-2">
                 <v-speed-dial
                     location="top center"
                     transition="scale-transition"
@@ -2166,7 +2166,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                            isKuiuchi = false;
                            isTracking = false
                            openJobPicker()"
-                    >観測</v-btn>
+                    >測位</v-btn>
 
                   </div>
                 </v-speed-dial>
@@ -3357,7 +3357,7 @@ export default {
     compass: null,
 
     rtkWindowMs: 2000,   // 無視する時間窓（ms）
-    lastRtkAt: 0,      // 直近でRTK級を観測したタイムスタンプ(ms)
+    lastRtkAt: 0,      // 直近でRTK級を測位したタイムスタンプ(ms)
 
     logEnabled: false,          // ロギングON/OFF
     csvRows: null,              // 2次元配列（ヘッダー含む）
@@ -3388,7 +3388,7 @@ export default {
 
     torokuPointLngLat: null,
 
-    // 観測点メタを保持
+    // 測位点メタを保持
     torokuPointQuality: null, // 'RTK級' など
     torokuPointQualityAt: null, // 記録時刻（ms）
 
@@ -3407,7 +3407,7 @@ export default {
     torokuDisabled: false,   // ★ ダイアログCloseで復帰
 
     isJobMenu: false,     // ← 左下メニューの表示制御（isなんとか）
-    torokuBusy: false,    // ←（多重観測防止）
+    torokuBusy: false,    // ←（多重測位防止）
 
     jobPickerOpen: false,    // Job Picker の v-model
     jobPickerBusy: false,    // ← 先頭アンダースコア禁止版（多重オープン防止）
@@ -7344,12 +7344,12 @@ export default {
         data = await res.json();
       } catch (e) {
         console.error('[job_points.list] ネットワーク失敗', e);
-        alert('サーバーから観測点を取得できませんでした');
+        alert('サーバーから測位点を取得できませんでした');
         return;
       }
       if (!data?.ok || !Array.isArray(data.data)) {
         console.error('[job_points.list] サーバーエラー', data);
-        alert('観測点の取得に失敗しました');
+        alert('測位点の取得に失敗しました');
         return;
       }
 
@@ -7653,7 +7653,7 @@ export default {
     },
 
     /* =========================
-     * 4) 観測点（赤丸）: 設置/クリック/レイヤ管理
+     * 4) 測位点（赤丸）: 設置/クリック/レイヤ管理
      * =======================*/
     zahyoGet() {
       const map = this.map01
@@ -7681,8 +7681,8 @@ export default {
 
       this.$store.dispatch('messageDialog/open', {
         id: 'torokuDialog',
-        title: '観測スタート',
-        contentHtml: '<p>観測する地点をクリックしてください。</p>',
+        title: '測位スタート',
+        contentHtml: '<p>測位する地点をクリックしてください。</p>',
         options: { maxWidth: 500, showCloseIcon: true }
       });
 
@@ -7938,7 +7938,7 @@ export default {
     },
 
     /* =========================
-     * 5) 観測（開始→サンプリング→停止→保存/出力）
+     * 5) 測位（開始→サンプリング→停止→保存/出力）
      * =======================*/
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
@@ -8007,7 +8007,7 @@ export default {
         this.kansokuStop(); return;
       }
       if (!this.torokuPointLngLat) {
-        console.warn('[kansoku] 赤丸(観測点)が未設定です');
+        console.warn('[kansoku] 赤丸(測位点)が未設定です');
         return;
       }
 
@@ -8401,16 +8401,16 @@ export default {
           payload = await res.json();
         } catch (e) {
           console.error('[downloadCsv2] fetch失敗', e);
-          alert('サーバーから観測点を取得できませんでした');
+          alert('サーバーから測位点を取得できませんでした');
           return;
         }
         const list = Array.isArray(payload?.data) ? payload.data : [];
         if (list.length === 0) {
-          alert('このジョブの観測点はありません');
+          alert('このジョブの測位点はありません');
           return;
         }
 
-        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','観測日時'];
+        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','測位日時'];
 
         const fmt3    = (v) => this.toFixed3(v);
         const fmtPole = (v) => this.toFixed2(v);
@@ -8442,7 +8442,7 @@ export default {
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
         const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-        const fname = `観測点_${stamp}.csv`;
+        const fname = `測位点_${stamp}.csv`;
         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
         const a = document.createElement('a');
@@ -8513,7 +8513,7 @@ export default {
         const sjisBytes = this.$_toShiftJisBytes(simTxt);
         const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
         const stamp     = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-        this.$_downloadBlob(blob, `観測点_${stamp}.sim`);
+        this.$_downloadBlob(blob, `測位点_${stamp}.sim`);
       } catch (e) {
         console.warn('[sima] export error', e);
         alert('SIMA出力に失敗しました');
