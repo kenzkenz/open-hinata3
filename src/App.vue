@@ -1019,7 +1019,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <div class="mt-1" style="color:#c00;">
                 平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
               </div>
-
+              <!-- ★ 追加：アンテナ高（m） -->
+              <div class="mt-1" style="color:#c00;">
+                アンテナ高：{{ toFixed2(offsetCm) }} m
+              </div>
             </v-alert>
             <!-- ▲▲ ここまで追加 ▲▲ -->
 
