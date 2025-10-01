@@ -876,8 +876,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <v-card>
           <v-card-title class="d-flex align-center">
             <span>現在のジョブ：{{ currentJobName }}</span>
-<!--            <v-spacer />-->
-<!--            <span>点名：{{ currentPointName }}</span>-->
             <v-spacer />
             <v-chip
                 v-if="kansokuAverages?.n === kansokuCount"
@@ -889,9 +887,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
               測位終了
             </v-chip>
           </v-card-title>
+
           <v-card-text>
             <div class="oh3-grid-4col">
-              <!-- 左: テキストフィールド（可変） -->
+              <!-- left -->
               <v-text-field
                   v-model="tenmei"
                   label="点名"
@@ -904,7 +903,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @update:modelValue="handleTenmeiInput"
                   :disabled="kansokuRunning"
               />
-              <!-- 中: 測位回数のセレクト（固定幅） -->
+              <!-- count -->
               <v-select
                   v-model="kansokuCount"
                   :items="kansokuItems"
@@ -915,7 +914,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   class="oh3-col-fixed"
                   :disabled="kansokuRunning"
               />
-              <!-- ★ 新規: 間隔（秒, 0.1刻み） -->
+              <!-- interval -->
               <v-text-field
                   v-model.number="sampleIntervalSec"
                   type="number"
@@ -929,6 +928,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :max="60"
                   :disabled="kansokuRunning"
               />
+              <!-- antenna -->
               <v-text-field
                   v-model.number="offsetCm"
                   type="number"
@@ -943,30 +943,62 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :disabled="kansokuRunning"
               />
             </div>
+
+<!--            <div class="flex items-center gap-2 mt-2">-->
+<!--              <v-btn-->
+<!--                  class="mt-2"-->
+<!--                  @click="kansokuStart"-->
+<!--                  :disabled="kansokuStartState.ok"-->
+<!--                  :title="kansokuStartState.reason || '測位開始'"-->
+<!--                  :loading="kansokuRunning"-->
+<!--              >-->
+<!--                測位開始-->
+<!--              </v-btn>-->
+<!--            </div>-->
+
+            <!-- 操作ボタン -->
             <div class="flex items-center gap-2 mt-2">
-              <v-btn class="mt-2" @click="kansokuStart" :disabled="torokuDisabled">測位開始</v-btn>
+              <!-- 測位開始（idle だけ有効） -->
+              <v-btn
+                  class="mt-2"
+                  @click="kansokuStart"
+                  :disabled="!canStartKansoku"
+                  :title="startHint"
+                  :loading="kansokuPhase === 'observing'"
+              >測位開始</v-btn>
+
+              <!-- 測位終了後の選択（保存/破棄）。await中のみ表示 -->
+              <template v-if="kansokuPhase === 'await'">
+                <v-btn color="primary" variant="elevated" class="mt-2" @click="onSaveKansoku">保存</v-btn>
+                <v-btn color="error"   variant="outlined" class="mt-2" @click="onDiscardKansoku">破棄</v-btn>
+              </template>
             </div>
-            <!-- スクロール箱：横・縦ともにオーバーフロー自動。追尾は v-stick-bottom -->
+
+
+
+
+
+            <!-- サンプル一覧 -->
             <div
                 class="kansoku-list"
                 v-stick-bottom.smooth="{ threshold: 40 }"
                 style="height:220px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
             >
-              <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;">
-              </div>
+              <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;"></div>
+
               <div
                   v-else
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
                   :key="idx"
                   :style="{
-              fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
-              fontSize: '12px',
-              lineHeight: '1.6',
-              padding: '2px 8px',
-              borderBottom: '1px dashed rgba(255,255,255,.08)',
-              backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
-              whiteSpace: 'nowrap'
-              }"
+            fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+            fontSize: '12px',
+            lineHeight: '1.6',
+            padding: '2px 8px',
+            borderBottom: '1px dashed rgba(255,255,255,.08)',
+            backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+            whiteSpace: 'nowrap'
+          }"
               >
           <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
             {{ row[7] }}
@@ -974,13 +1006,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtAcc(row[6]) }}
                 {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
                 {{ row[5] }}
-                <!--                {{ fmtLL(row[1]) }}, {{ fmtLL(row[2]) }}-->
-<!--                {{ row[8] }}-->
                 {{ row[0] }}
                 {{ fmtHumanHeight(row[9]) }}
               </div>
             </div>
-            <!-- ★ 追加：平均（既存スタイルに影響しない独立ブロック） -->
+
+            <!-- 平均表示 -->
             <div
                 v-if="kansokuAverages && kansokuAverages.n > 0"
                 style="margin-top:8px; padding:6px 8px; border:1px dashed var(--v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"
@@ -988,23 +1019,32 @@ import SakuraEffect from './components/SakuraEffect.vue';
               平均（n={{ kansokuAverages.n }}）:
               X={{ fmtXY(kansokuAverages.X) }},
               Y={{ fmtXY(kansokuAverages.Y) }}
-              <!--              lat={{ fmtLL(kansokuAverages.lat) }},-->
-              <!--              lon={{ fmtLL(kansokuAverages.lon) }}-->
             </div>
+
+            <!-- ▼▼ 追加：保存/破棄の判断カード（高さのブレは出さない） ▼▼ -->
+            <v-alert
+                v-if="pendingObservation"
+                type="warning"
+                variant="tonal"
+                class="mt-3"
+            >
+              <div class="text-body-2" style="color:#c00; font-weight:700;">観測結果</div>
+              <div class="mt-1" style="color:#c00;">
+                較差：XY={{ pendingObservation.diffTxt }}m
+              </div>
+              <div class="mt-1" style="color:#c00;">
+                平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
+              </div>
+
+              <div class="d-flex ga-2 mt-3">
+                <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
+                <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
+              </div>
+            </v-alert>
+            <!-- ▲▲ ここまで追加 ▲▲ -->
+
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
-<!--              <v-btn color="blue-darken-1" text-->
-<!--                     @click="dialogForToroku = false;-->
-<!--               clearTorokuPoint();-->
-<!--               detachTorokuPointClick()-->
-<!--               resetPointSequence()-->
-<!--               clearCsv2Points()"-->
-<!--                     :disabled="kansokuRunning">-->
-<!--                測位終了-->
-<!--              </v-btn>-->
-<!--              <v-btn color="green" @click="downloadCsv2" :disabled="kansokuRunning">CSV</v-btn>-->
-<!--              <v-btn color="indigo" @click="exportCsv2Sima" :disabled="kansokuRunning">SIMA</v-btn>-->
-              <v-spacer></v-spacer> <!-- これが右端へ押し出す役 -->
-              <!-- ★ 文字だけの閉じる -->
+              <v-spacer></v-spacer>
               <v-btn
                   variant="text"
                   density="compact"
@@ -1017,6 +1057,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-text>
         </v-card>
       </v-dialog>
+
 
 
 
@@ -3426,6 +3467,10 @@ export default {
 
     showAllJobs: false, // ←追加：基本はfalse = 選択中のみ表示
 
+    pendingObservation: null, // 観測停止後のプレビュー用 { n, Xavg, Yavg, diff }
+
+    kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
+
 
     aaa: null,
   }),
@@ -3466,6 +3511,23 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    canStartKansoku () {
+      if (this.kansokuPhase !== 'idle') return false;  // ← フェーズでブロック
+      if (!this.currentJobId) return false;
+      if (!this.torokuPointLngLat) return false;
+      const name = (this.tenmei || '').trim();
+      if (!name) return false;
+      if (!('geolocation' in navigator)) return false;
+      return true;
+    },
+    startHint () {
+      if (this.kansokuPhase === 'await') return '保存か破棄を選択してください';
+      if (this.kansokuPhase === 'observing') return '測位中です';
+      if (!this.currentJobId) return 'ジョブ未選択';
+      if (!this.torokuPointLngLat) return '観測点(赤丸)が未設定';
+      if (!(this.tenmei||'').trim()) return '点名が未入力';
+      return '測位開始';
+    },
     hasSecond() {
       return !!(this.currentJobId && this.pointsForCurrentJob && this.pointsForCurrentJob.length);
     },
@@ -7187,10 +7249,167 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    onDiscardKansoku () {
+      if (this.kansokuPhase !== 'await') return;
+
+      // 行・平均など計測結果を全部破棄
+      this._resetKansokuSession();
+
+      // 点名はそのまま、すぐ次を計測できる
+      this.kansokuPhase = 'idle';
+    },
+
+    async onSaveKansoku () {
+      if (this.kansokuPhase !== 'await') return;
+
+      const ok = await this.commitCsv2Point(); // ← 既存関数をそのまま利用
+      if (!ok) {
+        alert('保存に失敗しました');
+        return;
+      }
+
+      // 次点名を採番して入力欄に反映（ご要望どおり）
+      try {
+        const next = this.getNextPointName?.();
+        if (next) {
+          this.tenmei = next;
+          this.currentPointName = next;
+          try { localStorage.setItem('tenmei', next); } catch {}
+        }
+      } catch {}
+
+      // セッションを完全リセットして再スタート可能に
+      this._resetKansokuSession();
+      this.kansokuPhase = 'idle';
+    },
+
     jobPickerFWOpen() {
       this.$store.dispatch('showFloatingWindow', 'job-picker');
       this.isJobMenu = true
     },
+    _resetKansokuSession () {
+      // “1回の測位セッション”に関する可変状態をリセット
+      this.kansokuRunning   = false;
+      this.kansokuRemaining = 0;
+      if (this.kansokuTimer) { try { clearInterval(this.kansokuTimer); } catch{} this.kansokuTimer = null; }
+      this.kansokuCsvRows   = null;
+      this.kansokuAverages  = null;
+    },
+    kansokuStartState () {
+      // ここに “開始できない理由” を順に追加
+      if (this.kansokuRunning) return { ok:false, reason:'測位中です' };
+      if (!this.currentJobId)  return { ok:false, reason:'ジョブ未選択' };
+      if (!this.torokuPointLngLat) return { ok:false, reason:'観測点(赤丸)が未設定' };
+      const name = (this.tenmei || '').trim();
+      if (!name) return { ok:false, reason:'点名が未入力' };
+      if (!('geolocation' in navigator)) return { ok:false, reason:'この端末は測位に未対応' };
+      return { ok:true, reason:'' };
+    },
+
+    /** 観測CSVから XY の平均と較差だけを抽出（高さは扱わない） */
+    summarizeObservationLight() {
+      const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
+      if (!rows || rows.length <= 1) return null;
+
+      const header = rows[0];
+      const col = (name) => header.indexOf(name);
+      const iX  = col('X');
+      const iY  = col('Y');
+      const iET = col('eventType');
+      if (iX < 0 || iY < 0) return null;
+
+      const parse = this.parseNumberLike || ((v) => {
+        if (v == null) return null;
+        if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+        const s = String(v).trim().replace(/^[\s:=>\u3000：＝＞]+/, '').replace(',', '.');
+        const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+        const n = m ? Number(m[0]) : NaN;
+        return Number.isFinite(n) ? n : null;
+      });
+      const xs = [], ys = [];
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
+        if (et !== 'kansoku') continue;
+        const vx = parse(row[iX]); if (vx != null) xs.push(vx);
+        const vy = parse(row[iY]); if (vy != null) ys.push(vy);
+      }
+      if (!xs.length || !ys.length) return null;
+
+      const avg = (a) => a.reduce((s,v)=>s+v,0)/a.length;
+      const Xavg = avg(xs);
+      const Yavg = avg(ys);
+      const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+
+      const fix3 = this.toFixed3 || ((n) => (Number.isFinite(n) ? n.toFixed(3) : ''));
+      return {
+        n: xs.length,
+        Xavg, Yavg, diff,
+        XavgTxt: fix3(Xavg),
+        YavgTxt: fix3(Yavg),
+        diffTxt: fix3(diff),
+      };
+    },
+
+    /** 観測停止時：確定せずプレビューだけ用意（保存/破棄の判断材料） */
+
+
+    /** 保存：既存の commit をそのまま使う（壊さない） */
+    async onClickSaveObservation() {
+      if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
+      try {
+        const ok = await this.commitCsv2Point();
+        if (!ok) return;
+      } finally {
+        this.pendingObservation = null;
+        this.kansokuCsvRows = null; // 次の観測に向けてクリア
+      }
+      // ★ 点名の自動インクリメントは “次のキリ” で入れる
+    },
+
+    /** 破棄：仮赤丸/一時CSVを捨てる。点名は変更しない */
+    onClickDiscardObservation() {
+      try { this.clearPendingTorokuPoints?.(); } catch {}
+      this.pendingObservation = null;
+      this.kansokuCsvRows = null;
+    },
+    kansokuStop () {
+      // 測位自体は停止
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      if (this.kansokuTimer) {
+        try { clearInterval(this.kansokuTimer); } catch {}
+        this.kansokuTimer = null;
+      }
+
+      // ここでは「保存待ち」にするだけ（commitしない）
+      this.kansokuPhase = 'await';
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /* =========================
      * 1) 数値・フォーマット系ユーティリティ
      * =======================*/
@@ -7947,61 +8166,28 @@ export default {
         ]];
       }
     },
-    kansokuStart() {
-      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
-      if (!raw) {
-        alert('点名を入力してください。');
-        this.tenmeiError = '点名は必須です';
-        return;
-      }
-      this.torokuDisabled = true;
-      const unique = this.ensureUniqueTenmei(raw);
-      if (unique !== raw) {
-        this.tenmei = unique;
-        try { localStorage.setItem('tenmei', unique); } catch (_) {}
-      } else {
-        try { localStorage.setItem('tenmei', raw); } catch (_) {}
-      }
-      this.currentPointName = this.tenmei;
+    kansokuStart () {
+      if (!this.canStartKansoku) return;
+      // 念のため二重ガード
+      if (this.kansokuPhase !== 'idle') return;
 
-      try {
-        const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
-        const SRC = 'oh-toroku-point-src';
-        if (this._torokuFC && Array.isArray(this._torokuFC.features) && this._torokuFC.features.length) {
-          for (let i = this._torokuFC.features.length - 1; i >= 0; i--) {
-            const f = this._torokuFC.features[i];
-            if (f?.properties?.pendingLabel) {
-              f.properties.label = this.currentPointName;
-              f.properties.name  = this.currentPointName;
-              f.properties.pendingLabel = false;
-              if (map && map.getSource && map.getSource(SRC)) {
-                map.getSource(SRC).setData(this._torokuFC);
-              }
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('[label] apply on start failed', e);
-      }
-
-      if (this.kansokuRunning) return;
-      if (!('geolocation' in navigator)) {
-        console.warn('[kansoku] geolocation 未対応');
-        return;
-      }
+      // セッション初期化と準備
+      this._resetKansokuSession();
       this.initKansokuCsvIfNeeded();
-      this.kansokuRunning = true;
-      this.kansokuRemaining = Number(this.kansokuCount) || 1;
 
+      this.kansokuRunning   = true;
+      this.kansokuRemaining = Number(this.kansokuCount) || 1;
+      this.kansokuPhase     = 'observing';
+
+      // 既存の“1回実行＋インターバル起動”
       this.kansokuCollectOnce();
+
+      // 入力間隔を正規化（既存）
       this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec);
-      const stepSec = Number(this.sampleIntervalSec);
-      const intervalMs = Math.max(100, Math.round((Number.isFinite(stepSec) ? stepSec : 1) * 1000));
-      this.kansokuTimer = setInterval(() => {
-        this.kansokuCollectOnce();
-      }, intervalMs);
+      const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000));
+      this.kansokuTimer = setInterval(() => this.kansokuCollectOnce(), intervalMs);
     },
+
     kansokuCollectOnce() {
       if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
         this.kansokuStop(); return;
@@ -8156,15 +8342,7 @@ export default {
           opt
       );
     },
-    kansokuStop() {
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
-      }
-      try { this.commitCsv2Point(); } catch (e) { console.warn('[csv2] commit on stop error', e); }
-    },
+
     commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
