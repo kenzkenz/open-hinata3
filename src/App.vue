@@ -396,7 +396,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <div class="text-caption mb-2">既存のジョブ</div>
 
               <!-- ★ 固定pxやvhをやめ、親に対する割合＋上下限で調整 -->
-              <div class="fw-scroll job-list">
+              <div
+                  :class="['fw-scroll', hasSecond ? 'job-list' : 'job-list-full']"
+              >
                 <v-list density="compact" nav>
                   <v-list-item
                       v-for="job in visibleJobs"
@@ -438,7 +440,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
 
               <!-- ★ こちらも同様に割合ベースで可変 -->
-              <div class="fw-scroll point-list">
+              <div
+                  :class="['fw-scroll', hasSingleVisibleJob ? 'point-list-full' : 'point-list']"
+              >
                 <v-list density="compact" nav>
                   <v-list-item
                       v-for="pt in pointsForCurrentJob"
@@ -3462,10 +3466,20 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    hasSecond() {
+      return !!(this.currentJobId && this.pointsForCurrentJob && this.pointsForCurrentJob.length);
+    },
     visibleJobs() {
       if (this.showAllJobs) return this.jobList || [];
       if (!this.currentJobId) return this.jobList || []; // 未選択時は全部見せる
       return (this.jobList || []).filter(j => String(j.id) === String(this.currentJobId));
+    },
+    hasSingleVisibleJob() {
+      if (this.visibleJobs.length === 1) {
+        return true;
+      } else {
+        return false;
+      }
     },
     kansokuAverages () {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows.slice(1) : [];
@@ -13829,6 +13843,7 @@ html.oh3-embed #map01 {
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
 /* 親サイズに追従できるように： */
 .fw-fit {
   /* 親（FloatingWindow）を“サイズコンテナ”化して cqh/cqw を使えるようにする */
@@ -13873,6 +13888,15 @@ html.oh3-embed #map01 {
 /* 必要ならリスト2つで配分を変える */
 .fw-fit .job-list   { max-height: clamp(120px, 30cqh, 320px); }
 .fw-fit .point-list { max-height: clamp(120px, 30cqh, 320px); }
+
+/* とりあえずこれで凌ぐ。数値を変えて調整する必要あり */
+.fw-fit .job-list-full {
+  max-height: calc(100cqh - 80px);
+}
+.fw-fit .point-list-full {
+  max-height: calc(100cqh - 120px);
+}
+
 
 /* 横方向はウインドウに合わせて可変（念のため） */
 .fw-fit .fw-card,
