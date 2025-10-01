@@ -8,7 +8,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!-- 既存の isTracking ブロックの直下に追加 -->
+      <!--  -->
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column;">
@@ -19,12 +19,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <!-- 2行目：ボタンを横並び -->
         <div class="d-flex align-center" style="gap:6px;">
         <!-- 業務を終了 -->
-        <MiniTooltip text="業務を終了" :offset-x="0" :offset-y="0">
+        <MiniTooltip text="JOBを終了" :offset-x="0" :offset-y="0">
           <v-btn
               icon
               size="small"
               @click="onJobEndClick(true)"
-          aria-label="業務を終了"
+          aria-label="JOBを終了"
           >
             終了
 <!--          <v-icon size="18">mdi-flag-checkered</v-icon>-->
@@ -32,12 +32,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
 
         <!-- Job Picker を開く -->
-        <MiniTooltip text="業務を選ぶ / 変更する" :offset-x="0" :offset-y="0">
+        <MiniTooltip text="JOBを選ぶ / 変更する" :offset-x="0" :offset-y="0">
           <v-btn
               icon
               size="small"
               color="primary"
-              @click="onOpenJobPicker"
+              @click="jobPickerFWOpen"
           aria-label="Job Picker を開く"
           >
             リスト
@@ -2158,7 +2158,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                            onJobEndClick(true)"
                     >杭打</v-btn>
                     <v-btn icon
-                           @click="test();
+                           @click="jobPickerFWOpen();
                            isKuiuchi = false;
                            isTracking = false
                            openJobPicker()"
@@ -4927,6 +4927,7 @@ export default {
     async test () {
 
       this.$store.dispatch('showFloatingWindow', 'job-picker');
+      this.isJobMenu = true
 
       // const tileJson = await fetchGsiTileTest()
       // console.log(tileJson)
@@ -7172,6 +7173,10 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    jobPickerFWOpen() {
+      this.$store.dispatch('showFloatingWindow', 'job-picker');
+      this.isJobMenu = true
+    },
     /* =========================
      * 1) 数値・フォーマット系ユーティリティ
      * =======================*/
@@ -9247,6 +9252,7 @@ export default {
       if (isCleanup) {
         this.jobPickerOpen = false;
         this.isJobMenu = false;
+        this.$store.dispatch('hideFloatingWindow', 'job-picker');
       }
 
       try {
@@ -12932,6 +12938,52 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+
+    if (this.s_isAndroid){
+      let startY;
+      let isTouching = false;
+      let currentTarget = null;
+      let initialScrollTop = 0;
+      document.addEventListener('touchstart', (e) => {
+        const target = e.target.closest('.fw-fit');
+        if (target) {
+          startY = e.touches[0].clientY; // タッチ開始位置を記録
+          initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+          isTouching = true;
+          currentTarget = target;
+          target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+          target.style.touchAction = 'manipulation';
+          // **イベント伝播を防ぐ**
+          e.stopPropagation();
+        }
+      }, { passive: true, capture: true });
+
+      // タッチ移動時の処理
+      document.addEventListener('touchmove', (e) => {
+        if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+        const moveY = e.touches[0].clientY;
+        const deltaY = startY - moveY; // 移動量を計算
+        // スクロール位置を更新
+        currentTarget.scrollTop += deltaY;
+        startY = moveY; // 開始位置を現在の位置に更新
+        // **Android でスクロールが無視されないようにする**
+        e.preventDefault();
+        e.stopPropagation();
+
+      }, { passive: true, capture: true });
+
+      // タッチ終了時の処理
+      document.addEventListener('touchend', () => {
+        if (currentTarget) {
+          currentTarget.style.overflowY = ''; // スクロール設定をリセット
+        }
+        currentTarget = null; // 現在のターゲットをリセット
+        isTouching = false; // タッチ中フラグをOFF
+        initialScrollTop = 0; // 初期スクロール位置をリセット
+      });
+    }
+
+
 
     // 既存ジョブをローカルから復元（まだサーバなし）
     this.loadJobsFromStorage();
