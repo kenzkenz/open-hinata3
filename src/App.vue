@@ -37,7 +37,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               color="primary"
-              @click="jobPickerFWOpen"
+              @click="jobPickerFWOpen();openJobPicker();"
           aria-label="Job Picker を開く"
           >
             リスト
@@ -944,39 +944,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
             </div>
 
-<!--            <div class="flex items-center gap-2 mt-2">-->
-<!--              <v-btn-->
-<!--                  class="mt-2"-->
-<!--                  @click="kansokuStart"-->
-<!--                  :disabled="kansokuStartState.ok"-->
-<!--                  :title="kansokuStartState.reason || '測位開始'"-->
-<!--                  :loading="kansokuRunning"-->
-<!--              >-->
-<!--                測位開始-->
-<!--              </v-btn>-->
-<!--            </div>-->
-
-            <!-- 操作ボタン -->
-            <div class="flex items-center gap-2 mt-2">
+            <!-- ボタン行：右寄せ＆広めの間隔 -->
+            <div class="d-flex align-center flex-wrap justify-start ga-4 mt-3">
               <!-- 測位開始（idle だけ有効） -->
               <v-btn
-                  class="mt-2"
                   @click="kansokuStart"
                   :disabled="!canStartKansoku"
                   :title="startHint"
-                  :loading="kansokuPhase === 'observing'"
-              >測位開始</v-btn>
-
-              <!-- 測位終了後の選択（保存/破棄）。await中のみ表示 -->
-              <template v-if="kansokuPhase === 'await'">
-                <v-btn color="primary" variant="elevated" class="mt-2" @click="onSaveKansoku">保存</v-btn>
-                <v-btn color="error"   variant="outlined" class="mt-2" @click="onDiscardKansoku">破棄</v-btn>
-              </template>
+                  :loading="kansokuRunning"
+              >
+                測位開始
+              </v-btn>
+              <!-- 保存/破棄は “await” 中だけまとめて表示。内側でも余白を確保 -->
+              <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
+                <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
+                <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
+              </div>
             </div>
-
-
-
-
 
             <!-- サンプル一覧 -->
             <div
@@ -1036,10 +1020,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
               </div>
 
-              <div class="d-flex ga-2 mt-3">
-                <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
-                <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
-              </div>
             </v-alert>
             <!-- ▲▲ ここまで追加 ▲▲ -->
 
@@ -3470,7 +3450,6 @@ export default {
     pendingObservation: null, // 観測停止後のプレビュー用 { n, Xavg, Yavg, diff }
 
     kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
-
 
     aaa: null,
   }),
@@ -7355,36 +7334,41 @@ export default {
 
 
     /** 保存：既存の commit をそのまま使う（壊さない） */
-    async onClickSaveObservation() {
-      if (!this.kansokuCsvRows || this.kansokuCsvRows.length <= 1) return;
-      try {
-        const ok = await this.commitCsv2Point();
-        if (!ok) return;
-      } finally {
-        this.pendingObservation = null;
-        this.kansokuCsvRows = null; // 次の観測に向けてクリア
-      }
-      // ★ 点名の自動インクリメントは “次のキリ” で入れる
-    },
 
-    /** 破棄：仮赤丸/一時CSVを捨てる。点名は変更しない */
-    onClickDiscardObservation() {
-      try { this.clearPendingTorokuPoints?.(); } catch {}
-      this.pendingObservation = null;
-      this.kansokuCsvRows = null;
-    },
-    kansokuStop () {
-      // 測位自体は停止
+
+
+    kansokuStop() {
       this.kansokuRunning = false;
       this.kansokuRemaining = 0;
-      if (this.kansokuTimer) {
-        try { clearInterval(this.kansokuTimer); } catch {}
-        this.kansokuTimer = null;
-      }
+      if (this.kansokuTimer) { try { clearInterval(this.kansokuTimer); } catch {} this.kansokuTimer = null; }
 
-      // ここでは「保存待ち」にするだけ（commitしない）
-      this.kansokuPhase = 'await';
+      // ★ 軽量サマリーを確定
+      this.pendingObservation = this.summarizeObservationLight();
+      // サマリーがあれば保存/破棄待ちフェーズへ
+      this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
     },
+    // 保存：平均を1点として確定 → 次の点名へ → 待機解除
+    async onClickSaveObservation() {
+      try {
+        await this.commitCsv2Point(); // ★ ここで初めて確定保存
+      } catch (e) {
+        console.warn('[save] commit failed', e);
+      } finally {
+        this.kansokuCsvRows = null;          // 今回の観測ログはクリア
+        this.pendingObservation = null;
+        this.kansokuPhase = 'idle';
+        this.torokuDisabled = false;         // 測位開始を再アクティブ
+      }
+    },
+
+    // 破棄：ログだけ捨てて次へ
+    onClickDiscardObservation() {
+      this.kansokuCsvRows = null;
+      this.pendingObservation = null;
+      this.kansokuPhase = 'idle';
+      this.torokuDisabled = false;
+    },
+
 
 
 
