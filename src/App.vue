@@ -1020,23 +1020,23 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 class="mt-2 py-1 px-2"
                 style="font-size:14px; line-height:1.2;"
             >
-              <div class="text-body-2" style="color:#c00; font-weight:700;">測位結果</div>
+              <div class="text-body-2" style="color:black; font-weight:700;">測位結果</div>
 
               <!-- ★ 追加：点名 -->
-              <div class="mt-1" style="color:#c00;">
+              <div class="mt-1" style="color:black;">
                 点名：{{ (currentPointName || tenmei || '').trim() || '未設定' }}
               </div>
 
-              <div class="mt-1" style="color:#c00;">
+              <div class="mt-1" :style="`color:${kakusaColor};`">
                 較差：XY={{ pendingObservation.diffTxt }}m
               </div>
-              <div class="mt-1" style="color:#c00;">
+              <div class="mt-1" style="color:black;">
                 平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
               </div>
-              <div v-if="pendingObservation.HavgTxt" class="mt-1" style="color:#c00;">
+              <div v-if="pendingObservation.HavgTxt" class="mt-1" style="color:black;">
                 H={{ pendingObservation.HavgTxt }}m
               </div>
-              <div class="mt-1" style="color:#c00;">
+              <div class="mt-1" style="color:black;">
                 アンテナ高：{{ toFixed2(offsetCm) }} m
               </div>
             </v-alert>
@@ -3510,6 +3510,17 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    kakusaColor() {
+     const diff = Number(this.pendingObservation.diffTxt)
+      console.log(diff)
+      if (diff < 0.03) {
+        return 'blue'
+      } else if (diff < 0.06) {
+        return 'orange'
+      } else {
+        return '#c00'
+      }
+    },
     canStartKansoku () {
       if (this.kansokuPhase !== 'idle') return false;  // ← フェーズでブロック
       if (!this.currentJobId) return false;
