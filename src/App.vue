@@ -890,7 +890,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
           <v-card-text>
             <div class="oh3-grid-4col">
-              <!-- left -->
+              <!-- a: 点名（100%） -->
               <v-text-field
                   v-model="tenmei"
                   label="点名"
@@ -898,12 +898,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   density="compact"
                   hide-details="auto"
                   clearable
-                  class="oh3-col-flex"
+                  class="oh3-col-flex g-a"
                   :error-messages="tenmeiError"
                   @update:modelValue="handleTenmeiInput"
                   :disabled="kansokuRunning"
               />
-              <!-- count -->
+
+              <!-- b: 測位回数（100%） -->
               <v-select
                   v-model="kansokuCount"
                   :items="kansokuItems"
@@ -911,10 +912,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="oh3-col-fixed"
+                  class="oh3-col-fixed g-b"
                   :disabled="kansokuRunning"
               />
-              <!-- interval -->
+
+              <!-- c: 間隔（50%） -->
               <v-text-field
                   v-model.number="sampleIntervalSec"
                   type="number"
@@ -922,13 +924,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
-                  class="oh3-col-fixed"
-                  :step="0.1"
-                  :min="1.0"
-                  :max="60"
+                  class="oh3-col-fixed g-c"
+                  :step="0.1" :min="1.0" :max="60"
                   :disabled="kansokuRunning"
               />
-              <!-- antenna -->
+
+              <!-- d: アンテナ高（50%） -->
               <v-text-field
                   v-model.number="offsetCm"
                   type="number"
@@ -936,13 +937,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   variant="outlined"
                   density="compact"
                   hide-details="auto"
-                  class="oh3-col-fixed"
-                  :step="0.01"
-                  :min="0.00"
-                  :max="300"
+                  class="oh3-col-fixed g-d"
+                  :step="0.01" :min="0.00" :max="300"
                   :disabled="kansokuRunning"
               />
             </div>
+
 
             <!-- ボタン行：右寄せ＆広めの間隔 -->
             <div class="d-flex align-center flex-wrap justify-start ga-4 mt-3">
@@ -14040,6 +14040,37 @@ html.oh3-embed #map01 {
 .fw-fit .fw-scroll {
   max-width: 100cqw;   /* 親ウインドウの幅に追従 */
 }
+
+/* デスクトップ：4列（必要なら固定幅を調整） */
+.oh3-grid-4col{
+  display: grid;
+  grid-template-columns: 1fr 180px 150px 160px; /* ←好みで調整 */
+  gap: 8px;
+  align-items: start;
+}
+
+/* スマホ：3段（a=100%, b=100%, c+d=50%ずつ横並び） */
+@media (max-width: 600px){
+  .oh3-grid-4col{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "a a"
+      "b b"
+      "c d";
+    gap: 8px;
+  }
+  .oh3-grid-4col > .g-a{ grid-area: a; }
+  .oh3-grid-4col > .g-b{ grid-area: b; }
+  .oh3-grid-4col > .g-c{ grid-area: c; }
+  .oh3-grid-4col > .g-d{ grid-area: d; }
+
+  /* 中身は全幅で流し込む */
+  .oh3-col-flex,
+  .oh3-col-fixed{
+    width: 100%;
+  }
+}
+
 
 </style>
 
