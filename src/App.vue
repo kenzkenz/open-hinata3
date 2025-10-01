@@ -7259,6 +7259,12 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+// 2点以上そろったらサマリーを作る（観測中プレビュー兼用）
+    refreshPendingObservation(minN = 2) {
+      const sum = this.summarizeObservationLight?.();
+      // nがminN以上のときだけ表示、未満は非表示
+      this.pendingObservation = (sum && sum.n >= minN) ? sum : null;
+    },
 
     jobPickerFWOpen() {
       this.$store.dispatch('showFloatingWindow', 'job-picker');
@@ -8144,7 +8150,6 @@ export default {
       // 念のため二重ガード
       if (this.kansokuPhase !== 'idle') return;
 
-
       // すでに観測中は二重起動させない
       if (this.kansokuPhase === 'observing') return;
 
@@ -8160,6 +8165,7 @@ export default {
       try { localStorage.setItem('tenmei', raw); } catch (_) {}
       this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw;
 
+      this.pendingObservation = null;   // ← プレビュー消去
 
 
       // セッション初期化と準備
@@ -8318,6 +8324,8 @@ export default {
                 hOut,
                 Number.isFinite(haeN) ? fix3(haeN) : ''
               ]);
+              this.refreshPendingObservation(2); // ← 2件目から毎回サマリー反映
+
             } catch (e) {
               console.warn('[kansoku] collect error', e);
             } finally {
