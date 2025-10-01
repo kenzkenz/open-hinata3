@@ -2006,8 +2006,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </v-fab>
                   </template>
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
-                    <v-btn icon @click="toggleWatchPosition('t')">追跡</v-btn>
-                    <v-btn icon @click="toggleWatchPosition('k')">杭打</v-btn>
+                    <v-btn icon
+                           @click="toggleWatchPosition('t');
+                           onJobEndClick(true)"
+                    >追跡</v-btn>
+                    <v-btn icon
+                           @click="toggleWatchPosition('k');
+                           onJobEndClick(true)"
+                    >杭打</v-btn>
                     <v-btn icon
                            @click="isJobMenu = true;
                            isKuiuchi = false;
