@@ -80,7 +80,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               @click="startTorokuHere"
           aria-label="測位地点を新規追加"
           >
-            追加
+            測位
           </v-btn>
         </MiniTooltip>
         </div>
@@ -1018,6 +1018,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
               <div class="mt-1" style="color:#c00;">
                 平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
+              </div>
+              <!-- ★ 追加：標高（CSVの標高列の平均）。あれば表示 -->
+              <div v-if="pendingObservation.HavgTxt" class="mt-1" style="color:#c00;">
+                H={{ pendingObservation.HavgTxt }}m
               </div>
               <!-- ★ 追加：アンテナ高（m） -->
               <div class="mt-1" style="color:#c00;">
@@ -7288,7 +7292,6 @@ export default {
       return { ok:true, reason:'' };
     },
 
-    /** 観測CSVから XY の平均と較差だけを抽出（高さは扱わない） */
     summarizeObservationLight() {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
       if (!rows || rows.length <= 1) return null;
@@ -7298,6 +7301,11 @@ export default {
       const iX  = col('X');
       const iY  = col('Y');
       const iET = col('eventType');
+
+      // ★ 標高列（CSVヘッダと同じ。なければ既定の 9 列目＝'標高' を想定）
+      const iH  = (header.indexOf('標高') >= 0) ? header.indexOf('標高')
+          : (header.indexOf('height') >= 0 ? header.indexOf('height') : 9);
+
       if (iX < 0 || iY < 0) return null;
 
       const parse = this.parseNumberLike || ((v) => {
@@ -7308,13 +7316,20 @@ export default {
         const n = m ? Number(m[0]) : NaN;
         return Number.isFinite(n) ? n : null;
       });
-      const xs = [], ys = [];
+      const xs = [], ys = [], hs = [];
+
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
         if (et !== 'kansoku') continue;
+
         const vx = parse(row[iX]); if (vx != null) xs.push(vx);
         const vy = parse(row[iY]); if (vy != null) ys.push(vy);
+
+        if (iH >= 0 && row.length > iH && row[iH] != null && row[iH] !== '') {
+          const vh = parse(row[iH]);
+          if (vh != null) hs.push(vh);
+        }
       }
       if (!xs.length || !ys.length) return null;
 
@@ -7322,16 +7337,19 @@ export default {
       const Xavg = avg(xs);
       const Yavg = avg(ys);
       const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+      const Havg = hs.length ? avg(hs) : null;
 
       const fix3 = this.toFixed3 || ((n) => (Number.isFinite(n) ? n.toFixed(3) : ''));
       return {
         n: xs.length,
-        Xavg, Yavg, diff,
+        Xavg, Yavg, diff, Havg,
         XavgTxt: fix3(Xavg),
         YavgTxt: fix3(Yavg),
         diffTxt: fix3(diff),
+        HavgTxt: (Havg == null ? '' : fix3(Havg)),
       };
     },
+
 
     /** 観測停止時：確定せずプレビューだけ用意（保存/破棄の判断材料） */
 
