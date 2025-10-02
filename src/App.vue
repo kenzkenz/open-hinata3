@@ -9569,51 +9569,20 @@ export default {
       return n;
     },
     confirmTorokuPointAtCurrent(name, rowArray) {
-      const map = (this.$store && this.$store.state && this.$store.state.map01)
-          ? this.$store.state.map01
-          : this.map01;
-
+      const map = (this.$store?.state?.map01) || this.map01;
       const SRC   = 'oh-toroku-point-src';
       const LAYER = 'oh-toroku-point';
       const LAB   = 'oh-toroku-point-label';
 
-      let lng = null, lat = null;
-
-      // --- 1) 「仮赤丸（pendingLabel:true）」だけを座標取得＆削除対象にする ---
-      if (this._torokuFC && Array.isArray(this._torokuFC.features) && this._torokuFC.features.length) {
-        // a) pending を優先して探す
-        let idx = this._torokuFC.features.findIndex(f => f?.properties?.pendingLabel === true);
-
-        // b) 見つからなければ “最後のID” が pending の場合のみ採用（本命は絶対に消さない）
-        if (idx < 0 && this._lastTorokuFeatureId) {
-          const j = this._torokuFC.features.findIndex(f => f?.properties?.id === this._lastTorokuFeatureId);
-          if (j >= 0 && this._torokuFC.features[j]?.properties?.pendingLabel === true) {
-            idx = j;
-          }
-        }
-
-        // c) pending が見つかった時だけ、その座標を使い、仮赤丸を削除
-        if (idx >= 0) {
-          const f = this._torokuFC.features[idx];
-          if (f && f.geometry && Array.isArray(f.geometry.coordinates)) {
-            lng = Number(f.geometry.coordinates[0]);
-            lat = Number(f.geometry.coordinates[1]);
-          }
-          this._torokuFC.features.splice(idx, 1); // ← 仮赤丸のみ除去
-        }
-      }
-
-      // --- 2) 座標フォールバック：アンカー保持値を使う ---
-      if ((!Number.isFinite(lng) || !Number.isFinite(lat)) && this.torokuPointLngLat) {
-        lng = this.torokuPointLngLat.lng;
-        lat = this.torokuPointLngLat.lat;
-      }
+      // ★ 座標は “常に” torokuPointLngLat から取得（pending/lastIdは使わない）
+      const lng = Number(this?.torokuPointLngLat?.lng);
+      const lat = Number(this?.torokuPointLngLat?.lat);
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[toroku] confirm failed: no coordinate');
+        console.warn('[toroku] confirm failed: no torokuPointLngLat');
         return;
       }
 
-      // --- 3) 本命フィーチャを生成して追加（CSV相当を oh3_csv2_row に格納） ---
+      // ★ 赤丸フィーチャを追加
       const fid = 'pt_' + Date.now() + '_' + (Math.random() * 1e6 | 0);
       const feature = {
         type: 'Feature',
@@ -9621,7 +9590,6 @@ export default {
           id: fid,
           label: String(name || ''),
           name:  String(name || ''),
-          pendingLabel: false,
           oh3_csv2_row: JSON.stringify(rowArray)
         },
         geometry: { type: 'Point', coordinates: [lng, lat] }
@@ -9629,10 +9597,9 @@ export default {
 
       if (!this._torokuFC) this._torokuFC = { type: 'FeatureCollection', features: [] };
       this._torokuFC.features.push(feature);
-      this._lastTorokuFeatureId = fid;
 
-      // --- 4) 地図へ反映（ソース更新 or 初期化 + レイヤ作成） ---
-      if (map && map.getSource && map.getSource(SRC)) {
+      // ★ 地図へ反映（なければ作成／あれば更新）
+      if (map?.getSource(SRC)) {
         map.getSource(SRC).setData(this._torokuFC);
       } else if (map) {
         map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
@@ -9662,9 +9629,11 @@ export default {
         }
       }
 
-      // --- 5) 最終座標を保持 ---
+      // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
       this.torokuPointLngLat = { lng, lat };
     },
+
+
 
     onJobEndClick(isCleanup) {
       if (isCleanup) {
