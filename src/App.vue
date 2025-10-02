@@ -7897,31 +7897,82 @@ export default {
           return;
         }
 
+        // 1) 一覧（=唯一の真実源）から除去
         this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
             x => String(x.point_id ?? x.id) !== pointId
         );
 
+        // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
         try {
           const map = (this.$store?.state?.map01) || this.map01;
-          const SRC = 'oh-toroku-point-src';
-          const lng = Number(pt?.lng), lat = Number(pt?.lat);
-          if (this._torokuFC && Number.isFinite(lng) && Number.isFinite(lat)) {
-            const eps = 1e-9;
-            this._torokuFC.features = (this._torokuFC.features || []).filter(f => {
-              const c = f?.geometry?.coordinates || [];
-              return !(Math.abs(c[0] - lng) < eps && Math.abs(c[1] - lat) < eps);
-            });
-            if (map?.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
+          if (map) {
+            const SRC   = 'oh-toroku-point-src';
+            const LAYER = 'oh-toroku-point';
+            const LAB   = 'oh-toroku-point-label';
+
+            const fc = { type: 'FeatureCollection', features: [] };
+            for (const r of (this.pointsForCurrentJob || [])) {
+              const lng = Number(r?.lng), lat = Number(r?.lat);
+              if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+              fc.features.push({
+                type: 'Feature',
+                properties: {
+                  id: `pt_${String(r.point_id ?? r.id ?? Math.random()*1e6|0)}`,
+                  label: String(r.point_name ?? r.name ?? ''),
+                  name:  String(r.point_name ?? r.name ?? ''),
+                  pendingLabel: false,
+                  // 必要なら oh3_csv2_row などもここで再付与
+                },
+                geometry: { type: 'Point', coordinates: [lng, lat] }
+              });
+            }
+
+            this._torokuFC = fc;
+
+            if (map.getSource(SRC)) {
+              map.getSource(SRC).setData(fc);
+            } else {
+              map.addSource(SRC, { type: 'geojson', data: fc });
+              if (!map.getLayer(LAYER)) {
+                map.addLayer({
+                  id: LAYER,
+                  type: 'circle',
+                  source: SRC,
+                  paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#ff3b30',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                  }
+                });
+              }
+              if (!map.getLayer(LAB)) {
+                map.addLayer({
+                  id: LAB,
+                  type: 'symbol',
+                  source: SRC,
+                  layout: {
+                    'text-field': ['get', 'label'],
+                    'text-size': 16,
+                    'text-offset': [0, 0.5],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': true
+                  },
+                  paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+                });
+              }
+            }
           }
-          this.updateChainLine(); // ← 追加
         } catch (e) {
-          console.warn('[deletePoint] map update failed', e);
+          console.warn('[deletePoint] map repaint failed', e);
         }
+
       } catch (e) {
         console.error('[job_points.delete] 失敗', e);
         alert('削除に失敗しました：' + (e?.message || e));
       }
     },
+
     focusPointOnMap(pt) {
       try {
         const map = (this.$store?.state?.map01) || this.map01;
