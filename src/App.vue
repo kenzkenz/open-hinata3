@@ -7273,6 +7273,55 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    // 1) 現在地マーカー（緑丸）を1個だけ描く or 更新する
+    upsertCurrentMarker(lng, lat) {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map || !Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+
+      const fc = {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'Point', coordinates: [lng, lat] }
+        }]
+      };
+
+      if (map.getSource(SRC)) {
+        map.getSource(SRC).setData(fc);
+      } else {
+        map.addSource(SRC, { type: 'geojson', data: fc });
+        if (!map.getLayer(LAYER)) {
+          map.addLayer({
+            id: LAYER,
+            type: 'circle',
+            source: SRC,
+            paint: {
+              'circle-radius': 7,
+              'circle-color': '#22c55e',       // 緑
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+        }
+      }
+    },
+
+// 2) 現在地マーカー（緑丸）を完全に消す
+    clearCurrentMarker() {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map) return;
+
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch {}
+      try { if (map.getSource(SRC))  map.removeSource(SRC); } catch {}
+    },
+
     clearChainLineOnly() {
       try {
         const map = (this.$store?.state?.map01) || this.map01;
@@ -7491,6 +7540,7 @@ export default {
       }
       try {
         await this.commitCsv2Point(); // ★ ここで初めて確定保存
+        this.clearCurrentMarker();   // ← 追加
       } catch (e) {
         console.warn('[save] commit failed', e);
       } finally {
@@ -7512,6 +7562,7 @@ export default {
       this.pendingObservation = null;
       this.kansokuPhase = 'idle';
       this.torokuDisabled = false;
+      this.clearCurrentMarker();   // ← 追加
     },
 
 
@@ -8058,7 +8109,8 @@ export default {
       }
     },
     handleTorokuMapClick (lngLat) {
-      try { this.plotTorokuPoint(lngLat, /*label*/'', { deferLabel: true }); } catch(_) {}
+      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
+      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // ← 追加
       try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
       try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
       this.dialogForToroku = true;
@@ -8135,6 +8187,7 @@ export default {
 
               _this.plotTorokuPoint({ lng: lon, lat: lat }, /*label*/'', { deferLabel: true });
               _this.torokuPointLngLat = { lng: lon, lat };
+              _this.upsertCurrentMarker(lon, lat);   // ← 追加
 
               const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
               _this.torokuPointMeta      = meta;
@@ -8291,6 +8344,8 @@ export default {
       }
     },
     kansokuStart () {
+      this.clearCurrentMarker();   // ← 追加（残骸がある場合に備えて）
+
       if (!this.canStartKansoku) return;
       // 念のため二重ガード
       if (this.kansokuPhase !== 'idle') return;
