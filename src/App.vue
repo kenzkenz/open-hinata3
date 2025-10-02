@@ -7440,8 +7440,6 @@ export default {
       this.lineMode = mode;
       this.updateChainLine();
     },
-    setPointMode () { this.lineMode = 'point'; },
-    setChainMode () { this.lineMode = 'chain'; },
 
     /** 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2） */
     refreshPendingObservation(minN = 2) {
@@ -7451,6 +7449,8 @@ export default {
 
     /** ジョブピッカーをフローティングで開く */
     jobPickerFWOpen() {
+      // まず緑丸を必ず消す
+      try { this.clearCurrentMarker(); } catch {}
       this.$store.dispatch('showFloatingWindow', 'job-picker');
       this.isJobMenu = true
     },
@@ -9699,15 +9699,14 @@ export default {
       this.torokuPointLngLat = { lng, lat };
     },
 
-
-
     onJobEndClick(isCleanup) {
       if (isCleanup) {
         this.jobPickerOpen = false;
         this.isJobMenu = false;
         this.$store.dispatch('hideFloatingWindow', 'job-picker');
       }
-
+      // まず緑丸を必ず消す
+      try { this.clearCurrentMarker(); } catch {}
       try {
         if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
       } catch {}
