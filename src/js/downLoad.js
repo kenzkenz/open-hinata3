@@ -4829,25 +4829,31 @@ export function addXyztileLayer(id,name,url,bbox) {
     url = url.replace('https://kenzkenz.duckdns.org/','https://kenzkenz.net/')
     const map01 = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
+    const srcId = `oh-vpstile-${id}-${name}-source`;
+    const lyrId = `oh-vpstile-${id}-${name}-layer`;
+    // キャッシュバスターで解決
+    const v = Date.now();
+    const pmtilesUrl = `pmtiles://${url}${url.includes('?') ? '&' : '?'}v=${v}`;
     const source = {
-        id: 'oh-vpstile-' + id + '-' + name + '-source',obj: {
+        id: srcId,obj: {
             type: 'raster',
-            // tiles: ['transparentBlack://' + url],
-            url: 'pmtiles://' + url,
+            url: pmtilesUrl,
             bounds: bounds,
             maxzoom: 26,
         }
     };
     const layer = {
-        id: 'oh-vpstile-' + id + '-' + name + '-layer',
+        id: lyrId,
         type: 'raster',
-        source: 'oh-vpstile-' + id + '-' + name  + '-source',
+        source: srcId,
     }
+
     const mapNames = ['map01', 'map02']
     mapNames.forEach(mapName => {
+
         store.state.selectedLayers[mapName].unshift(
             {
-                id: 'oh-vpstile-' + id + '-' + name + '-layer',
+                id: lyrId,
                 label: name,
                 source: source,
                 layers: [layer],
@@ -4856,7 +4862,6 @@ export function addXyztileLayer(id,name,url,bbox) {
             }
         );
     })
-
 
     function fitBoundsAndThen(map, bbox, callback) {
         const onMoveEnd = () => {
@@ -4872,17 +4877,10 @@ export function addXyztileLayer(id,name,url,bbox) {
             duration: 1000 // アニメーション時間（ms）必要に応じて調整
         });
     }
-    // alert(document.querySelector('.draggable-div').style.display)
     fitBoundsAndThen(map01, bbox, () => {
         const currentZoom = map01.getZoom();
         map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
     });
-    // if (bbox) {
-    //     map01.fitBounds([
-    //         [bbox[0], bbox[1]], // minX, minY
-    //         [bbox[2], bbox[3]]  // maxX, maxY
-    //     ], { padding: 20 });
-    // }
     store.state.fetchImagesFire = !store.state.fetchImagesFire
 }
 
