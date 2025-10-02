@@ -7474,8 +7474,10 @@ export default {
     kansokuStop() {
       this.kansokuRunning = false;
       this.kansokuRemaining = 0;
-      if (this.kansokuTimer) { try { clearInterval(this.kansokuTimer); } catch {} this.kansokuTimer = null; }
-
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
       // ★ 軽量サマリーを確定
       this.pendingObservation = this.summarizeObservationLight();
       // サマリーがあれば保存/破棄待ちフェーズへ
@@ -7483,6 +7485,10 @@ export default {
     },
     // 保存：平均を1点として確定 → 次の点名へ → 待機解除
     async onClickSaveObservation() {
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
       try {
         await this.commitCsv2Point(); // ★ ここで初めて確定保存
       } catch (e) {
@@ -7492,11 +7498,16 @@ export default {
         this.pendingObservation = null;
         this.kansokuPhase = 'idle';
         this.torokuDisabled = false;         // 測位開始を再アクティブ
+
       }
     },
 
     // 破棄：ログだけ捨てて次へ
     onClickDiscardObservation() {
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
       this.kansokuCsvRows = null;
       this.pendingObservation = null;
       this.kansokuPhase = 'idle';
@@ -8286,6 +8297,11 @@ export default {
 
       // すでに観測中は二重起動させない
       if (this.kansokuPhase === 'observing') return;
+
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
+      }
 
       const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
 
@@ -9498,36 +9514,41 @@ export default {
       return n;
     },
     confirmTorokuPointAtCurrent(name, rowArray) {
-      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+      const map = (this.$store && this.$store.state && this.$store.state.map01)
+          ? this.$store.state.map01
+          : this.map01;
+
       const SRC   = 'oh-toroku-point-src';
       const LAYER = 'oh-toroku-point';
       const LAB   = 'oh-toroku-point-label';
 
       let lng = null, lat = null;
 
+      // --- 1) 「仮赤丸（pendingLabel:true）」だけを座標取得＆削除対象にする ---
       if (this._torokuFC && Array.isArray(this._torokuFC.features) && this._torokuFC.features.length) {
-        let idx = -1;
-        if (this._lastTorokuFeatureId) {
-          idx = this._torokuFC.features.findIndex(f => f?.properties?.id === this._lastTorokuFeatureId);
-        }
-        if (idx < 0) {
-          idx = this._torokuFC.features.findIndex(f => f?.properties?.pendingLabel === true);
-        }
-        if (idx < 0) {
-          idx = this._torokuFC.features.length - 1;
+        // a) pending を優先して探す
+        let idx = this._torokuFC.features.findIndex(f => f?.properties?.pendingLabel === true);
+
+        // b) 見つからなければ “最後のID” が pending の場合のみ採用（本命は絶対に消さない）
+        if (idx < 0 && this._lastTorokuFeatureId) {
+          const j = this._torokuFC.features.findIndex(f => f?.properties?.id === this._lastTorokuFeatureId);
+          if (j >= 0 && this._torokuFC.features[j]?.properties?.pendingLabel === true) {
+            idx = j;
+          }
         }
 
-        const f = this._torokuFC.features[idx];
-        if (f && f.geometry && Array.isArray(f.geometry.coordinates)) {
-          lng = Number(f.geometry.coordinates[0]);
-          lat = Number(f.geometry.coordinates[1]);
-        }
-
+        // c) pending が見つかった時だけ、その座標を使い、仮赤丸を削除
         if (idx >= 0) {
-          this._torokuFC.features.splice(idx, 1);
+          const f = this._torokuFC.features[idx];
+          if (f && f.geometry && Array.isArray(f.geometry.coordinates)) {
+            lng = Number(f.geometry.coordinates[0]);
+            lat = Number(f.geometry.coordinates[1]);
+          }
+          this._torokuFC.features.splice(idx, 1); // ← 仮赤丸のみ除去
         }
       }
 
+      // --- 2) 座標フォールバック：アンカー保持値を使う ---
       if ((!Number.isFinite(lng) || !Number.isFinite(lat)) && this.torokuPointLngLat) {
         lng = this.torokuPointLngLat.lng;
         lat = this.torokuPointLngLat.lat;
@@ -9537,7 +9558,8 @@ export default {
         return;
       }
 
-      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
+      // --- 3) 本命フィーチャを生成して追加（CSV相当を oh3_csv2_row に格納） ---
+      const fid = 'pt_' + Date.now() + '_' + (Math.random() * 1e6 | 0);
       const feature = {
         type: 'Feature',
         properties: {
@@ -9550,10 +9572,11 @@ export default {
         geometry: { type: 'Point', coordinates: [lng, lat] }
       };
 
-      if (!this._torokuFC) this._torokuFC = { type:'FeatureCollection', features: [] };
+      if (!this._torokuFC) this._torokuFC = { type: 'FeatureCollection', features: [] };
       this._torokuFC.features.push(feature);
       this._lastTorokuFeatureId = fid;
 
+      // --- 4) 地図へ反映（ソース更新 or 初期化 + レイヤ作成） ---
       if (map && map.getSource && map.getSource(SRC)) {
         map.getSource(SRC).setData(this._torokuFC);
       } else if (map) {
@@ -9584,8 +9607,10 @@ export default {
         }
       }
 
+      // --- 5) 最終座標を保持 ---
       this.torokuPointLngLat = { lng, lat };
     },
+
     onJobEndClick(isCleanup) {
       if (isCleanup) {
         this.jobPickerOpen = false;
