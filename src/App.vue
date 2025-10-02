@@ -25,10 +25,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
               color="primary"
               class="mr-2"
           >
-            <v-btn value="point" size="x-small" class="px-3 text-none">単点</v-btn>
-            <v-btn value="chain" size="x-small" class="px-3 text-none">結線</v-btn>
+            <v-btn @click="setLineMode('point')" value="point" size="x-small" class="px-3 text-none">単点</v-btn>
+            <v-btn @click="setLineMode('chain')" value="chain" size="x-small" class="px-3 text-none">結線</v-btn>
           </v-btn-toggle>
-
 
           <div class="text-subtitle-2">
             現在のジョブ：{{ currentJobName || '未選択' }}
@@ -7284,13 +7283,105 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+
+    buildChainCoordinates() {
+      try {
+        if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
+
+        // ① CSV相当（oh3_csv2_row）の最終列 “観測日時” があればそれで時刻ソート
+        // ② 無ければ配列の並び順（push順）でそのまま
+        const toKey = (f) => {
+          const row = f?.properties?.oh3_csv2_row;
+          if (!row) return Number.MAX_SAFE_INTEGER; // 後ろ扱い
+          try {
+            const arr = Array.isArray(row) ? row : JSON.parse(row);
+            const ts  = arr?.[11]; // ['点名',..., '観測日時'] ← 12列目(= index 11)
+            const t   = new Date(ts).getTime();
+            return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
+          } catch {
+            return Number.MAX_SAFE_INTEGER;
+          }
+        };
+
+        const feats = [...this._torokuFC.features].filter(f =>
+            f?.geometry?.type === 'Point' &&
+            Number.isFinite(+f.geometry.coordinates?.[0]) &&
+            Number.isFinite(+f.geometry.coordinates?.[1])
+        );
+
+        feats.sort((a,b) => toKey(a) - toKey(b));
+
+        return feats.map(f => {
+          const c = f.geometry.coordinates;
+          return [Number(c[0]), Number(c[1])]; // [lng, lat]
+        });
+      } catch {
+        return [];
+      }
+    },
+
+    // --- 2) ラインを更新（結線モードのみ表示） ---
+    updateChainLine() {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+
+        const SRC = 'oh-chain-src';
+        const LYR = 'oh-chain-layer';
+
+        // モードが単点 or 点が1つ以下 → ライン消す
+        const coords = (this.lineMode === 'chain') ? this.buildChainCoordinates() : [];
+        if (!coords || coords.length < 2) {
+          // 既存があれば削除
+          try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
+          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+          return;
+        }
+
+        const line = {
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {}
+        };
+
+        if (map.getSource(SRC)) {
+          map.getSource(SRC).setData(line);
+        } else {
+          map.addSource(SRC, { type: 'geojson', data: line });
+        }
+        if (!map.getLayer(LYR)) {
+          map.addLayer({
+            id: LYR,
+            type: 'line',
+            source: SRC,
+            paint: {
+              'line-width': 3,
+              'line-color': '#1e88e5' // とりあえず視認性良い青（後でテーマ連動でもOK）
+            }
+          });
+          try { map.moveLayer(LYR); } catch {}
+        }
+      } catch (e) {
+        console.warn('[chain] updateChainLine failed', e);
+      }
+    },
+
+    // --- 3) 明示クリア（削除系から呼び出し用） ---
+    clearChainLine() {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map) return;
+      const SRC = 'oh-chain-src';
+      const LYR = 'oh-chain-layer';
+      try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+    },
+
+
     setLineMode(mode) {
       if (mode !== 'point' && mode !== 'chain') return;
-      // 観測中は切り替え禁止にする場合は以下を活かす
       if (this.kansokuPhase === 'observing') return;
       this.lineMode = mode;
-      // 必要ならここで描画モード切替の副作用呼び出し：
-      // this.updatePolylineVisibilityByMode();
+      this.updateChainLine(); // ← 追加
     },
     setPointMode () { this.lineMode = 'point'; },
     setChainMode () { this.lineMode = 'chain'; },
@@ -7682,6 +7773,7 @@ export default {
           console.warn('[plot] oh3_csv2_row 付与に失敗（続行）', e);
         }
       }
+      this.updateChainLine(); // ← 追加
     },
     clearPendingTorokuPoints () {
       const map = (this.$store?.state?.map01) || this.map01;
@@ -7738,6 +7830,7 @@ export default {
             });
             if (map?.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
           }
+          this.updateChainLine(); // ← 追加
         } catch (e) {
           console.warn('[deletePoint] map update failed', e);
         }
@@ -7968,6 +8061,7 @@ export default {
       try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
       this.torokuPointLngLat = null;
+      this.updateChainLine(); // ← 追加
     },
     detachTorokuPointClick () {
       const map = this.$store.state.map01;
@@ -8168,6 +8262,7 @@ export default {
 
       this.torokuPointLngLat = { lng, lat };
       this._lastTorokuFeatureId = fid;
+      this.updateChainLine(); // ← 追加
     },
 
     /* =========================
@@ -8547,6 +8642,7 @@ export default {
 
         try {
           this.confirmTorokuPointAtCurrent(name, rowArray);
+          this.updateChainLine(); // ← 追加
         } catch (e) {
           console.warn('[csv2] confirm point replace failed', e);
         }
@@ -14171,27 +14267,6 @@ html.oh3-embed #map01 {
   .oh3-col-fixed{
     width: 100%;
   }
-}
-
-.oh-toggle {
-  display: inline-flex;
-  border: 1px solid var(--v-theme-outline);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-.oh-toggle-btn {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  padding: 4px 10px;
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.oh-toggle-btn.is-active {
-  font-weight: 700;
-  text-decoration: underline; /* 一時の識別。発色は後日 */
 }
 
 </style>
