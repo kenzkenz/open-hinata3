@@ -7839,25 +7839,6 @@ export default {
       }
       this.updateChainLine(); // ← 追加
     },
-    clearPendingTorokuPoints () {
-      const map = (this.$store?.state?.map01) || this.map01;
-      const SRC = 'oh-toroku-point-src';
-
-      if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return;
-
-      const beforeIds = new Set(this._torokuFC.features.map(f => f?.properties?.id));
-      this._torokuFC.features = this._torokuFC.features.filter(
-          f => !(f?.properties?.pendingLabel === true)
-      );
-
-      try { map?.getSource(SRC)?.setData(this._torokuFC); } catch {}
-
-      if (this._lastTorokuFeatureId && !this._torokuFC.features.some(f => f?.properties?.id === this._lastTorokuFeatureId)) {
-        this._lastTorokuFeatureId = null;
-      }
-      this.torokuPointLngLat = null;
-      this.setLineMode(this.lineMode)
-    },
     async deletePoint(pt) {
       const pointId = String(pt?.point_id ?? pt?.id ?? '');
       if (!pointId) return;
@@ -13593,19 +13574,7 @@ export default {
         this.jobPickerOpen = false; // メニュー閉じたらPickerも閉じる
       }
     },
-    dialogForToroku(val) {
-      if (val) {
-        this.torokuDisabled = false;
-      } else {
-        // ダイアログを閉じたら仮設置だけ掃除
-        this.clearPendingTorokuPoints();
-      }
-    },
-    // sampleIntervalSec(val) {
-    //   if (val > 0.5) return
-    //   const fixed = this.clampInterval(val);
-    //   if (fixed !== val) this.sampleIntervalSec = fixed;
-    // },
+
     tempLineCoordsGuide: {
       handler: function () {
         const length = dedupeCoords(this.tempLineCoordsGuide).length
