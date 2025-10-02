@@ -12,10 +12,33 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column;">
-        <!-- 1行目：現在のジョブ -->
-        <div class="mb-1" style="font-size:16px;">
-          現在のジョブ：{{ currentJobName || '未選択' }}
+        <!-- 1行目：モード切替 + 現在のジョブ -->
+        <!-- 1行目：単点/結線トグル + 現在のジョブ -->
+        <!-- 1行目：単点/結線トグル + 現在のジョブ -->
+        <div class="mb-1 d-flex align-center" style="gap:8px;">
+          <!-- 不透明で見やすい -->
+          <v-btn-toggle
+              v-model="lineMode"
+              mandatory
+              density="compact"
+              variant="elevated"
+              color="primary"
+              class="mr-2"
+          >
+            <v-btn value="point" size="x-small" class="px-3 text-none">単点</v-btn>
+            <v-btn value="chain" size="x-small" class="px-3 text-none">結線</v-btn>
+          </v-btn-toggle>
+
+
+          <div class="text-subtitle-2">
+            現在のジョブ：{{ currentJobName || '未選択' }}
+          </div>
         </div>
+
+        <!-- 1行目：現在のジョブ -->
+<!--        <div class="mb-1" style="font-size:16px;">-->
+<!--          現在のジョブ：{{ currentJobName || '未選択' }}-->
+<!--        </div>-->
         <!-- 2行目：ボタンを横並び -->
         <div class="d-flex align-center" style="gap:6px;">
         <!-- 業務を終了 -->
@@ -2208,7 +2231,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                            isTracking = false
                            openJobPicker()"
                     >測位</v-btn>
-
                   </div>
                 </v-speed-dial>
               </MiniTooltip>
@@ -3470,6 +3492,9 @@ export default {
     pendingObservation: null, // 観測停止後のプレビュー用 { n, Xavg, Yavg, diff }
 
     kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
+
+    // 単点/結線の唯一のソース。'point' か 'chain'
+    lineMode: localStorage.getItem('oh3_line_mode') || 'point',
 
     aaa: null,
   }),
@@ -7259,6 +7284,16 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    setLineMode(mode) {
+      if (mode !== 'point' && mode !== 'chain') return;
+      // 観測中は切り替え禁止にする場合は以下を活かす
+      if (this.kansokuPhase === 'observing') return;
+      this.lineMode = mode;
+      // 必要ならここで描画モード切替の副作用呼び出し：
+      // this.updatePolylineVisibilityByMode();
+    },
+    setPointMode () { this.lineMode = 'point'; },
+    setChainMode () { this.lineMode = 'chain'; },
 // 2点以上そろったらサマリーを作る（観測中プレビュー兼用）
     refreshPendingObservation(minN = 2) {
       const sum = this.summarizeObservationLight?.();
@@ -13133,6 +13168,18 @@ export default {
     // fire-and-forget（初回計算前にWasmを温める）
     ensureGeoid().catch(e => console.warn('[geoid] init failed', e));
 
+    // フォールバックで値を正規化（保険）
+    if (this.lineMode !== 'point' && this.lineMode !== 'chain') {
+      this.lineMode = 'point';
+    }
+
+    try {
+      const v = localStorage.getItem('oh3_line_mode');
+      if (v === 'point' || v === 'chain') {
+        this.lineMode = v;
+      }
+    } catch (e) {}
+
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.onResize);
@@ -13374,6 +13421,10 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    // 変更時にローカル保存＆（必要なら）副作用フック
+    lineMode(newVal) {
+      try { localStorage.setItem('oh3_line_mode', newVal); } catch (e) {}
+    },
     async isJobMenu(v) {
       if (v) {
         if (this.jobPickerBusy || this.jobPickerOpen) return;
@@ -14122,6 +14173,26 @@ html.oh3-embed #map01 {
   }
 }
 
+.oh-toggle {
+  display: inline-flex;
+  border: 1px solid var(--v-theme-outline);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.oh-toggle-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.oh-toggle-btn.is-active {
+  font-weight: 700;
+  text-decoration: underline; /* 一時の識別。発色は後日 */
+}
 
 </style>
 
