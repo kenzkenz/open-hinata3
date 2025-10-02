@@ -7535,6 +7535,10 @@ export default {
       try {
         await this.commitCsv2Point(); // ★ ここで初めて確定保存
         this.clearCurrentMarker();   // ← 追加
+        // ★ ピッカーのポイント一覧を最新化
+        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
+        // 必要なら件数バッジも更新
+        try { await this.refreshJobs(); } catch {}
       } catch (e) {
         console.warn('[save] commit failed', e);
       } finally {
@@ -7965,6 +7969,14 @@ export default {
           }
         } catch (e) {
           console.warn('[deletePoint] map repaint failed', e);
+        }
+
+        // ★ ピッカーのポイント一覧と件数をサーバ基準で再同期
+        try {
+          if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
+          await this.refreshJobs(); // バッジ件数があるなら
+        } catch (e) {
+          console.warn('[deletePoint] refresh after delete failed', e);
         }
 
       } catch (e) {
