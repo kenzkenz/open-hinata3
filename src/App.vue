@@ -8899,10 +8899,11 @@ export default {
 
         const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','測位日時'];
 
-        const fmt3    = (v) => this.toFixed3(v);
-        const fmtPole = (v) => this.toFixed2(v);
-        const fmtDeg8 = (v) => this.toFixed8(v);
-        const esc = (v) => {
+        // ← ここを this に依存しないローカル関数に
+        const fmt3    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
+        const fmt2    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
+        const fmt8    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
+        const esc     = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
           return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
@@ -8916,24 +8917,26 @@ export default {
             esc(fmt3(r.x_north)),
             esc(fmt3(r.y_east)),
             esc(fmt3(r.h_orthometric)),
-            esc(fmtPole(r.antenna_height)),
+            esc(fmt2(r.antenna_height)),
             esc(fmt3(r.h_at_antenna)),
             esc(fmt3(r.hae_ellipsoidal)),
             esc(fmt3(r.xy_diff)),
             esc(String(r.crs_label ?? '')),
-            esc(fmtDeg8(r.lat)),
-            esc(fmtDeg8(r.lng)),
+            esc(fmt8(r.lat)),
+            esc(fmt8(r.lng)),
             esc(String(r.observed_at ?? ''))
           ]);
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-        const jobNameRaw = String(this.currentJobName || 'JOB');
-        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-        const pointCount = Array.isArray(list) ? list.length : 0;
-        const fname = `${jobNameSafe}_${pointCount}点.csv`;
-        const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
+        // ファイル名 = JOB名 + ポイント数（禁則文字は _ に置換）
+        const jobNameRaw  = String(this.currentJobName || 'JOB');
+        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
+        const pointCount  = list.length;
+        const fname       = `${jobNameSafe}_${pointCount}点.csv`;
+
+        const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fname;
@@ -8943,6 +8946,7 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
 
     /** SIMA 出力（A01点列のみ。ラインは規格外のため非対応） */
     async exportCsv2Sima(title) {
