@@ -883,7 +883,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
       <!-- 測位  -->
-      <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false">
+      <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false" :persistent="kansokuPhase === 'await' || kansokuRunning">
         <v-card>
           <v-card-title class="d-flex align-center">
             <span>現在のジョブ：{{ currentJobName }}</span>
@@ -973,7 +973,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </div>
 
-            <!-- サンプル一覧 -->
             <div
                 class="kansoku-list"
                 v-stick-bottom.smooth="{ threshold: 40 }"
@@ -1041,7 +1040,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   class="text-none pa-0"
                   style="min-width:auto; padding:0;"
                   @click="closeTorokuDialog"
-                  :disabled="kansokuRunning"
+                  :disabled="kansokuPhase !== 'idle'"
               >閉じる</v-btn>
             </div>
           </v-card-text>
@@ -7666,28 +7665,55 @@ export default {
       fd.append('job_id', id);
 
       try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-          method: 'POST',
-          body: fd,
-        });
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
         const data = await res.json();
-
         if (!data?.ok) {
           alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
           return;
         }
 
+        // 一覧から除去
         this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
 
+        // ★ ここがポイント：現在のJOBを消したなら、赤丸/線/一覧を全クリア
         if (String(this.currentJobId) === id) {
-          this.currentJobId = null;
+          this.currentJobId   = null;
           this.currentJobName = '';
+
+          // 地図の赤丸（登録点）とラベルを消す
+          try {
+            const map = (this.$store?.state?.map01) || this.map01;
+            if (map) {
+              const SRC = 'oh-toroku-point-src';
+              const L   = 'oh-toroku-point';
+              const LAB = 'oh-toroku-point-label';
+              try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch {}
+              try { if (map.getLayer(L))   map.removeLayer(L); }   catch {}
+              try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+            }
+          } catch (e) {
+            console.warn('[jobs.delete] map clear failed (ignored)', e);
+          }
+
+          // 内部キャッシュも空に
+          this._torokuFC = { type: 'FeatureCollection', features: [] };
+          this._lastTorokuFeatureId = null;
+          this.pointsForCurrentJob = [];
+          this.torokuPointLngLat = null;
+
+          // 結線も消す
+          try { this.clearChainLine?.(); } catch {}
         }
+
+        // バッジ/一覧を再取得
+        try { await this.refreshJobs(); } catch {}
+
       } catch (e) {
         console.error('[jobs.delete] 失敗', e);
         alert('削除に失敗しました：' + (e?.message || e));
       }
     },
+
 
     /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
     async pickExistingJob(job) {
