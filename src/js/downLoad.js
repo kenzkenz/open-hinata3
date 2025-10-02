@@ -4581,7 +4581,8 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
 
 
 
-// alert(srsCode)
+// alert(transparent)
+//         console.log(transparent)
 
         const formData = new FormData();
         formData.append("file", filePath);

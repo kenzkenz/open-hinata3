@@ -1,5 +1,5 @@
 <?php
-// ====== gdal2tiles + Imagick 白黒キーヤー 統合版（2025-10-03）======
+// ====== gdal2tiles + Imagick 白黒キーヤー 統合版（透過OFFは完全バイパス） 2025-10-03 ======
 
 ini_set('memory_limit', '-1');
 ini_set('max_execution_time', 1200);
@@ -82,6 +82,25 @@ function deleteHighestZoomDirectory($tileDir,$z){
     $d = rtrim($tileDir,'/')."/$z/"; if(is_dir($d)){ exec("rm -rf ".escapeshellarg($d)); return true; } return false;
 }
 
+// 透過OFF時：アルファ/ノーデータを完全除去してRGB化
+function stripAlphaAndNodata($inPath, $fileName) {
+    $out = "/tmp/{$fileName}_opaque.tif";
+    // -b 1 -b 2 -b 3 で Alpha/MASK を落とす。-a_nodata none でノーデータ解除。
+    $cmd = "/usr/bin/gdal_translate -of GTiff -b 1 -b 2 -b 3 -a_nodata none "
+        . "-co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 "
+        . escapeshellarg($inPath)." ".escapeshellarg($out);
+    exec($cmd, $o, $r);
+    if ($r===0 && file_exists($out)) return $out;
+
+    // フォールバック：バンド数が足りない等で失敗 → ノーデータだけ解除
+    $out2 = "/tmp/{$fileName}_opaque_fallback.tif";
+    $cmd2 = "/usr/bin/gdal_translate -of GTiff -a_nodata none "
+        . "-co TILED=YES -co COMPRESS=DEFLATE -co PREDICTOR=2 "
+        . escapeshellarg($inPath)." ".escapeshellarg($out2);
+    exec($cmd2, $o2, $r2);
+    return ($r2===0 && file_exists($out2)) ? $out2 : $inPath;
+}
+
 // ---- Request check ----------------------------------------------------------
 if($_SERVER["REQUEST_METHOD"]!=="POST"){ sendSSE(["error"=>"POSTリクエストのみ"],"error"); exit; }
 if(!isset($_POST["file"]) || !isset($_POST["dir"])){ sendSSE(["error"=>"ファイル/dir未指定"],"error"); exit; }
@@ -89,15 +108,22 @@ if(!isset($_POST["file"]) || !isset($_POST["dir"])){ sendSSE(["error"=>"ファ�
 $filePath = realpath($_POST["file"]); if(!$filePath || !file_exists($filePath)){ sendSSE(["error"=>"ファイルが存在しません"],"error"); exit; }
 $fileName = isset($_POST["fileName"]) ? preg_replace('/[^a-zA-Z0-9_-]/','',$_POST["fileName"]) : pathinfo($filePath, PATHINFO_FILENAME);
 $subDir   = preg_replace('/[^a-zA-Z0-9_-]/','',$_POST["dir"]);
-$transparent = (isset($_POST["transparent"]) && $_POST["transparent"]!=="0") ? 1 : 0;
+
+// transparent: 数値0 も 文字列 "0" も完全スキップ
+$transparent = 1;
+if (isset($_POST["transparent"])) {
+    $t = $_POST["transparent"];
+    $transparent = ($t === 0 || $t === "0") ? 0 : 1;
+}
 
 // Imagick keys
-$useImagick = isset($_POST['useImagick']) ? (int)$_POST['useImagick'] : 1;      // 1=使う
-$keyMode    = $_POST['keyMode']   ?? 'luma';                                     // luma|both|black|white
-$blackLuma  = isset($_POST['blackLuma']) ? (int)$_POST['blackLuma'] : 24;        // 0-255
-$whiteLuma  = isset($_POST['whiteLuma']) ? (int)$_POST['whiteLuma'] : 235;       // 0-255
-$satMax     = isset($_POST['satMax']) ? floatval($_POST['satMax']) : 0.18;       // 0..1 （低彩度限定）
-$tileFormat = ($_POST['tileFormat']??'webp');                                     // webp|png
+$useImagick = isset($_POST['useImagick']) ? (int)$_POST['useImagick'] : 1;
+if ($transparent === 0) { $useImagick = 0; } // 透過OFFなら強制バイパス
+$keyMode    = $_POST['keyMode']   ?? 'luma';           // luma|both|black|white
+$blackLuma  = isset($_POST['blackLuma']) ? (int)$_POST['blackLuma'] : 24;   // 0-255
+$whiteLuma  = isset($_POST['whiteLuma']) ? (int)$_POST['whiteLuma'] : 235;  // 0-255
+$satMax     = isset($_POST['satMax']) ? floatval($_POST['satMax']) : 0.18;  // 0..1（低彩度限定）
+$tileFormat = ($_POST['tileFormat']??'webp');                                 // webp|png
 
 // SRS は「そのまま」受け取る（例: EPSG:2450）
 $sourceSRS  = $_POST["srs"] ?? "EPSG:2450";
@@ -118,78 +144,83 @@ if($tileFormat==='webp' && !checkWebPSupport()){ sendSSE(["error"=>"GDALにWebP�
 $free = disk_free_space('/tmp'); if($free===false || $free/(1024*1024) < 1000){ sendSSE(["error"=>"ディスク容量不足"],"error"); exit; }
 sendSSE(["log"=>"/tmp 空き容量: ".round($free/(1024*1024),2)." MB"]);
 
-if(($wf = worldfilePath($filePath))){ sendSSE(["log"=>"ワールドファイル確認: $wf"]); }
+$wf = worldfilePath($filePath);
+if($wf){ sendSSE(["log"=>"ワールドファイル確認: $wf"]); }
+
 $infoBase = gdalinfoJson($filePath);
 list($UL,$LR) = getULRRCorners($infoBase);
-$epsgInfo = $infoBase['coordinateSystem']['wkt'] ?? ($infoBase['coordinateSystem']['wkt']??null);
-sendSSE(["log"=>"計算された最大ズーム: 20 (GSD: 0.2 m/pixel)"]); // 省略表示（GSD計算は別途やっている前提）
-sendSSE(["log"=>"Geo(base): EPSG=".($infoBase['coordinateSystem']['wkt']?'from data':"n/a")." UL=[".($UL[0]??'n').",".($UL[1]??'a')."] LR=[".($LR[0]??'n').",".($LR[1]??'a')."]"]);
+sendSSE(["log"=>"計算された最大ズーム: 20 (GSD: 0.2 m/pixel)"]);
+sendSSE(["log"=>"Geo(base): EPSG=".(($infoBase && !empty($infoBase['coordinateSystem'])) ? ($infoBase['coordinateSystem']['wkt'] ? 'from data' : 'n/a') : 'n/a')
+    ." UL=[".($UL[0]??'n').",".($UL[1]??'a')."] LR=[".($LR[0]??'n').",".($LR[1]??'a')."]"]);
 
-// ---- Imagick キーイング（黒/白 -> 透明） -----------------------------------
-$outputRGBA = $filePath; // 初期値
-if($useImagick){
+// ---- パイプライン入力の決定 --------------------------------------------------
+$outputRGBA = $filePath;
+
+// 透過OFFなら：α/ノーデータ除去 → 不透明RGBでそのまま
+if ($transparent === 0) {
+    sendSSE(["log"=>"透過OFF: アルファ/ノーデータを除去してRGB化（Imagickは通さない）"]);
+    $outputRGBA = stripAlphaAndNodata($outputRGBA, $fileName);
+}
+
+// 透過ONかつ Imagick 使用：白/黒キーでアルファ作成
+if ($transparent === 1 && $useImagick === 1) {
     try{
         sendSSE(["log"=>"Imagick(Luma+Sat)透明化 開始"]);
 
         $im = new Imagick($filePath);
-        $im->setIteratorIndex(0);                 // 最初のフレームのみ（GeoTIFFは通常1枚）
+        $im->setIteratorIndex(0);
         $im->setImageColorspace(Imagick::COLORSPACE_SRGB);
-        $im->setImageAlphaChannel(Imagick::ALPHACHANNEL_SET); // RGBA にする（既存AlphaあってもOK）
+        $im->setImageAlphaChannel(Imagick::ALPHACHANNEL_SET); // RGBA化
 
         // === Luma ===
-        $luma = clone $im;                        // ← clone してから分離（戻りはboolのため）
+        $luma = clone $im;
         $luma->separateImageChannel(Imagick::CHANNEL_GRAY);
 
-        // blackMask: luma <= blackLuma → 白(255) / それ以外0
+        // blackMask: luma <= blackLuma → 白
         $blackMask = clone $luma;
-        $blackMask->thresholdImage($blackLuma * 257);       // 16bit量子対応（255*257=65535）
-        $blackMask->negateImage(true);                      // <=thr が白になるよう反転
+        $blackMask->thresholdImage($blackLuma * 257); // 16bit量子
+        $blackMask->negateImage(true);                // <=thr を白に
 
-        // whiteMask: luma >= whiteLuma → 白 / 他0
+        // whiteMask: luma >= whiteLuma → 白
         $whiteMask = clone $luma;
-        // まず upper threshold: > whiteLuma を白にするには、反転して下閾に…
         $whiteMask->negateImage(true);
         $whiteMask->thresholdImage((255 - $whiteLuma) * 257);
-        // 反転戻し（白が残るように）
         $whiteMask->negateImage(true);
 
         // === Saturation Gate（低彩度のみ抜く保険）===
         $hsv = clone $im;
         $hsv->transformimagecolorspace(Imagick::COLORSPACE_HSV);
         $sat = clone $hsv;
-        $sat->separateImageChannel(Imagick::CHANNEL_GREEN); // Sチャンネル
+        $sat->separateImageChannel(Imagick::CHANNEL_GREEN); // S
 
-        $satGate = null;
         if($satMax > 0){
-            $satGate = clone $sat;                                // sat <= satMax → 白
-            $satGate->thresholdImage((int)round($satMax*65535));  // 量子
-            $satGate->negateImage(true);                          // <=thr を白に
-            // black/white マスクに AND（=乗算）で適用
+            $satGate = clone $sat;
+            $satGate->thresholdImage((int)round($satMax*65535));
+            $satGate->negateImage(true); // <=thr を白に
+            // AND（乗算）で適用
             $blackMask->compositeImage($satGate, Imagick::COMPOSITE_MULTIPLY, 0, 0);
             $whiteMask->compositeImage($satGate, Imagick::COMPOSITE_MULTIPLY, 0, 0);
         }
 
-        // === マスク結合（和：どちらでも白なら白）===
+        // === マスク結合（max）===
         $union = clone $blackMask;
-        $union->compositeImage($whiteMask, Imagick::COMPOSITE_LIGHTEN, 0, 0); // max
+        $union->compositeImage($whiteMask, Imagick::COMPOSITE_LIGHTEN, 0, 0);
 
-        // === 透明度に適用（白=抜く → アルファ0）===
+        // === アルファ適用（白=抜く → α0）===
         $alpha = clone $union;
-        $alpha->negateImage(true); // 白(255)→0 にしてそのままアルファにコピー
+        $alpha->negateImage(true); // 白→0
         $im->compositeImage($alpha, Imagick::COMPOSITE_COPYOPACITY, 0, 0);
 
-        // 一時PNG/TIFFへ（PNGは正確なアルファ確認用。タイルは後段でPNG/WEBP）
         $tmpPng = "/tmp/{$fileName}_imagick_rgba.png";
         $im->setImageFormat('PNG');
         $im->writeImage($tmpPng);
 
-        // Geo 復元（UL/LR が n/a の場合は worldfile/既知SRSを優先適用）
-        $ULx = $UL[0] ?? null; $ULy = $UL[1] ?? null; $LRx = $LR[0] ?? null; $LRy = $LR[1] ?? null;
+        // Geo 復元（元のUL/LRが取得できていれば a_ullr で焼き戻す）
         $outGeo = "/tmp/{$fileName}_imagick_geo.tif";
+        $ULx = $UL[0] ?? null; $ULy = $UL[1] ?? null; $LRx = $LR[0] ?? null; $LRy = $LR[1] ?? null;
         if($ULx!==null && $ULy!==null && $LRx!==null && $LRy!==null){
             $cmd = "$gdalTranslate -of GTiff -a_ullr $ULx $ULy $LRx $LRy -a_srs ".escapeshellarg($sourceSRS)." ".escapeshellarg($tmpPng)." ".escapeshellarg($outGeo);
         }else{
-            // 位置が拾えないケースは SRS だけ被せ（世界座標は worldfile に任せる）
             $cmd = "$gdalTranslate -of GTiff -a_srs ".escapeshellarg($sourceSRS)." ".escapeshellarg($tmpPng)." ".escapeshellarg($outGeo);
         }
         exec($cmd,$gout,$grc);
@@ -197,11 +228,11 @@ if($useImagick){
             sendSSE(["error"=>"Geo復元失敗","details"=>implode("\n",(array)$gout)],"error"); exit;
         }
 
-        // 検証ログ
         $infoAfter = gdalinfoJson($outGeo);
         list($UL2,$LR2) = getULRRCorners($infoAfter);
         sendSSE(["log"=>"Geo(after restore): SRS=$sourceSRS UL=[".($UL2[0]??'n').",".($UL2[1]??'a')."] LR=[".($LR2[0]??'n').",".($LR2[1]??'a')."]"]);
 
+        // 次段に渡す
         $outputRGBA = $outGeo;
 
         // 後片付け
@@ -214,7 +245,7 @@ if($useImagick){
     }
 }
 
-// ---- 角経座標（BBOX）計算（log用）------------------------------------------
+// ---- BBOX 計算（log用）------------------------------------------------------
 $infoTiled = gdalinfoJson($outputRGBA);
 if(!$infoTiled){ sendSSE(["error"=>"gdalinfo 失敗"],"error"); exit; }
 list($ULt,$LRt) = getULRRCorners($infoTiled);
@@ -227,7 +258,7 @@ if(!$minCoord||!$maxCoord){ sendSSE(["error"=>"座標変換失敗"],"error"); ex
 sendSSE(["log"=>"座標変換完了: [{$minCoord[0]},{$minCoord[1]},{$maxCoord[0]},{$maxCoord[1]}]"]);
 
 // ---- タイル生成 -------------------------------------------------------------
-$max_zoom = 20; //（簡略：既存の計算値を使うなら差し替え可）
+$max_zoom = 20; // 必要なら既存のGSD計算を差し戻し可
 
 $tileDir     = "/var/www/html/public_html/tiles/$subDir/$fileName/";
 $mbTilesPath = "$tileDir{$fileName}.mbtiles";
@@ -243,7 +274,7 @@ $processes = 1;
 if($tileFormat==='png'){
     $tileCommand = "$gdal2Tiles --tiledriver PNG -z 0-$max_zoom --s_srs ".escapeshellarg($sourceSRS)." --xyz --processes $processes "
         . escapeshellarg($outputRGBA)." ".escapeshellarg($tileDir);
-}else{
+} else {
     $webpSwitch = "--webp-quality 90";
     $tileCommand = "$gdal2Tiles --tiledriver WEBP -z 0-$max_zoom --s_srs ".escapeshellarg($sourceSRS)." --xyz --processes $processes $webpSwitch "
         . escapeshellarg($outputRGBA)." ".escapeshellarg($tileDir);
@@ -270,7 +301,7 @@ sendSSE(["log"=>"タイル生成完了"]);
 
 // ---- サイズ上限制御 ---------------------------------------------------------
 $currentMaxZoom=$max_zoom; $minZoom=10;
-while($currentMaxZoom>=$minZoom){
+while($currentMaxZoom >= $minZoom){
     list($bytes,$nTiles)=calculateTileDirectorySize($tileDir);
     $mb=round($bytes/(1024*1024),2);
     sendSSE(["log"=>"ズーム 10-$currentMaxZoom サイズ: $mb MB ($nTiles タイル)"]);
@@ -309,7 +340,7 @@ foreach(scandir($tileDir) as $it){
 $pmTilesSizeMB = file_exists($pmTilesPath)? round(filesize($pmTilesPath)/(1024*1024),2):0;
 sendSSE([
     "success"=>true,
-    "tiles_url"=>$tileURL,
+    "tiles_url"=>$BASE_URL.$subDir."/".$fileName."/{$fileName}.pmtiles",
     "tiles_dir"=>$tileDir,
     "bbox"=>[$minCoord[0],$minCoord[1],$maxCoord[0],$maxCoord[1]],
     "max_zoom"=>$max_zoom,
