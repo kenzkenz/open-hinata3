@@ -7742,26 +7742,21 @@ export default {
         return;
       }
 
+      // 1) UI用キャッシュ
       this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
 
+      // 2) 既存表示をクリア（あれば）
       this.clearServerPoints?.();
 
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (map) {
-          const SRC = 'oh-toroku-point-src';
-          this._torokuFC = { type: 'FeatureCollection', features: [] };
-          if (map.getSource(SRC)) map.getSource(SRC).setData(this._torokuFC);
-        }
-      } catch (e) {
-        console.warn('[points] clear failed (続行)', e);
-      }
-
+      // 3) 一括描画に必要な整形
       const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
       const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
       const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
-      let i=0
-      for (const r of data.data) {
+
+      const features = [];
+      let bounds = null; // LngLatBounds
+
+      for (const r of this.pointsForCurrentJob) {
         const name   = String(r.point_name ?? '');
         const Xavg   = Number(r.x_north);
         const Yavg   = Number(r.y_east);
@@ -7795,43 +7790,92 @@ export default {
           ts,
         ];
 
-        console.log('[points] added', i, '/', data.data.length,
-            'features now =', this._torokuFC?.features?.length);
-        i++
-        try {
-          const map = (this.$store?.state?.map01) || this.map01;
-          if (map?.fitBounds) {
-            const B = new (window.mapboxgl?.LngLatBounds ?? function(){ this._ne=this._sw=null; this.extend=()=>{}; })();
-            if (window.mapboxgl?.LngLatBounds) {
-              const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
-              map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
-            } else {
-              map.fitBounds?.([[lng, lat],[lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
-            }
-          }
-        } catch (e) {
-          console.warn('[row-click] fitBounds failed (ignored)', e);
-        }
+        features.push({
+          type: 'Feature',
+          properties: {
+            id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
+            label: name,
+            name:  name,
+            oh3_csv2_row: rowArray,           // ← ここで付与（JSON化不要）
+            pendingLabel: false               // ← 保守目的で常に false
+          },
+          geometry: { type: 'Point', coordinates: [lng, lat] }
+        });
 
+        // bounds を一括で
         try {
-          const map = (this.$store?.state?.map01) || this.map01;
-          const SRC = 'oh-toroku-point-src';
-          const fid = this._lastTorokuFeatureId;
-          if (this._torokuFC && fid) {
-            const f = this._torokuFC.features.find(fe => fe?.properties?.id === fid);
-            if (f && f.properties) {
-              f.properties.oh3_csv2_row = rowArray;
-              if (map?.getSource(SRC)) {
-                map.getSource(SRC).setData(this._torokuFC);
-              }
-            }
+          if (window.mapboxgl?.LngLatBounds) {
+            if (!bounds) bounds = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
+            else bounds.extend([lng, lat]);
           }
-        } catch (e) {
-          console.warn('[plot] oh3_csv2_row 付与に失敗（続行）', e);
-        }
+        } catch (_) {}
       }
-      this.updateChainLine(); // ← 追加
+
+      // 4) GeoJSONソースへ一括反映 + レイヤ用意
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (map) {
+          const SRC  = 'oh-toroku-point-src';
+          const L    = 'oh-toroku-point';
+          const LAB  = 'oh-toroku-point-label';
+
+          this._torokuFC = { type: 'FeatureCollection', features };
+
+          if (!map.getSource(SRC)) {
+            map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+          } else {
+            map.getSource(SRC).setData(this._torokuFC);
+          }
+
+          if (!map.getLayer(L)) {
+            map.addLayer({
+              id: L,
+              type: 'circle',
+              source: SRC,
+              paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff3b30',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff'
+              }
+            });
+          }
+          if (!map.getLayer(LAB)) {
+            map.addLayer({
+              id: LAB,
+              type: 'symbol',
+              source: SRC,
+              layout: {
+                'text-field': ['get', 'label'],
+                'text-size': 16,
+                'text-offset': [0, 0.5],
+                'text-anchor': 'top',
+                'text-allow-overlap': true
+              },
+              paint: {
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1.0
+              }
+            });
+          }
+
+          // 5) fitBounds は全点で一度だけ
+          try {
+            if (bounds && map.fitBounds) {
+              map.fitBounds(bounds, { padding: 80, maxZoom: 18, duration: 0 });
+            }
+          } catch (e) {
+            console.warn('[points] fitBounds failed (ignored)', e);
+          }
+        }
+      } catch (e) {
+        console.warn('[points] render failed (続行)', e);
+      }
+
+      // 6) 結線モードの再描画（既存）
+      try { this.updateChainLine(); } catch (_) {}
     },
+
     async deletePoint(pt) {
       const pointId = String(pt?.point_id ?? pt?.id ?? '');
       if (!pointId) return;
