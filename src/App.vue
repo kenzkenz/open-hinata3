@@ -13,8 +13,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column;">
         <!-- 1行目：モード切替 + 現在のジョブ -->
-        <!-- 1行目：単点/結線トグル + 現在のジョブ -->
-        <!-- 1行目：単点/結線トグル + 現在のジョブ -->
         <div class="mb-1 d-flex align-center" style="gap:8px;">
           <!-- 不透明で見やすい -->
           <v-btn-toggle
@@ -30,14 +28,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-btn-toggle>
 
           <div class="text-subtitle-2">
-            現在のジョブ：{{ currentJobName || '未選択' }}
+            ジョブ：{{ currentJobName || '未選択' }}
           </div>
         </div>
-
-        <!-- 1行目：現在のジョブ -->
-<!--        <div class="mb-1" style="font-size:16px;">-->
-<!--          現在のジョブ：{{ currentJobName || '未選択' }}-->
-<!--        </div>-->
         <!-- 2行目：ボタンを横並び -->
         <div class="d-flex align-center" style="gap:6px;">
         <!-- 業務を終了 -->
@@ -49,7 +42,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           aria-label="JOBを終了"
           >
             終了
-<!--          <v-icon size="18">mdi-flag-checkered</v-icon>-->
           </v-btn>
         </MiniTooltip>
 
@@ -107,8 +99,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
         </div>
       </div>
-
-
 
       <div v-if="s_isKuiuchi" class="oh-left-bottom-tools">
         <!-- 終了 -->
@@ -7283,7 +7273,19 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    clearChainLineOnly() {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+        const SRC = 'oh-chain-src';
+        const LYR = 'oh-chain-layer';
 
+        try { if (map.getLayer(LYR))  map.removeLayer(LYR); } catch (_) {}
+        try { if (map.getSource(SRC)) map.removeSource(SRC); } catch (_) {}
+      } catch (e) {
+        console.warn('[chain] clearChainLineOnly failed', e);
+      }
+    },
     buildChainCoordinates() {
       try {
         if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
@@ -9612,10 +9614,10 @@ export default {
 
       this.pointsForCurrentJob = [];
 
+      this.clearChainLineOnly()
+
     },
-    onOpenJobPicker() {
-      this.jobPickerOpen = true
-    },
+ 
 
 
 
