@@ -7793,6 +7793,7 @@ export default {
         this._lastTorokuFeatureId = null;
       }
       this.torokuPointLngLat = null;
+      this.setLineMode(this.lineMode)
     },
     async deletePoint(pt) {
       const pointId = String(pt?.point_id ?? pt?.id ?? '');
