@@ -7723,19 +7723,21 @@ export default {
         return;
       }
 
-      // 1) UI用キャッシュ
       this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
-
-      // 2) 既存表示をクリア（あれば）
       this.clearServerPoints?.();
 
-      // 3) 一括描画に必要な整形
       const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
       const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
       const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
 
       const features = [];
-      let bounds = null; // LngLatBounds
+
+      // 手計算のバウンディングボックス
+      let minLng =  Infinity, minLat =  Infinity;
+      let maxLng = -Infinity, maxLat = -Infinity;
+
+      const total = this.pointsForCurrentJob.length;
+      let ok = 0, skip = 0;
 
       for (const r of this.pointsForCurrentJob) {
         const name   = String(r.point_name ?? '');
@@ -7751,24 +7753,24 @@ export default {
         const lng    = Number(r.lng);
         const lat    = Number(r.lat);
 
-        if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-          console.warn('[plot] DBに lng/lat が無いためスキップ:', name);
+        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
+        console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
+
+        if (!hasLngLat) {
+          skip += 1;
           continue;
         }
+        ok += 1;
+
+        // bbox 更新
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
 
         const rowArray = [
-          name,
-          fmt3(Xavg),
-          fmt3(Yavg),
-          fmt3(hOrtho),
-          fmtPole(pole),
-          fmt3(hAtAnt),
-          fmt3(hae),
-          fmt3(diff),
-          cs,
-          fmtDeg8(lat),
-          fmtDeg8(lng),
-          ts,
+          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
+          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
         ];
 
         features.push({
@@ -7782,17 +7784,16 @@ export default {
           },
           geometry: { type: 'Point', coordinates: [lng, lat] }
         });
-
-        // bounds を一括で更新
-        try {
-          if (window.mapboxgl?.LngLatBounds) {
-            if (!bounds) bounds = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
-            else bounds.extend([lng, lat]);
-          }
-        } catch (_) {}
       }
 
-      // 4) GeoJSONソースへ一括反映 + レイヤ用意
+      console.log('[loadPointsForJob] summary', {
+        total, ok, skip,
+        bbox: { minLng, minLat, maxLng, maxLat },
+        bboxValid:
+            Number.isFinite(minLng) && Number.isFinite(minLat) &&
+            Number.isFinite(maxLng) && Number.isFinite(maxLat)
+      });
+
       try {
         const map = (this.$store?.state?.map01) || this.map01;
         if (map) {
@@ -7802,17 +7803,12 @@ export default {
 
           this._torokuFC = { type: 'FeatureCollection', features };
 
-          if (!map.getSource(SRC)) {
-            map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-          } else {
-            map.getSource(SRC).setData(this._torokuFC);
-          }
+          if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+          else map.getSource(SRC).setData(this._torokuFC);
 
           if (!map.getLayer(L)) {
             map.addLayer({
-              id: L,
-              type: 'circle',
-              source: SRC,
+              id: L, type: 'circle', source: SRC,
               paint: {
                 'circle-radius': 6,
                 'circle-color': '#ff3b30',
@@ -7823,9 +7819,7 @@ export default {
           }
           if (!map.getLayer(LAB)) {
             map.addLayer({
-              id: LAB,
-              type: 'symbol',
-              source: SRC,
+              id: LAB, type: 'symbol', source: SRC,
               layout: {
                 'text-field': ['get', 'label'],
                 'text-size': 16,
@@ -7833,29 +7827,31 @@ export default {
                 'text-anchor': 'top',
                 'text-allow-overlap': true
               },
-              paint: {
-                'text-halo-color': '#ffffff',
-                'text-halo-width': 1.0
-              }
+              paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
             });
           }
 
-          // 5) fitBounds は全点で一度だけ
-          try {
-            if (bounds && map.fitBounds) {
-              map.fitBounds(bounds, { padding: 80, maxZoom: 18, duration: 0 });
-            }
-          } catch (e) {
-            console.warn('[points] fitBounds failed (ignored)', e);
+          // 手計算 bbox で fitBounds（Mapbox/MapLibre 両対応）
+          const bboxValid =
+              Number.isFinite(minLng) && Number.isFinite(minLat) &&
+              Number.isFinite(maxLng) && Number.isFinite(maxLat);
+
+          if (bboxValid && typeof map.fitBounds === 'function') {
+            const pad = 80;
+            console.log('[loadPointsForJob] fitBounds(array bbox)');
+            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
+          } else {
+            console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
           }
         }
       } catch (e) {
         console.warn('[points] render failed (続行)', e);
       }
 
-    // 6) 結線モードの再描画（既存）
       try { this.updateChainLine(); } catch (_) {}
     },
+
+
 
     /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
     async deletePoint(pt) {
