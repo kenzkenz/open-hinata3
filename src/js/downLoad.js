@@ -4578,6 +4578,11 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
     async function generateTiles(filePath, srsCode = "3857", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
         // FormDataを作成
+
+
+
+// alert(srsCode)
+
         const formData = new FormData();
         formData.append("file", filePath);
         formData.append("srs", srsCode);
@@ -4585,6 +4590,14 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
         formData.append("fileName", fileName);
         // formData.append("resolution", resolution || 22);
         formData.append("transparent", transparent || '1');
+        formData.append("useImagick", '1');                      // Imagickを使う
+        formData.append("keyMode",    'luma');                   // ← 重要：lumaに！
+        formData.append("blackLuma",  '24');                     // 0..255, 黒域を抜く閾値
+        formData.append("whiteLuma",  '235');                    // 0..255, 白域を抜く閾値
+
+// 片側だけ抜きたい時：無効側は -1
+// 例) 黒だけ → blackLuma='24', whiteLuma='-1'
+//     白だけ → blackLuma='-1', whiteLuma='235'
 
         try {
             // generate_tiles11.phpにリクエスト送信 generate_tiles15.phpが安定版
