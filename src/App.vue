@@ -55,7 +55,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           aria-label="Job Picker を開く"
           >
             リスト
-<!--          <v-icon size="18">mdi-briefcase-search-outline</v-icon>-->
           </v-btn>
         </MiniTooltip>
 
@@ -8075,6 +8074,7 @@ export default {
       this.enableTorokuPointClick = false;
     },
     startTorokuHere () {
+      this.$store.dispatch('hideFloatingWindow', 'job-picker');
       try { this.detachGpsLineClick(); } catch {}
       try { this.clearGpsLine(); } catch {}
       this.gpsLineAnchorLngLat = null;
@@ -9617,7 +9617,7 @@ export default {
       this.clearChainLineOnly()
 
     },
- 
+
 
 
 
