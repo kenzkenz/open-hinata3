@@ -3489,6 +3489,7 @@ export default {
   computed: {
     ...mapState([
       'userId',
+      'myNickname',
       'isKuiuchi',
       'confirmMessage',
       'confirmProps',
@@ -7377,7 +7378,6 @@ export default {
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
     },
 
-
     setLineMode(mode) {
       if (mode !== 'point' && mode !== 'chain') return;
       if (this.kansokuPhase === 'observing') return;
@@ -7570,6 +7570,7 @@ export default {
       const fd = new FormData();
       fd.append('action','jobs.create');
       fd.append('user_id',this.userId);
+      fd.append('user_name',this.myNickname);
       fd.append('job_name',job_name);
       const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
       const rJson = await r.json();

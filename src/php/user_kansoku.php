@@ -32,6 +32,7 @@ try {
         // -------------------- jobs.create --------------------
         case 'jobs.create': {
             $user_id  = trim((string)($_POST['user_id'] ?? ''));
+            $user_name  = trim((string)($_POST['user_name'] ?? ''));
             $job_name = trim((string)($_POST['job_name'] ?? $_POST['name'] ?? ''));
             $note     = isset($_POST['note']) ? trim((string)$_POST['note']) : null;
             if ($user_id === '' || $job_name === '') {
@@ -41,11 +42,11 @@ try {
             if ($note === '') $note = null;
 
             if ($note !== null) {
-                $stmt = $pdo->prepare('INSERT INTO jobs (user_id, job_name, note) VALUES (?, ?, ?)');
-                $stmt->execute([$user_id, $job_name, $note]);
+                $stmt = $pdo->prepare('INSERT INTO jobs (user_id, user_name, job_name, note) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$user_id, $user_name, $job_name, $note]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO jobs (user_id, job_name) VALUES (?, ?)');
-                $stmt->execute([$user_id, $job_name]);
+                $stmt = $pdo->prepare('INSERT INTO jobs (user_id, user_name, job_name) VALUES (?, ?, ?)');
+                $stmt->execute([$user_id, $user_name, $job_name]);
             }
 
             $id  = (int)$pdo->lastInsertId();
