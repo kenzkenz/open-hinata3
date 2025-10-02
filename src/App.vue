@@ -8961,9 +8961,7 @@ export default {
           fd.append('job_id', String(jobId));
           const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
           const data = await res.json();
-          if (!data?.ok || !Array.isArray(data.data)) {
-            alert('ポイントの取得に失敗しました'); return;
-          }
+          if (!data?.ok || !Array.isArray(data.data)) { alert('ポイントの取得に失敗しました'); return; }
           rows = data.data;
         }
         if (!rows.length) { alert('このジョブにポイントがありません'); return; }
@@ -8981,25 +8979,33 @@ export default {
           `A00,`
         ];
 
-        const fmt3 = v => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
+        const num  = (v) => (v===''||v==null) ? NaN : Number(v);
+        const fmt3 = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
 
         let n = 0;
         const a01 = rows.map(r => {
           const name = String(r.point_name ?? '');
           const X = fmt3(r.x_north);
           const Y = fmt3(r.y_east);
-          let H = null;
-          if (Number.isFinite(Number(r.h_orthometric))) {
-            H = fmt3(r.h_orthometric);
-          } else if (Number.isFinite(Number(r.h_at_antenna)) && Number.isFinite(Number(r.antenna_height))) {
-            H = fmt3(Number(r.h_at_antenna) - Number(r.antenna_height));
-          } else {
-            H = '';
+
+          let Hn = num(r.h_orthometric);
+          if (!Number.isFinite(Hn)) {
+            const hAtAnt = num(r.h_at_antenna);
+            const pole   = num(r.antenna_height);
+            if (Number.isFinite(hAtAnt) && Number.isFinite(pole)) Hn = hAtAnt - pole;
           }
+          if (!Number.isFinite(Hn)) {
+            const eH = num(this?.externalElevation?.hOrthometric);
+            if (Number.isFinite(eH)) Hn = eH;
+          }
+          const hasH = Number.isFinite(Hn);
+          const H = hasH ? fmt3(Hn) : null;
 
           if (!name || !X || !Y) return null;
           n += 1;
-          return `A01,${n},${name},${X},${Y},${H},`;
+          return hasH
+              ? `A01,${n},${name},${X},${Y},${H},`
+              : `A01,${n},${name},${X},${Y},`;
         }).filter(Boolean);
 
         if (!a01.length) { console.warn('[sima] no valid rows'); return; }
@@ -9007,13 +9013,21 @@ export default {
         const simTxt   = [...head, ...a01].join('\r\n') + '\r\n';
         const sjisBytes = this.$_toShiftJisBytes(simTxt);
         const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
-        const stamp     = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-        this.$_downloadBlob(blob, `測位点_${stamp}.sim`);
+
+        // ===== ここが変更点：CSVと同じ命名規則 =====
+        const jobNameRaw  = String(this.currentJobName || 'JOB');
+        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
+        const pointCount  = a01.length; // 実際に出力したA01件数
+        const fname       = `${jobNameSafe}_${pointCount}点.sim`;
+
+        this.$_downloadBlob(blob, fname);
       } catch (e) {
         console.warn('[sima] export error', e);
         alert('SIMA出力に失敗しました');
       }
     },
+
+
 
 /** =========================
  * 現在地追跡（watchPosition）・距離線 UI

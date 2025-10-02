@@ -6593,10 +6593,22 @@ export async function userKmzSet(name, url, id) {
 export function userXyztileSet(name,url,id,bbox,transparent) {
     const map = store.state.map01
     const bounds = [bbox[0], bbox[1], bbox[2], bbox[3]]
-    if (map.getLayer('oh-vpstile-' + id + '-' + name + '-layer')) {
-        map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
+    /**
+     * ?下３行は要らない？
+     */
+    // if (map.getLayer('oh-vpstile-' + id + '-' + name + '-layer')) {
+    //     // map.getSource('oh-vpstile-' + id + '-' + name + '-source').setTiles([tile])
+    // }
+    // store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(layer => layer.id !== 'oh-vpstile-' + id + '-' + name + '-layer')
+
+    const layerId = 'oh-vpstile-' + id + '-' + name + '-layer'
+    const isExists = bringSelectedLayerToTop('map01', layerId)
+    if (isExists) {
+        if (bbox) {
+            fitOrCenter(map, bbox, { padding: 20, animate: false, tinyThresholdMeters: 3, zoomForTiny: 17 });
+        }
+        return
     }
-    store.state.selectedLayers.map01 = store.state.selectedLayers.map01.filter(layer => layer.id !== 'oh-vpstile-' + id + '-' + name + '-layer')
 
     let tile = ''
     let source = null
@@ -13898,8 +13910,23 @@ export function getLayerContext(map, layerId) {
     };
 }
 
-// Example (safe to run in console after map is ready):
-// const info = getLayerContext(map, 'oh-mw-dummy');
-// console.table({ index: info.index, beforeId: info.beforeId, afterId: info.afterId });
+/**
+ * selectedLayers[mapKey]（オブジェクト配列）から layerId を探し、
+ * 見つかれば配列先頭へ移動して true。見つからなければ false。
+ * ミューテートのみ。同期・commit 一切なし。
+ * @param {'map01'|'map02'} mapKey
+ * @param {string} layerId
+ * @returns {boolean}
+ */
+function bringSelectedLayerToTop(mapKey, layerId) {
+    const arr = store?.state?.selectedLayers?.[mapKey];
+    if (!Array.isArray(arr)) return false;
 
-
+    const idx = arr.findIndex(item => item && item.id === layerId);
+    if (idx === -1) return false;
+    if (idx > 0) {
+        const [item] = arr.splice(idx, 1);
+        arr.unshift(item);
+    }
+    return true;
+}
