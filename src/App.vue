@@ -1005,24 +1005,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtHumanHeight(row[9]) }}
               </div>
             </div>
-
-            <!-- 平均表示 -->
-<!--            <div-->
-<!--                v-if="kansokuAverages && kansokuAverages.n > 0"-->
-<!--                style="margin-top:8px; padding:6px 8px; border:1px dashed var(&#45;&#45;v-theme-outline); border-radius:6px; overflow-x:auto; white-space:nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"-->
-<!--            >-->
-<!--              平均（n={{ kansokuAverages.n }}）:-->
-<!--              X={{ fmtXY(kansokuAverages.X) }},-->
-<!--              Y={{ fmtXY(kansokuAverages.Y) }}-->
-<!--            </div>-->
-
-            <!-- ▼▼ 追加：保存/破棄の判断カード（高さのブレは出さない） ▼▼ -->
-<!--            <v-alert-->
-<!--                v-if="pendingObservation"-->
-<!--                type="warning"-->
-<!--                variant="tonal"-->
-<!--                class="mt-3"-->
-<!--            >-->
             <v-alert
                 v-if="pendingObservation"
                 type="warning"
@@ -1052,8 +1034,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </v-alert>
 
-            <!-- ▲▲ ここまで追加 ▲▲ -->
-
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
               <v-spacer></v-spacer>
               <v-btn
@@ -1061,7 +1041,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   density="compact"
                   class="text-none pa-0"
                   style="min-width:auto; padding:0;"
-                  @click="dialogForToroku = false"
+                  @click="closeTorokuDialog"
                   :disabled="kansokuRunning"
               >閉じる</v-btn>
             </div>
@@ -7273,6 +7253,20 @@ export default {
     /**
      * 現在地連続取得を改良
      */
+    clearCurrentDot () {
+      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+      if (!map) return;
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+    },
+      closeTorokuDialog () {
+        this.dialogForToroku = false;
+        try { this.clearCurrentDot?.(); } catch {}
+        this.torokuPointLngLat = null;
+      },
+
     // 1) 現在地マーカー（緑丸）を1個だけ描く or 更新する
     upsertCurrentMarker(lng, lat) {
       const map = (this.$store?.state?.map01) || this.map01;
@@ -7801,7 +7795,6 @@ export default {
           ts,
         ];
 
-        this.plotTorokuPoint({ lng, lat }, name, { deferLabel: false });
         console.log('[points] added', i, '/', data.data.length,
             'features now =', this._torokuFC?.features?.length);
         i++
@@ -8166,7 +8159,6 @@ export default {
                 return;
               }
 
-              _this.plotTorokuPoint({ lng: lon, lat: lat }, /*label*/'', { deferLabel: true });
               _this.torokuPointLngLat = { lng: lon, lat };
               _this.upsertCurrentMarker(lon, lat);   // ← 追加
 
