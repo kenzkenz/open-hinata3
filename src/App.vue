@@ -7250,9 +7250,15 @@ export default {
       const map = this.$store.state.map01
       map.zoomOut({duration: 500})
     },
+
     /**
-     * 現在地連続取得を改良
+     * ここから観測関係
      */
+
+    /** =========================
+     * 現在地の緑丸（1個だけ表示）関連
+     * ========================= */
+    /** 現在地マーカー（緑丸）を完全削除 */
     clearCurrentDot () {
       const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
       if (!map) return;
@@ -7261,13 +7267,15 @@ export default {
       try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
     },
-      closeTorokuDialog () {
-        this.dialogForToroku = false;
-        try { this.clearCurrentDot?.(); } catch {}
-        this.torokuPointLngLat = null;
-      },
 
-    // 1) 現在地マーカー（緑丸）を1個だけ描く or 更新する
+    /** 測位ダイアログを閉じる（閉じる際に緑丸も消す） */
+    closeTorokuDialog () {
+      this.dialogForToroku = false;
+      try { this.clearCurrentDot?.(); } catch {}
+      this.torokuPointLngLat = null;
+    },
+
+    /** 現在地マーカー（緑丸）を 1 個だけ追加 or 更新（座標必須） */
     upsertCurrentMarker(lng, lat) {
       const map = (this.$store?.state?.map01) || this.map01;
       if (!map || !Number.isFinite(lng) || !Number.isFinite(lat)) return;
@@ -7304,7 +7312,7 @@ export default {
       }
     },
 
-// 2) 現在地マーカー（緑丸）を完全に消す
+    /** 現在地マーカー（緑丸）を完全削除（↑と同義。呼び出し箇所ごとに命名差分あり） */
     clearCurrentMarker() {
       const map = (this.$store?.state?.map01) || this.map01;
       if (!map) return;
@@ -7316,6 +7324,11 @@ export default {
       try { if (map.getSource(SRC))  map.removeSource(SRC); } catch {}
     },
 
+    /** =========================
+     * 結線（ライン）表示関連
+     * ========================= */
+
+    /** 結線レイヤのみ完全削除（他点は残す） */
     clearChainLineOnly() {
       try {
         const map = (this.$store?.state?.map01) || this.map01;
@@ -7329,18 +7342,19 @@ export default {
         console.warn('[chain] clearChainLineOnly failed', e);
       }
     },
+
+    /** 現在保持している赤丸（FeatureCollection）から、時系列順の [lng,lat] の配列を構築 */
     buildChainCoordinates() {
       try {
         if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
 
-        // ① CSV相当（oh3_csv2_row）の最終列 “観測日時” があればそれで時刻ソート
-        // ② 無ければ配列の並び順（push順）でそのまま
+        // ① CSV相当の最後列 “観測日時” でソート、②無ければ push 順
         const toKey = (f) => {
           const row = f?.properties?.oh3_csv2_row;
-          if (!row) return Number.MAX_SAFE_INTEGER; // 後ろ扱い
+          if (!row) return Number.MAX_SAFE_INTEGER;
           try {
             const arr = Array.isArray(row) ? row : JSON.parse(row);
-            const ts  = arr?.[11]; // ['点名',..., '観測日時'] ← 12列目(= index 11)
+            const ts  = arr?.[11]; // 12列目(= index 11)
             const t   = new Date(ts).getTime();
             return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
           } catch {
@@ -7365,7 +7379,7 @@ export default {
       }
     },
 
-    // --- 2) ラインを更新（結線モードのみ表示） ---
+    /** ライン（結線モード時のみ）を再描画。点が 2 未満 or 単点モードなら削除 */
     updateChainLine() {
       try {
         const map = (this.$store?.state?.map01) || this.map01;
@@ -7374,10 +7388,9 @@ export default {
         const SRC = 'oh-chain-src';
         const LYR = 'oh-chain-layer';
 
-        // モードが単点 or 点が1つ以下 → ライン消す
+        // 単点 or 点2未満 → ライン削除
         const coords = (this.lineMode === 'chain') ? this.buildChainCoordinates() : [];
         if (!coords || coords.length < 2) {
-          // 既存があれば削除
           try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
           try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
           return;
@@ -7401,7 +7414,7 @@ export default {
             source: SRC,
             paint: {
               'line-width': 3,
-              'line-color': '#1e88e5' // とりあえず視認性良い青（後でテーマ連動でもOK）
+              'line-color': '#1e88e5'
             }
           });
           try { map.moveLayer(LYR); } catch {}
@@ -7411,7 +7424,7 @@ export default {
       }
     },
 
-    // --- 3) 明示クリア（削除系から呼び出し用） ---
+    /** ラインの明示クリア（他からも呼びやすい名前） */
     clearChainLine() {
       const map = (this.$store?.state?.map01) || this.map01;
       if (!map) return;
@@ -7421,33 +7434,38 @@ export default {
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
     },
 
+    /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
     setLineMode(mode) {
       if (mode !== 'point' && mode !== 'chain') return;
       if (this.kansokuPhase === 'observing') return;
       this.lineMode = mode;
-      this.updateChainLine(); // ← 追加
+      this.updateChainLine();
     },
     setPointMode () { this.lineMode = 'point'; },
     setChainMode () { this.lineMode = 'chain'; },
-// 2点以上そろったらサマリーを作る（観測中プレビュー兼用）
+
+    /** 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2） */
     refreshPendingObservation(minN = 2) {
       const sum = this.summarizeObservationLight?.();
-      // nがminN以上のときだけ表示、未満は非表示
       this.pendingObservation = (sum && sum.n >= minN) ? sum : null;
     },
 
+    /** ジョブピッカーをフローティングで開く */
     jobPickerFWOpen() {
       this.$store.dispatch('showFloatingWindow', 'job-picker');
       this.isJobMenu = true
     },
+
+    /** 観測セッションの可変状態を初期化（タイマ停止・ログ消去） */
     _resetKansokuSession () {
-      // “1回の測位セッション”に関する可変状態をリセット
       this.kansokuRunning   = false;
       this.kansokuRemaining = 0;
       if (this.kansokuTimer) { try { clearInterval(this.kansokuTimer); } catch{} this.kansokuTimer = null; }
       this.kansokuCsvRows   = null;
       this.kansokuAverages  = null;
     },
+
+    /** 軽量サマリー：CSV（kansokuCsvRows）から X/Y/H の平均と較差を算出 */
     summarizeObservationLight() {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
       if (!rows || rows.length <= 1) return null;
@@ -7458,7 +7476,7 @@ export default {
       const iY  = col('Y');
       const iET = col('eventType');
 
-      // ★ 標高列（CSVヘッダと同じ。なければ既定の 9 列目＝'標高' を想定）
+      // 標高列（なければ 9 列目を想定）
       const iH  = (header.indexOf('標高') >= 0) ? header.indexOf('標高')
           : (header.indexOf('height') >= 0 ? header.indexOf('height') : 9);
 
@@ -7506,14 +7524,11 @@ export default {
       };
     },
 
+    /** =========================
+     * 観測フロー（開始→収集→停止→保存/破棄）
+     * ========================= */
 
-    /** 観測停止時：確定せずプレビューだけ用意（保存/破棄の判断材料） */
-
-
-    /** 保存：既存の commit をそのまま使う（壊さない） */
-
-
-
+    /** 観測停止：タイマ停止・サマリー確定・フェーズ遷移 */
     kansokuStop() {
       this.kansokuRunning = false;
       this.kansokuRemaining = 0;
@@ -7521,36 +7536,32 @@ export default {
         clearInterval(this.kansokuTimer);
         this.kansokuTimer = null;
       }
-      // ★ 軽量サマリーを確定
       this.pendingObservation = this.summarizeObservationLight();
-      // サマリーがあれば保存/破棄待ちフェーズへ
       this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
     },
-    // 保存：平均を1点として確定 → 次の点名へ → 待機解除
+
+    /** 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了 */
     async onClickSaveObservation() {
       if (this.kansokuTimer) {
         clearInterval(this.kansokuTimer);
         this.kansokuTimer = null;
       }
       try {
-        await this.commitCsv2Point(); // ★ ここで初めて確定保存
-        this.clearCurrentMarker();   // ← 追加
-        // ★ ピッカーのポイント一覧を最新化
+        await this.commitCsv2Point();
+        this.clearCurrentMarker();
         if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
-        // 必要なら件数バッジも更新
         try { await this.refreshJobs(); } catch {}
       } catch (e) {
         console.warn('[save] commit failed', e);
       } finally {
-        this.kansokuCsvRows = null;          // 今回の観測ログはクリア
+        this.kansokuCsvRows = null;
         this.pendingObservation = null;
         this.kansokuPhase = 'idle';
-        this.torokuDisabled = false;         // 測位開始を再アクティブ
-
+        this.torokuDisabled = false;
       }
     },
 
-    // 破棄：ログだけ捨てて次へ
+    /** 破棄：ログ消去・緑丸消去・待機へ戻す（点は保存しない） */
     onClickDiscardObservation() {
       if (this.kansokuTimer) {
         clearInterval(this.kansokuTimer);
@@ -7560,63 +7571,20 @@ export default {
       this.pendingObservation = null;
       this.kansokuPhase = 'idle';
       this.torokuDisabled = false;
-      this.clearCurrentMarker();   // ← 追加
+      this.clearCurrentMarker();
     },
 
+    /** =========================
+     * ジョブ管理（Picker/作成/削除/選択/一覧）
+     * ========================= */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /* =========================
-     * 1) 数値・フォーマット系ユーティリティ
-     * =======================*/
-    parseNumberLike(v) {
-      if (v == null) return null;
-      if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-      const s = String(v).trim()
-          .replace(/^[\s:=>\u3000：＝＞]+/, '')
-          .replace(',', '.');
-      const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-      if (!m) return null;
-      const n = Number(m[0]);
-      return Number.isFinite(n) ? n : null;
-    },
-    toFixedN(v, n = 3) {
-      const x = this.parseNumberLike(v);
-      return x == null ? '' : x.toFixed(n);
-    },
-    toFixed3(v) { return this.toFixedN(v, 3); },
-    toFixed2(v) { return this.toFixedN(v, 2); },
-    toFixed8(v) { return this.toFixedN(v, 8); },
-
-    /* =========================
-     * 2) ジョブ管理（作成/一覧/削除/選択）＆地図上の点の操作
-     * =======================*/
+    /** ジョブピッカーを開き、サーバ一覧を最新化 */
     openJobPicker() {
       this.jobPickerOpen = true;
       this.refreshJobs();
     },
+
+    /** 新規ジョブ作成 → 現在ジョブに設定 → 一覧更新 → ピッカー閉じ */
     async createNewJob() {
       this.jobNameError = '';
       const job_name = (this.jobName || '').trim();
@@ -7641,9 +7609,13 @@ export default {
       alert('左下の「追加」ボタンをクリックしてください。')
       this.jobPickerOpen = false
     },
+
+    /** 新規作成成功後の一覧更新 */
     async onJobCreatedSuccess() {
       await this.refreshJobs();
     },
+
+    /** サーバからジョブ一覧取得 → UIへ反映 */
     async refreshJobs() {
       const fd = new FormData();
       fd.append('action', 'jobs.list');
@@ -7683,6 +7655,8 @@ export default {
       });
       this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
     },
+
+    /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
     async deleteJob(job) {
       const id = String(job?.id ?? job?.job_id ?? '');
       if (!id) return;
@@ -7715,6 +7689,8 @@ export default {
         alert('削除に失敗しました：' + (e?.message || e));
       }
     },
+
+    /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
     async pickExistingJob(job) {
       this.pointsForCurrentJob = [];
       const id   = String(job?.id ?? job?.job_id ?? '');
@@ -7726,6 +7702,8 @@ export default {
 
       await this.loadPointsForJob(id);
     },
+
+    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
     async loadPointsForJob(jobId) {
       const fd = new FormData();
       fd.append('action', 'job_points.list');
@@ -7800,13 +7778,13 @@ export default {
             id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
             label: name,
             name:  name,
-            oh3_csv2_row: rowArray,           // ← ここで付与（JSON化不要）
-            pendingLabel: false               // ← 保守目的で常に false
+            oh3_csv2_row: rowArray,
+            pendingLabel: false
           },
           geometry: { type: 'Point', coordinates: [lng, lat] }
         });
 
-        // bounds を一括で
+        // bounds を一括で更新
         try {
           if (window.mapboxgl?.LngLatBounds) {
             if (!bounds) bounds = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
@@ -7876,10 +7854,11 @@ export default {
         console.warn('[points] render failed (続行)', e);
       }
 
-      // 6) 結線モードの再描画（既存）
+    // 6) 結線モードの再描画（既存）
       try { this.updateChainLine(); } catch (_) {}
     },
 
+    /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
     async deletePoint(pt) {
       const pointId = String(pt?.point_id ?? pt?.id ?? '');
       if (!pointId) return;
@@ -7925,7 +7904,6 @@ export default {
                   label: String(r.point_name ?? r.name ?? ''),
                   name:  String(r.point_name ?? r.name ?? ''),
                   pendingLabel: false,
-                  // 必要なら oh3_csv2_row などもここで再付与
                 },
                 geometry: { type: 'Point', coordinates: [lng, lat] }
               });
@@ -7971,7 +7949,7 @@ export default {
           console.warn('[deletePoint] map repaint failed', e);
         }
 
-        // ★ ピッカーのポイント一覧と件数をサーバ基準で再同期
+        // 3) サーバ基準で再同期
         try {
           if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
           await this.refreshJobs(); // バッジ件数があるなら
@@ -7985,6 +7963,7 @@ export default {
       }
     },
 
+    /** ピッカーの行クリックで、その点へズーム＆赤丸を（必要に応じて）描画 */
     focusPointOnMap(pt) {
       try {
         const map = (this.$store?.state?.map01) || this.map01;
@@ -8014,7 +7993,8 @@ export default {
         console.warn('[focusPointOnMap] error', e);
       }
     },
-    // === Storage（UIだけの擬似DB） ===
+
+    /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
     loadJobsFromStorage() {
       try {
         const raw = localStorage.getItem('oh3_jobs');
@@ -8023,7 +8003,6 @@ export default {
       } catch {
         this.jobList = [];
       }
-      // 直近選択の復元（任意）
       try {
         const curId = localStorage.getItem('oh3_current_job_id');
         const curName = localStorage.getItem('oh3_current_job_name');
@@ -8034,16 +8013,19 @@ export default {
       } catch {}
     },
 
+    /** =========================
+     * 外部標高（ドロガー）受信
+     * ========================= */
 
-    /* =========================
-     * 3) 外部標高（ドロガー）の受け取り
-     * =======================*/
+    /** 外部標高の正規化セット */
     setExternalElevation(payload) {
       const norm = this.extractElevationFrom(payload);
       if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
       this.externalElevation = norm;
       try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
     },
+
+    /** window.dispatchEvent('oh3:elevation', { ... }) を購読 */
     bindExternalElevationListener() {
       const handler = (ev) => {
         const d = ev?.detail || {};
@@ -8053,6 +8035,8 @@ export default {
       window.addEventListener('oh3:elevation', handler);
       this._elevHandler = handler;
     },
+
+    /** window.postMessage 経由の受信 */
     unbindExternalElevationListener() {
       if (this._elevHandler) {
         window.removeEventListener('oh3:elevation', this._elevHandler);
@@ -8072,6 +8056,8 @@ export default {
       window.addEventListener('message', onMsg);
       this._elevPM = onMsg;
     },
+
+    /** BroadcastChannel 経由の受信 */
     bindElevationBroadcast() {
       try {
         if (this._elevBC) { this._elevBC.close(); this._elevBC = null; }
@@ -8082,6 +8068,8 @@ export default {
         };
       } catch (e) { console.warn('[elev] BroadcastChannel not available', e); }
     },
+
+    /** 外部データから標高を抽出・正規化 */
     extractElevationFrom(payload) {
       if (!payload || typeof payload !== 'object') return null;
 
@@ -8124,16 +8112,16 @@ export default {
       return null;
     },
 
-    /* =========================
-     * 4) 測位点（赤丸）: 設置/クリック/レイヤ管理
-     * =======================*/
+    /** =========================
+     * 測位点（赤丸）: 設置/クリック/レイヤ管理
+     * ========================= */
+
+    /** マップ中央のゾーンから座標系ラベルを推定し store に反映 */
     zahyoGet() {
       const map = this.map01
       const center = map.getCenter();
       const centerPoint = map.project([center.lng, center.lat]);
-      const features = map.queryRenderedFeatures(centerPoint, {
-        layers: ['zones-layer']
-      });
+      const features = map.queryRenderedFeatures(centerPoint, { layers: ['zones-layer'] });
       if (features.length > 0) {
         const zoneFeature = features[0];
         const zone = zoneFeature.properties.zone;
@@ -8142,6 +8130,8 @@ export default {
         this.$store.state.zahyokei = '';
       }
     },
+
+    /** 「ここで測位」導線：クリックを案内し、クリックハンドラをアタッチ */
     openTorokuDialog() {
       try { this.detachGpsLineClick(); } catch (_) {}
       try { this.clearGpsLine(); } catch (_) {}
@@ -8163,6 +8153,8 @@ export default {
       try { this.centerMarker?.remove?.(); } catch(_) {}
       this.centerMarker = null;
     },
+
+    /** 測位クリックの購読を開始（on('click')） */
     attachTorokuPointClick () {
       const map = this.$store.state.map01;
       if (!map) return;
@@ -8189,9 +8181,11 @@ export default {
         map.once('load', bind);
       }
     },
+
+    /** 測位クリック発火時：赤丸位置（＝緑丸も）をセットしてダイアログを開く */
     handleTorokuMapClick (lngLat) {
       this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // ← 追加
+      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // 緑丸表示・更新
       try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
       try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
       this.dialogForToroku = true;
@@ -8199,6 +8193,8 @@ export default {
       this.kansokuRemaining = 0;
       this.kansokuCsvRows = null;
     },
+
+    /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
     clearTorokuPoint () {
       const map = this.$store.state.map01; if (!map) return;
       const SRC   = 'oh-toroku-point-src';
@@ -8208,8 +8204,10 @@ export default {
       try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
       try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
       this.torokuPointLngLat = null;
-      this.updateChainLine(); // ← 追加
+      this.updateChainLine(); // 結線も消す
     },
+
+    /** 測位クリックの購読を停止（off('click')） */
     detachTorokuPointClick () {
       const map = this.$store.state.map01;
       if (!map) return;
@@ -8219,6 +8217,8 @@ export default {
       }
       this.enableTorokuPointClick = false;
     },
+
+    /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
     startTorokuHere () {
       this.$store.dispatch('hideFloatingWindow', 'job-picker');
       try { this.detachGpsLineClick(); } catch {}
@@ -8267,7 +8267,7 @@ export default {
               }
 
               _this.torokuPointLngLat = { lng: lon, lat };
-              _this.upsertCurrentMarker(lon, lat);   // ← 追加
+              _this.upsertCurrentMarker(lon, lat);   // 緑丸
 
               const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
               _this.torokuPointMeta      = meta;
@@ -8330,6 +8330,8 @@ export default {
           opt
       );
     },
+
+    /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */
     async plotTorokuPoint (lngLat, label, opts = {}) {
       const map = (this.$store?.state?.map01) || this.map01;
       if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
@@ -8410,12 +8412,14 @@ export default {
 
       this.torokuPointLngLat = { lng, lat };
       this._lastTorokuFeatureId = fid;
-      this.updateChainLine(); // ← 追加
+      this.updateChainLine();
     },
 
-    /* =========================
-     * 5) 測位（開始→サンプリング→停止→保存/出力）
-     * =======================*/
+    /** =========================
+     * 測位（開始→収集→停止→保存/出力）
+     * ========================= */
+
+    /** 1回の観測CSVヘッダを用意（未初期化時のみ） */
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
         this.kansokuCsvRows = [[
@@ -8423,15 +8427,14 @@ export default {
         ]];
       }
     },
+
+    /** 観測開始：入力検証→状態初期化→インターバルで収集開始 */
     kansokuStart () {
-      this.clearCurrentMarker();   // ← 追加（残骸がある場合に備えて）
+      this.clearCurrentMarker();   // 残っている緑丸を消す
 
       if (!this.canStartKansoku) return;
-      // 念のため二重ガード
-      if (this.kansokuPhase !== 'idle') return;
-
-      // すでに観測中は二重起動させない
-      if (this.kansokuPhase === 'observing') return;
+      if (this.kansokuPhase !== 'idle') return;      // 二重起動防止
+      if (this.kansokuPhase === 'observing') return; // 念のため
 
       if (this.kansokuTimer) {
         clearInterval(this.kansokuTimer);
@@ -8440,18 +8443,16 @@ export default {
 
       const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
 
-      // === ここを最小変更：空なら採番せず中断 ===
+      // 点名必須（自動採番しない）
       if (!raw) {
         this.tenmeiError = '点名は必須です';
         alert('点名を入力してください');
         return;
       }
-      // ユーザー入力をそのまま使う（採番もしない）
       try { localStorage.setItem('tenmei', raw); } catch (_) {}
       this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw;
 
-      this.pendingObservation = null;   // ← プレビュー消去
-
+      this.pendingObservation = null;
 
       // セッション初期化と準備
       this._resetKansokuSession();
@@ -8461,15 +8462,15 @@ export default {
       this.kansokuRemaining = Number(this.kansokuCount) || 1;
       this.kansokuPhase     = 'observing';
 
-      // 既存の“1回実行＋インターバル起動”
+      // 即時1回 + 以後 interval 実行
       this.kansokuCollectOnce();
 
-      // 入力間隔を正規化（既存）
       this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec);
       const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000));
       this.kansokuTimer = setInterval(() => this.kansokuCollectOnce(), intervalMs);
     },
 
+    /** 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止 */
     kansokuCollectOnce() {
       if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
         this.kansokuStop(); return;
@@ -8609,7 +8610,7 @@ export default {
                 hOut,
                 Number.isFinite(haeN) ? fix3(haeN) : ''
               ]);
-              this.refreshPendingObservation(2); // ← 2件目から毎回サマリー反映
+              this.refreshPendingObservation(2); // 2件目からサマリー表示
 
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -8627,6 +8628,7 @@ export default {
       );
     },
 
+    /** サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う */
     commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
@@ -8694,23 +8696,14 @@ export default {
         const avg = (a) => a.reduce((s,v)=>s+v,0)/a.length;
         const Xavg = avg(xs);
         const Yavg = avg(ys);
-
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
-
-        // let name = this.currentPointName;
-        // if (!name || typeof name !== 'string') {
-        //   name = this.getNextPointName?.() || '';
-        //   this.currentPointName = name;
-        // }
 
         let name = this.currentPointName;
         if (!name || typeof name !== 'string' || !name.trim()) {
           console.warn('[csv2] point name missing');
           alert('点名が未設定のため保存できません');
-          return false; // ← ここで打ち切る
+          return false;
         }
-
-
 
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
@@ -8797,7 +8790,7 @@ export default {
 
         try {
           this.confirmTorokuPointAtCurrent(name, rowArray);
-          this.updateChainLine(); // ← 追加
+          this.updateChainLine();
         } catch (e) {
           console.warn('[csv2] confirm point replace failed', e);
         }
@@ -8853,6 +8846,8 @@ export default {
         return false;
       }
     },
+
+    /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
     async downloadCsv2() {
       try {
         if (!this.currentJobId) {
@@ -8913,7 +8908,6 @@ export default {
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-        // ファイル名 = JOB名 + ポイント数（禁則文字は _ に置換）
         const jobNameRaw = String(this.currentJobName || 'JOB');
         const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
         const pointCount = Array.isArray(list) ? list.length : 0;
@@ -8929,6 +8923,8 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
+    /** SIMA 出力（A01点列のみ。ラインは規格外のため非対応） */
     async exportCsv2Sima(title) {
       try {
         const jobId = this.currentJobId;
@@ -8994,14 +8990,10 @@ export default {
         alert('SIMA出力に失敗しました');
       }
     },
-    clearCsv2Points() {
-      this.csv2Points = [];
-      try { localStorage.removeItem('csv2_points'); } catch(_) {}
-    },
 
-    /* =========================
-     * 6) 現在地の継続取得（追跡/杭打ち）・距離線UI
-     * =======================*/
+/** =========================
+ * 現在地追跡（watchPosition）・距離線 UI
+ * ========================= */
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
