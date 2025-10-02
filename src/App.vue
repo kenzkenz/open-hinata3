@@ -1030,8 +1030,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 H={{ pendingObservation.HavgTxt }}m
               </div>
               <div class="mt-1" style="color:black;">
-                アンテナ高：{{ toFixed2(offsetCm) }} m
-              </div>
+                アンテナ高：{{ Number.isFinite(+offsetCm) ? (+offsetCm).toFixed(2) : '' }} m              </div>
             </v-alert>
 
             <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
@@ -8610,7 +8609,7 @@ export default {
                 hOut,
                 Number.isFinite(haeN) ? fix3(haeN) : ''
               ]);
-              this.refreshPendingObservation(2); // 2件目からサマリー表示
+              _this.refreshPendingObservation(2); // 2件目からサマリー表示
 
             } catch (e) {
               console.warn('[kansoku] collect error', e);
@@ -8629,7 +8628,7 @@ export default {
     },
 
     /** サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う */
-    commitCsv2Point() {
+    async commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
@@ -8706,7 +8705,6 @@ export default {
         }
 
         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
-
         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
 
         const eH = Number(this?.externalElevation?.hOrthometric);
@@ -8824,15 +8822,14 @@ export default {
             fd.append('crs_label',    String(csLabel || ''));
             fd.append('observed_at',  _toSql(ts));
 
-            (async () => {
-              try {
-                const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-                const data = await res.json();
-                if (!data?.ok) console.warn('[job_points.create] server error:', data);
-              } catch (err) {
-                console.warn('[job_points.create] network error:', err);
-              }
-            })();
+            // ★ ここを await に変更（保存完了を待つ）
+            try {
+              const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
+              const data = await res.json();
+              if (!data?.ok) console.warn('[job_points.create] server error:', data);
+            } catch (err) {
+              console.warn('[job_points.create] network error:', err);
+            }
           } else {
             console.warn('[job_points.create] skip (jobId/userId 不在)');
           }
@@ -8846,6 +8843,7 @@ export default {
         return false;
       }
     },
+
 
     /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
     async downloadCsv2() {
