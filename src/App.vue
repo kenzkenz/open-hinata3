@@ -8762,8 +8762,11 @@ export default {
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-        const stamp = this.$_jstStamp?.() ?? new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
-        const fname = `測位点_${stamp}.csv`;
+        // ファイル名 = JOB名 + ポイント数（禁則文字は _ に置換）
+        const jobNameRaw = String(this.currentJobName || 'JOB');
+        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
+        const pointCount = Array.isArray(list) ? list.length : 0;
+        const fname = `${jobNameSafe}_${pointCount}点.csv`;
         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
         const a = document.createElement('a');
