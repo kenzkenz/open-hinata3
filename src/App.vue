@@ -7530,13 +7530,27 @@ export default {
     kansokuStop() {
       this.kansokuRunning = false;
       this.kansokuRemaining = 0;
-      if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
-      }
-      this.pendingObservation = this.summarizeObservationLight();
+      if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
+
+      const sum = this.summarizeObservationLight();
+      this.pendingObservation = sum || null;
+
+      // ← ここがポイント：重複回避後の“最終点名”を決定
+      const base = (this.tenmei || '').trim();
+      const finalName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(base) : base;
+
+      // サマリー表示名
+      if (this.pendingObservation) this.pendingObservation.pointName = finalName;
+
+      // ★ v-text-fieldに即反映（ここでG100になる）
+      this.tenmei = finalName;
+      this.currentPointName = finalName;
+      try { localStorage.setItem('tenmei', finalName); } catch {}
+
       this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
     },
+
+
 
     /** 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了 */
     async onClickSaveObservation() {
