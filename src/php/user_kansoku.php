@@ -94,6 +94,7 @@ try {
 
         // -------------------- job_points.create --------------------
         case 'job_points.create': {
+
             $job_id   = (int)($_POST['job_id'] ?? 0);
             $user_id  = trim((string)($_POST['user_id'] ?? ''));
             $pname    = trim((string)($_POST['point_name'] ?? $_POST['name'] ?? ''));
@@ -101,13 +102,14 @@ try {
                 echo json_encode(['ok'=>false,'error'=>'job_id / user_id / point_name は必須']); exit;
             }
 
-            // 任意項目は空文字なら NULL 扱い
+            // 空文字は NULL 扱いするヘルパ
             $nz = function($v){ return (isset($v) && $v !== '') ? $v : null; };
 
+            // 必須以外のカラム（NULL 可）
             $x_north         = $nz($_POST['x_north']         ?? null);
             $y_east          = $nz($_POST['y_east']          ?? null);
-            $lng             = $nz($_POST['lng']             ?? null); // ★ 追加
-            $lat             = $nz($_POST['lat']             ?? null); // ★ 追加
+            $lng             = $nz($_POST['lng']             ?? null); // 追加済
+            $lat             = $nz($_POST['lat']             ?? null); // 追加済
             $h_orthometric   = $nz($_POST['h_orthometric']   ?? null);
             $antenna_height  = $nz($_POST['antenna_height']  ?? null);
             $h_at_antenna    = $nz($_POST['h_at_antenna']    ?? null);
@@ -116,20 +118,39 @@ try {
             $crs_label       = $nz($_POST['crs_label']       ?? null);
             $observed_at     = $nz($_POST['observed_at']     ?? null); // "YYYY-MM-DD HH:MM:SS"
 
+            // ★ 新規：実測回数（NULL 可）
+            //    数値で来れば int、空や未指定なら NULL
+            $observe_count   = isset($_POST['observe_count']) && $_POST['observe_count'] !== ''
+                ? (int)$_POST['observe_count']
+                : null;
+
+            // INSERT（列順はテーブルに合わせる）
             $sql = 'INSERT INTO job_points
-                (job_id,user_id,point_name,x_north,y_east,lng,lat,h_orthometric,antenna_height,h_at_antenna,hae_ellipsoidal,xy_diff,crs_label,observed_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+        (job_id,user_id,point_name,
+         x_north,y_east,lng,lat,
+         h_orthometric,antenna_height,h_at_antenna,hae_ellipsoidal,
+         xy_diff,crs_label,observed_at,
+         observe_count)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                $job_id,$user_id,$pname,
-                $x_north,$y_east,$lng,$lat,$h_orthometric,$antenna_height,$h_at_antenna,
-                $hae_ellipsoidal,$xy_diff,$crs_label,$observed_at
+            $ok = $stmt->execute([
+                $job_id, $user_id, $pname,
+                $x_north, $y_east, $lng, $lat,
+                $h_orthometric, $antenna_height, $h_at_antenna, $hae_ellipsoidal,
+                $xy_diff, $crs_label, $observed_at,
+                $observe_count
             ]);
 
+            if (!$ok) {
+                echo json_encode(['ok'=>false,'error'=>'DB insert failed'], JSON_UNESCAPED_UNICODE); exit;
+            }
+
             $id  = (int)$pdo->lastInsertId();
-            $row = $pdo->query("SELECT * FROM job_points WHERE point_id={$id}")->fetch();
+            $row = $pdo->query("SELECT * FROM job_points WHERE point_id={$id}")->fetch(PDO::FETCH_ASSOC);
             echo json_encode(['ok'=>true,'data'=>$row], JSON_UNESCAPED_UNICODE); exit;
         }
+
 
         // -------------------- job_points.list（job_id 指定で昇順） --------------------
         case 'job_points.list': {

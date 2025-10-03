@@ -966,7 +966,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
               <!-- ★ 1000回を選んで“観測中”のときだけ表示 -->
               <v-btn
-                  v-if="kansokuRunning && Number(kansokuCount) === 1000"
+                  v-if="kansokuRunning && [1000, 100, 50].includes(Number(kansokuCount))"
                   variant="outlined"
                   color="warning"
                   @click="cancelKansoku"
@@ -7259,9 +7259,9 @@ export default {
      */
     cancelKansoku () {
       // 1000回測位中にだけ意味があるが、一応ガード
-      if (!this.kansokuRunning) return;
-      if (Number(this.kansokuCount) !== 1000) return;
-      if (!confirm('1000回の測位を途中で停止して、ここまでの結果で確定してよろしいですか？')) {
+      // if (!this.kansokuRunning) return;
+      // if (Number(this.kansokuCount) !== 1000) return;
+      if (!confirm('測位を途中で停止して、ここまでの結果で確定してよろしいですか？')) {
         return;
       }
       // 既存の停止処理でOK：サマリーを作り、kansokuPhase='await' になる
@@ -8688,9 +8688,7 @@ export default {
         const parse = this.parseNumberLike || ((v) => {
           if (v == null) return null;
           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-          const s = String(v).trim()
-              .replace(/^[\s:=>\u3000：＝＞]+/, '')
-              .replace(',', '.');
+          const s = String(v).trim().replace(/^[\s:=>\u3000：＝＞]+/, '').replace(',', '.');
           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
           const n = m ? Number(m[0]) : NaN;
           return Number.isFinite(n) ? n : null;
@@ -8700,16 +8698,13 @@ export default {
 
         const header = rows[0];
         const col = (name) => header.indexOf(name);
-        const iX   = col('X');
-        const iY   = col('Y');
-        const iLat = col('lat');   // ★ 追加
-        const iLon = col('lon');   // ★ 追加
-        const iTS  = col('timestamp');
-        const iET  = col('eventType');
+        const iX  = col('X');
+        const iY  = col('Y');
+        const iTS = col('timestamp');
+        const iET = col('eventType');
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
-
         const iHAE = (() => {
           const names = ['楕円体高','hae','ellipsoidal','hEllipsoidal','h_ellipsoidal','ellipsoidal_height'];
           for (const n of names) { const idx = col(n); if (idx >= 0) return idx; }
@@ -8717,7 +8712,6 @@ export default {
         })();
 
         const xs = [], ys = [];
-        const lats = [], lons = [];          // ★ 追加：観測の緯度経度を集計
         const hTxtArr = [];
         const hNumArr = [];
         const haeNumArr = [];
@@ -8731,21 +8725,16 @@ export default {
           const vx = parse(row[iX]); if (vx != null) xs.push(vx);
           const vy = parse(row[iY]); if (vy != null) ys.push(vy);
 
-          if (iLat >= 0) { const vlat = parse(row[iLat]); if (vlat != null) lats.push(vlat); }  // ★ 追加
-          if (iLon >= 0) { const vlon = parse(row[iLon]); if (vlon != null) lons.push(vlon); }  // ★ 追加
-
           if (row.length > iH && row[iH] != null && row[iH] !== '') {
             const raw = row[iH];
             hTxtArr.push(raw);
             const hn = parse(raw);
             if (hn != null) hNumArr.push(hn);
           }
-
           if (iHAE >= 0 && row[iHAE] != null && row[iHAE] !== '') {
             const haeN = parse(row[iHAE]);
             if (haeN != null) haeNumArr.push(haeN);
           }
-
           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
         }
         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
@@ -8755,9 +8744,7 @@ export default {
         const Yavg = avg(ys);
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
 
-        // ★ 追加：lat/lon の平均（取れなければ null）
-        const latAvg = (lats.length ? avg(lats) : null);
-        const lonAvg = (lons.length ? avg(lons) : null);
+        const obsCount = xs.length; // ★ 実測回数
 
         let name = this.currentPointName;
         if (!name || typeof name !== 'string' || !name.trim()) {
@@ -8779,17 +8766,6 @@ export default {
         } else if (hNumArr.length) {
           const avgH = avg(hNumArr);
           hDisp = hadHAE ? `${avgH.toFixed(3)} m（楕円体高）` : `${avgH.toFixed(3)} m`;
-        } else {
-          hDisp = '';
-        }
-
-        // ★ ここで今回確定に使う lat/lng を決定：平均 > アンカー の優先順
-        const latUse = Number.isFinite(latAvg) ? latAvg : Number(this?.torokuPointLngLat?.lat);
-        const lngUse = Number.isFinite(lonAvg) ? lonAvg : Number(this?.torokuPointLngLat?.lng);
-        if (!Number.isFinite(latUse) || !Number.isFinite(lngUse)) {
-          alert('位置情報が取得できませんでした（lat/lon 不足）');
-          console.warn('[csv2] no lat/lon to commit', { latAvg, lonAvg, torokuPointLngLat: this.torokuPointLngLat });
-          return false;
         }
 
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
@@ -8801,8 +8777,9 @@ export default {
           pole: poleVal,
           diff,
           ts,
-          lat: Number(latUse),
-          lng: Number(lngUse),
+          lat: Number(this?.torokuPointLngLat?.lat),
+          lng: Number(this?.torokuPointLngLat?.lng),
+          obsCount, // ★ 参考までに保持
         });
         if (!this.useServerOnly) {
           try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch {}
@@ -8811,8 +8788,9 @@ export default {
         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
         let csLabel = storeLabel;
         if (!csLabel) {
-          if (Number.isFinite(lngUse)) {
-            let z = Math.round((lngUse - 129) / 2) + 1;
+          const lon = Number(this.torokuPointLngLat?.lng);
+          if (Number.isFinite(lon)) {
+            let z = Math.round((lon - 129) / 2) + 1;
             if (z < 1) z = 1;
             if (z > 19) z = 19;
             csLabel = `公共座標${z}系`;
@@ -8828,8 +8806,7 @@ export default {
           return Number.isFinite(n2) ? n2 : null;
         })();
 
-        const antennaHighNum =
-            Number.isFinite(Number(poleVal)) ? Number(poleVal) : null;
+        const antennaHighNum = Number.isFinite(Number(poleVal)) ? Number(poleVal) : null;
 
         const hOrthometricNum =
             (Number.isFinite(hAntennaPosNum) && Number.isFinite(antennaHighNum))
@@ -8838,6 +8815,10 @@ export default {
 
         const haeEllipsoidalNum = haeNumArr.length ? avg(haeNumArr) : null;
 
+        const lng = Number(this?.torokuPointLngLat?.lng);
+        const lat = Number(this?.torokuPointLngLat?.lat);
+
+        // ★ rowArray は内部表示用なので末尾位置は厳密でなくOK
         const rowArray = [
           String(name || ''),
           fix3(Xavg),
@@ -8848,20 +8829,20 @@ export default {
           fix3(haeEllipsoidalNum),
           fix3(diff),
           String(csLabel || ''),
-          Number.isFinite(latUse) ? Number(latUse).toFixed(8) : '',
-          Number.isFinite(lngUse) ? Number(lngUse).toFixed(8) : '',
+          Number.isFinite(lat) ? lat.toFixed(8) : '',
+          Number.isFinite(lng) ? lng.toFixed(8) : '',
+          String(obsCount),     // ★ 測位回数
           String(ts || '')
         ];
 
         try {
-          // ★ マップ描画も新しい座標で行うため、先にアンカーを更新してから確定描画
-          this.torokuPointLngLat = { lng: Number(lngUse), lat: Number(latUse) };
           this.confirmTorokuPointAtCurrent(name, rowArray);
           this.updateChainLine();
         } catch (e) {
           console.warn('[csv2] confirm point replace failed', e);
         }
 
+        // ★ サーバに測位回数も送る（未対応なら無視される）
         try {
           const _toSql = (v) => {
             if (!v) return '';
@@ -8879,17 +8860,18 @@ export default {
             fd.append('job_id', String(jobId));
             fd.append('user_id', String(userId));
             fd.append('point_name', String(name || ''));
-            fd.append('x_north',        Number.isFinite(Xavg) ? String(Xavg) : '');
-            fd.append('y_east',         Number.isFinite(Yavg) ? String(Yavg) : '');
-            fd.append('lng',            Number.isFinite(lngUse) ? String(lngUse) : '');
-            fd.append('lat',            Number.isFinite(latUse) ? String(latUse) : '');
-            fd.append('h_orthometric',  Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
-            fd.append('antenna_height', Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
-            fd.append('h_at_antenna',   Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
+            fd.append('x_north',      Number.isFinite(Xavg) ? String(Xavg) : '');
+            fd.append('y_east',       Number.isFinite(Yavg) ? String(Yavg) : '');
+            fd.append('lng',          Number.isFinite(lng) ? String(lng) : '');
+            fd.append('lat',          Number.isFinite(lat) ? String(lat) : '');
+            fd.append('h_orthometric',Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
+            fd.append('antenna_height',Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
+            fd.append('h_at_antenna', Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
             fd.append('hae_ellipsoidal',Number.isFinite(haeEllipsoidalNum) ? String(haeEllipsoidalNum) : '');
-            fd.append('xy_diff',        Number.isFinite(diff) ? String(diff) : '');
-            fd.append('crs_label',      String(csLabel || ''));
-            fd.append('observed_at',    _toSql(ts));
+            fd.append('xy_diff',      Number.isFinite(diff) ? String(diff) : '');
+            fd.append('crs_label',    String(csLabel || ''));
+            fd.append('observed_at',  _toSql(ts));
+            fd.append('observe_count', String(obsCount)); // ★ 追加
 
             try {
               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
@@ -8912,8 +8894,6 @@ export default {
       }
     },
 
-
-
     /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
     async downloadCsv2() {
       try {
@@ -8928,10 +8908,7 @@ export default {
 
         let res, payload;
         try {
-          res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-            method: 'POST',
-            body: fd,
-          });
+          res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
           payload = await res.json();
         } catch (e) {
           console.error('[downloadCsv2] fetch失敗', e);
@@ -8944,13 +8921,18 @@ export default {
           return;
         }
 
-        const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','測位日時'];
+        // ★ 見出し：最後から2番目 = 測位日時の直前
+        const header = [
+          '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
+          '測位回数',          // ← 追加（last-2）
+          '測位日時'
+        ];
 
-        // ← ここを this に依存しないローカル関数に
-        const fmt3    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
-        const fmt2    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
-        const fmt8    = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
-        const esc     = (v) => {
+        const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
+        const fmt3    = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
+        const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
+        const fmtDeg8 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(8) : '');
+        const esc = (v) => {
           if (v == null) return '';
           const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
           return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
@@ -8959,29 +8941,33 @@ export default {
         const rows = [header];
 
         for (const r of list) {
+          // サーバ側のフィールド名に幅を持たせて取り込む
+          const obsCount =
+              Number(r.observe_count ?? r.obs_count ?? r.sample_count ?? r.n ?? r.count);
           rows.push([
             esc(String(r.point_name ?? '')),
             esc(fmt3(r.x_north)),
             esc(fmt3(r.y_east)),
             esc(fmt3(r.h_orthometric)),
-            esc(fmt2(r.antenna_height)),
+            esc(fmtPole(r.antenna_height)),
             esc(fmt3(r.h_at_antenna)),
             esc(fmt3(r.hae_ellipsoidal)),
             esc(fmt3(r.xy_diff)),
             esc(String(r.crs_label ?? '')),
-            esc(fmt8(r.lat)),
-            esc(fmt8(r.lng)),
+            esc(fmtDeg8(r.lat)),
+            esc(fmtDeg8(r.lng)),
+            esc(Number.isFinite(obsCount) ? obsCount : ''), // ← 追加（last-2）
             esc(String(r.observed_at ?? ''))
           ]);
         }
 
         const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
 
-        // ファイル名 = JOB名 + ポイント数（禁則文字は _ に置換）
-        const jobNameRaw  = String(this.currentJobName || 'JOB');
+        // ファイル名 = JOB名 + ポイント数（既存仕様）
+        const jobNameRaw = String(this.currentJobName || 'JOB');
         const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-        const pointCount  = list.length;
-        const fname       = `${jobNameSafe}_${pointCount}点.csv`;
+        const pointCount = Array.isArray(list) ? list.length : 0;
+        const fname = `${jobNameSafe}_${pointCount}点.csv`;
 
         const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
@@ -8993,6 +8979,7 @@ export default {
         console.warn('[csv2] download error', e);
       }
     },
+
 
 
     /** SIMA 出力（A01点列のみ。ラインは規格外のため非対応） */
