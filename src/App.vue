@@ -178,138 +178,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
 
       </div>
-
-      <!-- Job Picker -->
-<!--      <v-dialog v-model="jobPickerOpen" max-width="520" persistent>-->
-<!--        <v-card>-->
-<!--          <v-card-title class="d-flex align-center text-h6">-->
-<!--            <span v-if="!currentJobName">ジョブ選択</span>-->
-<!--            <span v-else>-->
-<!--              現在のジョブ: {{ currentJobName }}-->
-<!--            </span>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            &lt;!&ndash; トグル（小さめのチップ） &ndash;&gt;-->
-<!--            <v-chip-->
-<!--                size="small"-->
-<!--                variant="outlined"-->
-<!--                class="cursor-pointer"-->
-<!--                @click="showAllJobs = !showAllJobs"-->
-<!--            >-->
-<!--              {{ showAllJobs ? '全件表示' : '選択中のみ' }}-->
-<!--            </v-chip>-->
-<!--          </v-card-title>-->
-
-<!--          <v-divider />-->
-
-<!--          &lt;!&ndash; ★ ダイアログ本文も伸びすぎ防止 &ndash;&gt;-->
-<!--          <v-card-text style="max-height: 70vh; overflow-y: auto;">-->
-<!--            &lt;!&ndash; 新規ジョブ（上） &ndash;&gt;-->
-<!--            <div class="mb-4">-->
-<!--              <div class="text-caption mb-2">新規ジョブを作成</div>-->
-<!--              <div class="d-flex ga-2">-->
-<!--                <v-text-field-->
-<!--                    v-model.trim="jobName"-->
-<!--                    label="ジョブ名"-->
-<!--                    variant="outlined"-->
-<!--                    density="comfortable"-->
-<!--                    hide-details="auto"-->
-<!--                    class="flex-1-1"-->
-<!--                />-->
-<!--                <v-btn color="primary" @click="createNewJob">作成</v-btn>-->
-<!--              </div>-->
-<!--              <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>-->
-<!--            </div>-->
-
-<!--            <v-divider class="my-3" />-->
-
-<!--            &lt;!&ndash; 既存ジョブ（下） &ndash;&gt;-->
-<!--            <div v-if="jobList && jobList.length">-->
-<!--              <div class="text-caption mb-2">既存のジョブ</div>-->
-
-<!--              &lt;!&ndash; ★ スクロール枠（高さ制限＋縦スクロール） &ndash;&gt;-->
-<!--              <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(&#45;&#45;v-theme-outline); border-radius: 8px;">-->
-<!--                <v-list density="compact" nav>-->
-<!--                  <v-list-item-->
-<!--                      v-for="job in visibleJobs"-->
-<!--                      :key="job.id"-->
-<!--                      :title="job.name"-->
-<!--                      @click="pickExistingJob(job)"-->
-<!--                  >-->
-<!--                    <template #append>-->
-<!--                      <v-chip-->
-<!--                          v-if="Number(job.count) > 0"-->
-<!--                          size="small"-->
-<!--                          variant="flat"-->
-<!--                          color="red"-->
-<!--                          class="rounded-pill mr-1"-->
-<!--                          style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"-->
-<!--                      >-->
-<!--                        {{ job.count }}-->
-<!--                      </v-chip>-->
-<!--                      <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">-->
-<!--                        <v-icon size="16">mdi-close</v-icon>-->
-<!--                      </v-btn>-->
-<!--                    </template>-->
-<!--                  </v-list-item>-->
-<!--                </v-list>-->
-<!--              </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; ↓ 選択中ジョブのポイント一覧 &ndash;&gt;-->
-<!--            <div v-if="currentJobId && pointsForCurrentJob && pointsForCurrentJob.length" class="mt-3">-->
-<!--              <v-divider class="my-2" />-->
-<!--              <div class="d-flex align-center justify-space-between mb-1">-->
-<!--                <div class="text-caption">-->
-<!--                  <span v-if="currentJobName">{{ currentJobName }}のポイント</span>-->
-<!--                  （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）-->
-<!--                </div>-->
-<!--                <v-btn icon size="x-small" variant="text" @click.stop="loadPointsForJob(currentJobId)">-->
-<!--                  <v-icon size="16">mdi-refresh</v-icon>-->
-<!--                </v-btn>-->
-<!--              </div>-->
-
-<!--              &lt;!&ndash; ★ スクロール枠（ポイント側も） &ndash;&gt;-->
-<!--              <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(&#45;&#45;v-theme-outline); border-radius: 8px;">-->
-<!--                <v-list density="compact" nav>-->
-<!--                  <v-list-item-->
-<!--                      v-for="pt in pointsForCurrentJob"-->
-<!--                      :key="pt.point_id"-->
-<!--                      :title="pt.point_name"-->
-<!--                      @click="focusPointOnMap(pt)"-->
-<!--                  >-->
-<!--                    &lt;!&ndash; 緯度経度 → XY（X=北, Y=東）へ変更 &ndash;&gt;-->
-<!--                    <template #subtitle>-->
-<!--                <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">-->
-<!--                  X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}-->
-<!--                </span>-->
-<!--                    </template>-->
-
-<!--                    <template #append>-->
-<!--                      <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">-->
-<!--                        <v-icon size="16">mdi-trash-can-outline</v-icon>-->
-<!--                      </v-btn>-->
-<!--                    </template>-->
-<!--                  </v-list-item>-->
-<!--                </v-list>-->
-<!--              </div>-->
-<!--            </div>-->
-
-<!--            &lt;!&ndash; ★ “ジョブが無い”表示は jobList が空の時だけ &ndash;&gt;-->
-<!--            <div v-else-if="!jobList || !jobList.length" class="text-medium-emphasis text-caption">-->
-<!--              既存のジョブはありません。-->
-<!--            </div>-->
-<!--          </v-card-text>-->
-
-<!--          <v-card-actions class="justify-end">-->
-<!--            <v-btn variant="text" @click="closeJobPicker">閉じる</v-btn>-->
-<!--          </v-card-actions>-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
-
-
-
-
-
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
         <v-card>
@@ -7627,6 +7495,13 @@ export default {
     /** ジョブピッカーを開き、サーバ一覧を最新化 */
     openJobPicker() {
       this.jobPickerOpen = true;
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p>新規ジョブの作成、または既存のジョブを選択して下さい。</p>',
+        options: { maxWidth: 400, showCloseIcon: true }
+      })
+
       this.refreshJobs();
     },
 
@@ -7652,7 +7527,12 @@ export default {
 
       await this.onJobCreatedSuccess()
 
-      alert('左下の「追加」ボタンをクリックしてください。')
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p>左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンをクリックしてください。</p>',
+        options: { maxWidth: 400, showCloseIcon: true }
+      })
       this.jobPickerOpen = false
     },
 
@@ -7765,6 +7645,13 @@ export default {
 
     /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
     async pickExistingJob(job) {
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
+            '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
+        options: { maxWidth: 400, showCloseIcon: true }
+      })
       this.pointsForCurrentJob = [];
       const id   = String(job?.id ?? job?.job_id ?? '');
       const name = String(job?.name ?? job?.job_name ?? '');
