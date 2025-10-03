@@ -4603,7 +4603,7 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
         try {
             let phpUrl = ''
             if (isOld) {
-                phpUrl = "https://kenzkenz.net/myphp/generate_tiles17OLD.php"
+                phpUrl = "https://kenzkenz.net/myphp/generate_tiles17.php"
             } else {
                 phpUrl = "https://kenzkenz.net/myphp/generate_tiles17.php"
             }
