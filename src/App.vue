@@ -3342,6 +3342,8 @@ export default {
     // 単点/結線の唯一のソース。'point' か 'chain'
     lineMode: localStorage.getItem('oh3_line_mode') || 'point',
 
+    DONT_SHOW_KEY: 'oh3.hideJobTips',
+
     aaa: null,
   }),
   computed: {
@@ -8091,7 +8093,7 @@ export default {
         title: '次の操作は？',
         contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
             '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true }
+        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
       })
 
       this.refreshJobs();
@@ -8167,7 +8169,7 @@ export default {
         console.error('[jobs.list] server says:', data);
         return;
       }
-      console.log(JSON.stringify(data, null, 2));
+      // console.log(JSON.stringify(data, null, 2));
       const toUi = (r) => ({
         id: String(r.job_id),
         name: r.job_name,
@@ -8239,22 +8241,33 @@ export default {
 
     /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
     async pickExistingJob(job) {
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
-            '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
-        options: { maxWidth: 400, showCloseIcon: true }
-      })
-      this.pointsForCurrentJob = [];
-      const id   = String(job?.id ?? job?.job_id ?? '');
-      const name = String(job?.name ?? job?.job_name ?? '');
-      if (!id) return;
+      // ▼ 「次回から表示しない」＆ isSmall500 のときはジョブピッカーを閉じて即作業に入る
+      let hideTips = false
+      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1' } catch (_) {}
+      if (!(this.isSmall500 && hideTips)) {
+        // 条件を満たさない場合のみ、誘導ダイアログを出す（dontShowKey により必要なら自動スキップ）
+        this.$store.dispatch('messageDialog/open', {
+          id: 'openJobPicker',
+          title: '次の操作は？',
+          contentHtml:
+              '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
+              '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
+          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
+        })
+      } else {
+        // スモール画面＆次回非表示→ジョブピッカーを即閉
+        this.jobPickerOpen = false
+      }
 
-      this.currentJobId   = id;
-      this.currentJobName = name;
+      this.pointsForCurrentJob = []
+      const id   = String(job.id || '')
+      const name = String(job.name || '')
+      if (!id) return
 
-      await this.loadPointsForJob(id);
+      this.currentJobId   = id
+      this.currentJobName = name
+
+      await this.loadPointsForJob(id)
     },
 
     /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
