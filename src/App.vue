@@ -954,10 +954,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
               />
             </div>
 
-
             <!-- ボタン行：右寄せ＆広めの間隔 -->
             <div class="d-flex align-center flex-wrap justify-start ga-4 mt-3">
-              <!-- 測位開始（idle だけ有効） -->
               <v-btn
                   @click="kansokuStart"
                   :disabled="!canStartKansoku"
@@ -966,8 +964,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 測位開始
               </v-btn>
-              <!-- 保存/破棄は “await” 中だけまとめて表示。内側でも余白を確保 -->
-              <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
+              <!-- ★ 1000回を選んで“観測中”のときだけ表示 -->
+              <v-btn
+                  v-if="kansokuRunning && Number(kansokuCount) === 1000"
+                  variant="outlined"
+                  color="warning"
+                  @click="cancelKansoku"
+              >
+                測位停止
+              </v-btn>              <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
                 <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
                 <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
               </div>
@@ -3402,7 +3407,7 @@ export default {
 
     dialogForToroku: false,
 
-    kansokuItems: [1, 10, 20, 50, 100],
+    kansokuItems: [1, 10, 20, 50, 100, 1000],
     kansokuCount: 10, // 既定値
     // 追加: 0〜100cm のセレクト
     offsetCm: 0,
@@ -7252,6 +7257,17 @@ export default {
     /**
      * ここから観測関係
      */
+    cancelKansoku () {
+      // 1000回測位中にだけ意味があるが、一応ガード
+      if (!this.kansokuRunning) return;
+      if (Number(this.kansokuCount) !== 1000) return;
+      if (!confirm('1000回の測位を途中で停止して、ここまでの結果で確定してよろしいですか？')) {
+        return;
+      }
+      // 既存の停止処理でOK：サマリーを作り、kansokuPhase='await' になる
+      this.kansokuStop();
+      // ← ボタンは v-if の条件を満たさなくなるので自動で非表示に戻る
+    },
 
     /** =========================
      * 現在地の緑丸（1個だけ表示）関連
