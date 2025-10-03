@@ -11,7 +11,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!--  -->
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
-           style="display:flex; flex-direction:column;">
+           style="display:flex; flex-direction:column; bottom: 70px;">
         <!-- 1行目：モード切替 + 現在のジョブ -->
         <div class="mb-1 d-flex align-center" style="gap:8px;">
           <!-- 不透明で見やすい -->
@@ -8129,8 +8129,18 @@ export default {
 
       await this.onJobCreatedSuccess();
 
-      alert('左下の「追加」ボタンをクリックしてください。')
-      this.jobPickerOpen = false;
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>',
+        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
+      })
+      let hideTips = false
+      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1' } catch (_) {}
+      if (hideTips) {
+        this.jobPickerOpen = false;
+        this.$store.dispatch('hideFloatingWindow', 'job-picker');
+      }
     },
 
     /** 新規作成成功後の一覧更新 */
@@ -8256,7 +8266,9 @@ export default {
         })
       } else {
         // スモール画面＆次回非表示→ジョブピッカーを即閉
-        this.jobPickerOpen = false
+        this.onJobEndClick()
+        this.jobPickerOpen = false;
+        this.$store.dispatch('hideFloatingWindow', 'job-picker');
       }
 
       this.pointsForCurrentJob = []
