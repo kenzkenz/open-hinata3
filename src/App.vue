@@ -5451,9 +5451,9 @@ export default {
       const isJpg = this.$store.state.tiffAndWorldFile.find(f => f.name.includes('jgw'))
 
       if (isJpg) {
-        tileGenerateForUser('jpg','jgw',true)
+        tileGenerateForUser('jpg','jgw',true, true)
       } else {
-        tileGenerateForUser('png','pgw',true)
+        tileGenerateForUser('png','pgw',true, true)
       }
       this.showTileDialog = false
     },

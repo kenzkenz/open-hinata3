@@ -4573,7 +4573,7 @@ export async function tileGenerateForUserPdf () {
     // -------------------------------------------------------------------------------------------------
 }
 
-export async function tileGenerateForUser(imageExtension, worldFileExtension, is3857) {
+export async function tileGenerateForUser(imageExtension, worldFileExtension, is3857, isOld) {
     // タイル生成関数
     async function generateTiles(filePath, srsCode = "3857", dir, fileName, resolution, transparent) {
         store.state.loading2 = true;
@@ -4601,8 +4601,13 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
 //     白だけ → blackLuma='-1', whiteLuma='235'
 
         try {
-            // generate_tiles11.phpにリクエスト送信 generate_tiles15.phpが安定版
-            const response = await fetch("https://kenzkenz.net/myphp/generate_tiles17.php", {
+            let phpUrl = ''
+            if (isOld) {
+                phpUrl = "https://kenzkenz.net/myphp/generate_tiles17OLD.php"
+            } else {
+                phpUrl = "https://kenzkenz.net/myphp/generate_tiles17.php"
+            }
+            const response = await fetch(phpUrl, {
                 method: "POST",
                 body: formData,
             });
