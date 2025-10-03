@@ -7510,27 +7510,31 @@ export default {
       const exists = this.jobList.some(j => j.name === job_name)
       if (exists) { this.jobNameError = '同名のジョブが存在します'; return; }
 
-      this.onJobEndClick(false)
+      this.onJobEndClick(false);
 
       const fd = new FormData();
       fd.append('action','jobs.create');
       fd.append('user_id',this.userId);
       fd.append('user_name',this.myNickname);
       fd.append('job_name',job_name);
+
       const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
       const rJson = await r.json();
-      this.currentJobId = rJson.data.job_id;
 
-      await this.onJobCreatedSuccess()
+      // ★ ここを追加：作成直後に現在ジョブへ反映
+      this.currentJobId   = String(rJson.data.job_id);
+      this.currentJobName = job_name;
+      try {
+        localStorage.setItem('oh3_current_job_id',   this.currentJobId);
+        localStorage.setItem('oh3_current_job_name', this.currentJobName);
+      } catch (_) {}
 
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p>ジョブリストを閉じて左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンをクリックしてください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true }
-      })
-      this.jobPickerOpen = false
+      await this.onJobCreatedSuccess();
+
+      alert('左下の「追加」ボタンをクリックしてください。')
+      this.jobPickerOpen = false;
     },
+
 
     /** 新規作成成功後の一覧更新 */
     async onJobCreatedSuccess() {
