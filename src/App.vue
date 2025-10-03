@@ -232,6 +232,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       >
       <!-- ★ 親サイズに追従させるフィット用ラッパ -->
       <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
+
         <v-card class="fw-card">
           <v-card-title class="d-flex align-center text-h6">
             <span v-if="!currentJobName">ジョブ選択</span>
@@ -247,7 +248,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             </v-chip>
           </v-card-title>
 
-          <v-divider />
+          <v-divider thickness="4" />
 
           <!-- ★ 本文は親高に応じて伸縮＆内部スクロール -->
           <v-card-text class="fw-body">
@@ -268,13 +269,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
             </div>
 
-            <v-divider class="my-3" />
+            <v-divider thickness="4" class="my-3" />
 
             <!-- 既存ジョブ -->
             <div v-if="jobList && jobList.length">
               <div class="text-caption mb-2">既存のジョブ</div>
 
-              <!-- ★ 固定pxやvhをやめ、親に対する割合＋上下限で調整 -->
               <div
                   :class="['fw-scroll', hasSecond ? 'job-list' : 'job-list-full']"
               >
@@ -297,7 +297,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         {{ job.count }}
                       </v-chip>
                       <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">
-                        <v-icon size="16">mdi-close</v-icon>
+                        <v-icon size=22>mdi-close</v-icon>
                       </v-btn>
                     </template>
                   </v-list-item>
@@ -307,18 +307,17 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
             <!-- 選択中ジョブのポイント -->
             <div v-if="currentJobId && pointsForCurrentJob && pointsForCurrentJob.length" class="mt-3">
-              <v-divider class="my-2" />
+              <v-divider thickness="4" class="my-2" />
               <div class="d-flex align-center justify-space-between mb-1">
                 <div class="text-caption">
                   <span v-if="currentJobName">{{ currentJobName }}のポイント</span>
                   （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）
                 </div>
-                <v-btn icon size="x-small" variant="text" @click.stop="loadPointsForJob(currentJobId)">
-                  <v-icon size="16">mdi-refresh</v-icon>
-                </v-btn>
+<!--                <v-btn icon size="x-small" variant="text" @click.stop="loadPointsForJob(currentJobId)">-->
+<!--                  <v-icon size="16">mdi-refresh</v-icon>-->
+<!--                </v-btn>-->
               </div>
 
-              <!-- ★ こちらも同様に割合ベースで可変 -->
               <div
                   :class="['fw-scroll', hasSingleVisibleJob ? 'point-list-full' : 'point-list']"
               >
@@ -336,7 +335,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </template>
                     <template #append>
                       <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
-                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                        <v-icon size="22">mdi-trash-can-outline</v-icon>
                       </v-btn>
                     </template>
                   </v-list-item>
@@ -348,10 +347,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               既存のジョブはありません。
             </div>
           </v-card-text>
-
-<!--          <v-card-actions class="justify-end">-->
-<!--            <v-btn variant="text" @click="closeJobPicker">閉じる</v-btn>-->
-<!--          </v-card-actions>-->
         </v-card>
       </div>
       </FloatingWindow>
@@ -7498,7 +7493,8 @@ export default {
       this.$store.dispatch('messageDialog/open', {
         id: 'openJobPicker',
         title: '次の操作は？',
-        contentHtml: '<p>新規ジョブの作成、または既存のジョブを選択して下さい。</p>',
+        contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
+                     '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
         options: { maxWidth: 400, showCloseIcon: true }
       })
 
@@ -7530,7 +7526,7 @@ export default {
       this.$store.dispatch('messageDialog/open', {
         id: 'openJobPicker',
         title: '次の操作は？',
-        contentHtml: '<p>左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンをクリックしてください。</p>',
+        contentHtml: '<p>ジョブリストを閉じて左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンをクリックしてください。</p>',
         options: { maxWidth: 400, showCloseIcon: true }
       })
       this.jobPickerOpen = false
@@ -14295,7 +14291,6 @@ html.oh3-embed #map01 {
 .fw-fit .fw-body {
   flex: 1 1 auto;
   min-height: 0;     /* ← これが超重要（子のoverflowを効かせる）*/
-  //overflow: auto;    /* 本文全体がスクロール（推奨）*/
   overflow: hidden;
 }
 
@@ -14380,6 +14375,33 @@ html.oh3-embed #map01 {
 @media (prefers-reduced-motion: reduce) {
   .oh-chip-heartbeat { animation: none; }
 }
+
+/* App.vue <style scoped> などに */
+.oh-panel{
+  border:1px solid var(--v-theme-outline);
+  border-radius:12px;
+  padding:12px 14px;
+  background:color-mix(in oklab, var(--v-theme-surface) 92%, transparent);
+  /* ↑ 明るさをほんの少しだけ上げる。対応しない環境でも単色なので破綻しない */
+}
+.oh-panel__title{
+  font-size:12px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.62); /* ダーク時はVuetifyがよしなに反転 */
+  margin-bottom:10px;
+  border-left:3px solid var(--v-theme-outline);
+  padding-left:8px;
+}
+
+/* 余白を抑えてフラットに */
+.v-list-item{
+  border-radius:8px;
+}
+.v-list-item:hover{
+  background: color-mix(in oklab, var(--v-theme-surface) 88%, transparent);
+}
+
 
 </style>
 
