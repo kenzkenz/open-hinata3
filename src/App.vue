@@ -972,7 +972,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   @click="cancelKansoku"
               >
                 測位停止
-              </v-btn>              <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
+              </v-btn>
+              <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
                 <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
                 <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
               </div>
@@ -1017,6 +1018,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 class="mt-2 py-1 px-2"
                 style="font-size:14px; line-height:1.2;"
             >
+              <!-- ここを追加：観測中も表示 -->
+              <v-chip
+                  v-if="pendingObservation && (kansokuPhase==='observing' || kansokuPhase==='await')"
+                  :color="kakusaColor"
+                  variant="flat"
+                  class="font-weight-bold"
+                  style="position: absolute; right: 10px;"
+              >
+                {{ `${pendingObservation.diffTxt}m` }}
+              </v-chip>
               <div class="text-body-2" style="color:black; font-weight:700;">測位結果</div>
 
               <!-- ★ 追加：点名 -->
@@ -8980,8 +8991,6 @@ export default {
       }
     },
 
-
-
     /** SIMA 出力（A01点列のみ。ラインは規格外のため非対応） */
     async exportCsv2Sima(title) {
       try {
@@ -9060,8 +9069,6 @@ export default {
         alert('SIMA出力に失敗しました');
       }
     },
-
-
 
 /** =========================
  * 現在地追跡（watchPosition）・距離線 UI
@@ -9622,11 +9629,13 @@ export default {
     /* =========================
      * 9) 汎用ユーティリティ（日時/保存/クランプ/終了処理）
      * =======================*/
-    formatCoordinates(value) {
-      if (typeof value === 'number') {
-        return value.toFixed(value >= 10000 ? 3 : 5);
-      }
-      return value;
+// 色分け: 較差 <=0.02: success, <=0.05: warning, それ以外: error
+    diffColor(d) {
+      const x = Number(d);
+      if (!Number.isFinite(x)) return 'default';
+      if (x <= 0.02) return 'success';
+      if (x <= 0.05) return 'warning';
+      return 'error';
     },
     fmtLL(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(5) : v; },
     fmtXY(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(3) : v; },
