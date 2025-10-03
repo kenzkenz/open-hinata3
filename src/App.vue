@@ -8670,10 +8670,12 @@ export default {
 
         const header = rows[0];
         const col = (name) => header.indexOf(name);
-        const iX  = col('X');
-        const iY  = col('Y');
-        const iTS = col('timestamp');
-        const iET = col('eventType');
+        const iX   = col('X');
+        const iY   = col('Y');
+        const iLat = col('lat');   // ★ 追加
+        const iLon = col('lon');   // ★ 追加
+        const iTS  = col('timestamp');
+        const iET  = col('eventType');
         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
 
         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
@@ -8685,6 +8687,7 @@ export default {
         })();
 
         const xs = [], ys = [];
+        const lats = [], lons = [];          // ★ 追加：観測の緯度経度を集計
         const hTxtArr = [];
         const hNumArr = [];
         const haeNumArr = [];
@@ -8697,6 +8700,9 @@ export default {
 
           const vx = parse(row[iX]); if (vx != null) xs.push(vx);
           const vy = parse(row[iY]); if (vy != null) ys.push(vy);
+
+          if (iLat >= 0) { const vlat = parse(row[iLat]); if (vlat != null) lats.push(vlat); }  // ★ 追加
+          if (iLon >= 0) { const vlon = parse(row[iLon]); if (vlon != null) lons.push(vlon); }  // ★ 追加
 
           if (row.length > iH && row[iH] != null && row[iH] !== '') {
             const raw = row[iH];
@@ -8718,6 +8724,10 @@ export default {
         const Xavg = avg(xs);
         const Yavg = avg(ys);
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+
+        // ★ 追加：lat/lon の平均（取れなければ null）
+        const latAvg = (lats.length ? avg(lats) : null);
+        const lonAvg = (lons.length ? avg(lons) : null);
 
         let name = this.currentPointName;
         if (!name || typeof name !== 'string' || !name.trim()) {
@@ -8743,6 +8753,15 @@ export default {
           hDisp = '';
         }
 
+        // ★ ここで今回確定に使う lat/lng を決定：平均 > アンカー の優先順
+        const latUse = Number.isFinite(latAvg) ? latAvg : Number(this?.torokuPointLngLat?.lat);
+        const lngUse = Number.isFinite(lonAvg) ? lonAvg : Number(this?.torokuPointLngLat?.lng);
+        if (!Number.isFinite(latUse) || !Number.isFinite(lngUse)) {
+          alert('位置情報が取得できませんでした（lat/lon 不足）');
+          console.warn('[csv2] no lat/lon to commit', { latAvg, lonAvg, torokuPointLngLat: this.torokuPointLngLat });
+          return false;
+        }
+
         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
         this.csv2Points.push({
           name: String(name || ''),
@@ -8752,8 +8771,8 @@ export default {
           pole: poleVal,
           diff,
           ts,
-          lat: Number(this?.torokuPointLngLat?.lat),
-          lng: Number(this?.torokuPointLngLat?.lng),
+          lat: Number(latUse),
+          lng: Number(lngUse),
         });
         if (!this.useServerOnly) {
           try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch {}
@@ -8762,9 +8781,8 @@ export default {
         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
         let csLabel = storeLabel;
         if (!csLabel) {
-          const lon = Number(this.torokuPointLngLat?.lng);
-          if (Number.isFinite(lon)) {
-            let z = Math.round((lon - 129) / 2) + 1;
+          if (Number.isFinite(lngUse)) {
+            let z = Math.round((lngUse - 129) / 2) + 1;
             if (z < 1) z = 1;
             if (z > 19) z = 19;
             csLabel = `公共座標${z}系`;
@@ -8790,9 +8808,6 @@ export default {
 
         const haeEllipsoidalNum = haeNumArr.length ? avg(haeNumArr) : null;
 
-        const lng = Number(this?.torokuPointLngLat?.lng);
-        const lat = Number(this?.torokuPointLngLat?.lat);
-
         const rowArray = [
           String(name || ''),
           fix3(Xavg),
@@ -8803,12 +8818,14 @@ export default {
           fix3(haeEllipsoidalNum),
           fix3(diff),
           String(csLabel || ''),
-          Number.isFinite(lat) ? lat.toFixed(8) : '',
-          Number.isFinite(lng) ? lng.toFixed(8) : '',
+          Number.isFinite(latUse) ? Number(latUse).toFixed(8) : '',
+          Number.isFinite(lngUse) ? Number(lngUse).toFixed(8) : '',
           String(ts || '')
         ];
 
         try {
+          // ★ マップ描画も新しい座標で行うため、先にアンカーを更新してから確定描画
+          this.torokuPointLngLat = { lng: Number(lngUse), lat: Number(latUse) };
           this.confirmTorokuPointAtCurrent(name, rowArray);
           this.updateChainLine();
         } catch (e) {
@@ -8832,19 +8849,18 @@ export default {
             fd.append('job_id', String(jobId));
             fd.append('user_id', String(userId));
             fd.append('point_name', String(name || ''));
-            fd.append('x_north',      Number.isFinite(Xavg) ? String(Xavg) : '');
-            fd.append('y_east',       Number.isFinite(Yavg) ? String(Yavg) : '');
-            fd.append('lng',          Number.isFinite(lng) ? String(lng) : '');
-            fd.append('lat',          Number.isFinite(lat) ? String(lat) : '');
-            fd.append('h_orthometric',Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
-            fd.append('antenna_height',Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
-            fd.append('h_at_antenna', Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
+            fd.append('x_north',        Number.isFinite(Xavg) ? String(Xavg) : '');
+            fd.append('y_east',         Number.isFinite(Yavg) ? String(Yavg) : '');
+            fd.append('lng',            Number.isFinite(lngUse) ? String(lngUse) : '');
+            fd.append('lat',            Number.isFinite(latUse) ? String(latUse) : '');
+            fd.append('h_orthometric',  Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
+            fd.append('antenna_height', Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
+            fd.append('h_at_antenna',   Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
             fd.append('hae_ellipsoidal',Number.isFinite(haeEllipsoidalNum) ? String(haeEllipsoidalNum) : '');
-            fd.append('xy_diff',      Number.isFinite(diff) ? String(diff) : '');
-            fd.append('crs_label',    String(csLabel || ''));
-            fd.append('observed_at',  _toSql(ts));
+            fd.append('xy_diff',        Number.isFinite(diff) ? String(diff) : '');
+            fd.append('crs_label',      String(csLabel || ''));
+            fd.append('observed_at',    _toSql(ts));
 
-            // ★ ここを await に変更（保存完了を待つ）
             try {
               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
               const data = await res.json();
@@ -8865,6 +8881,7 @@ export default {
         return false;
       }
     },
+
 
 
     /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
