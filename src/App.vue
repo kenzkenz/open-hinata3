@@ -8660,6 +8660,9 @@ export default {
         const latAvg = (lats.length ? avg(lats) : null);
         const lonAvg = (lons.length ? avg(lons) : null);
 
+        // ★ 追加: 実測回数（測位回数）
+        const obsCount = xs.length;
+
         let name = this.currentPointName;
         if (!name || typeof name !== 'string' || !name.trim()) {
           console.warn('[csv2] point name missing');
@@ -8704,6 +8707,7 @@ export default {
           ts,
           lat: Number(latUse),
           lng: Number(lngUse),
+          obsCount,
         });
         if (!this.useServerOnly) {
           try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch {}
@@ -8751,6 +8755,7 @@ export default {
           String(csLabel || ''),
           Number.isFinite(latUse) ? Number(latUse).toFixed(8) : '',
           Number.isFinite(lngUse) ? Number(lngUse).toFixed(8) : '',
+          String(obsCount),
           String(ts || '')
         ];
 
@@ -8791,7 +8796,7 @@ export default {
             fd.append('xy_diff',        Number.isFinite(diff) ? String(diff) : '');
             fd.append('crs_label',      String(csLabel || ''));
             fd.append('observed_at',    _toSql(ts));
-
+            fd.append('observe_count', String(obsCount));
             try {
               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
               const data = await res.json();
