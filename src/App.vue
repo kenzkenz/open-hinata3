@@ -829,7 +829,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </v-btn>
               <!-- ★ 1000回を選んで“観測中”のときだけ表示 -->
               <v-btn
-                  v-if="kansokuRunning && [1000, 100, 50].includes(Number(kansokuCount))"
+                  v-if="kansokuRunning && [86400, 1000, 100, 50].includes(Number(kansokuCount))"
                   variant="outlined"
                   color="warning"
                   @click="cancelKansoku"
@@ -3282,7 +3282,7 @@ export default {
 
     dialogForToroku: false,
 
-    kansokuItems: [1, 10, 20, 50, 100, 1000],
+    kansokuItems: [1, 10, 20, 50, 100, 1000, 86400],
     kansokuCount: 10, // 既定値
     // 追加: 0〜100cm のセレクト
     offsetCm: 0,
@@ -3309,7 +3309,7 @@ export default {
     externalElevation: null, // { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN: number|null }
 
     torokuAnimMs: 700,        // センタリングのアニメ時間(ms)
-    torokuDialogDelayMs: 1000, // moveend後に待つ時間(ms)
+    torokuDialogDelayMs: 0, // moveend後に待つ時間(ms)
 
     sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
 
@@ -7959,15 +7959,12 @@ export default {
       } catch {
         this.jobList = [];
       }
-      try {
-        const curId = localStorage.getItem('oh3_current_job_id');
-        const curName = localStorage.getItem('oh3_current_job_name');
-        if (curId && curName) {
-          this.currentJobId = curId;
-          this.currentJobName = curName;
-        }
-      } catch {}
+
+      // ★ 初回起動時は未選択にするため、直近選択の復元はしない
+      this.currentJobId = null;
+      this.currentJobName = '';
     },
+
 
     /** =========================
      * 外部標高（ドロガー）受信
@@ -8821,230 +8818,6 @@ export default {
         return false;
       }
     },
-//     async commitCsv2Point() {
-//       try {
-//         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
-//         if (!rows || rows.length <= 1) { console.warn('[csv2] rows empty'); return false; }
-//
-//         const parse = this.parseNumberLike || ((v) => {
-//           if (v == null) return null;
-//           if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-//           const s = String(v).trim().replace(/^[\s:=>\u3000：＝＞]+/, '').replace(',', '.');
-//           const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-//           const n = m ? Number(m[0]) : NaN;
-//           return Number.isFinite(n) ? n : null;
-//         });
-//         const fix3 = this.toFixed3 || ((n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(3) : ''));
-//         const fix2 = this.toFixed2 || ((n) => (Number.isFinite(Number(n)) ? Number(n).toFixed(2) : ''));
-//
-//         const header = rows[0];
-//         const col = (name) => header.indexOf(name);
-//         const iX  = col('X');
-//         const iY  = col('Y');
-//         const iTS = col('timestamp');
-//         const iET = col('eventType');
-//         if (iX < 0 || iY < 0) { console.warn('[csv2] X/Y column not found'); return false; }
-//
-//         const iH = (header.indexOf('height') >= 0) ? header.indexOf('height') : 9;
-//         const iHAE = (() => {
-//           const names = ['楕円体高','hae','ellipsoidal','hEllipsoidal','h_ellipsoidal','ellipsoidal_height'];
-//           for (const n of names) { const idx = col(n); if (idx >= 0) return idx; }
-//           return -1;
-//         })();
-//
-//         const xs = [], ys = [];
-//         const hTxtArr = [];
-//         const hNumArr = [];
-//         const haeNumArr = [];
-//         let lastTs = '';
-//
-//         for (let r = 1; r < rows.length; r++) {
-//           const row = rows[r];
-//           const et = (iET >= 0 && row[iET]) ? String(row[iET]) : 'kansoku';
-//           if (et !== 'kansoku') continue;
-//
-//           const vx = parse(row[iX]); if (vx != null) xs.push(vx);
-//           const vy = parse(row[iY]); if (vy != null) ys.push(vy);
-//
-//           if (row.length > iH && row[iH] != null && row[iH] !== '') {
-//             const raw = row[iH];
-//             hTxtArr.push(raw);
-//             const hn = parse(raw);
-//             if (hn != null) hNumArr.push(hn);
-//           }
-//           if (iHAE >= 0 && row[iHAE] != null && row[iHAE] !== '') {
-//             const haeN = parse(row[iHAE]);
-//             if (haeN != null) haeNumArr.push(haeN);
-//           }
-//           if (iTS >= 0 && row[iTS]) lastTs = String(row[iTS]);
-//         }
-//         if (!xs.length || !ys.length) { console.warn('[csv2] no numeric XY'); return false; }
-//
-//         const avg = (a) => a.reduce((s,v)=>s+v,0)/a.length;
-//         const Xavg = avg(xs);
-//         const Yavg = avg(ys);
-//         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
-//
-//         const obsCount = xs.length; // ★ 実測回数
-//
-//         // 既存の name 取得の下に差し込む
-//         let name = this.currentPointName;
-//         if (!name || typeof name !== 'string' || !name.trim()) {
-//           console.warn('[csv2] point name missing');
-//           alert('点名が未設定のため保存できません');
-//           return false;
-//         }
-//
-// // ★ 最終ユニーク化チェック（サーバー＆地図＆ローカルを考慮）
-//         const uniq = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(name) : name;
-//         if (uniq !== name) {
-//           name = uniq;
-//           this.currentPointName = uniq;
-//           this.tenmei = uniq;
-//           try { localStorage.setItem('tenmei', uniq); } catch {}
-//         }
-//
-//
-//         const ts = lastTs || (this.$_jstLocal?.() ?? new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
-//         const poleVal = Number.isFinite(Number(this.offsetCm)) ? Number(this.offsetCm) : null;
-//
-//         const eH = Number(this?.externalElevation?.hOrthometric);
-//         const hasOrtho = Number.isFinite(eH);
-//         const hadHAE = hTxtArr.some(t => typeof t === 'string' && /\(HAE\)/i.test(t));
-//
-//         let hDisp = '';
-//         if (hasOrtho) {
-//           hDisp = `${eH.toFixed(3)} m`;
-//         } else if (hNumArr.length) {
-//           const avgH = avg(hNumArr);
-//           hDisp = hadHAE ? `${avgH.toFixed(3)} m（楕円体高）` : `${avgH.toFixed(3)} m`;
-//         }
-//
-//         if (!Array.isArray(this.csv2Points)) this.csv2Points = [];
-//         this.csv2Points.push({
-//           name: String(name || ''),
-//           X: Xavg,
-//           Y: Yavg,
-//           hDisp,
-//           pole: poleVal,
-//           diff,
-//           ts,
-//           lat: Number(this?.torokuPointLngLat?.lat),
-//           lng: Number(this?.torokuPointLngLat?.lng),
-//           obsCount, // ★ 参考までに保持
-//         });
-//         if (!this.useServerOnly) {
-//           try { localStorage.setItem('csv2_points', JSON.stringify(this.csv2Points)); } catch {}
-//         }
-//
-//         const storeLabel = this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '';
-//         let csLabel = storeLabel;
-//         if (!csLabel) {
-//           const lon = Number(this.torokuPointLngLat?.lng);
-//           if (Number.isFinite(lon)) {
-//             let z = Math.round((lon - 129) / 2) + 1;
-//             if (z < 1) z = 1;
-//             if (z > 19) z = 19;
-//             csLabel = `公共座標${z}系`;
-//           } else {
-//             csLabel = '';
-//           }
-//         }
-//
-//         const hAntennaPosNum = (() => {
-//           const n1 = (this.parseNumberLike || ((v)=>{ if(v==null)return null; if(typeof v==='number') return Number.isFinite(v)?v:null; const s=String(v).trim().replace(/^[\s:=>\u3000：＝＞]+/,'').replace(',', '.'); const m=s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/); const n=m?Number(m[0]):NaN; return Number.isFinite(n)?n:null; }))(hDisp);
-//           if (n1 != null) return n1;
-//           const n2 = Number(this?.externalElevation?.hOrthometric);
-//           return Number.isFinite(n2) ? n2 : null;
-//         })();
-//
-//         const antennaHighNum = Number.isFinite(Number(poleVal)) ? Number(poleVal) : null;
-//
-//         const hOrthometricNum =
-//             (Number.isFinite(hAntennaPosNum) && Number.isFinite(antennaHighNum))
-//                 ? (hAntennaPosNum - antennaHighNum)
-//                 : null;
-//
-//         const haeEllipsoidalNum = haeNumArr.length ? avg(haeNumArr) : null;
-//
-//         const lng = Number(this?.torokuPointLngLat?.lng);
-//         const lat = Number(this?.torokuPointLngLat?.lat);
-//
-//         // ★ rowArray は内部表示用なので末尾位置は厳密でなくOK
-//         const rowArray = [
-//           String(name || ''),
-//           fix3(Xavg),
-//           fix3(Yavg),
-//           fix3(hOrthometricNum),
-//           fix2(antennaHighNum),
-//           fix3(hAntennaPosNum),
-//           fix3(haeEllipsoidalNum),
-//           fix3(diff),
-//           String(csLabel || ''),
-//           Number.isFinite(lat) ? lat.toFixed(8) : '',
-//           Number.isFinite(lng) ? lng.toFixed(8) : '',
-//           String(obsCount),     // ★ 測位回数
-//           String(ts || '')
-//         ];
-//
-//         try {
-//           this.confirmTorokuPointAtCurrent(name, rowArray);
-//           this.updateChainLine();
-//         } catch (e) {
-//           console.warn('[csv2] confirm point replace failed', e);
-//         }
-//
-//         // ★ サーバに測位回数も送る（未対応なら無視される）
-//         try {
-//           const _toSql = (v) => {
-//             if (!v) return '';
-//             const d = new Date(v);
-//             if (isNaN(d)) return '';
-//             const p = n => String(n).padStart(2, '0');
-//             return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-//           };
-//
-//           const jobId = this.currentJobId;
-//           const userId = this.userId;
-//           if (jobId && userId) {
-//             const fd = new FormData();
-//             fd.append('action', 'job_points.create');
-//             fd.append('job_id', String(jobId));
-//             fd.append('user_id', String(userId));
-//             fd.append('point_name', String(name || ''));
-//             fd.append('x_north',      Number.isFinite(Xavg) ? String(Xavg) : '');
-//             fd.append('y_east',       Number.isFinite(Yavg) ? String(Yavg) : '');
-//             fd.append('lng',          Number.isFinite(lng) ? String(lng) : '');
-//             fd.append('lat',          Number.isFinite(lat) ? String(lat) : '');
-//             fd.append('h_orthometric',Number.isFinite(hOrthometricNum) ? String(hOrthometricNum) : '');
-//             fd.append('antenna_height',Number.isFinite(antennaHighNum) ? String(antennaHighNum) : '');
-//             fd.append('h_at_antenna', Number.isFinite(hAntennaPosNum) ? String(hAntennaPosNum) : '');
-//             fd.append('hae_ellipsoidal',Number.isFinite(haeEllipsoidalNum) ? String(haeEllipsoidalNum) : '');
-//             fd.append('xy_diff',      Number.isFinite(diff) ? String(diff) : '');
-//             fd.append('crs_label',    String(csLabel || ''));
-//             fd.append('observed_at',  _toSql(ts));
-//             fd.append('observe_count', String(obsCount)); // ★ 追加
-//
-//             try {
-//               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-//               const data = await res.json();
-//               if (!data?.ok) console.warn('[job_points.create] server error:', data);
-//             } catch (err) {
-//               console.warn('[job_points.create] network error:', err);
-//             }
-//           } else {
-//             console.warn('[job_points.create] skip (jobId/userId 不在)');
-//           }
-//         } catch (err) {
-//           console.warn('[job_points.create] post block error:', err);
-//         }
-//
-//         return true;
-//       } catch (e) {
-//         console.warn('[csv2] commit error', e);
-//         return false;
-//       }
-//     },
 
     /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
     async downloadCsv2() {
@@ -9725,16 +9498,7 @@ export default {
       try { localStorage.setItem('tenmaiSeq', String(seq)); } catch(_) {}
       return base + String(seq);
     },
-    resetPointSequence () {
-      try {
-        var base = (this.tenmaiPrefix != null && this.tenmaiPrefix !== '') ? String(this.tenmaiPrefix) : null;
-        if (base) {
-          localStorage.setItem('tenmaiPrefix', base);
-        }
-        localStorage.setItem('tenmaiSeq', '0');
-      } catch (_) {}
-      this.currentPointName = '';
-    },
+
     handleTenmeiInput(v) {
       if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
       let s = (v == null) ? '' : String(v).trim();
@@ -10928,18 +10692,6 @@ export default {
         return null;
       }
 
-      // function getPolygonFeatureIdAtClick(map, e) {
-      //   // alert(999)
-      //   if (!e || !e.lngLat) return null;
-      //   const clickLngLat = [e.lngLat.lng, e.lngLat.lat];
-      //   // ポリゴン配列取得
-      //   const features = map.getSource(clickCircleSource.iD)._data.features || [];
-      //   const found = features.find(f => {
-      //     if (!f.geometry || f.geometry.type !== 'Polygon' || f.geometry.type !== 'MultiPolygon') return false;
-      //     return turf.booleanPointInPolygon(turf.point(clickLngLat), f);
-      //   });
-      //   return found ? found.properties.id : null;
-      // }
       // 該当featureのid（またはnull）を返す: LineString版
       function getLineFeatureIdAtClickByPixel(map, e, pixelTolerance = 20) {
         if (!e || !e.lngLat) return null;
@@ -11099,167 +10851,6 @@ export default {
         },500)
 
       })
-      // // ライン作成-------------------------------------------------------------------------------------------------------
-      // function onLineClick(e) {
-      //   popup(e,map,'map01',vm.s_map2Flg)
-      // }
-      // // ライン描画
-      // map.on('click', (e) => {
-      //   const lat = e.lngLat.lat;
-      //   const lng = e.lngLat.lng;
-      //   const coordinates = [lng, lat];
-      //   this.$store.state.coordinates = coordinates
-      //   // クリック判定
-      //   const targetId = getLineFeatureIdAtClickByPixel(map, e);
-      //   if (targetId) {
-      //     this.$store.state.id = targetId;
-      //     return;
-      //   }
-      //   if (!this.s_isDrawLine) return;
-      //   if (clickTimer !== null) return; // 2回目のクリック時は無視
-      //   clickTimer = setTimeout(() => {
-      //     // 節点追加
-      //     this.tempLineCoords.push(coordinates);
-      //     this.tempLineCoords = dedupeCoords(this.tempLineCoords)
-      //
-      //     console.log('シングルクリック！');
-      //     clickTimer = null;
-      //   }, CLICK_DELAY);
-      // });
-      // // ダブルクリック時：ライン確定
-      // map.on('dblclick', (e) => {
-      //   if (!this.s_isDrawLine) return;
-      //   if (clickTimer !== null) {
-      //     clearTimeout(clickTimer); // シングルの予定をキャンセル
-      //     clickTimer = null;
-      //   }
-      //   e.preventDefault(); // 地図ズーム防止
-      //   if (this.tempLineCoords.length >= 2) {
-      //     // ライン作成
-      //     const id = String(Math.floor(10000 + Math.random() * 90000));
-      //     this.$store.state.id = id;
-      //     const properties = {
-      //       id: id,
-      //       pairId: id,
-      //       label: '',
-      //       labelType: this.$store.state.currentLineLabelType,
-      //       offsetValue: [0.6, 0],
-      //       color: this.$store.state.currentLineColor,
-      //       arrow: this.$store.state.currentArrowColor,
-      //       'line-width': this.$store.state.currentLineWidth,
-      //       textAnchor: 'left',
-      //       textJustify: 'left',
-      //       calc: this.$store.state.currentLineCalcCheck
-      //     };
-      //     geojsonCreate(map, 'LineString', this.tempLineCoords.slice(), properties);
-      //     // 擬似クリックイベント発火（最初の点）
-      //     const dummyEvent = {
-      //       lngLat: {
-      //         lng: this.tempLineCoords[0][0],
-      //         lat: this.tempLineCoords[0][1]
-      //       }
-      //     };
-      //     this.$store.state.coordinates = [this.tempLineCoords[0][0], this.tempLineCoords[0][1]];
-      //     setTimeout(() => {
-      //       onLineClick(dummyEvent);
-      //     }, 500);
-      //     this.finishLine()
-      //     // 終了
-      //     this.tempLineCoords = [];
-      //   }
-      // });
-      // // let isFirstTouch = true;
-      // map.on('touchstart', (e) => {
-      //   if (!this.s_isDrawLine && !this.s_isDrawPolygon) return;
-      //   // if (!isFirstTouch) return;
-      //   // isFirstTouch = false;
-      //   const touch = e.touches?.[0] || e.originalEvent?.touches?.[0];
-      //   if (!touch) return;
-      //   const rect = map.getCanvas().getBoundingClientRect();
-      //   const point = {
-      //     x: touch.clientX - rect.left,
-      //     y: touch.clientY - rect.top
-      //   };
-      //   const lngLat = map.unproject(point);
-      //   const vertexGeojson = {
-      //     type: 'FeatureCollection',
-      //     features: [{
-      //       type: 'Feature',
-      //       geometry: {
-      //         type: 'Point',
-      //         coordinates: [lngLat.lng, lngLat.lat]
-      //       },
-      //       properties: {}
-      //     }]
-      //   };
-      //   map.getSource('guide-line-source')?.setData(vertexGeojson);
-      // });
-      // // ポリゴン作成：シングルクリックで節点追加---------------------------------------------------------
-      // function onPolygonClick(e) {
-      //   popup(e,map,'map01',vm.s_map2Flg)
-      // }
-      // map.on('click', (e) => {
-      //   if (!this.s_isDrawPolygon) return;
-      //
-      //   const lat = e.lngLat.lat;
-      //   const lng = e.lngLat.lng;
-      //   const coordinates = [lng, lat];
-      //   console.log(coordinates)
-      //   // 節点追加
-      //   this.tempPolygonCoords.push(coordinates);
-      //   console.log('シングルクリック！（ポリゴン）', this.tempPolygonCoords);
-      //   this.tempPolygonCoords = dedupeCoords(this.tempPolygonCoords)
-      //
-      // });
-      // // ダブルクリックでポリゴン確定
-      // map.on('dblclick', (e) => {
-      //   if (!this.s_isDrawPolygon) return;
-      //   if (clickTimer !== null) {
-      //     clearTimeout(clickTimer);
-      //     clickTimer = null;
-      //   }
-      //   e.preventDefault();
-      //
-      //   if (this.tempPolygonCoords.length >= 3) {
-      //     // ポリゴンは必ず閉じる（最初の点を最後に追加）
-      //     if (
-      //         this.tempPolygonCoords.length < 4 ||
-      //         this.tempPolygonCoords[0][0] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][0] ||
-      //         this.tempPolygonCoords[0][1] !== this.tempPolygonCoords[this.tempPolygonCoords.length - 1][1]
-      //     ) {
-      //       this.tempPolygonCoords.push([...this.tempPolygonCoords[0]]);
-      //     }
-      //
-      //     // GeoJSONのPolygonは2重配列
-      //     const coords = [this.tempPolygonCoords.slice()];
-      //
-      //     const id = String(Math.floor(10000 + Math.random() * 90000));
-      //     this.$store.state.id = id;
-      //     const properties = {
-      //       id: id,
-      //       pairId: id,
-      //       label: '',
-      //       color: colorNameToRgba(this.$store.state.currentPolygonColor || 'yellow', 0.6),
-      //       'line-width': 1,
-      //     };
-      //     geojsonCreate(map, 'Polygon', coords, properties);
-      //
-      //     // 擬似クリックイベント発火（最初の点）
-      //     const dummyEvent = {
-      //       lngLat: {
-      //         lng: this.tempPolygonCoords[0][0],
-      //         lat: this.tempPolygonCoords[0][1]
-      //       }
-      //     };
-      //     this.$store.state.coordinates = [this.tempPolygonCoords[0][0], this.tempPolygonCoords[0][1]];
-      //     setTimeout(() => {
-      //       onPolygonClick(dummyEvent);
-      //     }, 500);
-      //
-      //     this.finishLine();
-      //     this.tempPolygonCoords = [];
-      //   }
-      // });
 
       /**
        *
