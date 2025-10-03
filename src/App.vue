@@ -886,7 +886,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false" :persistent="kansokuPhase === 'await' || kansokuRunning">
         <v-card>
           <v-card-title class="d-flex align-center">
-            <span>現在のジョブ：{{ currentJobName }}</span>
+            <span>{{ currentJobName }}</span>
             <v-spacer />
             <v-chip
                 v-if="kansokuAverages?.n === kansokuCount"
@@ -1023,7 +1023,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   v-if="pendingObservation && (kansokuPhase==='observing' || kansokuPhase==='await')"
                   :color="kakusaColor"
                   variant="flat"
-                  class="font-weight-bold"
+                  class="font-weight-bold px-4"
+                  :class="observingClass"
                   style="position: absolute; right: 10px;"
               >
                 {{ `${pendingObservation.diffTxt}m` }}
@@ -3518,6 +3519,12 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    // 測位中(= 観測フェーズ)だけクラスを付ける
+    observingClass() {
+      return (this.kansokuPhase === 'observing' && this.kansokuRunning)
+          ? 'oh-chip-heartbeat'
+          : ''; // それ以外は剥がす
+    },
     kakusaColor() {
      const diff = Number(this.pendingObservation.diffTxt)
       console.log(diff)
@@ -14463,6 +14470,28 @@ html.oh3-embed #map01 {
   .oh3-col-fixed{
     width: 100%;
   }
+}
+/* ハートビート（鼓動） */
+.oh-chip-heartbeat {
+  /* ほんの少し大きめに（任意） */
+  transform: translateZ(0);             /* ジャギ回避 */
+  animation: oh-heartbeat 1.0s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+/* 鼓動キーフレーム：ドクン→少し戻る→休む */
+@keyframes oh-heartbeat {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  10%  { transform: scale(1.06); box-shadow: 0 0 0 0.25rem color-mix(in srgb, currentColor 30%, transparent); }
+  20%  { transform: scale(1.12); box-shadow: 0 0 0 0.35rem color-mix(in srgb, currentColor 22%, transparent); }
+  40%  { transform: scale(1.03); box-shadow: 0 0 0 0.15rem color-mix(in srgb, currentColor 18%, transparent); }
+  60%  { transform: scale(1.00); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  100% { transform: scale(1.00); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
+
+/* 端末の「簡易アニメーション」設定に配慮（OS設定でアニメ抑制時は停止） */
+@media (prefers-reduced-motion: reduce) {
+  .oh-chip-heartbeat { animation: none; }
 }
 
 </style>
