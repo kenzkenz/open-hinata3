@@ -7138,10 +7138,12 @@ export default {
     /**
      * ここから観測関係
      */
+    /** =========================
+     * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
+     * ========================= */
+
+// 測位を途中でキャンセルし、結果を確定
     cancelKansoku () {
-      // 1000回測位中にだけ意味があるが、一応ガード
-      // if (!this.kansokuRunning) return;
-      // if (Number(this.kansokuCount) !== 1000) return;
       if (!confirm('測位を途中で停止して、ここまでの結果で確定してよろしいですか？')) {
         return;
       }
@@ -7150,208 +7152,65 @@ export default {
       // ← ボタンは v-if の条件を満たさなくなるので自動で非表示に戻る
     },
 
-    /** =========================
-     * 現在地の緑丸（1個だけ表示）関連
-     * ========================= */
-    /** 現在地マーカー（緑丸）を完全削除 */
-    clearCurrentDot () {
-      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
-      if (!map) return;
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+// 観測停止：タイマ停止・サマリー確定・フェーズ遷移
+    kansokuStop() {
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
+
+      const sum = this.summarizeObservationLight();
+      this.pendingObservation = sum || null;
+
+      // ← ここがポイント：重複回避後の“最終点名”を決定
+      const base = (this.tenmei || '').trim();
+      const finalName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(base) : base;
+
+      // サマリー表示名
+      if (this.pendingObservation) this.pendingObservation.pointName = finalName;
+
+      // ★ v-text-fieldに即反映（ここでG100になる）
+      this.tenmei = finalName;
+      this.currentPointName = finalName;
+      try { localStorage.setItem('tenmei', finalName); } catch {}
+
+      this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
     },
 
-    /** 測位ダイアログを閉じる（閉じる際に緑丸も消す） */
-    closeTorokuDialog () {
-      this.dialogForToroku = false;
-      try { this.clearCurrentDot?.(); } catch {}
-      this.torokuPointLngLat = null;
-    },
-
-    /** 現在地マーカー（緑丸）を 1 個だけ追加 or 更新（座標必須） */
-    upsertCurrentMarker(lng, lat) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map || !Number.isFinite(lng) || !Number.isFinite(lat)) return;
-
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-
-      const fc = {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: {},
-          geometry: { type: 'Point', coordinates: [lng, lat] }
-        }]
-      };
-
-      if (map.getSource(SRC)) {
-        map.getSource(SRC).setData(fc);
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: fc });
-        if (!map.getLayer(LAYER)) {
-          map.addLayer({
-            id: LAYER,
-            type: 'circle',
-            source: SRC,
-            paint: {
-              'circle-radius': 7,
-              'circle-color': '#22c55e',       // 緑
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-        }
+// 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了
+    async onClickSaveObservation() {
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
       }
-    },
-
-    /** 現在地マーカー（緑丸）を完全削除（↑と同義。呼び出し箇所ごとに命名差分あり） */
-    clearCurrentMarker() {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) return;
-
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch {}
-      try { if (map.getSource(SRC))  map.removeSource(SRC); } catch {}
-    },
-
-    /** =========================
-     * 結線（ライン）表示関連
-     * ========================= */
-
-    /** 結線レイヤのみ完全削除（他点は残す） */
-    clearChainLineOnly() {
       try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (!map) return;
-        const SRC = 'oh-chain-src';
-        const LYR = 'oh-chain-layer';
-
-        try { if (map.getLayer(LYR))  map.removeLayer(LYR); } catch (_) {}
-        try { if (map.getSource(SRC)) map.removeSource(SRC); } catch (_) {}
+        await this.commitCsv2Point();
+        this.clearCurrentMarker();
+        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
+        try { await this.refreshJobs(); } catch {}
       } catch (e) {
-        console.warn('[chain] clearChainLineOnly failed', e);
+        console.warn('[save] commit failed', e);
+      } finally {
+        this.kansokuCsvRows = null;
+        this.pendingObservation = null;
+        this.kansokuPhase = 'idle';
+        this.torokuDisabled = false;
       }
     },
 
-    /** 現在保持している赤丸（FeatureCollection）から、時系列順の [lng,lat] の配列を構築 */
-    buildChainCoordinates() {
-      try {
-        if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
-
-        // ① CSV相当の最後列 “観測日時” でソート、②無ければ push 順
-        const toKey = (f) => {
-          const row = f?.properties?.oh3_csv2_row;
-          if (!row) return Number.MAX_SAFE_INTEGER;
-          try {
-            const arr = Array.isArray(row) ? row : JSON.parse(row);
-            const ts  = arr?.[11]; // 12列目(= index 11)
-            const t   = new Date(ts).getTime();
-            return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
-          } catch {
-            return Number.MAX_SAFE_INTEGER;
-          }
-        };
-
-        const feats = [...this._torokuFC.features].filter(f =>
-            f?.geometry?.type === 'Point' &&
-            Number.isFinite(+f.geometry.coordinates?.[0]) &&
-            Number.isFinite(+f.geometry.coordinates?.[1])
-        );
-
-        feats.sort((a,b) => toKey(a) - toKey(b));
-
-        return feats.map(f => {
-          const c = f.geometry.coordinates;
-          return [Number(c[0]), Number(c[1])]; // [lng, lat]
-        });
-      } catch {
-        return [];
+// 破棄：ログ消去・緑丸消去・待機へ戻す（点は保存しない）
+    onClickDiscardObservation() {
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer);
+        this.kansokuTimer = null;
       }
+      this.kansokuCsvRows = null;
+      this.pendingObservation = null;
+      this.kansokuPhase = 'idle';
+      this.torokuDisabled = false;
+      this.clearCurrentMarker();
     },
 
-    /** ライン（結線モード時のみ）を再描画。点が 2 未満 or 単点モードなら削除 */
-    updateChainLine() {
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (!map) return;
-
-        const SRC = 'oh-chain-src';
-        const LYR = 'oh-chain-layer';
-
-        // 単点 or 点2未満 → ライン削除
-        const coords = (this.lineMode === 'chain') ? this.buildChainCoordinates() : [];
-        if (!coords || coords.length < 2) {
-          try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
-          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-          return;
-        }
-
-        const line = {
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        };
-
-        if (map.getSource(SRC)) {
-          map.getSource(SRC).setData(line);
-        } else {
-          map.addSource(SRC, { type: 'geojson', data: line });
-        }
-        if (!map.getLayer(LYR)) {
-          map.addLayer({
-            id: LYR,
-            type: 'line',
-            source: SRC,
-            paint: {
-              'line-width': 3,
-              'line-color': '#1e88e5'
-            }
-          });
-          try { map.moveLayer(LYR); } catch {}
-        }
-      } catch (e) {
-        console.warn('[chain] updateChainLine failed', e);
-      }
-    },
-
-    /** ラインの明示クリア（他からも呼びやすい名前） */
-    clearChainLine() {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) return;
-      const SRC = 'oh-chain-src';
-      const LYR = 'oh-chain-layer';
-      try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-    },
-
-    /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
-    setLineMode(mode) {
-      if (mode !== 'point' && mode !== 'chain') return;
-      if (this.kansokuPhase === 'observing') return;
-      this.lineMode = mode;
-      this.updateChainLine();
-    },
-
-    /** 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2） */
-    refreshPendingObservation(minN = 2) {
-      const sum = this.summarizeObservationLight?.();
-      this.pendingObservation = (sum && sum.n >= minN) ? sum : null;
-    },
-
-    /** ジョブピッカーをフローティングで開く */
-    jobPickerFWOpen() {
-      // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
-      this.$store.dispatch('showFloatingWindow', 'job-picker');
-      this.isJobMenu = true
-    },
-
-    /** 観測セッションの可変状態を初期化（タイマ停止・ログ消去） */
+// 観測セッションの可変状態を初期化（タイマ停止・ログ消去）
     _resetKansokuSession () {
       this.kansokuRunning   = false;
       this.kansokuRemaining = 0;
@@ -7360,7 +7219,7 @@ export default {
       this.kansokuAverages  = null;
     },
 
-    /** 軽量サマリー：CSV（kansokuCsvRows）から X/Y/H の平均と較差を算出 */
+// 軽量サマリー：CSV（kansokuCsvRows）から X/Y/H の平均と較差を算出
     summarizeObservationLight() {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
       if (!rows || rows.length <= 1) return null;
@@ -7419,960 +7278,13 @@ export default {
       };
     },
 
-    /** =========================
-     * 観測フロー（開始→収集→停止→保存/破棄）
-     * ========================= */
-
-    /** 観測停止：タイマ停止・サマリー確定・フェーズ遷移 */
-    kansokuStop() {
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
-
-      const sum = this.summarizeObservationLight();
-      this.pendingObservation = sum || null;
-
-      // ← ここがポイント：重複回避後の“最終点名”を決定
-      const base = (this.tenmei || '').trim();
-      const finalName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(base) : base;
-
-      // サマリー表示名
-      if (this.pendingObservation) this.pendingObservation.pointName = finalName;
-
-      // ★ v-text-fieldに即反映（ここでG100になる）
-      this.tenmei = finalName;
-      this.currentPointName = finalName;
-      try { localStorage.setItem('tenmei', finalName); } catch {}
-
-      this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
+// 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2）
+    refreshPendingObservation(minN = 2) {
+      const sum = this.summarizeObservationLight?.();
+      this.pendingObservation = (sum && sum.n >= minN) ? sum : null;
     },
 
-
-
-    /** 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了 */
-    async onClickSaveObservation() {
-      if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
-      }
-      try {
-        await this.commitCsv2Point();
-        this.clearCurrentMarker();
-        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
-        try { await this.refreshJobs(); } catch {}
-      } catch (e) {
-        console.warn('[save] commit failed', e);
-      } finally {
-        this.kansokuCsvRows = null;
-        this.pendingObservation = null;
-        this.kansokuPhase = 'idle';
-        this.torokuDisabled = false;
-      }
-    },
-
-    /** 破棄：ログ消去・緑丸消去・待機へ戻す（点は保存しない） */
-    onClickDiscardObservation() {
-      if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
-      }
-      this.kansokuCsvRows = null;
-      this.pendingObservation = null;
-      this.kansokuPhase = 'idle';
-      this.torokuDisabled = false;
-      this.clearCurrentMarker();
-    },
-
-    /** =========================
-     * ジョブ管理（Picker/作成/削除/選択/一覧）
-     * ========================= */
-
-    /** ジョブピッカーを開き、サーバ一覧を最新化 */
-    openJobPicker() {
-      this.jobPickerOpen = true;
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
-                     '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true }
-      })
-
-      this.refreshJobs();
-    },
-
-    /** 新規ジョブ作成 → 現在ジョブに設定 → 一覧更新 → ピッカー閉じ */
-    async createNewJob() {
-      this.jobNameError = '';
-      const job_name = (this.jobName || '').trim();
-      if (!job_name) { this.jobNameError = 'ジョブ名を入力してください'; return; }
-      if (job_name.length > 64) { this.jobNameError = '64文字以内で入力してください'; return; }
-      const exists = this.jobList.some(j => j.name === job_name)
-      if (exists) { this.jobNameError = '同名のジョブが存在します'; return; }
-
-      this.onJobEndClick(false);
-
-      const fd = new FormData();
-      fd.append('action','jobs.create');
-      fd.append('user_id',this.userId);
-      fd.append('user_name',this.myNickname);
-      fd.append('job_name',job_name);
-
-      const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
-      const rJson = await r.json();
-
-      // ★ ここを追加：作成直後に現在ジョブへ反映
-      this.currentJobId   = String(rJson.data.job_id);
-      this.currentJobName = job_name;
-      try {
-        localStorage.setItem('oh3_current_job_id',   this.currentJobId);
-        localStorage.setItem('oh3_current_job_name', this.currentJobName);
-      } catch (_) {}
-
-      await this.onJobCreatedSuccess();
-
-      alert('左下の「追加」ボタンをクリックしてください。')
-      this.jobPickerOpen = false;
-    },
-
-
-    /** 新規作成成功後の一覧更新 */
-    async onJobCreatedSuccess() {
-      await this.refreshJobs();
-    },
-
-    /** サーバからジョブ一覧取得 → UIへ反映 */
-    async refreshJobs() {
-      const fd = new FormData();
-      fd.append('action', 'jobs.list');
-      fd.append('user_id', this.userId);
-      let res;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-          method: 'POST',
-          body: fd,
-        });
-      } catch (e) {
-        console.error('[jobs.list] ネットワーク失敗', e);
-        alert('ジョブ一覧の取得に失敗しました: ' + (e?.message || e));
-        return;
-      }
-      const ct = res.headers.get('content-type') || '';
-      let data;
-      try {
-        data = ct.includes('application/json') ? await res.json() : JSON.parse(await res.text());
-      } catch (e) {
-        console.error('[jobs.list] JSON解析失敗', e);
-        alert('ジョブ一覧の解析に失敗しました');
-        return;
-      }
-      if (!data?.ok) {
-        const msg = data?.error || 'サーバーエラー';
-        alert('ジョブ一覧の取得に失敗しました：' + msg);
-        console.error('[jobs.list] server says:', data);
-        return;
-      }
-      console.log(JSON.stringify(data, null, 2));
-      const toUi = (r) => ({
-        id: String(r.job_id),
-        name: r.job_name,
-        createdAt: r.created_at,
-        count: Number(r.point_count ?? 0),
-      });
-      this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
-    },
-
-    /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
-    async deleteJob(job) {
-      const id = String(job?.id ?? job?.job_id ?? '');
-      if (!id) return;
-      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
-
-      const fd = new FormData();
-      fd.append('action', 'jobs.delete');
-      fd.append('job_id', id);
-
-      try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!data?.ok) {
-          alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
-          return;
-        }
-
-        // 一覧から除去
-        this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
-
-        // ★ ここがポイント：現在のJOBを消したなら、赤丸/線/一覧を全クリア
-        if (String(this.currentJobId) === id) {
-          this.currentJobId   = null;
-          this.currentJobName = '';
-
-          // 地図の赤丸（登録点）とラベルを消す
-          try {
-            const map = (this.$store?.state?.map01) || this.map01;
-            if (map) {
-              const SRC = 'oh-toroku-point-src';
-              const L   = 'oh-toroku-point';
-              const LAB = 'oh-toroku-point-label';
-              try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch {}
-              try { if (map.getLayer(L))   map.removeLayer(L); }   catch {}
-              try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-            }
-          } catch (e) {
-            console.warn('[jobs.delete] map clear failed (ignored)', e);
-          }
-
-          // 内部キャッシュも空に
-          this._torokuFC = { type: 'FeatureCollection', features: [] };
-          this._lastTorokuFeatureId = null;
-          this.pointsForCurrentJob = [];
-          this.torokuPointLngLat = null;
-
-          // 結線も消す
-          try { this.clearChainLine?.(); } catch {}
-        }
-
-        // バッジ/一覧を再取得
-        try { await this.refreshJobs(); } catch {}
-
-      } catch (e) {
-        console.error('[jobs.delete] 失敗', e);
-        alert('削除に失敗しました：' + (e?.message || e));
-      }
-    },
-
-
-    /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
-    async pickExistingJob(job) {
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
-            '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
-        options: { maxWidth: 400, showCloseIcon: true }
-      })
-      this.pointsForCurrentJob = [];
-      const id   = String(job?.id ?? job?.job_id ?? '');
-      const name = String(job?.name ?? job?.job_name ?? '');
-      if (!id) return;
-
-      this.currentJobId   = id;
-      this.currentJobName = name;
-
-      await this.loadPointsForJob(id);
-    },
-
-    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
-    async loadPointsForJob(jobId) {
-      const fd = new FormData();
-      fd.append('action', 'job_points.list');
-      fd.append('job_id', String(jobId));
-
-      let res, data;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-        data = await res.json();
-      } catch (e) {
-        console.error('[job_points.list] ネットワーク失敗', e);
-        alert('サーバーから測位点を取得できませんでした');
-        return;
-      }
-      if (!data?.ok || !Array.isArray(data.data)) {
-        console.error('[job_points.list] サーバーエラー', data);
-        alert('測位点の取得に失敗しました');
-        return;
-      }
-
-      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
-      this.clearServerPoints?.();
-
-      const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
-      const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
-      const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
-
-      const features = [];
-
-      // 手計算のバウンディングボックス
-      let minLng =  Infinity, minLat =  Infinity;
-      let maxLng = -Infinity, maxLat = -Infinity;
-
-      const total = this.pointsForCurrentJob.length;
-      let ok = 0, skip = 0;
-
-      for (const r of this.pointsForCurrentJob) {
-        const name   = String(r.point_name ?? '');
-        const Xavg   = Number(r.x_north);
-        const Yavg   = Number(r.y_east);
-        const hOrtho = Number(r.h_orthometric);
-        const pole   = Number(r.antenna_height);
-        const hAtAnt = Number(r.h_at_antenna);
-        const hae    = Number(r.hae_ellipsoidal);
-        const diff   = Number(r.xy_diff);
-        const cs     = String(r.crs_label ?? '');
-        const ts     = String(r.observed_at ?? '');
-        const lng    = Number(r.lng);
-        const lat    = Number(r.lat);
-
-        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
-        console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
-
-        if (!hasLngLat) {
-          skip += 1;
-          continue;
-        }
-        ok += 1;
-
-        // bbox 更新
-        if (lng < minLng) minLng = lng;
-        if (lng > maxLng) maxLng = lng;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-
-        const rowArray = [
-          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
-          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
-        ];
-
-        features.push({
-          type: 'Feature',
-          properties: {
-            id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
-            label: name,
-            name:  name,
-            oh3_csv2_row: rowArray,
-            pendingLabel: false
-          },
-          geometry: { type: 'Point', coordinates: [lng, lat] }
-        });
-      }
-
-      console.log('[loadPointsForJob] summary', {
-        total, ok, skip,
-        bbox: { minLng, minLat, maxLng, maxLat },
-        bboxValid:
-            Number.isFinite(minLng) && Number.isFinite(minLat) &&
-            Number.isFinite(maxLng) && Number.isFinite(maxLat)
-      });
-
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (map) {
-          const SRC  = 'oh-toroku-point-src';
-          const L    = 'oh-toroku-point';
-          const LAB  = 'oh-toroku-point-label';
-
-          this._torokuFC = { type: 'FeatureCollection', features };
-
-          if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-          else map.getSource(SRC).setData(this._torokuFC);
-
-          if (!map.getLayer(L)) {
-            map.addLayer({
-              id: L, type: 'circle', source: SRC,
-              paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff3b30',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
-          }
-          if (!map.getLayer(LAB)) {
-            map.addLayer({
-              id: LAB, type: 'symbol', source: SRC,
-              layout: {
-                'text-field': ['get', 'label'],
-                'text-size': 16,
-                'text-offset': [0, 0.5],
-                'text-anchor': 'top',
-                'text-allow-overlap': true
-              },
-              paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-            });
-          }
-
-          // 手計算 bbox で fitBounds（Mapbox/MapLibre 両対応）
-          const bboxValid =
-              Number.isFinite(minLng) && Number.isFinite(minLat) &&
-              Number.isFinite(maxLng) && Number.isFinite(maxLat);
-
-          if (bboxValid && typeof map.fitBounds === 'function') {
-            const pad = 80;
-            console.log('[loadPointsForJob] fitBounds(array bbox)');
-            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
-          } else {
-            console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
-          }
-        }
-      } catch (e) {
-        console.warn('[points] render failed (続行)', e);
-      }
-
-      try { this.updateChainLine(); } catch (_) {}
-    },
-
-
-
-    /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
-    async deletePoint(pt) {
-      const pointId = String(pt?.point_id ?? pt?.id ?? '');
-      if (!pointId) return;
-
-      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt?.point_name ?? pt?.name ?? ''}`)) return;
-
-      const fd = new FormData();
-      fd.append('action', 'job_points.delete');
-      fd.append('point_id', pointId);
-
-      try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-          method: 'POST',
-          body: fd,
-        });
-        const data = await res.json();
-        if (!data?.ok) {
-          alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
-          return;
-        }
-
-        // 1) 一覧（=唯一の真実源）から除去
-        this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
-            x => String(x.point_id ?? x.id) !== pointId
-        );
-
-        // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
-        try {
-          const map = (this.$store?.state?.map01) || this.map01;
-          if (map) {
-            const SRC   = 'oh-toroku-point-src';
-            const LAYER = 'oh-toroku-point';
-            const LAB   = 'oh-toroku-point-label';
-
-            const fc = { type: 'FeatureCollection', features: [] };
-            for (const r of (this.pointsForCurrentJob || [])) {
-              const lng = Number(r?.lng), lat = Number(r?.lat);
-              if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
-              fc.features.push({
-                type: 'Feature',
-                properties: {
-                  id: `pt_${String(r.point_id ?? r.id ?? Math.random()*1e6|0)}`,
-                  label: String(r.point_name ?? r.name ?? ''),
-                  name:  String(r.point_name ?? r.name ?? ''),
-                  pendingLabel: false,
-                },
-                geometry: { type: 'Point', coordinates: [lng, lat] }
-              });
-            }
-
-            this._torokuFC = fc;
-
-            if (map.getSource(SRC)) {
-              map.getSource(SRC).setData(fc);
-            } else {
-              map.addSource(SRC, { type: 'geojson', data: fc });
-              if (!map.getLayer(LAYER)) {
-                map.addLayer({
-                  id: LAYER,
-                  type: 'circle',
-                  source: SRC,
-                  paint: {
-                    'circle-radius': 6,
-                    'circle-color': '#ff3b30',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                  }
-                });
-              }
-              if (!map.getLayer(LAB)) {
-                map.addLayer({
-                  id: LAB,
-                  type: 'symbol',
-                  source: SRC,
-                  layout: {
-                    'text-field': ['get', 'label'],
-                    'text-size': 16,
-                    'text-offset': [0, 0.5],
-                    'text-anchor': 'top',
-                    'text-allow-overlap': true
-                  },
-                  paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('[deletePoint] map repaint failed', e);
-        }
-
-        // 3) サーバ基準で再同期
-        try {
-          if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
-          await this.refreshJobs(); // バッジ件数があるなら
-        } catch (e) {
-          console.warn('[deletePoint] refresh after delete failed', e);
-        }
-
-      } catch (e) {
-        console.error('[job_points.delete] 失敗', e);
-        alert('削除に失敗しました：' + (e?.message || e));
-      }
-    },
-
-    /** ピッカーの行クリックで、その点へズーム＆赤丸を（必要に応じて）描画 */
-    focusPointOnMap(pt) {
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (!map) return;
-
-        const lng = Number(pt?.lng);
-        const lat = Number(pt?.lat);
-        if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-          console.warn('[focusPointOnMap] invalid lng/lat', pt);
-          return;
-        }
-
-        try {
-          if (window.mapboxgl?.LngLatBounds) {
-            const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
-            map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
-          } else {
-            map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
-          }
-        } catch (e) {
-          console.warn('[focusPointOnMap] fitBounds failed', e);
-        }
-
-        const label = String(pt?.point_name ?? pt?.name ?? '');
-        this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
-      } catch (e) {
-        console.warn('[focusPointOnMap] error', e);
-      }
-    },
-
-    /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
-    loadJobsFromStorage() {
-      try {
-        const raw = localStorage.getItem('oh3_jobs');
-        const arr = raw ? JSON.parse(raw) : [];
-        this.jobList = Array.isArray(arr) ? arr : [];
-      } catch {
-        this.jobList = [];
-      }
-
-      // ★ 初回起動時は未選択にするため、直近選択の復元はしない
-      this.currentJobId = null;
-      this.currentJobName = '';
-    },
-
-
-    /** =========================
-     * 外部標高（ドロガー）受信
-     * ========================= */
-
-    /** 外部標高の正規化セット */
-    setExternalElevation(payload) {
-      const norm = this.extractElevationFrom(payload);
-      if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
-      this.externalElevation = norm;
-      try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
-    },
-
-    /** window.dispatchEvent('oh3:elevation', { ... }) を購読 */
-    bindExternalElevationListener() {
-      const handler = (ev) => {
-        const d = ev?.detail || {};
-        this.setExternalElevation(d);
-      };
-      if (this._elevHandler) window.removeEventListener('oh3:elevation', this._elevHandler);
-      window.addEventListener('oh3:elevation', handler);
-      this._elevHandler = handler;
-    },
-
-    /** window.postMessage 経由の受信 */
-    unbindExternalElevationListener() {
-      if (this._elevHandler) {
-        window.removeEventListener('oh3:elevation', this._elevHandler);
-        this._elevHandler = null;
-      }
-    },
-    bindElevationPostMessage() {
-      const onMsg = (ev) => {
-        const d = ev?.data || {};
-        if (d && d.type === 'oh3:elevation') return this.setExternalElevation(d);
-        if (d && (d.lat != null || d.longitude != null)) {
-          const maybe = this.extractElevationFrom(d);
-          if (maybe) this.setExternalElevation(maybe);
-        }
-      };
-      if (this._elevPM) window.removeEventListener('message', this._elevPM);
-      window.addEventListener('message', onMsg);
-      this._elevPM = onMsg;
-    },
-
-    /** BroadcastChannel 経由の受信 */
-    bindElevationBroadcast() {
-      try {
-        if (this._elevBC) { this._elevBC.close(); this._elevBC = null; }
-        this._elevBC = new BroadcastChannel('oh3-elevation');
-        this._elevBC.onmessage = (ev) => {
-          const d = ev?.data || {};
-          if (d) this.setExternalElevation(d);
-        };
-      } catch (e) { console.warn('[elev] BroadcastChannel not available', e); }
-    },
-
-    /** 外部データから標高を抽出・正規化 */
-    extractElevationFrom(payload) {
-      if (!payload || typeof payload !== 'object') return null;
-
-      const pick = (...names) => {
-        for (const k of names) {
-          for (const key of Object.keys(payload)) {
-            if (key.toLowerCase() === k.toLowerCase()) return payload[key];
-          }
-        }
-        return undefined;
-      };
-
-      let hOrtho = pick('hOrthometric','orthometricHeight','orthometric','h_msl','msl','elevation','height','altMSL','z','H','h');
-      let hEll  = pick('hEllipsoidal','ellipsoidalHeight','ellipsoidal','hae','alt','altitude','altEllipsoid');
-      let geoidN = pick('geoidN','N','geoid','geoidSeparation','geoidSep');
-
-      const toNum = (v) => {
-        if (v == null) return NaN;
-        if (typeof v === 'number') return v;
-        if (typeof v === 'string') {
-          const s = v.replace(',', '.').trim();
-          const n = Number(s);
-          return Number.isFinite(n) ? n : NaN;
-        }
-        return NaN;
-      };
-      const nOrtho = toNum(hOrtho);
-      const nEll   = toNum(hEll);
-      const nN     = toNum(geoidN);
-
-      if (Number.isFinite(nOrtho)) {
-        return { hType: 'orthometric', hMeters: nOrtho, geoidN: Number.isFinite(nN) ? nN : null, hOrthometric: nOrtho };
-      }
-
-      if (Number.isFinite(nEll) && Number.isFinite(nN)) {
-        const h = nEll - nN;
-        return { hType: 'ellipsoidal', hMeters: nEll, geoidN: nN, hOrthometric: h };
-      }
-
-      return null;
-    },
-
-    /** =========================
-     * 測位点（赤丸）: 設置/クリック/レイヤ管理
-     * ========================= */
-
-    /** マップ中央のゾーンから座標系ラベルを推定し store に反映 */
-    zahyoGet() {
-      const map = this.map01
-      const center = map.getCenter();
-      const centerPoint = map.project([center.lng, center.lat]);
-      const features = map.queryRenderedFeatures(centerPoint, { layers: ['zones-layer'] });
-      if (features.length > 0) {
-        const zoneFeature = features[0];
-        const zone = zoneFeature.properties.zone;
-        this.$store.state.zahyokei = '公共座標' + zone + '系';
-      } else {
-        this.$store.state.zahyokei = '';
-      }
-    },
-
-    /** 「ここで測位」導線：クリックを案内し、クリックハンドラをアタッチ */
-    openTorokuDialog() {
-      try { this.detachGpsLineClick(); } catch (_) {}
-      try { this.clearGpsLine(); } catch (_) {}
-      this.gpsLineAnchorLngLat = null;
-      this.enableGpsLineClick  = false;
-      this.distance = null;
-      this.isTracking = false
-      this.s_isKuiuchi = false
-
-      this.$store.dispatch('messageDialog/open', {
-        id: 'torokuDialog',
-        title: '測位スタート',
-        contentHtml: '<p>測位する地点をクリックしてください。</p>',
-        options: { maxWidth: 500, showCloseIcon: true }
-      });
-
-      this.attachTorokuPointClick();
-
-      try { this.centerMarker?.remove?.(); } catch(_) {}
-      this.centerMarker = null;
-    },
-
-    /** 測位クリックの購読を開始（on('click')） */
-    attachTorokuPointClick () {
-      const map = this.$store.state.map01;
-      if (!map) return;
-
-      if (this.onMapClickForToroku) {
-        this.enableTorokuPointClick = true;
-        return;
-      }
-
-      const bind = () => {
-        this.enableTorokuPointClick = true;
-        this.onMapClickForToroku = (e) => {
-          if (!this.enableTorokuPointClick) return;
-          if (!e || !e.lngLat) return;
-          this.handleTorokuMapClick(e.lngLat);
-        };
-        map.on('click', this.onMapClickForToroku);
-      };
-
-      try {
-        if (map.isStyleLoaded && map.isStyleLoaded()) bind();
-        else map.once('load', bind);
-      } catch (_) {
-        map.once('load', bind);
-      }
-    },
-
-    /** 測位クリック発火時：赤丸位置（＝緑丸も）をセットしてダイアログを開く */
-    handleTorokuMapClick (lngLat) {
-      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // 緑丸表示・更新
-      try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
-      try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
-      this.dialogForToroku = true;
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      this.kansokuCsvRows = null;
-    },
-
-    /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
-    clearTorokuPoint () {
-      const map = this.$store.state.map01; if (!map) return;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
-      try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
-      this.torokuPointLngLat = null;
-      this.updateChainLine(); // 結線も消す
-    },
-
-    /** 測位クリックの購読を停止（off('click')） */
-    detachTorokuPointClick () {
-      const map = this.$store.state.map01;
-      if (!map) return;
-      if (this.onMapClickForToroku) {
-        try { map.off('click', this.onMapClickForToroku); } catch(_) {}
-        this.onMapClickForToroku = null;
-      }
-      this.enableTorokuPointClick = false;
-    },
-
-    /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
-    startTorokuHere () {
-      this.$store.dispatch('hideFloatingWindow', 'job-picker');
-      try { this.detachGpsLineClick(); } catch {}
-      try { this.clearGpsLine(); } catch {}
-      this.gpsLineAnchorLngLat = null;
-      this.enableGpsLineClick  = false;
-      this.distance = null;
-      this.isTracking = false;
-      this.s_isKuiuchi = false;
-
-      try { if (this._torokuDialogTimer) { clearTimeout(this._torokuDialogTimer); this._torokuDialogTimer = null; } } catch {}
-      this._torokuDialogOpened = false;
-
-      if (!(navigator && navigator.geolocation)) {
-        console.warn('[startTorokuHere] geolocation not supported');
-        return;
-      }
-
-      const _this = this;
-      if (typeof _this.rtkWindowMs !== 'number') _this.rtkWindowMs = 1000;
-      if (typeof _this.lastRtkAt   !== 'number') _this.lastRtkAt   = 0;
-
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
-
-      navigator.geolocation.getCurrentPosition(
-          function success (pos) {
-            try {
-              const c   = pos && pos.coords ? pos.coords : {};
-              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
-              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                console.warn('[startTorokuHere] invalid geolocation coords', c);
-                return;
-              }
-
-              const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-
-              const q      = _this.getGeoQualityLabel(acc, altAcc);
-
-              const nowTs = pos.timestamp || Date.now();
-              if (q === 'RTK級') {
-                _this.lastRtkAt = nowTs;
-              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
-                return;
-              }
-
-              _this.torokuPointLngLat = { lng: lon, lat };
-              _this.upsertCurrentMarker(lon, lat);   // 緑丸
-
-              const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
-              _this.torokuPointMeta      = meta;
-              _this.torokuPointQuality   = meta.quality;
-              _this.torokuPointQualityAt = meta.at;
-
-              try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
-              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
-
-              const map =
-                  (_this.$store && _this.$store.state && _this.$store.state.map01)
-                      ? _this.$store.state.map01
-                      : _this.map01;
-
-              const ANIM_MS  = Number.isFinite(Number(_this.torokuAnimMs)) ? Number(_this.torokuAnimMs) : 700;
-              const DELAY_MS = Number.isFinite(Number(_this.torokuDialogDelayMs)) ? Number(_this.torokuDialogDelayMs) : 1000;
-
-              const openDialogOnce = () => {
-                if (_this._torokuDialogOpened) return;
-                _this._torokuDialogOpened = true;
-                _this.kansokuRunning   = false;
-                _this.kansokuRemaining = 0;
-                _this.kansokuCsvRows   = null;
-                _this.dialogForToroku  = true;
-              };
-
-              const armAfterAnim = () => {
-                const fallbackMs = ANIM_MS + DELAY_MS + 300;
-                _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
-
-                const onEnd = () => {
-                  try { map.off('moveend', onEnd); } catch {}
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, DELAY_MS);
-                };
-                try { map.on('moveend', onEnd); } catch {}
-              };
-
-              try {
-                if (map && map.easeTo) {
-                  map.easeTo({ center: [lon, lat], duration: ANIM_MS });
-                  _this._torokuDialogOpened = false;
-                  armAfterAnim();
-                } else if (map && map.jumpTo) {
-                  map.jumpTo({ center: [lon, lat] });
-                  _this._torokuDialogOpened = false;
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, 600);
-                } else {
-                  openDialogOnce();
-                }
-              } catch {
-                openDialogOnce();
-              }
-            } catch (e) {
-              console.warn('[startTorokuHere] success handler error', e);
-            }
-          },
-          function error (err) {
-            console.warn('[startTorokuHere] getCurrentPosition error', err);
-          },
-          opt
-      );
-    },
-
-    /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */
-    async plotTorokuPoint (lngLat, label, opts = {}) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
-
-      const lng = Number(lngLat?.lng);
-      const lat = Number(lngLat?.lat);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
-      }
-
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-
-      if (!this._torokuFC) {
-        this._torokuFC = { type:'FeatureCollection', features: [] };
-      }
-
-      const wantDefer = opts?.deferLabel === true;
-      const text = wantDefer ? '' : (label || this.currentPointName || this.tenmei || '');
-      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
-
-      this._torokuFC.features.push({
-        type: 'Feature',
-        properties: {
-          id: fid,
-          label: text,
-          name: text,
-          pendingLabel: wantDefer ? true : false,
-        },
-        geometry: { type: 'Point', coordinates: [lng, lat] }
-      });
-
-      if (map.getSource(SRC)) {
-        try { map.getSource(SRC).setData(this._torokuFC); }
-        catch (_) { try { map.removeSource(SRC); } catch(e) {}
-          map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        }
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-      }
-      console.log(this._torokuFC)
-
-      if (!map.getLayer(LAYER)) {
-        map.addLayer({
-          id: LAYER,
-          type: 'circle',
-          source: SRC,
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#ff3b30',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
-      }
-      if (!map.getLayer(LAB)) {
-        map.addLayer({
-          id: LAB,
-          type: 'symbol',
-          source: SRC,
-          layout: {
-            'text-field': ['get', 'label'],
-            'text-size': 16,
-            'text-offset': [0, 0.5],
-            'text-anchor': 'top',
-            'text-allow-overlap': true
-          },
-          paint: {
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 1.0
-          }
-        });
-      }
-
-      try { map.moveLayer(LAYER); } catch (_) {}
-      try { map.moveLayer(LAB); }   catch (_) {}
-
-      this.torokuPointLngLat = { lng, lat };
-      this._lastTorokuFeatureId = fid;
-      this.updateChainLine();
-    },
-
-    /** =========================
-     * 測位（開始→収集→停止→保存/出力）
-     * ========================= */
-
-    /** 1回の観測CSVヘッダを用意（未初期化時のみ） */
+// 1回の観測CSVヘッダを用意（未初期化時のみ）
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
         this.kansokuCsvRows = [[
@@ -8381,7 +7293,7 @@ export default {
       }
     },
 
-    /** 観測開始：入力検証→状態初期化→インターバルで収集開始 */
+// 観測開始：入力検証→状態初期化→インターバルで収集開始
     kansokuStart () {
       this.clearCurrentMarker();   // 残っている緑丸を消す
 
@@ -8423,7 +7335,7 @@ export default {
       this.kansokuTimer = setInterval(() => this.kansokuCollectOnce(), intervalMs);
     },
 
-    /** 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止 */
+// 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
     kansokuCollectOnce() {
       if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
         this.kansokuStop(); return;
@@ -8581,7 +7493,7 @@ export default {
       );
     },
 
-    /** サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う */
+// サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う
     async commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
@@ -8819,7 +7731,7 @@ export default {
       }
     },
 
-    /** サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv） */
+// サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
     async downloadCsv2() {
       try {
         if (!this.currentJobId) {
@@ -8905,7 +7817,7 @@ export default {
       }
     },
 
-    /** SIMA 出力（A01点列のみ。ラインは規格外のため非対応） */
+// SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
     async exportCsv2Sima(title) {
       try {
         const jobId = this.currentJobId;
@@ -8984,9 +7896,1135 @@ export default {
       }
     },
 
-/** =========================
- * 現在地追跡（watchPosition）・距離線 UI
- * ========================= */
+    /** =========================
+     * 杭打関連（測位点登録・赤丸表示・ジョブ管理・結線表示）
+     * ========================= */
+
+// 現在地の緑丸（1個だけ表示）関連
+    /** 現在地マーカー（緑丸）を完全削除 */
+    clearCurrentDot () {
+      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
+      if (!map) return;
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+    },
+
+    /** 測位ダイアログを閉じる（閉じる際に緑丸も消す） */
+    closeTorokuDialog () {
+      this.dialogForToroku = false;
+      try { this.clearCurrentDot?.(); } catch {}
+      this.torokuPointLngLat = null;
+    },
+
+    /** 現在地マーカー（緑丸）を 1 個だけ追加 or 更新（座標必須） */
+    upsertCurrentMarker(lng, lat) {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map || !Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+
+      const fc = {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'Point', coordinates: [lng, lat] }
+        }]
+      };
+
+      if (map.getSource(SRC)) {
+        map.getSource(SRC).setData(fc);
+      } else {
+        map.addSource(SRC, { type: 'geojson', data: fc });
+        if (!map.getLayer(LAYER)) {
+          map.addLayer({
+            id: LAYER,
+            type: 'circle',
+            source: SRC,
+            paint: {
+              'circle-radius': 7,
+              'circle-color': '#22c55e',       // 緑
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+        }
+      }
+    },
+
+    /** 現在地マーカー（緑丸）を完全削除（↑と同義。呼び出し箇所ごとに命名差分あり） */
+    clearCurrentMarker() {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map) return;
+
+      const SRC   = 'oh-current-src';
+      const LAYER = 'oh-current';
+
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch {}
+      try { if (map.getSource(SRC))  map.removeSource(SRC); } catch {}
+    },
+
+// 結線（ライン）表示関連
+    /** 結線レイヤのみ完全削除（他点は残す） */
+    clearChainLineOnly() {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+        const SRC = 'oh-chain-src';
+        const LYR = 'oh-chain-layer';
+
+        try { if (map.getLayer(LYR))  map.removeLayer(LYR); } catch (_) {}
+        try { if (map.getSource(SRC)) map.removeSource(SRC); } catch (_) {}
+      } catch (e) {
+        console.warn('[chain] clearChainLineOnly failed', e);
+      }
+    },
+
+    /** 現在保持している赤丸（FeatureCollection）から、時系列順の [lng,lat] の配列を構築 */
+    buildChainCoordinates() {
+      try {
+        if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
+
+        // ① CSV相当の最後列 “観測日時” でソート、②無ければ push 順
+        const toKey = (f) => {
+          const row = f?.properties?.oh3_csv2_row;
+          if (!row) return Number.MAX_SAFE_INTEGER;
+          try {
+            const arr = Array.isArray(row) ? row : JSON.parse(row);
+            const ts  = arr?.[11]; // 12列目(= index 11)
+            const t   = new Date(ts).getTime();
+            return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
+          } catch {
+            return Number.MAX_SAFE_INTEGER;
+          }
+        };
+
+        const feats = [...this._torokuFC.features].filter(f =>
+            f?.geometry?.type === 'Point' &&
+            Number.isFinite(+f.geometry.coordinates?.[0]) &&
+            Number.isFinite(+f.geometry.coordinates?.[1])
+        );
+
+        feats.sort((a,b) => toKey(a) - toKey(b));
+
+        return feats.map(f => {
+          const c = f.geometry.coordinates;
+          return [Number(c[0]), Number(c[1])]; // [lng, lat]
+        });
+      } catch {
+        return [];
+      }
+    },
+
+    /** ライン（結線モード時のみ）を再描画。点が 2 未満 or 単点モードなら削除 */
+    updateChainLine() {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+
+        const SRC = 'oh-chain-src';
+        const LYR = 'oh-chain-layer';
+
+        // 単点 or 点2未満 → ライン削除
+        const coords = (this.lineMode === 'chain') ? this.buildChainCoordinates() : [];
+        if (!coords || coords.length < 2) {
+          try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
+          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+          return;
+        }
+
+        const line = {
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: coords },
+          properties: {}
+        };
+
+        if (map.getSource(SRC)) {
+          map.getSource(SRC).setData(line);
+        } else {
+          map.addSource(SRC, { type: 'geojson', data: line });
+        }
+        if (!map.getLayer(LYR)) {
+          map.addLayer({
+            id: LYR,
+            type: 'line',
+            source: SRC,
+            paint: {
+              'line-width': 3,
+              'line-color': '#1e88e5'
+            }
+          });
+          try { map.moveLayer(LYR); } catch {}
+        }
+      } catch (e) {
+        console.warn('[chain] updateChainLine failed', e);
+      }
+    },
+
+    /** ラインの明示クリア（他からも呼びやすい名前） */
+    clearChainLine() {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map) return;
+      const SRC = 'oh-chain-src';
+      const LYR = 'oh-chain-layer';
+      try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+    },
+
+    /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
+    setLineMode(mode) {
+      if (mode !== 'point' && mode !== 'chain') return;
+      if (this.kansokuPhase === 'observing') return;
+      this.lineMode = mode;
+      this.updateChainLine();
+    },
+
+// ジョブ管理（Picker/作成/削除/選択/一覧）
+    /** ジョブピッカーを開き、サーバ一覧を最新化 */
+    openJobPicker() {
+      this.jobPickerOpen = true;
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
+            '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
+        options: { maxWidth: 400, showCloseIcon: true }
+      })
+
+      this.refreshJobs();
+    },
+
+    /** 新規ジョブ作成 → 現在ジョブに設定 → 一覧更新 → ピッカー閉じ */
+    async createNewJob() {
+      this.jobNameError = '';
+      const job_name = (this.jobName || '').trim();
+      if (!job_name) { this.jobNameError = 'ジョブ名を入力してください'; return; }
+      if (job_name.length > 64) { this.jobNameError = '64文字以内で入力してください'; return; }
+      const exists = this.jobList.some(j => j.name === job_name)
+      if (exists) { this.jobNameError = '同名のジョブが存在します'; return; }
+
+      this.onJobEndClick(false);
+
+      const fd = new FormData();
+      fd.append('action','jobs.create');
+      fd.append('user_id',this.userId);
+      fd.append('user_name',this.myNickname);
+      fd.append('job_name',job_name);
+
+      const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
+      const rJson = await r.json();
+
+      // ★ ここを追加：作成直後に現在ジョブへ反映
+      this.currentJobId   = String(rJson.data.job_id);
+      this.currentJobName = job_name;
+      try {
+        localStorage.setItem('oh3_current_job_id',   this.currentJobId);
+        localStorage.setItem('oh3_current_job_name', this.currentJobName);
+      } catch (_) {}
+
+      await this.onJobCreatedSuccess();
+
+      alert('左下の「追加」ボタンをクリックしてください。')
+      this.jobPickerOpen = false;
+    },
+
+    /** 新規作成成功後の一覧更新 */
+    async onJobCreatedSuccess() {
+      await this.refreshJobs();
+    },
+
+    /** サーバからジョブ一覧取得 → UIへ反映 */
+    async refreshJobs() {
+      const fd = new FormData();
+      fd.append('action', 'jobs.list');
+      fd.append('user_id', this.userId);
+      let res;
+      try {
+        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd,
+        });
+      } catch (e) {
+        console.error('[jobs.list] ネットワーク失敗', e);
+        alert('ジョブ一覧の取得に失敗しました: ' + (e?.message || e));
+        return;
+      }
+      const ct = res.headers.get('content-type') || '';
+      let data;
+      try {
+        data = ct.includes('application/json') ? await res.json() : JSON.parse(await res.text());
+      } catch (e) {
+        console.error('[jobs.list] JSON解析失敗', e);
+        alert('ジョブ一覧の解析に失敗しました');
+        return;
+      }
+      if (!data?.ok) {
+        const msg = data?.error || 'サーバーエラー';
+        alert('ジョブ一覧の取得に失敗しました：' + msg);
+        console.error('[jobs.list] server says:', data);
+        return;
+      }
+      console.log(JSON.stringify(data, null, 2));
+      const toUi = (r) => ({
+        id: String(r.job_id),
+        name: r.job_name,
+        createdAt: r.created_at,
+        count: Number(r.point_count ?? 0),
+      });
+      this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
+    },
+
+    /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
+    async deleteJob(job) {
+      const id = String(job?.id ?? job?.job_id ?? '');
+      if (!id) return;
+      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
+
+      const fd = new FormData();
+      fd.append('action', 'jobs.delete');
+      fd.append('job_id', id);
+
+      try {
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data?.ok) {
+          alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
+          return;
+        }
+
+        // 一覧から除去
+        this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
+
+        // ★ ここがポイント：現在のJOBを消したなら、赤丸/線/一覧を全クリア
+        if (String(this.currentJobId) === id) {
+          this.currentJobId   = null;
+          this.currentJobName = '';
+
+          // 地図の赤丸（登録点）とラベルを消す
+          try {
+            const map = (this.$store?.state?.map01) || this.map01;
+            if (map) {
+              const SRC = 'oh-toroku-point-src';
+              const L   = 'oh-toroku-point';
+              const LAB = 'oh-toroku-point-label';
+              try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch {}
+              try { if (map.getLayer(L))   map.removeLayer(L); }   catch {}
+              try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
+            }
+          } catch (e) {
+            console.warn('[jobs.delete] map clear failed (ignored)', e);
+          }
+
+          // 内部キャッシュも空に
+          this._torokuFC = { type: 'FeatureCollection', features: [] };
+          this._lastTorokuFeatureId = null;
+          this.pointsForCurrentJob = [];
+          this.torokuPointLngLat = null;
+
+          // 結線も消す
+          try { this.clearChainLine?.(); } catch {}
+        }
+
+        // バッジ/一覧を再取得
+        try { await this.refreshJobs(); } catch {}
+
+      } catch (e) {
+        console.error('[jobs.delete] 失敗', e);
+        alert('削除に失敗しました：' + (e?.message || e));
+      }
+    },
+
+    /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
+    async pickExistingJob(job) {
+      this.$store.dispatch('messageDialog/open', {
+        id: 'openJobPicker',
+        title: '次の操作は？',
+        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
+            '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
+        options: { maxWidth: 400, showCloseIcon: true }
+      })
+      this.pointsForCurrentJob = [];
+      const id   = String(job?.id ?? job?.job_id ?? '');
+      const name = String(job?.name ?? job?.job_name ?? '');
+      if (!id) return;
+
+      this.currentJobId   = id;
+      this.currentJobName = name;
+
+      await this.loadPointsForJob(id);
+    },
+
+    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
+    async loadPointsForJob(jobId) {
+      const fd = new FormData();
+      fd.append('action', 'job_points.list');
+      fd.append('job_id', String(jobId));
+
+      let res, data;
+      try {
+        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
+        data = await res.json();
+      } catch (e) {
+        console.error('[job_points.list] ネットワーク失敗', e);
+        alert('サーバーから測位点を取得できませんでした');
+        return;
+      }
+      if (!data?.ok || !Array.isArray(data.data)) {
+        console.error('[job_points.list] サーバーエラー', data);
+        alert('測位点の取得に失敗しました');
+        return;
+      }
+
+      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
+      this.clearServerPoints?.();
+
+      const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
+      const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
+      const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
+
+      const features = [];
+
+      // 手計算のバウンディングボックス
+      let minLng =  Infinity, minLat =  Infinity;
+      let maxLng = -Infinity, maxLat = -Infinity;
+
+      const total = this.pointsForCurrentJob.length;
+      let ok = 0, skip = 0;
+
+      for (const r of this.pointsForCurrentJob) {
+        const name   = String(r.point_name ?? '');
+        const Xavg   = Number(r.x_north);
+        const Yavg   = Number(r.y_east);
+        const hOrtho = Number(r.h_orthometric);
+        const pole   = Number(r.antenna_height);
+        const hAtAnt = Number(r.h_at_antenna);
+        const hae    = Number(r.hae_ellipsoidal);
+        const diff   = Number(r.xy_diff);
+        const cs     = String(r.crs_label ?? '');
+        const ts     = String(r.observed_at ?? '');
+        const lng    = Number(r.lng);
+        const lat    = Number(r.lat);
+
+        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
+        console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
+
+        if (!hasLngLat) {
+          skip += 1;
+          continue;
+        }
+        ok += 1;
+
+        // bbox 更新
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+
+        const rowArray = [
+          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
+          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
+        ];
+
+        features.push({
+          type: 'Feature',
+          properties: {
+            id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
+            label: name,
+            name:  name,
+            oh3_csv2_row: rowArray,
+            pendingLabel: false
+          },
+          geometry: { type: 'Point', coordinates: [lng, lat] }
+        });
+      }
+
+      console.log('[loadPointsForJob] summary', {
+        total, ok, skip,
+        bbox: { minLng, minLat, maxLng, maxLat },
+        bboxValid:
+            Number.isFinite(minLng) && Number.isFinite(minLat) &&
+            Number.isFinite(maxLng) && Number.isFinite(maxLat)
+      });
+
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (map) {
+          const SRC  = 'oh-toroku-point-src';
+          const L    = 'oh-toroku-point';
+          const LAB  = 'oh-toroku-point-label';
+
+          this._torokuFC = { type: 'FeatureCollection', features };
+
+          if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+          else map.getSource(SRC).setData(this._torokuFC);
+
+          if (!map.getLayer(L)) {
+            map.addLayer({
+              id: L, type: 'circle', source: SRC,
+              paint: {
+                'circle-radius': 6,
+                'circle-color': '#ff3b30',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff'
+              }
+            });
+          }
+          if (!map.getLayer(LAB)) {
+            map.addLayer({
+              id: LAB, type: 'symbol', source: SRC,
+              layout: {
+                'text-field': ['get', 'label'],
+                'text-size': 16,
+                'text-offset': [0, 0.5],
+                'text-anchor': 'top',
+                'text-allow-overlap': true
+              },
+              paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+            });
+          }
+
+          // 手計算 bbox で fitBounds（Mapbox/MapLibre 両対応）
+          const bboxValid =
+              Number.isFinite(minLng) && Number.isFinite(minLat) &&
+              Number.isFinite(maxLng) && Number.isFinite(maxLat);
+
+          if (bboxValid && typeof map.fitBounds === 'function') {
+            const pad = 80;
+            console.log('[loadPointsForJob] fitBounds(array bbox)');
+            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
+          } else {
+            console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
+          }
+        }
+      } catch (e) {
+        console.warn('[points] render failed (続行)', e);
+      }
+
+      try { this.updateChainLine(); } catch (_) {}
+    },
+
+    /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
+    async deletePoint(pt) {
+      const pointId = String(pt?.point_id ?? pt?.id ?? '');
+      if (!pointId) return;
+
+      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt?.point_name ?? pt?.name ?? ''}`)) return;
+
+      const fd = new FormData();
+      fd.append('action', 'job_points.delete');
+      fd.append('point_id', pointId);
+
+      try {
+        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd,
+        });
+        const data = await res.json();
+        if (!data?.ok) {
+          alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
+          return;
+        }
+
+        // 1) 一覧（=唯一の真実源）から除去
+        this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
+            x => String(x.point_id ?? x.id) !== pointId
+        );
+
+        // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
+        try {
+          const map = (this.$store?.state?.map01) || this.map01;
+          if (map) {
+            const SRC   = 'oh-toroku-point-src';
+            const LAYER = 'oh-toroku-point';
+            const LAB   = 'oh-toroku-point-label';
+
+            const fc = { type: 'FeatureCollection', features: [] };
+            for (const r of (this.pointsForCurrentJob || [])) {
+              const lng = Number(r?.lng), lat = Number(r?.lat);
+              if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+              fc.features.push({
+                type: 'Feature',
+                properties: {
+                  id: `pt_${String(r.point_id ?? r.id ?? Math.random()*1e6|0)}`,
+                  label: String(r.point_name ?? r.name ?? ''),
+                  name:  String(r.point_name ?? r.name ?? ''),
+                  pendingLabel: false,
+                },
+                geometry: { type: 'Point', coordinates: [lng, lat] }
+              });
+            }
+
+            this._torokuFC = fc;
+
+            if (map.getSource(SRC)) {
+              map.getSource(SRC).setData(fc);
+            } else {
+              map.addSource(SRC, { type: 'geojson', data: fc });
+              if (!map.getLayer(LAYER)) {
+                map.addLayer({
+                  id: LAYER,
+                  type: 'circle',
+                  source: SRC,
+                  paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#ff3b30',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                  }
+                });
+              }
+              if (!map.getLayer(LAB)) {
+                map.addLayer({
+                  id: LAB,
+                  type: 'symbol',
+                  source: SRC,
+                  layout: {
+                    'text-field': ['get', 'label'],
+                    'text-size': 16,
+                    'text-offset': [0, 0.5],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': true
+                  },
+                  paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[deletePoint] map repaint failed', e);
+        }
+
+        // 3) サーバ基準で再同期
+        try {
+          if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
+          await this.refreshJobs(); // バッジ件数があるなら
+        } catch (e) {
+          console.warn('[deletePoint] refresh after delete failed', e);
+        }
+
+      } catch (e) {
+        console.error('[job_points.delete] 失敗', e);
+        alert('削除に失敗しました：' + (e?.message || e));
+      }
+    },
+
+    /** ピッカーの行クリックで、その点へズーム＆赤丸を（必要に応じて）描画 */
+    focusPointOnMap(pt) {
+      try {
+        const map = (this.$store?.state?.map01) || this.map01;
+        if (!map) return;
+
+        const lng = Number(pt?.lng);
+        const lat = Number(pt?.lat);
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+          console.warn('[focusPointOnMap] invalid lng/lat', pt);
+          return;
+        }
+
+        try {
+          if (window.mapboxgl?.LngLatBounds) {
+            const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
+            map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
+          } else {
+            map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
+          }
+        } catch (e) {
+          console.warn('[focusPointOnMap] fitBounds failed', e);
+        }
+
+        const label = String(pt?.point_name ?? pt?.name ?? '');
+        this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
+      } catch (e) {
+        console.warn('[focusPointOnMap] error', e);
+      }
+    },
+
+    /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
+    loadJobsFromStorage() {
+      try {
+        const raw = localStorage.getItem('oh3_jobs');
+        const arr = raw ? JSON.parse(raw) : [];
+        this.jobList = Array.isArray(arr) ? arr : [];
+      } catch {
+        this.jobList = [];
+      }
+
+      // ★ 初回起動時は未選択にするため、直近選択の復元はしない
+      this.currentJobId = null;
+      this.currentJobName = '';
+    },
+
+// 測位点（赤丸）: 設置/クリック/レイヤ管理
+    /** マップ中央のゾーンから座標系ラベルを推定し store に反映 */
+    zahyoGet() {
+      const map = this.map01
+      const center = map.getCenter();
+      const centerPoint = map.project([center.lng, center.lat]);
+      const features = map.queryRenderedFeatures(centerPoint, { layers: ['zones-layer'] });
+      if (features.length > 0) {
+        const zoneFeature = features[0];
+        const zone = zoneFeature.properties.zone;
+        this.$store.state.zahyokei = '公共座標' + zone + '系';
+      } else {
+        this.$store.state.zahyokei = '';
+      }
+    },
+
+    /** 測位クリックの購読を開始（on('click')） */
+    attachTorokuPointClick () {
+      const map = this.$store.state.map01;
+      if (!map) return;
+
+      if (this.onMapClickForToroku) {
+        this.enableTorokuPointClick = true;
+        return;
+      }
+
+      const bind = () => {
+        this.enableTorokuPointClick = true;
+        this.onMapClickForToroku = (e) => {
+          if (!this.enableTorokuPointClick) return;
+          if (!e || !e.lngLat) return;
+          this.handleTorokuMapClick(e.lngLat);
+        };
+        map.on('click', this.onMapClickForToroku);
+      };
+
+      try {
+        if (map.isStyleLoaded && map.isStyleLoaded()) bind();
+        else map.once('load', bind);
+      } catch (_) {
+        map.once('load', bind);
+      }
+    },
+
+    /** 測位クリック発火時：赤丸位置（＝緑丸も）をセットしてダイアログを開く */
+    handleTorokuMapClick (lngLat) {
+      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
+      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // 緑丸表示・更新
+      try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
+      try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
+      this.dialogForToroku = true;
+      this.kansokuRunning = false;
+      this.kansokuRemaining = 0;
+      this.kansokuCsvRows = null;
+    },
+
+    /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
+    clearTorokuPoint () {
+      const map = this.$store.state.map01; if (!map) return;
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
+      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
+      try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
+      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+      this.torokuPointLngLat = null;
+      this.updateChainLine(); // 結線も消す
+    },
+
+    /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
+    startTorokuHere () {
+      this.$store.dispatch('hideFloatingWindow', 'job-picker');
+      try { this.detachGpsLineClick(); } catch {}
+      try { this.clearGpsLine(); } catch {}
+      this.gpsLineAnchorLngLat = null;
+      this.enableGpsLineClick  = false;
+      this.distance = null;
+      this.isTracking = false;
+      this.s_isKuiuchi = false;
+
+      try { if (this._torokuDialogTimer) { clearTimeout(this._torokuDialogTimer); this._torokuDialogTimer = null; } } catch {}
+      this._torokuDialogOpened = false;
+
+      if (!(navigator && navigator.geolocation)) {
+        console.warn('[startTorokuHere] geolocation not supported');
+        return;
+      }
+
+      const _this = this;
+      if (typeof _this.rtkWindowMs !== 'number') _this.rtkWindowMs = 1000;
+      if (typeof _this.lastRtkAt   !== 'number') _this.lastRtkAt   = 0;
+
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+
+      navigator.geolocation.getCurrentPosition(
+          function success (pos) {
+            try {
+              const c   = pos && pos.coords ? pos.coords : {};
+              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                console.warn('[startTorokuHere] invalid geolocation coords', c);
+                return;
+              }
+
+              const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+              const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+
+              const q      = _this.getGeoQualityLabel(acc, altAcc);
+
+              const nowTs = pos.timestamp || Date.now();
+              if (q === 'RTK級') {
+                _this.lastRtkAt = nowTs;
+              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
+                return;
+              }
+
+              _this.torokuPointLngLat = { lng: lon, lat };
+              _this.upsertCurrentMarker(lon, lat);   // 緑丸
+
+              const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
+              _this.torokuPointMeta      = meta;
+              _this.torokuPointQuality   = meta.quality;
+              _this.torokuPointQualityAt = meta.at;
+
+              try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
+              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
+
+              const map =
+                  (_this.$store && _this.$store.state && _this.$store.state.map01)
+                      ? _this.$store.state.map01
+                      : _this.map01;
+
+              const ANIM_MS  = Number.isFinite(Number(_this.torokuAnimMs)) ? Number(_this.torokuAnimMs) : 700;
+              const DELAY_MS = Number.isFinite(Number(_this.torokuDialogDelayMs)) ? Number(_this.torokuDialogDelayMs) : 1000;
+
+              const openDialogOnce = () => {
+                if (_this._torokuDialogOpened) return;
+                _this._torokuDialogOpened = true;
+                _this.kansokuRunning   = false;
+                _this.kansokuRemaining = 0;
+                _this.kansokuCsvRows   = null;
+                _this.dialogForToroku  = true;
+              };
+
+              const armAfterAnim = () => {
+                const fallbackMs = ANIM_MS + DELAY_MS + 300;
+                _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
+
+                const onEnd = () => {
+                  try { map.off('moveend', onEnd); } catch {}
+                  _this._torokuDialogTimer = setTimeout(openDialogOnce, DELAY_MS);
+                };
+                try { map.on('moveend', onEnd); } catch {}
+              };
+
+              try {
+                if (map && map.easeTo) {
+                  map.easeTo({ center: [lon, lat], duration: ANIM_MS });
+                  _this._torokuDialogOpened = false;
+                  armAfterAnim();
+                } else if (map && map.jumpTo) {
+                  map.jumpTo({ center: [lon, lat] });
+                  _this._torokuDialogOpened = false;
+                  _this._torokuDialogTimer = setTimeout(openDialogOnce, 600);
+                } else {
+                  openDialogOnce();
+                }
+              } catch {
+                openDialogOnce();
+              }
+            } catch (e) {
+              console.warn('[startTorokuHere] success handler error', e);
+            }
+          },
+          function error (err) {
+            console.warn('[startTorokuHere] getCurrentPosition error', err);
+          },
+          opt
+      );
+    },
+
+    /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */
+    async plotTorokuPoint (lngLat, label, opts = {}) {
+      const map = (this.$store?.state?.map01) || this.map01;
+      if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
+
+      const lng = Number(lngLat?.lng);
+      const lat = Number(lngLat?.lat);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
+      }
+
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
+
+      if (!this._torokuFC) {
+        this._torokuFC = { type:'FeatureCollection', features: [] };
+      }
+
+      const wantDefer = opts?.deferLabel === true;
+      const text = wantDefer ? '' : (label || this.currentPointName || this.tenmei || '');
+      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
+
+      this._torokuFC.features.push({
+        type: 'Feature',
+        properties: {
+          id: fid,
+          label: text,
+          name: text,
+          pendingLabel: wantDefer ? true : false,
+        },
+        geometry: { type: 'Point', coordinates: [lng, lat] }
+      });
+
+      if (map.getSource(SRC)) {
+        try { map.getSource(SRC).setData(this._torokuFC); }
+        catch (_) { try { map.removeSource(SRC); } catch(e) {}
+          map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+        }
+      } else {
+        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+      }
+      console.log(this._torokuFC)
+
+      if (!map.getLayer(LAYER)) {
+        map.addLayer({
+          id: LAYER,
+          type: 'circle',
+          source: SRC,
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#ff3b30',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+      }
+      if (!map.getLayer(LAB)) {
+        map.addLayer({
+          id: LAB,
+          type: 'symbol',
+          source: SRC,
+          layout: {
+            'text-field': ['get', 'label'],
+            'text-size': 16,
+            'text-offset': [0, 0.5],
+            'text-anchor': 'top',
+            'text-allow-overlap': true
+          },
+          paint: {
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1.0
+          }
+        });
+      }
+
+      try { map.moveLayer(LAYER); } catch (_) {}
+      try { map.moveLayer(LAB); }   catch (_) {}
+
+      this.torokuPointLngLat = { lng, lat };
+      this._lastTorokuFeatureId = fid;
+      this.updateChainLine();
+    },
+
+    /** ジョブピッカーをフローティングで開く */
+    jobPickerFWOpen() {
+      // まず緑丸を必ず消す
+      try { this.clearCurrentMarker(); } catch {}
+      this.$store.dispatch('showFloatingWindow', 'job-picker');
+      this.isJobMenu = true
+    },
+
+    /** 確定赤丸描画：確定座標と点名で赤丸を追加（レイヤは既存前提） */
+    confirmTorokuPointAtCurrent(name, rowArray) {
+      const map = (this.$store?.state?.map01) || this.map01;
+      const SRC   = 'oh-toroku-point-src';
+      const LAYER = 'oh-toroku-point';
+      const LAB   = 'oh-toroku-point-label';
+
+      // ★ 座標は “常に” torokuPointLngLat から取得（pending/lastIdは使わない）
+      const lng = Number(this?.torokuPointLngLat?.lng);
+      const lat = Number(this?.torokuPointLngLat?.lat);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+        console.warn('[toroku] confirm failed: no torokuPointLngLat');
+        return;
+      }
+
+      // ★ 赤丸フィーチャを追加
+      const fid = 'pt_' + Date.now() + '_' + (Math.random() * 1e6 | 0);
+      const feature = {
+        type: 'Feature',
+        properties: {
+          id: fid,
+          label: String(name || ''),
+          name:  String(name || ''),
+          oh3_csv2_row: JSON.stringify(rowArray)
+        },
+        geometry: { type: 'Point', coordinates: [lng, lat] }
+      };
+
+      if (!this._torokuFC) this._torokuFC = { type: 'FeatureCollection', features: [] };
+      this._torokuFC.features.push(feature);
+
+      // ★ 地図へ反映（なければ作成／あれば更新）
+      if (map?.getSource(SRC)) {
+        map.getSource(SRC).setData(this._torokuFC);
+      } else if (map) {
+        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
+        if (!map.getLayer(LAYER)) {
+          map.addLayer({
+            id: LAYER, type: 'circle', source: SRC,
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#ff3b30',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+        }
+        if (!map.getLayer(LAB)) {
+          map.addLayer({
+            id: LAB, type: 'symbol', source: SRC,
+            layout: {
+              'text-field': ['get', 'label'],
+              'text-size': 16,
+              'text-offset': [0, 0.5],
+              'text-anchor': 'top',
+              'text-allow-overlap': true
+            },
+            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+          });
+        }
+      }
+
+      // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
+      this.torokuPointLngLat = { lng, lat };
+    },
+
+    /** ジョブ終了処理（クリーンアップ含む） */
+    onJobEndClick(isCleanup) {
+      if (isCleanup) {
+        this.jobPickerOpen = false;
+        this.isJobMenu = false;
+        this.$store.dispatch('hideFloatingWindow', 'job-picker');
+      }
+      // まず緑丸を必ず消す
+      try { this.clearCurrentMarker(); } catch {}
+      try {
+        if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
+      } catch {}
+      this.kansokuRunning   = false;
+      this.kansokuRemaining = 0;
+
+      try { this.clearTorokuPoint(); } catch {}
+      this._torokuFC = { type: 'FeatureCollection', features: [] };
+      this._lastTorokuFeatureId = null;
+      this.torokuPointLngLat = null;
+
+      this.kansokuCsvRows = null;
+      this.csv2Points = [];
+
+      this.currentJobId = null;
+      this.currentJobName = '';
+      try {
+        localStorage.removeItem('oh3_current_job_id');
+        localStorage.removeItem('oh3_current_job_name');
+      } catch {}
+
+      try { this.$emit?.('job-ended'); } catch {}
+      try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
+
+      this.pointsForCurrentJob = [];
+
+      this.clearChainLineOnly()
+
+    },
+
+    /** =========================
+     * 追跡関連（現在地追跡・距離線・ログ出力）
+     * ========================= */
+
+// 外部標高（ドロガー）受信
+    /** 外部標高の正規化セット */
+    setExternalElevation(payload) {
+      const norm = this.extractElevationFrom(payload);
+      if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
+      this.externalElevation = norm;
+      try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
+    },
+
+    /** window.dispatchEvent('oh3:elevation', { ... }) を購読 */
+    bindExternalElevationListener() {
+      const handler = (ev) => {
+        const d = ev?.detail || {};
+        this.setExternalElevation(d);
+      };
+      if (this._elevHandler) window.removeEventListener('oh3:elevation', this._elevHandler);
+      window.addEventListener('oh3:elevation', handler);
+      this._elevHandler = handler;
+    },
+
+    /** window.postMessage 経由の受信 */
+    unbindExternalElevationListener() {
+      if (this._elevHandler) {
+        window.removeEventListener('oh3:elevation', this._elevHandler);
+        this._elevHandler = null;
+      }
+    },
+    bindElevationPostMessage() {
+      const onMsg = (ev) => {
+        const d = ev?.data || {};
+        if (d && d.type === 'oh3:elevation') return this.setExternalElevation(d);
+        if (d && (d.lat != null || d.longitude != null)) {
+          const maybe = this.extractElevationFrom(d);
+          if (maybe) this.setExternalElevation(maybe);
+        }
+      };
+      if (this._elevPM) window.removeEventListener('message', this._elevPM);
+      window.addEventListener('message', onMsg);
+      this._elevPM = onMsg;
+    },
+
+    /** 外部データから標高を抽出・正規化 */
+    extractElevationFrom(payload) {
+      if (!payload || typeof payload !== 'object') return null;
+
+      const pick = (...names) => {
+        for (const k of names) {
+          for (const key of Object.keys(payload)) {
+            if (key.toLowerCase() === k.toLowerCase()) return payload[key];
+          }
+        }
+        return undefined;
+      };
+
+      let hOrtho = pick('hOrthometric','orthometricHeight','orthometric','h_msl','msl','elevation','height','altMSL','z','H','h');
+      let hEll  = pick('hEllipsoidal','ellipsoidalHeight','ellipsoidal','hae','alt','altitude','altEllipsoid');
+      let geoidN = pick('geoidN','N','geoid','geoidSeparation','geoidSep');
+
+      const toNum = (v) => {
+        if (v == null) return NaN;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+          const s = v.replace(',', '.').trim();
+          const n = Number(s);
+          return Number.isFinite(n) ? n : NaN;
+        }
+        return NaN;
+      };
+      const nOrtho = toNum(hOrtho);
+      const nEll   = toNum(hEll);
+      const nN     = toNum(geoidN);
+
+      if (Number.isFinite(nOrtho)) {
+        return { hType: 'orthometric', hMeters: nOrtho, geoidN: Number.isFinite(nN) ? nN : null, hOrthometric: nOrtho };
+      }
+
+      if (Number.isFinite(nEll) && Number.isFinite(nN)) {
+        const h = nEll - nN;
+        return { hType: 'ellipsoidal', hMeters: nEll, geoidN: nN, hOrthometric: h };
+      }
+
+      return null;
+    },
+
+// 現在地追跡（watchPosition）・距離線 UI
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
@@ -9303,9 +9341,7 @@ export default {
       }
     },
 
-    /* =========================
-     * 7) 追跡ログ（移動履歴）
-     * =======================*/
+// 追跡ログ（移動履歴）
     requestClearLog() { this.confirmClearLog = true; },
     doClearLog() {
       if (this.logEnabled) this.stopTrackLog();
@@ -9448,9 +9484,7 @@ export default {
       this.$_downloadBlob(blob, `track_${this.$_jstStamp()}.sim`);
     },
 
-    /* =========================
-     * 8) 点名（連番）管理
-     * =======================*/
+// 点名（連番）管理
     loadTenmeiFromStorage() {
       try {
         const v = localStorage.getItem('tenmei') || '';
@@ -9480,24 +9514,6 @@ export default {
       try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
     },
     isValidTenmaiPrefix(v) { return /^[0-9A-Za-z_-]{1,12}$/.test(String(v)); },
-    getNextPointName() {
-      var base = (this.tenmaiPrefix != null && this.tenmaiPrefix !== '') ? String(this.tenmaiPrefix) : 'P';
-      if (!/^[0-9A-Za-z_-]{1,12}$/.test(base)) {
-        this.tenmaiPrefixError = '英数字・ハイフン・アンダースコア（1〜12文字）で設定してください。';
-        base = 'P';
-      }
-      var lastBase = null;
-      try { lastBase = localStorage.getItem('tenmaiPrefix'); } catch(_) {}
-      if (lastBase !== base) {
-        try { localStorage.setItem('tenmaiPrefix', base); } catch(_) {}
-        try { localStorage.setItem('tenmaiSeq', '0'); } catch(_) {}
-      }
-      var seq = 0;
-      try { seq = Number(localStorage.getItem('tenmaiSeq')) || 0; } catch(_) { seq = 0; }
-      seq += 1;
-      try { localStorage.setItem('tenmaiSeq', String(seq)); } catch(_) {}
-      return base + String(seq);
-    },
 
     handleTenmeiInput(v) {
       if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
@@ -9551,18 +9567,9 @@ export default {
       return cand;
     },
 
-
-    /* =========================
-     * 9) 汎用ユーティリティ（日時/保存/クランプ/終了処理）
-     * =======================*/
+// 汎用ユーティリティ（日時/保存/クランプ/終了処理）
 // 色分け: 較差 <=0.02: success, <=0.05: warning, それ以外: error
-    diffColor(d) {
-      const x = Number(d);
-      if (!Number.isFinite(x)) return 'default';
-      if (x <= 0.02) return 'success';
-      if (x <= 0.05) return 'warning';
-      return 'error';
-    },
+
     fmtLL(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(5) : v; },
     fmtXY(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(3) : v; },
     fmtAcc(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : v; },
@@ -9573,17 +9580,6 @@ export default {
       const n = this.parseNumberLike(v);
       if (n == null) return '';
       return n.toFixed(3);
-    },
-    $_jstIso() {
-      const d = new Date();
-      const fmt = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Tokyo',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-      });
-      const parts = fmt.formatToParts(d).reduce((a,p)=>(a[p.type]=p.value,a),{});
-      return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+09:00`;
     },
     $_jstLocal() {
       const p = new Intl.DateTimeFormat('en-CA', {
@@ -9646,108 +9642,6 @@ export default {
       if (n > MAX) n = MAX;
       n = Number(n.toFixed(3));
       return n;
-    },
-    confirmTorokuPointAtCurrent(name, rowArray) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-
-      // ★ 座標は “常に” torokuPointLngLat から取得（pending/lastIdは使わない）
-      const lng = Number(this?.torokuPointLngLat?.lng);
-      const lat = Number(this?.torokuPointLngLat?.lat);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[toroku] confirm failed: no torokuPointLngLat');
-        return;
-      }
-
-      // ★ 赤丸フィーチャを追加
-      const fid = 'pt_' + Date.now() + '_' + (Math.random() * 1e6 | 0);
-      const feature = {
-        type: 'Feature',
-        properties: {
-          id: fid,
-          label: String(name || ''),
-          name:  String(name || ''),
-          oh3_csv2_row: JSON.stringify(rowArray)
-        },
-        geometry: { type: 'Point', coordinates: [lng, lat] }
-      };
-
-      if (!this._torokuFC) this._torokuFC = { type: 'FeatureCollection', features: [] };
-      this._torokuFC.features.push(feature);
-
-      // ★ 地図へ反映（なければ作成／あれば更新）
-      if (map?.getSource(SRC)) {
-        map.getSource(SRC).setData(this._torokuFC);
-      } else if (map) {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        if (!map.getLayer(LAYER)) {
-          map.addLayer({
-            id: LAYER, type: 'circle', source: SRC,
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#ff3b30',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-        }
-        if (!map.getLayer(LAB)) {
-          map.addLayer({
-            id: LAB, type: 'symbol', source: SRC,
-            layout: {
-              'text-field': ['get', 'label'],
-              'text-size': 16,
-              'text-offset': [0, 0.5],
-              'text-anchor': 'top',
-              'text-allow-overlap': true
-            },
-            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-          });
-        }
-      }
-
-      // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
-      this.torokuPointLngLat = { lng, lat };
-    },
-
-    onJobEndClick(isCleanup) {
-      if (isCleanup) {
-        this.jobPickerOpen = false;
-        this.isJobMenu = false;
-        this.$store.dispatch('hideFloatingWindow', 'job-picker');
-      }
-      // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
-      try {
-        if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
-      } catch {}
-      this.kansokuRunning   = false;
-      this.kansokuRemaining = 0;
-
-      try { this.clearTorokuPoint(); } catch {}
-      this._torokuFC = { type: 'FeatureCollection', features: [] };
-      this._lastTorokuFeatureId = null;
-      this.torokuPointLngLat = null;
-
-      this.kansokuCsvRows = null;
-      this.csv2Points = [];
-
-      this.currentJobId = null;
-      this.currentJobName = '';
-      try {
-        localStorage.removeItem('oh3_current_job_id');
-        localStorage.removeItem('oh3_current_job_name');
-      } catch {}
-
-      try { this.$emit?.('job-ended'); } catch {}
-      try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
-
-      this.pointsForCurrentJob = [];
-
-      this.clearChainLineOnly()
-
     },
 
 
