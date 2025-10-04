@@ -2029,11 +2029,86 @@ import SakuraEffect from './components/SakuraEffect.vue';
                v-if="s_isPrint || isTracking"
                @click="compassClick()"
           >
-            <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60">
-              <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
-              <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
-              <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
-            </svg>
+            <!-- コンパス（OH3ミニマル） -->
+            <div class="compass-wrap" @click="compassClick" title="Compass">
+              <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60" aria-label="Compass">
+                <defs>
+                  <!-- ほのかな内側グロウ -->
+                  <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="1.2" result="blur"/>
+                    <feMerge>
+                      <feMergeNode in="blur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  <!-- 外周リングの微グラデ -->
+                  <linearGradient id="ringGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="rgba(255,255,255,0.35)"/>
+                    <stop offset="1" stop-color="rgba(255,255,255,0.08)"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- 背面 -->
+                <g filter="url(#softGlow)">
+                  <circle cx="50" cy="50" r="48" class="c-bg"/>
+                  <!-- 外周リング（テーマ色×グラデ） -->
+                  <circle cx="50" cy="50" r="46"
+                          class="c-ring"
+                          stroke="url(#ringGrad)"/>
+                </g>
+
+                <!-- 目盛り（30°刻み＋主要方位は太く） -->
+                <g class="c-ticks" stroke-linecap="round">
+                  <!-- 12本（0〜330°） -->
+                  <g transform="translate(50,50)">
+                    <!-- 主要4方向 -->
+                    <g stroke-width="2.2">
+                      <line y1="-40" y2="-46" transform="rotate(0)"/>
+                      <line y1="-40" y2="-46" transform="rotate(90)"/>
+                      <line y1="-40" y2="-46" transform="rotate(180)"/>
+                      <line y1="-40" y2="-46" transform="rotate(270)"/>
+                    </g>
+                    <!-- 準目盛り -->
+                    <g stroke-width="1.2" opacity="0.7">
+                      <line y1="-42" y2="-46" transform="rotate(30)"/>
+                      <line y1="-42" y2="-46" transform="rotate(60)"/>
+                      <line y1="-42" y2="-46" transform="rotate(120)"/>
+                      <line y1="-42" y2="-46" transform="rotate(150)"/>
+                      <line y1="-42" y2="-46" transform="rotate(210)"/>
+                      <line y1="-42" y2="-46" transform="rotate(240)"/>
+                      <line y1="-42" y2="-46" transform="rotate(300)"/>
+                      <line y1="-42" y2="-46" transform="rotate(330)"/>
+                    </g>
+                  </g>
+                </g>
+
+                <!-- 針（北=赤、南=薄グレー）。回転させたい場合はこのgに transform を当てる -->
+                <g class="c-needle" transform="rotate(0 50 50)">
+                  <!-- 北側 -->
+                  <polygon class="c-needle-n"
+                           points="50,10 57,50 50,44 43,50"/>
+                  <!-- 南側 -->
+                  <polygon class="c-needle-s"
+                           points="50,90 43,50 50,56 57,50"/>
+                  <!-- 中心キャップ -->
+                  <circle cx="50" cy="50" r="4.2" class="c-cap"/>
+                </g>
+
+                <!-- 方位文字 -->
+                <g class="c-labels" font-size="10" font-weight="600">
+                  <text x="50" y="18" text-anchor="middle" class="c-N">N</text>
+                  <text x="84" y="54" text-anchor="middle">E</text>
+                  <text x="50" y="88" text-anchor="middle">S</text>
+                  <text x="16" y="54" text-anchor="middle">W</text>
+                </g>
+              </svg>
+            </div>
+
+            <!--            <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60">-->
+<!--              <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>-->
+<!--              <polygon points="50,10 60,50 50,40 40,50" fill="red"/>-->
+<!--              <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>-->
+<!--            </svg>-->
           </div>
 
           <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
@@ -11017,14 +11092,11 @@ export default {
         }
       });
       map.on('rotate', () => {
-        const bearing = map.getBearing(); // 地図の北の角度（度）
-        try {
-          document.querySelectorAll('.compass-icon').forEach(compass => {
-            compass.style.transform = `rotate(${-bearing}deg)`
-          })
-        }catch (e) {
-          console.log(e)
-        }
+        const bearing = map.getBearing(); // 度
+        document.querySelectorAll('.c-needle').forEach(el => {
+          // SVGの transform 属性に直接書く：rotate(<角度> <cx> <cy>)
+          el.setAttribute('transform', `rotate(${-bearing} 50 50)`);
+        });
       });
 
       function getScaleRatio(map) {
@@ -14298,6 +14370,52 @@ html.oh3-embed #map01 {
 }
 .editable-label:hover { opacity: .9; }
 
+/* ===== Compass (OH3) ===== */
+.compass-wrap { cursor: pointer; display:inline-block; }
+.compass-icon { display:block; border-radius:999px; }
+
+/* ダークUI前提の落ち着いた背景（透け感） */
+.c-bg {
+  fill: rgba(18, 18, 20, 0.82);
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* リング：テーマ色 × グラデ。親の color を優先（currentColor） */
+.c-ring {
+  fill: none;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+.compass-wrap { color: var(--oh-primary, #ff9800); } /* OH3既定:オレンジ */
+
+/* 目盛り */
+.c-ticks line {
+  stroke: rgba(255,255,255,0.6);
+  vector-effect: non-scaling-stroke;
+}
+
+/* 針 */
+.c-needle-n { fill: #e53935; /* 上品な赤 */ }
+.c-needle-s { fill: rgba(255,255,255,0.55); }
+.c-cap {
+  fill: rgba(0,0,0,0.35);
+  stroke: rgba(255,255,255,0.7);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* 方位文字：Nだけテーマ色でアクセント */
+.c-labels text { fill: rgba(255,255,255,0.85); }
+.c-labels .c-N { fill: currentColor; }
+
+/* 小さめ端末でのくっきり維持 */
+@media (max-width: 480px) {
+  .compass-icon { width: 48px; height: 48px; }
+}
+
+
 </style>
 
 
@@ -14485,9 +14603,6 @@ font {
   -webkit-overflow-scrolling: touch !important;
   max-height: 300px; /* 必要に応じて調整 */
   touch-action: pan-y !important; /* 縦方向のタッチスクロールを有効化 */
-}
-.maplibregl-ctrl-compass-heading {
-  display: none!important;
 }
 .color-container {
   margin-top: 15px;
