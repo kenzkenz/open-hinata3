@@ -111,7 +111,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
       </div>
 
-      <div v-if="isTracking" class="oh-left-bottom-tools">
+      <div v-if="isTracking" class="oh-left-bottom-tools" style="bottom: 90px;">
         <!-- 終了 -->
         <MiniTooltip text="終了する" :offset-x="0" :offset-y="0">
           <v-btn
@@ -2025,8 +2025,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
 
           <!-- コンパス -->
-          <div :class="!s_isPrint && isHeadingUp ? 'compass-div-headingup' : 'compass-div'" v-if="s_isPrint || isHeadingUp">
-            <svg class="compass-icon" viewBox="0 0 100 100" width="40" height="40">
+          <div :class="!s_isPrint && isTracking ? 'compass-div-tracking' : 'compass-div'"
+               v-if="s_isPrint || isTracking"
+               @click="compassClick()"
+          >
+            <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60">
               <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>
               <polygon points="50,10 60,50 50,40 40,50" fill="red"/>
               <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>
@@ -4288,6 +4291,14 @@ export default {
     },
   },
   methods: {
+    compassClick() {
+      if (this.isHeadingUp) {
+        this.compass.turnOn()
+      } else {
+        this.compass.turnOff()
+      }
+      this.isHeadingUp = !this.isHeadingUp;
+    },
     /** 単純 2x3 アフィン適用 */
     _applyAffine (M, pt) {
       const [a,b,c,d,e,f] = M; const [x,y] = pt;
@@ -14969,13 +14980,13 @@ select {
   pointer-events: none;
   z-index: 1;
 }
-.compass-div-headingup {
+.compass-div-tracking {
   position: absolute;
   top: 60px;
   left: calc(50% - 20px);
   width: 40px;
   height: 40px;
-  pointer-events: none;
+  cursor: pointer;
   z-index: 3;
 }
 .scale-ratio {
