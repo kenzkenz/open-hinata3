@@ -314,17 +314,17 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         v{{ clientVersion }}
       </p>
 
-      <div v-if="user1">
-        <p style="margin-bottom: 20px;">
-          <template v-if="initialGroupName && initialGroupName !== ''">
-            現在のグループ＝「{{ initialGroupName }}」
-            <!--            {{ s_currentGroupId }}-->
-          </template>
-          <template v-else>
-            グループに所属していません。
-          </template>
-        </p>
-      </div>
+<!--      <div v-if="user1">-->
+<!--        <p style="margin-bottom: 20px;">-->
+<!--          <template v-if="initialGroupName && initialGroupName !== ''">-->
+<!--            現在のグループ＝「{{ initialGroupName }}」-->
+<!--            &lt;!&ndash;            {{ s_currentGroupId }}&ndash;&gt;-->
+<!--          </template>-->
+<!--          <template v-else>-->
+<!--            グループに所属していません。-->
+<!--          </template>-->
+<!--        </p>-->
+<!--      </div>-->
 
       <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
       座標検索で使用する系を選択
@@ -346,7 +346,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <v-switch style="height: 40px;" v-model="s_isWindow" label="ウインドウ復帰" color="primary" />
 
-      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_mapillary" label="mapillary" color="primary" />
+      <v-switch style="height: 40px;" v-model="s_mapillary" label="mapillary" color="primary" />
+
+      <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isContextMenu" label="右クリックメニュー" color="primary" />
 
       起動時レイヤーを現在のレイヤーに設定します。
       <v-btn style="margin-top: 10px;margin-bottom: 10px; width: 100%" @click="setStartUrl">起動時レイヤー設定変更</v-btn>
@@ -623,6 +625,15 @@ export default {
     },
     s_userId () {
       return this.$store.state.userId
+    },
+    s_isContextMenu: {
+      get() {
+        return this.$store.state.isContextMenu
+      },
+      set(value) {
+        this.$store.state.isContextMenu = value
+        localStorage.setItem('isContextMenu',value)
+      }
     },
     s_mapillary: {
       get() {
@@ -1769,6 +1780,9 @@ export default {
     }
     if (localStorage.getItem('mapillary')) {
       this.s_mapillary = JSON.parse(localStorage.getItem('mapillary'))
+    }
+    if (localStorage.getItem('isContextMenu')) {
+      this.s_isContextMenu = JSON.parse(localStorage.getItem('isContextMenu'))
     }
   },
 }

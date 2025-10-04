@@ -214,7 +214,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 
 
-      <!--JOBリスト -->
+      <!--JOBリスト job picker -->
       <FloatingWindow
           windowId="job-picker"
           title="ジョブリスト"
@@ -3375,10 +3375,15 @@ export default {
     tempJobName: '',
     jobNameDebounceTimer: null,
 
+    contextMenuObject: {},
+
+    detachForContextMenu: null,
+
     aaa: null,
   }),
   computed: {
     ...mapState([
+      'isContextMenu',
       'userId',
       'myNickname',
       'isKuiuchi',
@@ -7263,7 +7268,7 @@ export default {
       try {
         await this.commitCsv2Point();
         this.clearCurrentMarker();
-        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
+        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId,  { fit: false });
         try { await this.refreshJobs(); } catch {}
       } catch (e) {
         console.warn('[save] commit failed', e);
@@ -8359,7 +8364,7 @@ export default {
     },
 
     /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
-    async loadPointsForJob(jobId) {
+    async loadPointsForJob(jobId, options = { fit: true }) {
       const fd = new FormData();
       fd.append('action', 'job_points.list');
       fd.append('job_id', String(jobId));
@@ -8380,7 +8385,6 @@ export default {
       }
 
       this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
-      this.clearServerPoints?.();
 
       const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
       const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
@@ -8495,7 +8499,12 @@ export default {
           if (bboxValid && typeof map.fitBounds === 'function') {
             const pad = 80;
             console.log('[loadPointsForJob] fitBounds(array bbox)');
-            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
+            if (options.fit) {
+              map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {padding: pad, maxZoom: 18, duration: 0});
+            } else {
+              const last = this.pointsForCurrentJob.at(-1)
+              map.setCenter([last.lng, last.lat])
+            }
           } else {
             console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
           }
@@ -8598,9 +8607,7 @@ export default {
           console.warn('[deletePoint] map repaint failed', e);
         }
 
-        // 3) サーバ基準で再同期
         try {
-          if (this.currentJobId) await this.loadPointsForJob(this.currentJobId);
           await this.refreshJobs(); // バッジ件数があるなら
         } catch (e) {
           console.warn('[deletePoint] refresh after delete failed', e);
@@ -11154,7 +11161,7 @@ export default {
        * 右クリックメニュー
        * @type {detach|*}
        */
-      const detach = attachMapRightClickMenu({
+      this.contextMenuObject = {
         map: store.state.map01,
         items: [
           {
@@ -11322,7 +11329,10 @@ export default {
             ]
           },
         ]
-      });
+      }
+      if (this.isContextMenu) {
+        this.detachForContextMenu = attachMapRightClickMenu(this.contextMenuObject);
+      }
       /**
        * ピッチとベアリングを監視
        * store.state.map01Pitch等に収録
@@ -13473,6 +13483,17 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    isContextMenu(value) {
+      if (value) {
+        this.detachForContextMenu = attachMapRightClickMenu(this.contextMenuObject);
+      } else{
+        const isFn = typeof this.detachForContextMenu === 'function'
+        if (isFn) {
+          this.detachForContextMenu()
+          this.detachForContextMenu = null
+        }
+      }
+    },
     // 変更時にローカル保存＆（必要なら）副作用フック
     lineMode(newVal) {
       try { localStorage.setItem('oh3_line_mode', newVal); } catch (e) {}

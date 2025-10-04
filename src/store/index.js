@@ -51,6 +51,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.647,
+    isContextMenu: true,
     isKuiuchi: false,
     geo: null,
     demTint: null,
