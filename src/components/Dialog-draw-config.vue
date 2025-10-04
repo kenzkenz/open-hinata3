@@ -566,7 +566,7 @@ export default {
       this.scaleText = '縮尺：' + (t ? t.label.replace('で固定', '') : '')
     },
     directionChange() {
-      // changePrintMap03(this.s_titleDirection)
+      changePrintMap03(this.s_titleDirection)
       printDirectionChange(this.s_titleDirection)
     }
   },

@@ -1947,15 +1947,15 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <div v-if="s_isPrint" class="map-radio d-flex justify-center">
         <div style="margin-left: -30px!important;">
         <v-chip-group
-            v-model="printMap"
+            v-model="s_printMap"
             mandatory
             row
             column
             class="mt-4"
         >
-          <v-chip @click="printMap01" value="map01" variant="flat">map01</v-chip>
-          <v-chip @click="printMap02" value="map02" variant="flat">map02</v-chip>
-          <v-chip @click="printMap03" value="map03" variant="flat">map03</v-chip>
+          <v-chip @click="s_printMap01" value="map01" variant="flat">map01</v-chip>
+          <v-chip @click="s_printMap02" value="map02" variant="flat">map02</v-chip>
+          <v-chip @click="s_printMap03" value="map03" variant="flat">map03</v-chip>
 
         </v-chip-group>
         </div>
@@ -2365,8 +2365,8 @@ import {
   addSvgAsImage,
   animateRelocate,
   bakeRotationToBlob,
-  capture,
-  changePrintMap03,
+  capture, changePrintMap03,
+  changes_printMap03,
   compressImageToUnder10MB,
   convertFromEPSG4326,
   convertGsiTileJson2,
@@ -3304,7 +3304,6 @@ export default {
     scaleUpInterval: null,
     scaleDownInterval: null,
     scaleValue: 100,
-    printMap: 'map01',
     dialogForDrawCsv: false,
     csvColumns: [],
     csvAddressColumn: '',
@@ -3499,6 +3498,14 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    s_printMap: {
+      get() {
+        return this.$store.state.printMap;
+      },
+      set(value) {
+        this.$store.state.printMap = value
+      }
+    },
     // 測位中(= 観測フェーズ)だけクラスを付ける
     observingClass() {
       return (this.kansokuPhase === 'observing' && this.kansokuRunning)
@@ -6416,7 +6423,7 @@ export default {
 
     },
     pngDl0 () {
-      fncPngDl(this.printMap)
+      fncPngDl(this.s_printMap)
     },
     print () {
       // 印刷ダイアログ表示
@@ -6424,8 +6431,8 @@ export default {
         window.print()
       }, 200)
     },
-    printMap01 () {
-      this.printMap = 'map01'
+    s_printMap01 () {
+      this.s_printMap = 'map01'
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
       setTimeout(() => {
@@ -6433,8 +6440,8 @@ export default {
         map02Div.style.position = 'absolute'
       },10)
     },
-    printMap02 () {
-      this.printMap = 'map02'
+    s_printMap02 () {
+      this.s_printMap = 'map02'
       const map01Div = document.getElementById('map01');
       const map02Div = document.getElementById('map02');
       setTimeout(() => {
@@ -6444,8 +6451,8 @@ export default {
         map02Div.style.position = 'relative'
       }, 10)
     },
-    printMap03 () {
-      this.printMap = 'map03'
+    s_printMap03 () {
+      this.s_printMap = 'map03'
       changePrintMap03(this.titleDirection)
     },
     handlePrint(isClose) {

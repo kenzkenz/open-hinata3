@@ -50,7 +50,8 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.647,
+    clientVersion: 1.649,
+    printMap: 'map01',
     isContextMenu: true,
     isKuiuchi: false,
     geo: null,
