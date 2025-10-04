@@ -8,13 +8,12 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!--  -->
+      <!-- ジョブピッカー -->
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column; bottom: 70px;">
         <!-- 1行目：モード切替 + 現在のジョブ -->
         <div class="mb-1 d-flex align-center" style="gap:8px;">
-          <!-- 不透明で見やすい -->
           <v-btn-toggle
               v-model="lineMode"
               mandatory
@@ -234,9 +233,34 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
 
         <v-card class="fw-card">
+
           <v-card-title class="d-flex align-center text-h6">
             <span v-if="!currentJobName">ジョブ選択</span>
-            <span v-else>現在のジョブ: {{ currentJobName }}</span>
+            <span v-else class="jobname-wrap" @mouseenter="hoverJobName = true" @mouseleave="hoverJobName = false">
+                ジョブ:
+              <template v-if="!editingJobName">
+                <span class="editable-label ml-1" @click="startEditJobName">
+                  {{ currentJobName }}
+<!--                  <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>-->
+                </span>
+              </template>
+              <template v-else>
+                 <v-text-field
+                     v-model="tempJobName"
+                     density="compact"
+                     variant="outlined"
+                     hide-details
+                     autofocus
+                     style="width: 250px;"
+                     @change="commitJobName"
+                     @keydown.esc.stop="cancelJobNameEdit"
+                     @keydown.left.stop
+                     @keydown.right.stop
+                     @blur="commitJobName"
+                 />
+              </template>
+            </span>
+            <!-- ▲ ここまで -->
             <v-spacer></v-spacer>
             <v-chip
                 size="small"
@@ -263,6 +287,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     density="comfortable"
                     hide-details="auto"
                     class="flex-1-1"
+                    @keydown.left.stop
+                    @keydown.right.stop
                 />
                 <v-btn color="primary" @click="createNewJob">作成</v-btn>
               </div>
@@ -3343,6 +3369,11 @@ export default {
     lineMode: localStorage.getItem('oh3_line_mode') || 'point',
 
     DONT_SHOW_KEY: 'oh3.hideJobTips',
+
+    editingJobName: false,
+    hoverJobName: false,
+    tempJobName: '',
+    jobNameDebounceTimer: null,
 
     aaa: null,
   }),
@@ -7140,6 +7171,51 @@ export default {
     /**
      * ここから観測関係
      */
+    startEditJobName () {
+      this.tempJobName = String(this.currentJobName || '')
+      this.lastCommittedJobName = this.tempJobName
+      this.editingJobName = true
+    },
+    cancelJobNameEdit () {
+      this.editingJobName = false
+      this.tempJobName = ''
+    },
+    async commitJobName () {
+      const newName = (this.tempJobName || '').trim()
+
+      // 空は確定しない
+      if (!newName) { this.editingJobName = false; return }
+      // 変更なしは何もしない
+      if (newName === this.lastCommittedJobName) { this.editingJobName = false; return }
+
+      try {
+        await this.updateJobNameOnServer(this.currentJobId, newName)
+        this.currentJobName = newName
+        this.lastCommittedJobName = newName
+        try { await this.refreshJobs?.() } catch (_) {}
+      } catch (err) {
+        console.error('[jobName] update failed:', err)
+        // 必要ならスナックバー等で通知
+      } finally {
+        this.editingJobName = false
+      }
+    },
+    async updateJobNameOnServer (jobId, newName) {
+      if (!jobId) throw new Error('jobId missing')
+      const fd = new FormData()
+      fd.append('action', 'jobs.update')
+      fd.append('job_id', String(jobId))
+      fd.append('job_name', newName)
+      const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+        method: 'POST',
+        body: fd
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json().catch(() => ({}))
+      if (!json || json.ok === false) throw new Error(json.error || 'update failed')
+      return json.data || json
+    },
+
     /** =========================
      * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
      * ========================= */
@@ -14184,6 +14260,11 @@ html.oh3-embed #map01 {
   background: color-mix(in oklab, var(--v-theme-surface) 88%, transparent);
 }
 
+.editable-label {
+  cursor: pointer;
+  border-bottom: 1px dotted currentColor; /* クリックできることを示す */
+}
+.editable-label:hover { opacity: .9; }
 
 </style>
 
