@@ -14306,8 +14306,8 @@ html.oh3-embed #map01 {
   align-items: start;
 }
 
-/* スマホ：3段（a=100%, b=100%, c+d=50%ずつ横並び） */
-@media (max-width: 600px){
+/* 小画面：3段（a=100%, b=100%, c+d=50%ずつ横並び） */
+@media (max-width: 1000px){
   .oh3-grid-4col{
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
