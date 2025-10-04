@@ -2027,10 +2027,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <!-- コンパス -->
           <div :class="!s_isPrint && isTracking ? 'compass-div-tracking' : 'compass-div'"
                v-if="s_isPrint || isTracking"
-               @click="compassClick()"
+               @click="compassClick"
           >
             <!-- コンパス（OH3ミニマル） -->
-            <div class="compass-wrap" @click="compassClick" title="Compass">
+            <div class="compass-wrap" title="Compass">
               <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60" aria-label="Compass">
                 <defs>
                   <!-- ほのかな内側グロウ -->
@@ -2263,6 +2263,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <div
                 :id="'terrain-btn-div-' + mapName"
                 class="terrain-btn-div"
+                v-show="!s_isPrint"
             >
               <div class="terrain-btn-container">
                 <v-icon class="terrain-btn-close" @pointerdown="terrainBtnClos">mdi-close</v-icon>
@@ -4368,11 +4369,13 @@ export default {
   methods: {
     compassClick() {
       if (this.isHeadingUp) {
-        this.compass.turnOn()
-      } else {
+        this.map01.setBearing(0)
         this.compass.turnOff()
+        this.isHeadingUp = false
+      } else {
+        this.compass.turnOn()
+        this.isHeadingUp = true
       }
-      this.isHeadingUp = !this.isHeadingUp;
     },
     /** 単純 2x3 アフィン適用 */
     _applyAffine (M, pt) {
@@ -13710,7 +13713,9 @@ export default {
           document.querySelector('#drawList').style.display = 'none'
         }
       }catch (e) {
-        document.querySelector('#drawList').style.display = 'none'
+        if (document.querySelector('#drawList')) {
+          document.querySelector('#drawList').style.display = 'none'
+        }
       }
       this.updatePermalink()
     },
@@ -14416,6 +14421,7 @@ html.oh3-embed #map01 {
 }
 
 
+
 </style>
 
 
@@ -14425,6 +14431,9 @@ html.oh3-embed #map01 {
 <style>
 label {
   cursor: pointer;
+}
+.maplibregl-ctrl{
+  display: none;
 }
 .maplibregl-canvas.force-pointer {
   cursor: pointer !important;
@@ -15089,7 +15098,7 @@ select {
 .compass-div {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 30px;
   width: 40px;
   height: 40px;
   pointer-events: none;
