@@ -167,6 +167,20 @@ try {
             $stmt->execute([$point_id]);
             echo json_encode(['ok'=>true,'data'=>['deleted_id'=>$point_id]], JSON_UNESCAPED_UNICODE); exit;
         }
+        // -------------------- job_points.rename --------------------
+        case 'job_points.rename': {
+            $point_id   = (int)($_POST['point_id'] ?? 0);
+            $point_name = trim((string)($_POST['point_name'] ?? ''));
+            if ($point_id <= 0 || $point_name === '') {
+                echo json_encode(['ok'=>false,'error'=>'point_id と point_name は必須'], JSON_UNESCAPED_UNICODE); exit;
+            }
+            $stmt = $pdo->prepare('UPDATE job_points SET point_name = ? WHERE point_id = ?');
+            $stmt->execute([$point_name, $point_id]);
+
+            $stmt2 = $pdo->prepare('SELECT * FROM job_points WHERE point_id = ?');
+            $stmt2->execute([$point_id]);
+            echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
+        }
 
         default: {
             echo json_encode(['ok'=>false,'error'=>'未知の action: '.$action], JSON_UNESCAPED_UNICODE); exit;
