@@ -369,7 +369,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       <v-list-item
                           v-for="pt in pointsForCurrentJob"
                           :key="pt.point_id"
-                          @click="focusPointOnMap(pt)"
                       >
                         <!-- タイトル：ポイント名インライン編集（70%幅） -->
                         <template #title>
@@ -404,6 +403,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
                         <template #subtitle>
                       <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                        {{ pt.address }}
+                        &nbsp;
                         X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
                       </span>
                         </template>
@@ -4595,12 +4596,15 @@ export default {
         // 地図ラベル（GeoJSON）も更新
         try {
           const SRC = 'oh-toroku-point-src'
+          const LAB   = 'oh-toroku-point-label';
           const f = this._torokuFC?.features?.find(f => f?.properties?.id === pid)
           if (f) {
             f.properties.label = newName
             f.properties.name  = newName
-            const map = (this.$store?.state?.map01) || this.map01
-            map?.getSource(SRC)?.setData(this._torokuFC)
+            const map = this.map01
+            map.getSource(SRC).setData(this._torokuFC)
+            map.triggerRepaint()
+            console.log(this._torokuFC)
           }
         } catch (e) {
           console.warn('[commitPointName] map label update skipped:', e)
@@ -8124,6 +8128,7 @@ export default {
                 : null;
 
         const haeEllipsoidalNum = haeNumArr.length ? avg(haeNumArr) : null;
+        const addr = String(this.$store.state.address || '');
 
         const rowArray = [
           String(name || ''),
@@ -8137,6 +8142,7 @@ export default {
           String(csLabel || ''),
           Number.isFinite(latUse) ? Number(latUse).toFixed(8) : '',
           Number.isFinite(lngUse) ? Number(lngUse).toFixed(8) : '',
+          addr,
           String(obsCount),
           String(ts || '')
         ];
@@ -8179,6 +8185,7 @@ export default {
             fd.append('crs_label',      String(csLabel || ''));
             fd.append('observed_at',    _toSql(ts));
             fd.append('observe_count', String(obsCount));
+            fd.append('address', String(this.$store.state.address || '')); // ★追加：所在
             try {
               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
               const data = await res.json();
@@ -8230,6 +8237,7 @@ export default {
         // ★ 見出し：最後から2番目 = 測位日時の直前
         const header = [
           '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
+          '所在',
           '測位回数',          // ← 追加（last-2）
           '測位日時'
         ];
@@ -8262,6 +8270,7 @@ export default {
             esc(String(r.crs_label ?? '')),
             esc(fmtDeg8(r.lat)),
             esc(fmtDeg8(r.lng)),
+            esc(String(r.address ?? '')),
             esc(Number.isFinite(obsCount) ? obsCount : ''), // ← 追加（last-2）
             esc(String(r.observed_at ?? ''))
           ]);
@@ -8562,7 +8571,7 @@ export default {
             '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
         options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
       })
-
+      this.showJobListOnly = true
       this.refreshJobs();
     },
 
@@ -8814,9 +8823,17 @@ export default {
         if (lat < minLat) minLat = lat;
         if (lat > maxLat) maxLat = lat;
 
+        // const rowArray = [
+        //   name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
+        //   fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
+        // ];
+        // alert(r.address)
         const rowArray = [
           name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
-          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
+          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
+          String(r.address ?? ''),                                // ★ 所在
+          // String(r.observe_count ?? r.observed_count ?? ''),      // ★ 測位回数
+          ts
         ];
 
         features.push({
@@ -9006,35 +9023,35 @@ export default {
     },
 
     /** ピッカーの行クリックで、その点へズーム＆赤丸を（必要に応じて）描画 */
-    focusPointOnMap(pt) {
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (!map) return;
-
-        const lng = Number(pt?.lng);
-        const lat = Number(pt?.lat);
-        if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-          console.warn('[focusPointOnMap] invalid lng/lat', pt);
-          return;
-        }
-
-        try {
-          if (window.mapboxgl?.LngLatBounds) {
-            const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
-            map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
-          } else {
-            map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
-          }
-        } catch (e) {
-          console.warn('[focusPointOnMap] fitBounds failed', e);
-        }
-
-        const label = String(pt?.point_name ?? pt?.name ?? '');
-        this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
-      } catch (e) {
-        console.warn('[focusPointOnMap] error', e);
-      }
-    },
+    // focusPointOnMap(pt) {
+    //   try {
+    //     const map = (this.$store?.state?.map01) || this.map01;
+    //     if (!map) return;
+    //
+    //     const lng = Number(pt?.lng);
+    //     const lat = Number(pt?.lat);
+    //     if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+    //       console.warn('[focusPointOnMap] invalid lng/lat', pt);
+    //       return;
+    //     }
+    //
+    //     try {
+    //       if (window.mapboxgl?.LngLatBounds) {
+    //         const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
+    //         map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
+    //       } else {
+    //         map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
+    //       }
+    //     } catch (e) {
+    //       console.warn('[focusPointOnMap] fitBounds failed', e);
+    //     }
+    //
+    //     const label = String(pt?.point_name ?? pt?.name ?? '');
+    //     this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
+    //   } catch (e) {
+    //     console.warn('[focusPointOnMap] error', e);
+    //   }
+    // },
 
     /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
     loadJobsFromStorage() {

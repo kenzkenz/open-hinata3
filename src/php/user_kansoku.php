@@ -126,21 +126,23 @@ try {
             $crs_label       = $nz($_POST['crs_label']       ?? null);
             $observed_at     = $nz($_POST['observed_at']     ?? null);
             $observe_count   = isset($_POST['observe_count']) && $_POST['observe_count'] !== '' ? (int)$_POST['observe_count'] : null;
+            $address         = $_POST['address']         ?? null;  // ★追加
 
             $sql = 'INSERT INTO job_points
                 (job_id,user_id,point_name,
                  x_north,y_east,lng,lat,
                  h_orthometric,antenna_height,h_at_antenna,hae_ellipsoidal,
                  xy_diff,crs_label,observed_at,
-                 observe_count)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                 observe_count,address)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
             $stmt = $pdo->prepare($sql);
             $ok = $stmt->execute([
                 $job_id, $user_id, $pname,
                 $x_north, $y_east, $lng, $lat,
                 $h_orthometric, $antenna_height, $h_at_antenna, $hae_ellipsoidal,
                 $xy_diff, $crs_label, $observed_at,
-                $observe_count
+                $observe_count,
+                $address
             ]);
             if (!$ok) { echo json_encode(['ok'=>false,'error'=>'DB insert failed'], JSON_UNESCAPED_UNICODE); exit; }
 
