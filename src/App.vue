@@ -2030,8 +2030,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </div>
 
           <!-- コンパス -->
-          <div :class="!s_isPrint && isTracking ? 'compass-div-tracking' : 'compass-div'"
-               v-if="s_isPrint || isTracking"
+          <div :class="(!s_isPrint && isTracking) || (!s_isPrint && s_isKuiuchi) ? 'compass-div-tracking' : 'compass-div'"
+               v-if="s_isPrint || isTracking || s_isKuiuchi"
                @click="compassClick"
           >
             <!-- コンパス（OH3ミニマル） -->
@@ -2172,10 +2172,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </v-fab>
                   </template>
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
-                    <v-btn icon
-                           @click="toggleWatchPosition('t');
-                           onJobEndClick(true)"
-                    >追跡</v-btn>
+<!--                    <v-btn icon-->
+<!--                           @click="toggleWatchPosition('t');-->
+<!--                           onJobEndClick(true)"-->
+<!--                    >追跡</v-btn>-->
                     <v-btn icon
                            @click="toggleWatchPosition('k');
                            onJobEndClick(true)"
@@ -3807,7 +3807,7 @@ export default {
           [
             { key: 'print', text: '印刷', icon: 'mdi-printer', color: 'primary', disabled: this.isSmall500,  click: this.handlePrint },
             { key: 'currentPosition', text: '現在地取得', icon: 'mdi-crosshairs-gps', click: this.goToCurrentLocation },
-            // { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', color: this.isTracking ? 'green' : 'primary', click: this.toggleWatchPosition },
+            { key: 'watchPosition', text: '現在地連続取得', icon: 'mdi-map-marker-radius', click: this.toggleWatchPosition },
             { key: 'share', text: '共有', icon: 'mdi-share-variant', color: 'primary', click: this.share },
             { key: 'help', text: 'ヘルプ', icon: 'mdi-help', color: 'primary', click: this.help },
             { key: 'drawList', text: 'ドローリスト', icon: 'mdi-view-list', color: 'primary', click: this.drawListOpen, style: 'margin-top: 200px;' },
@@ -9583,11 +9583,12 @@ export default {
       this.gpsLineAnchorLngLat = null;
       if (!isClose) {
         this.dialogForWatchPosition = true;
-        if (mode === 't') {
-          this.s_isKuiuchi = false
-        } else {
+        if (mode === 'k') {
           this.isTracking = false
           this.s_isKuiuchi = true
+        } else {
+          this.isTracking = true
+          this.s_isKuiuchi = false
         }
       }
     },
