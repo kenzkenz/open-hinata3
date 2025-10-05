@@ -3519,6 +3519,8 @@ export default {
 
     showJobListOnly: true, // 起動時は一覧。ジョブ選択時に false（ポイント全高）にする
 
+    currentLngLat: null,
+
     aaa: null,
   }),
   computed: {
@@ -4436,6 +4438,101 @@ export default {
     },
   },
   methods: {
+    /**
+     * 始点(centerLngLat)を画面中心に固定したまま、
+     * 終点(targetLngLat)が画面に収まるようにズーム（必要な時だけズームアウト）
+     */
+    focusCenterIncludePoint (centerLngLat, targetLngLat, {
+      padding = 60,
+      animate = false,
+      maxZoom,
+      minZoom,
+      hysteresis = 0.02   // 0.02 ≒ 2%スケール差 ≒ ズーム差 ~0.03
+    } = {}) {
+      const map = (this.$store?.state?.map01) || this.map01 || this.map
+      if (!map || !centerLngLat || !targetLngLat) return
+
+      const cx = Number(centerLngLat[0]), cy = Number(centerLngLat[1])
+      const tx = Number(targetLngLat[0]),  ty = Number(targetLngLat[1])
+      if (![cx,cy,tx,ty].every(n => Number.isFinite(n))) return
+
+      const cont  = map.getContainer ? map.getContainer() : map.getCanvas?.()
+      const w = cont?.clientWidth  ?? 0
+      const h = cont?.clientHeight ?? 0
+      const halfW = Math.max(0, (w / 2) - padding)
+      const halfH = Math.max(0, (h / 2) - padding)
+      if (halfW === 0 || halfH === 0) return
+
+      const toMerc = (lng, lat) => {
+        const x = (lng + 180) / 360
+        const s = Math.sin(lat * Math.PI / 180)
+        const y = (1 - Math.log((1 + s) / (1 - s)) / Math.PI) / 2
+        return [x, y]
+      }
+      const [mxC, myC]   = toMerc(cx, cy)
+      let   [mxT, myT]   = toMerc(tx, ty)
+
+      // 経度ラップ（±0.5 世界）
+      let dxu = mxT - mxC
+      if (dxu >  0.5) { mxT -= 1; dxu = mxT - mxC }
+      if (dxu < -0.5) { mxT += 1; dxu = mxT - mxC }
+      const dyu = myT - myC
+
+      const EPS = 1e-12
+      // 同一点 or ほぼ同一点 → ズーム変更なしで center だけ固定
+      if (Math.abs(dxu) < EPS && Math.abs(dyu) < EPS) {
+        const opts = { center: [cx, cy] }
+        animate ? map.easeTo({ ...opts, duration: 300 }) : map.jumpTo(opts)
+        return
+      }
+
+      // 必要スケール（worldSize = 512 * 2^z、ピクセルで収まる条件）
+      const needScaleX = (Math.abs(dxu) < EPS) ? Infinity : (halfW / (512 * Math.abs(dxu)))
+      const needScaleY = (Math.abs(dyu) < EPS) ? Infinity : (halfH / (512 * Math.abs(dyu)))
+      const needScale  = Math.min(needScaleX, needScaleY)
+
+      const curZ = map.getZoom?.() ?? 16
+      const zMax = (typeof maxZoom === 'number') ? maxZoom : (map.getMaxZoom?.() ?? 22)
+      const zMin = (typeof minZoom === 'number') ? minZoom : (map.getMinZoom?.() ?? 0)
+
+      // 収めるのに必要なズーム（ズームイン/アウト両方向OK）
+      let zReq = Math.log2(Math.max(needScale, 1e-9))
+      zReq = Math.min(zReq, zMax)
+      zReq = Math.max(zReq, zMin)
+
+      // 変更が微小なら何もしない（ちらつき防止）
+      if (Math.abs(zReq - curZ) < hysteresis) {
+        const opts = { center: [cx, cy] }
+        animate ? map.easeTo({ ...opts, duration: 200 }) : map.jumpTo(opts)
+        return
+      }
+
+      // ★ ここが変更点：ズームインも許可（以前は Math.min(curZ, zReq) でアウトのみだった）
+      const targetZ = zReq
+
+      const opts = { center: [cx, cy], zoom: targetZ }
+      animate ? map.easeTo({ ...opts, duration: 300, padding: 0 }) : map.jumpTo(opts)
+    },
+
+    focusTwoPoints (aLngLat, bLngLat, { padding, maxZoom, duration } = {}) {
+      const A = Array.isArray(aLngLat) ? aLngLat.map(Number) : null; // [lng,lat]
+      const B = Array.isArray(bLngLat) ? bLngLat.map(Number) : null;
+      if (!A && !B) return;
+
+      const map = (this.$store?.state?.map01) || this.map01 || this.map;
+      if (!map || typeof map.fitBounds !== 'function') return;
+
+      const pad = (typeof padding === 'number') ? padding : (this.isSmall500 ? 80 : 120);
+      const opts = { padding: pad, maxZoom: (typeof maxZoom === 'number') ? maxZoom : 18, duration: (typeof duration === 'number') ? duration : 0 };
+
+      if (A && B) {
+        const minLng = Math.min(A[0], B[0]), minLat = Math.min(A[1], B[1]);
+        const maxLng = Math.max(A[0], B[0]), maxLat = Math.max(A[1], B[1]);
+        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], opts);
+      } else if (A || B) {
+        map.setCenter((A || B));
+      }
+    },
     // ====== ポイント名のインライン編集 ======
     startEditPointName (pt) {
       const cur = String(pt?.point_name ?? '')
@@ -7713,7 +7810,6 @@ export default {
           return null;
         }
       }
-
       navigator.geolocation.getCurrentPosition(
           async (pos) => {
             try {
@@ -9616,7 +9712,16 @@ export default {
           paint: { 'text-halo-color': 'white', 'text-halo-width': 1.5 }
         });
       }
+
+      // snap で相手ポイント座標が決まった直後
+      const snapLngLat = [p1.lng, p1.lat]
+      // 現在地は currentLngLat を使う（あなたが既に保持）
+      this.focusCenterIncludePoint(this.currentLngLat, snapLngLat, { padding: this.isSmall500 ? 80 : 120, animate: true })
+
+      // this.focusTwoPoints([p1.lng, p1.lat], this.currentLngLat, { duration: 1000 });
+
     },
+
     attachGpsLineClick () {
       const map = this.$store?.state?.map01;
       if (!map) return;
@@ -10055,6 +10160,8 @@ export default {
         this.centerMarker = new maplibregl.Marker({ color: 'green' })
             .setLngLat([longitude, latitude])
             .addTo(map);
+        // alert(888)
+        this.currentLngLat = [longitude, latitude];
       } else {
         this.centerMarker.setLngLat([longitude, latitude]);
       }
