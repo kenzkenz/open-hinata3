@@ -2414,7 +2414,7 @@ import rtkPngUrl from '@/assets/icons/oh-rtk.png'
 import { ensureGeoid, calcOrthometric } from '@/geoid';
 
 import {
-  addDraw,
+  addDraw, addressFromMapCenter,
   addSvgAsImage,
   animateRelocate,
   bakeRotationToBlob,
@@ -3519,7 +3519,10 @@ export default {
 
     showJobListOnly: true, // 起動時は一覧。ジョブ選択時に false（ポイント全高）にする
 
+    snapLngLat: null,
     currentLngLat: null,
+
+    suppressUntil: 0, // タッチ操作終了から20秒は抑止
 
     aaa: null,
   }),
@@ -4438,6 +4441,36 @@ export default {
     },
   },
   methods: {
+    maybeFocusCenterIncludePoint(aLngLat, bLngLat, opts) {
+      if (Date.now() < this.suppressUntil) return;
+      // if (this.suppressUntil > 0) {
+      //   alert(this.suppressUntil)
+      // }
+      return this.focusCenterIncludePoint(aLngLat, bLngLat, opts);
+    },
+
+    installTouchSuppressor() {
+      const map = (this.$store && this.$store.state) ? this.$store.state.map01 : null;
+      if (!map || !map.getCanvasContainer) return;
+      const el = map.getCanvasContainer();
+      const setSuppress = () => {
+        this.suppressUntil = Date.now() + 20000;
+        // alert(this.suppressUntil);
+      };
+
+      // タッチ系の「終了」イベントで20秒抑止
+      el.addEventListener('touchend',       setSuppress, { passive: true });
+      el.addEventListener('touchcancel',    setSuppress, { passive: true });
+      el.addEventListener('pointerup',      setSuppress, { passive: true });
+      el.addEventListener('pointercancel',  setSuppress, { passive: true });
+      el.addEventListener('gestureend',     setSuppress, { passive: true }); // iOS保険
+
+      // // MapLibre の終了イベントでも抑止
+      // map.on('dragend',   setSuppress);
+      // map.on('zoomend',   setSuppress);
+      // map.on('rotateend', setSuppress);
+      // map.on('pitchend',  setSuppress);
+    },
     /**
      * 始点(centerLngLat)を画面中心に固定したまま、
      * 終点(targetLngLat)が画面に収まるようにズーム（必要な時だけズームアウト）
@@ -4480,11 +4513,11 @@ export default {
 
       const EPS = 1e-12
       // 同一点 or ほぼ同一点 → ズーム変更なしで center だけ固定
-      if (Math.abs(dxu) < EPS && Math.abs(dyu) < EPS) {
-        const opts = { center: [cx, cy] }
-        animate ? map.easeTo({ ...opts, duration: 300 }) : map.jumpTo(opts)
-        return
-      }
+      // if (Math.abs(dxu) < EPS && Math.abs(dyu) < EPS) {
+      //   const opts = { center: [cx, cy] }
+      //   animate ? map.easeTo({ ...opts, duration: 300 }) : map.jumpTo(opts)
+      //   return
+      // }
 
       // 必要スケール（worldSize = 512 * 2^z、ピクセルで収まる条件）
       const needScaleX = (Math.abs(dxu) < EPS) ? Infinity : (halfW / (512 * Math.abs(dxu)))
@@ -4501,17 +4534,20 @@ export default {
       zReq = Math.max(zReq, zMin)
 
       // 変更が微小なら何もしない（ちらつき防止）
-      if (Math.abs(zReq - curZ) < hysteresis) {
-        const opts = { center: [cx, cy] }
-        animate ? map.easeTo({ ...opts, duration: 200 }) : map.jumpTo(opts)
-        return
-      }
+      // if (Math.abs(zReq - curZ) < hysteresis) {
+      //   const opts = { center: [cx, cy] }
+      //   animate ? map.easeTo({ ...opts, duration: 200 }) : map.jumpTo(opts)
+      //   return
+      // }
 
       // ★ ここが変更点：ズームインも許可（以前は Math.min(curZ, zReq) でアウトのみだった）
       const targetZ = zReq
-
       const opts = { center: [cx, cy], zoom: targetZ }
-      animate ? map.easeTo({ ...opts, duration: 300, padding: 0 }) : map.jumpTo(opts)
+      // animate ? map.easeTo({ ...opts, duration: 300, padding: 0 }) : map.jumpTo(opts)
+
+      map.setZoom(targetZ)
+
+
     },
 
     focusTwoPoints (aLngLat, bLngLat, { padding, maxZoom, duration } = {}) {
@@ -7727,6 +7763,8 @@ export default {
     kansokuStart () {
       this.clearCurrentMarker()   // 残っている緑丸を消す
 
+      addressFromMapCenter()
+
       if (!this.canStartKansoku) return
       if (this.kansokuPhase !== 'idle') return
       if (this.kansokuPhase === 'observing') return
@@ -9496,12 +9534,16 @@ export default {
               const isUpdateLocation = this.saveGeoMetrics(position);
               if (isUpdateLocation) {
 
-                // alert(999)
 
                 /**
                  * ここらへんに仕掛ければいいか？
                  */
-
+                this.currentLngLat = [Number(position.coords.longitude), Number(position.coords.latitude)]
+                this.maybeFocusCenterIncludePoint(
+                    this.currentLngLat,
+                    this.snapLngLat,
+                    { padding: this.isSmall500 ? 80 : 120, animate: true }
+                )
 
                 this.updateLocationAndCoordinates?.(position);
               }
@@ -9722,9 +9764,8 @@ export default {
       }
 
       // snap で相手ポイント座標が決まった直後
-      const snapLngLat = [p1.lng, p1.lat]
-      // 現在地は currentLngLat を使う（あなたが既に保持）
-      this.focusCenterIncludePoint(this.currentLngLat, snapLngLat, { padding: this.isSmall500 ? 80 : 120, animate: true })
+      this.snapLngLat = [p1.lng, p1.lat]
+      this.focusCenterIncludePoint(this.currentLngLat, this.snapLngLat, { padding: this.isSmall500 ? 80 : 120, animate: true })
 
       // this.focusTwoPoints([p1.lng, p1.lat], this.currentLngLat, { duration: 1000 });
 
@@ -10437,35 +10478,9 @@ export default {
       &geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}&isdrawfit=${JSON.stringify(isDrawFit)}`
       this.createShortUrl()
       this.zoom = zoom
-      const vm = this
-      axios
-          .get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
-            params: {
-              lon: lng,
-              lat: lat
-            }
-          })
-          .then(function (response) {
-            if (response.data.results) {
-              try {
-                const muni0 = muni[Number(response.data.results.muniCd)]
-                if (muni0) {
-                  const splitMuni = muni0.split(',')
-                  vm.s_address = splitMuni[1] + splitMuni[3] + response.data.results.lv01Nm
-                  vm.s_addressMini = removeAllWhitespace(splitMuni[3] + response.data.results.lv01Nm)
-                  console.log(vm.s_address)
-                  vm.$store.state.prefId = splitMuni[0]
-                }
-              } catch (e) {
-                console.log(e)
-                vm.s_address = ''
-                vm.s_addressMini = ''
-              }
-            } else {
-              vm.s_address = ''
-              vm.s_addressMini = ''
-            }
-          })
+
+      addressFromMapCenter()
+
       history('updatePermalink',window.location.href)
       japanCoord([lng,lat])
     },
@@ -11711,6 +11726,7 @@ export default {
       })
       this.map01Tracker = res.map01Tracker
       this.map02Tracker = res.map02Tracker
+      this.installTouchSuppressor();
 
       // -----------------------------------------------------------------------------------------------------------------
       // on load オンロード
