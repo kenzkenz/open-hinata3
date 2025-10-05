@@ -806,6 +806,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
               <!-- b: 測位回数（100%） -->
               <v-select
+                  :menu-props="{
+                    maxHeight: '300px',
+                    overflow: 'scroll',
+                    contentClass: 'scrollable-menu'
+                  }"
                   v-model="kansokuCount"
                   :items="kansokuItems"
                   label="測位回数"
@@ -14468,8 +14473,6 @@ html.oh3-embed #map01 {
 @media (max-width: 480px) {
   .compass-icon { width: 48px; height: 48px; }
 }
-
-
 
 </style>
 
