@@ -809,7 +809,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   :menu-props="{
                     maxHeight: '300px',
                     overflow: 'scroll',
-                    contentClass: 'scrollable-menu'
+                    contentClass: 'scrollable-menu elevation-8'
                   }"
                   v-model="kansokuCount"
                   :items="kansokuItems"
@@ -13387,6 +13387,17 @@ export default {
     window.removeEventListener("resize", this.onResize);
   },
   mounted() {
+    // android対応まとめ-----------------------------------------------------------
+    if (this.s_isAndroid) {
+      const stopOnMenu = (e) => {
+        const content = e.target.closest('.v-overlay__content.scrollable-menu');
+        if (content) e.stopPropagation();   // ← スクロールはネイティブに任せる
+      };
+      // 伝播を止めるには capture: true で早期にフック
+      window.addEventListener('touchstart', stopOnMenu, { capture: true, passive: true });
+      window.addEventListener('touchmove',  stopOnMenu, { capture: true, passive: true });
+      window.addEventListener('touchend',   stopOnMenu, { capture: true, passive: true });
+    }
 
     if (this.s_isAndroid){
       let startY;
@@ -13431,6 +13442,8 @@ export default {
         initialScrollTop = 0; // 初期スクロール位置をリセット
       });
     }
+    // android対応まとめ-----------------------------------------------------------
+
 
 
 
@@ -15291,11 +15304,27 @@ select {
   color: #1976d2; /* ホバー時に青く */
 }
 
-/* iOS でスムースにスクロールできるように */
+/* スマホでスムースにスクロールできるように */
+/* 外側: 影を出す。スクロールはしない */
 .scrollable-menu {
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
+  overflow: visible !important;
+  touch-action: auto !important;              /* ← 親の touch-action:none を打ち消す */
+  overscroll-behavior: contain;               /* スクロール連鎖を切る（Android向け） */
 }
+
+/* 内側（v-list / v-card 等）をスクロール領域に */
+.scrollable-menu > * {
+  max-height: 300px;                          /* menu-props の maxHeight と揃える */
+  overflow-y: auto !important;
+  /* iOS の慣性。Androidでも無害 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 念のため、メニュー内部の全要素でタッチを奪わないように */
+.scrollable-menu, .scrollable-menu * {
+  touch-action: auto !important;
+}
+
 
 .v-navigation-drawer{
   /* iOS での安定化: 不要な backdrop-filter は避ける */
