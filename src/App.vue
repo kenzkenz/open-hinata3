@@ -9495,6 +9495,14 @@ export default {
             try {
               const isUpdateLocation = this.saveGeoMetrics(position);
               if (isUpdateLocation) {
+
+                // alert(999)
+
+                /**
+                 * ここらへんに仕掛ければいいか？
+                 */
+
+
                 this.updateLocationAndCoordinates?.(position);
               }
             } catch (e) {
