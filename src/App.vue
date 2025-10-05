@@ -237,48 +237,56 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
           <v-card class="fw-card">
 
-            <!-- ヘッダー：ジョブ名インライン編集＋戻るボタン -->
+            <!-- ヘッダー：ジョブ名インライン編集＋一覧へ戻る -->
             <v-card-title class="d-flex align-center text-h6">
               <span v-if="!currentJobName">ジョブ選択</span>
 
-              <span v-else class="jobname-wrap" @mouseenter="hoverJobName = true" @mouseleave="hoverJobName = false">
-          ジョブ:
-          <template v-if="!editingJobName">
-            <span class="editable-label ml-1" @click="startEditJobName">
-              {{ currentJobName }}
-              <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
-            </span>
-          </template>
-          <template v-else>
-            <v-text-field
-                v-model="tempJobName"
-                density="compact"
-                variant="outlined"
-                hide-details
-                autofocus
-                class="jobname-input"
-                @change="commitJobName"
-                @keydown.esc.stop="cancelJobNameEdit"
-                @keydown.left.stop
-                @keydown.right.stop
-                @blur="commitJobName"
-            />
-          </template>
-        </span>
+              <div
+                  v-else
+                  class="name-edit-wrap"
+                  @mouseenter="hoverJobName = true"
+                  @mouseleave="hoverJobName = false"
+              >
+                ジョブ:
+                <template v-if="!editingJobName">
+      <span class="editable-label ml-1" @click="startEditJobName">
+        {{ currentJobName }}
+        <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
+      </span>
+                </template>
+                <template v-else>
+                  <v-text-field
+                      v-model="tempJobName"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      autofocus
+                      class="name-input-70"
+                      @change="commitJobName"
+                      @keydown.esc.stop="cancelJobNameEdit"
+                      @keydown.left.stop
+                      @keydown.right.stop
+                      @blur="commitJobName"
+                  />
+                </template>
+              </div>
 
-              <v-spacer></v-spacer>
+              <!-- ここには何も置かない（ボタンはタイトルの外へ） -->
+            </v-card-title>
 
-              <!-- 一覧へ戻る（一覧中は disabled） -->
+            <!-- ▼ タイトルの“1行下”：右端寄せの行を追加（Vuetify3） -->
+            <v-card-subtitle class="d-flex justify-end px-4 pt-1">
               <v-btn
                   size="small"
                   variant="outlined"
-                  class="mr-2"
                   :disabled="showJobListOnly"
                   @click="showJobListOnly = true"
               >
                 ジョブ一覧
               </v-btn>
-            </v-card-title>
+            </v-card-subtitle>
+
+
 
             <v-divider thickness="4" />
 
@@ -308,7 +316,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
                 <v-divider thickness="4" class="my-3" />
 
-                <!-- 既存ジョブ一覧：中間ラッパを section-grow、スクロール箱を list-pane -->
+                <!-- 既存ジョブ一覧：中間ラッパ(section-grow)＋中でスクロール(list-pane) -->
                 <div v-if="jobList && jobList.length" class="section-grow">
                   <div class="text-caption mb-2">既存のジョブ</div>
 
@@ -347,7 +355,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
               <!-- ========== ポイント一覧画面（全高表示） ========== -->
               <template v-else>
-                <!-- タイトル＆件数は上に固定し、下の list-pane をスクロール領域に -->
+                <!-- 上：タイトル＆件数、下：スクロール領域 -->
                 <div class="section-grow">
                   <div class="d-flex align-center justify-space-between mb-1">
                     <div class="text-caption">
@@ -363,39 +371,41 @@ import SakuraEffect from './components/SakuraEffect.vue';
                           :key="pt.point_id"
                           @click="focusPointOnMap(pt)"
                       >
-                        <!-- タイトル：ポイント名インライン編集 -->
+                        <!-- タイトル：ポイント名インライン編集（70%幅） -->
                         <template #title>
-                    <span class="pointname-wrap"
-                          @mouseenter="hoverPointId = pt.point_id"
-                          @mouseleave="hoverPointId = null">
-                      <template v-if="editingPointId !== pt.point_id">
-                        <span class="editable-label" @click.stop="startEditPointName(pt)">
-                          {{ pt.point_name }}
-                          <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
-                        </span>
-                      </template>
-                      <template v-else>
-                        <v-text-field
-                            v-model="tempPointName"
-                            density="compact"
-                            variant="outlined"
-                            hide-details
-                            autofocus
-                            class="pointname-input"
-                            @change="commitPointName(pt)"
-                            @keydown.esc.stop="cancelPointNameEdit"
-                            @keydown.left.stop
-                            @keydown.right.stop
-                            @blur="commitPointName(pt)"
-                        />
-                      </template>
-                    </span>
+                          <div
+                              class="name-edit-wrap"
+                              @mouseenter="hoverPointId = pt.point_id"
+                              @mouseleave="hoverPointId = null"
+                          >
+                            <template v-if="editingPointId !== pt.point_id">
+                          <span class="editable-label" @click.stop="startEditPointName(pt)">
+                            {{ pt.point_name }}
+                            <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
+                          </span>
+                            </template>
+                            <template v-else>
+                              <v-text-field
+                                  v-model="tempPointName"
+                                  density="compact"
+                                  variant="outlined"
+                                  hide-details
+                                  autofocus
+                                  class="name-input-70"
+                                  @change="commitPointName(pt)"
+                                  @keydown.esc.stop="cancelPointNameEdit"
+                                  @keydown.left.stop
+                                  @keydown.right.stop
+                                  @blur="commitPointName(pt)"
+                              />
+                            </template>
+                          </div>
                         </template>
 
                         <template #subtitle>
-                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-                    </span>
+                      <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                        X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                      </span>
                         </template>
 
                         <template #append>
@@ -14558,17 +14568,38 @@ html.oh3-embed #map01 {
   overflow:auto;             /* ← スクロール発生点 */
 }
 
-/* 見た目：インライン編集の統一 */
+/* インライン編集：見た目＆幅 70% */
 .editable-label{ cursor:pointer; border-bottom:1px dotted currentColor; }
 .editable-label:hover{ opacity:.9; }
-.jobname-wrap,.pointname-wrap{ display:inline-flex; align-items:center; gap:6px; min-width:0; }
-.jobname-input,.pointname-input{ width:100%; max-width:100%; }
 
-/* モバイル余白（任意） */
-@media (max-width: 400px){
-  .fw-body{ padding:8px; }
+.name-edit-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  min-width:0;
 }
 
+.name-input-70{
+  flex:0 1 70%;
+  max-width:70%;
+  min-width:140px;           /* お好みで調整 */
+}
+/* Vuetify 内側ラッパへ幅伝搬（v2） */
+.name-input-70 :deep(.v-input),
+.name-input-70 :deep(.v-input__control),
+.name-input-70 :deep(.v-field){ width:100%; }
+/* タイトル直下の操作行を右端寄せに */
+/* scoped でも効くようにシンプルに */
+.title-actions{
+  display:flex;
+  justify-content:flex-end;  /* 右端 */
+  padding:4px 16px 0;        /* タイトルとの間隔 */
+}
+/* モバイル余白（任意） */
+@media (max-width: 500px){
+  .fw-body{ padding:8px; }
+}
 
 </style>
 
