@@ -14197,7 +14197,17 @@ html.oh3-embed #map01 {
       1px -1px 0 #ffffff,
       -1px  1px 0 #ffffff,
       1px  1px 0 #ffffff;
+
+  /* デフォは通常どおり（PCでクリックを遮らない or 必要なら触れる） */
+  pointer-events: auto;
+  user-select: none;
 }
+
+/* タッチ（粗いポインタ）端末では“すり抜け”させる */
+@media (pointer: coarse) {
+  .zoom-div { pointer-events: none; }
+}
+
 .current-position {
   position: absolute;
   top: 0px;
