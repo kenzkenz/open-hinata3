@@ -3457,6 +3457,8 @@ export default {
 
     detachForContextMenu: null,
 
+    kansokuInFlight: false,  // 1tick内の重複実行を防ぐ
+
     aaa: null,
   }),
   computed: {
@@ -4374,6 +4376,44 @@ export default {
     },
   },
   methods: {
+    _stopIntervalAndFinalize () {
+      if (this.kansokuTimer) {
+        clearInterval(this.kansokuTimer)
+        this.kansokuTimer = null
+      }
+      this.kansokuStop?.()  // サマリー確定 → await へ
+    },
+    async _tickKansoku () {
+      if (this.kansokuPhase !== 'observing') return
+      if (this.kansokuInFlight) return
+
+      const nGoal = Number(this.kansokuCount || 0)
+      const nNow  = Number(this.pendingObservation?.n || 0)
+
+      // 既に目標到達なら停止
+      if (nGoal > 0 && nNow >= nGoal) {
+        this._stopIntervalAndFinalize()
+        return
+      }
+
+      this.kansokuInFlight = true
+      try {
+        // 1回採取（内部で pendingObservation.n が増える）
+        await this.kansokuCollectOnce()
+
+        // 採取直後に再判定して “ぴったり” で停止
+        const nAfter = Number(this.pendingObservation?.n || 0)
+        if (nGoal > 0 && nAfter >= nGoal) {
+          this._stopIntervalAndFinalize()
+        }
+      } catch (e) {
+        console.warn('[kansoku] collect failed; continue:', e)
+        // 失敗時は n は増えない → 次tickへ
+      } finally {
+        this.kansokuInFlight = false
+      }
+    },
+
     compassClick() {
       if (this.isHeadingUp) {
         this.map01.setBearing(0)
@@ -7474,45 +7514,47 @@ export default {
 
 // 観測開始：入力検証→状態初期化→インターバルで収集開始
     kansokuStart () {
-      this.clearCurrentMarker();   // 残っている緑丸を消す
+      this.clearCurrentMarker()   // 残っている緑丸を消す
 
-      if (!this.canStartKansoku) return;
-      if (this.kansokuPhase !== 'idle') return;      // 二重起動防止
-      if (this.kansokuPhase === 'observing') return; // 念のため
+      if (!this.canStartKansoku) return
+      if (this.kansokuPhase !== 'idle') return
+      if (this.kansokuPhase === 'observing') return
 
       if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer);
-        this.kansokuTimer = null;
+        clearInterval(this.kansokuTimer)
+        this.kansokuTimer = null
       }
 
-      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
-
-      // 点名必須（自動採番しない）
+      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim()
       if (!raw) {
-        this.tenmeiError = '点名は必須です';
-        alert('点名を入力してください');
-        return;
+        this.tenmeiError = '点名は必須です'
+        alert('点名を入力してください')
+        return
       }
-      try { localStorage.setItem('tenmei', raw); } catch (_) {}
-      this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw;
+      try { localStorage.setItem('tenmei', raw) } catch (_) {}
+      this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw
 
-      this.pendingObservation = null;
+      this.pendingObservation = null
 
       // セッション初期化と準備
-      this._resetKansokuSession();
-      this.initKansokuCsvIfNeeded();
+      this._resetKansokuSession()
+      this.initKansokuCsvIfNeeded()
 
-      this.kansokuRunning   = true;
-      this.kansokuRemaining = Number(this.kansokuCount) || 1;
-      this.kansokuPhase     = 'observing';
+      this.kansokuRunning   = true
+      this.kansokuRemaining = Number(this.kansokuCount) || 1
+      this.kansokuPhase     = 'observing'
 
-      // 即時1回 + 以後 interval 実行
-      this.kansokuCollectOnce();
+      // インターバル算出
+      this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec)
+      const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000))
 
-      this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec);
-      const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000));
-      this.kansokuTimer = setInterval(() => this.kansokuCollectOnce(), intervalMs);
+      // 即時1回（＝最初のtick）※ n を見て停止判定もここで行う
+      this._tickKansoku()
+
+      // 以後は毎tickで n を見て止める
+      this.kansokuTimer = setInterval(() => this._tickKansoku(), intervalMs)
     },
+
 
 // 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
     kansokuCollectOnce() {
