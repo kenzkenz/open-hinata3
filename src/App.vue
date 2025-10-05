@@ -213,10 +213,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
       <!-- <v-btn @click="test">test</v-btn>-->
 
       <!-- =========================
-        JOBリスト（ジョブピッカー） UI 全文
-        - ジョブ名：インライン編集（既存と同じ操作感）
-        - ポイント名：インライン編集（統一）
-        - 親サイズ追従、内部スクロール対応
+        JOBピッカー UI（簡略版・全文）
+        - 一覧：常に全ジョブ表示
+        - 選択：ポイント一覧のみ全高表示
+        - 戻る：ジョブ一覧のみ表示に戻る
+        - ジョブ名 / ポイント名 はインライン編集で統一
       ========================= -->
       <FloatingWindow
           windowId="job-picker"
@@ -227,24 +228,25 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-top="10"
           :default-left="10"
           :default-width="400"
-          :default-height="600"
+          :default-height="430"
           :keepAspectRatio="false"
           :showMaxRestore="false"
           @close="jobPickerOpen = false"
       >
-        <!-- ★ 親サイズに追従させるフィット用ラッパ -->
+        <!-- 親サイズに追従（高さ伝搬の起点） -->
         <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
           <v-card class="fw-card">
 
-            <!-- ヘッダー：ジョブ名インライン編集 -->
+            <!-- ヘッダー：ジョブ名インライン編集＋戻るボタン -->
             <v-card-title class="d-flex align-center text-h6">
               <span v-if="!currentJobName">ジョブ選択</span>
+
               <span v-else class="jobname-wrap" @mouseenter="hoverJobName = true" @mouseleave="hoverJobName = false">
           ジョブ:
           <template v-if="!editingJobName">
             <span class="editable-label ml-1" @click="startEditJobName">
               {{ currentJobName }}
-              <v-icon v-if="!isSmall500" x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
+              <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
             </span>
           </template>
           <template v-else>
@@ -254,7 +256,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 variant="outlined"
                 hide-details
                 autofocus
-                width="200px"
                 class="jobname-input"
                 @change="commitJobName"
                 @keydown.esc.stop="cancelJobNameEdit"
@@ -267,143 +268,151 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
               <v-spacer></v-spacer>
 
-              <v-chip
+              <!-- 一覧へ戻る（一覧中は disabled） -->
+              <v-btn
                   size="small"
                   variant="outlined"
-                  class="cursor-pointer"
-                  @click="showAllJobs = !showAllJobs"
+                  class="mr-2"
+                  :disabled="showJobListOnly"
+                  @click="showJobListOnly = true"
               >
-                {{ showAllJobs ? '全件表示' : '選択中のみ' }}
-              </v-chip>
+                ジョブ一覧
+              </v-btn>
             </v-card-title>
 
             <v-divider thickness="4" />
 
-            <!-- 本文は親高に応じて伸縮＆内部スクロール -->
+            <!-- 本文：単画面切替（高さは flex で伝搬） -->
             <v-card-text class="fw-body">
-              <!-- 新規ジョブ -->
-              <div class="mb-4">
-                <div class="text-caption mb-2">新規ジョブを作成</div>
-                <div class="d-flex ga-2">
-                  <v-text-field
-                      v-model.trim="jobName"
-                      label="ジョブ名"
-                      variant="outlined"
-                      density="comfortable"
-                      hide-details="auto"
-                      class="flex-1-1"
-                      @keydown.left.stop
-                      @keydown.right.stop
-                  />
-                  <v-btn color="primary" @click="createNewJob">作成</v-btn>
+
+              <!-- ========== ジョブ一覧画面（常に全ジョブ） ========== -->
+              <template v-if="showJobListOnly">
+                <!-- 新規ジョブ -->
+                <div class="mb-4">
+                  <div class="text-caption mb-2">新規ジョブを作成</div>
+                  <div class="d-flex ga-2">
+                    <v-text-field
+                        v-model.trim="jobName"
+                        label="ジョブ名"
+                        variant="outlined"
+                        density="comfortable"
+                        hide-details="auto"
+                        class="flex-1-1"
+                        @keydown.left.stop
+                        @keydown.right.stop
+                    />
+                    <v-btn color="primary" @click="createNewJob">作成</v-btn>
+                  </div>
+                  <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
                 </div>
-                <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
-              </div>
 
-              <v-divider thickness="4" class="my-3" />
+                <v-divider thickness="4" class="my-3" />
 
-              <!-- 既存ジョブ -->
-              <div v-if="jobList && jobList.length">
-                <div class="text-caption mb-2">既存のジョブ</div>
+                <!-- 既存ジョブ一覧：中間ラッパを section-grow、スクロール箱を list-pane -->
+                <div v-if="jobList && jobList.length" class="section-grow">
+                  <div class="text-caption mb-2">既存のジョブ</div>
 
-                <div :class="['fw-scroll', hasSecond ? 'job-list' : 'job-list-full']">
-                  <v-list density="compact" nav>
-                    <v-list-item
-                        v-for="job in visibleJobs"
-                        :key="job.id"
-                        :title="job.name"
-                        @click="pickExistingJob(job)"
-                    >
-                      <template #append>
-                        <v-chip
-                            v-if="Number(job.count) > 0"
-                            size="small"
-                            variant="flat"
-                            color="red"
-                            class="rounded-pill mr-1"
-                            style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
-                        >
-                          {{ job.count }}
-                        </v-chip>
-                        <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">
-                          <v-icon size="22">mdi-close</v-icon>
-                        </v-btn>
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </div>
-              </div>
-
-              <!-- 選択中ジョブのポイント -->
-              <div v-if="currentJobId && pointsForCurrentJob && pointsForCurrentJob.length" class="mt-3">
-                <v-divider thickness="4" class="my-2" />
-                <div class="d-flex align-center justify-space-between mb-1">
-                  <div class="text-caption">
-                    <span v-if="currentJobName">{{ currentJobName }}のポイント</span>
-                    （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）
+                  <div class="list-pane">
+                    <v-list density="compact" nav>
+                      <v-list-item
+                          v-for="job in jobList"
+                          :key="job.id"
+                          :title="job.name"
+                          @click="pickExistingJob(job); showJobListOnly = false"
+                      >
+                        <template #append>
+                          <v-chip
+                              v-if="Number(job.count) > 0"
+                              size="small"
+                              variant="flat"
+                              color="red"
+                              class="rounded-pill mr-1"
+                              style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
+                          >
+                            {{ job.count }}
+                          </v-chip>
+                          <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">
+                            <v-icon size="22">mdi-close</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-list-item>
+                    </v-list>
                   </div>
                 </div>
 
-                <div :class="['fw-scroll', hasSingleVisibleJob ? 'point-list-full' : 'point-list']">
-                  <v-list density="compact" nav>
-                    <v-list-item
-                        v-for="pt in pointsForCurrentJob"
-                        :key="pt.point_id"
-                        @click="focusPointOnMap(pt)"
-                    >
-                      <!-- ★ タイトル（ポイント名）インライン編集：ジョブ名と統一 -->
-                      <template #title>
-                  <span class="pointname-wrap"
-                        @mouseenter="hoverPointId = pt.point_id"
-                        @mouseleave="hoverPointId = null">
-                    <template v-if="editingPointId !== pt.point_id">
-                      <span class="editable-label" @click.stop="startEditPointName(pt)">
-                        {{ pt.point_name }}
-                        <v-icon v-if="!isSmall500" x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
-                      </span>
-                    </template>
-                    <template v-else>
-                      <v-text-field
-                          v-model="tempPointName"
-                          density="compact"
-                          variant="outlined"
-                          hide-details
-                          autofocus
-                          width="200px"
-                          class="pointname-input"
-                          @change="commitPointName(pt)"
-                          @keydown.esc.stop="cancelPointNameEdit"
-                          @keydown.left.stop
-                          @keydown.right.stop
-                          @blur="commitPointName(pt)"
-                      />
-                    </template>
-                  </span>
-                      </template>
-
-                      <template #subtitle>
-                  <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                    X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-                  </span>
-                      </template>
-
-                      <template #append>
-                        <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
-                          <v-icon size="22">mdi-trash-can-outline</v-icon>
-                        </v-btn>
-                      </template>
-                    </v-list-item>
-                  </v-list>
+                <div v-else class="text-medium-emphasis text-caption">
+                  既存のジョブはありません。
                 </div>
-              </div>
+              </template>
 
-              <div v-else-if="!jobList || !jobList.length" class="text-medium-emphasis text-caption">
-                既存のジョブはありません。
-              </div>
+              <!-- ========== ポイント一覧画面（全高表示） ========== -->
+              <template v-else>
+                <!-- タイトル＆件数は上に固定し、下の list-pane をスクロール領域に -->
+                <div class="section-grow">
+                  <div class="d-flex align-center justify-space-between mb-1">
+                    <div class="text-caption">
+                      <span v-if="currentJobName">{{ currentJobName }}のポイント</span>
+                      （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）
+                    </div>
+                  </div>
+
+                  <div class="list-pane">
+                    <v-list density="compact" nav>
+                      <v-list-item
+                          v-for="pt in pointsForCurrentJob"
+                          :key="pt.point_id"
+                          @click="focusPointOnMap(pt)"
+                      >
+                        <!-- タイトル：ポイント名インライン編集 -->
+                        <template #title>
+                    <span class="pointname-wrap"
+                          @mouseenter="hoverPointId = pt.point_id"
+                          @mouseleave="hoverPointId = null">
+                      <template v-if="editingPointId !== pt.point_id">
+                        <span class="editable-label" @click.stop="startEditPointName(pt)">
+                          {{ pt.point_name }}
+                          <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
+                        </span>
+                      </template>
+                      <template v-else>
+                        <v-text-field
+                            v-model="tempPointName"
+                            density="compact"
+                            variant="outlined"
+                            hide-details
+                            autofocus
+                            class="pointname-input"
+                            @change="commitPointName(pt)"
+                            @keydown.esc.stop="cancelPointNameEdit"
+                            @keydown.left.stop
+                            @keydown.right.stop
+                            @blur="commitPointName(pt)"
+                        />
+                      </template>
+                    </span>
+                        </template>
+
+                        <template #subtitle>
+                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                    </span>
+                        </template>
+
+                        <template #append>
+                          <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
+                            <v-icon size="22">mdi-trash-can-outline</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-list-item>
+                    </v-list>
+                  </div>
+                </div>
+              </template>
             </v-card-text>
           </v-card>
         </div>
       </FloatingWindow>
+
 
 
 
@@ -3497,6 +3506,8 @@ export default {
     tempPointName: '',
     hoverPointId: null,
     pointRenameInFlight: false,
+
+    showJobListOnly: true, // 起動時は一覧。ジョブ選択時に false（ポイント全高）にする
 
     aaa: null,
   }),
@@ -14386,67 +14397,6 @@ html.oh3-embed #map01 {
   100% { transform: scale(1); }
 }
 
-/* 親サイズに追従できるように： */
-.fw-fit {
-  /* 親（FloatingWindow）を“サイズコンテナ”化して cqh/cqw を使えるようにする */
-  container-type: size;
-
-  /* 自身はウインドウ内部いっぱい */
-  width: 100%;
-  height: 100%;
-
-  /* v-card を縦に伸ばしたいので flex 縦 */
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-/* v-card を親いっぱいに */
-.fw-fit .fw-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-}
-
-/* 本文は伸縮＆スクロール担当 */
-.fw-fit .fw-body {
-  flex: 1 1 auto;
-  min-height: 0;     /* ← これが超重要（子のoverflowを効かせる）*/
-  overflow: hidden;
-}
-
-/* 個別のスクロール枠が欲しいとき： */
-/* 親の高さに対して 35% 前後を目安にしつつ、最小/最大も制限する */
-.fw-fit .fw-scroll {
-  overflow: auto;
-  /* 例: 最小140px、理想は親高の35%、最大360px */
-  max-height: clamp(140px, 35cqh, 360px);
-  border: 1px solid var(--v-theme-outline);
-  border-radius: 8px;
-}
-
-/* 必要ならリスト2つで配分を変える */
-.fw-fit .job-list   { max-height: clamp(120px, 30cqh, 320px); }
-.fw-fit .point-list { max-height: clamp(120px, 30cqh, 320px); }
-
-/* とりあえずこれで凌ぐ。数値を変えて調整する必要あり */
-.fw-fit .job-list-full {
-  max-height: calc(100cqh - 200px);
-}
-.fw-fit .point-list-full {
-  max-height: calc(100cqh - 370px);
-}
-
-
-/* 横方向はウインドウに合わせて可変（念のため） */
-.fw-fit .fw-card,
-.fw-fit .fw-body,
-.fw-fit .fw-scroll {
-  max-width: 100cqw;   /* 親ウインドウの幅に追従 */
-}
-
 /* デスクトップ：4列（必要なら固定幅を調整） */
 .oh3-grid-4col{
   display: grid;
@@ -14576,23 +14526,48 @@ html.oh3-embed #map01 {
   .compass-icon { width: 48px; height: 48px; }
 }
 
-/* ====== 見た目の補助（ジョブ名/ポイント名の統一感） ====== */
-.editable-label { cursor: pointer; border-bottom: 1px dotted currentColor; }
-.editable-label:hover { opacity: .9; }
-.jobname-wrap, .pointname-wrap { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.jobname-input, .pointname-input { width: 100%; max-width: 100%; }
+/* ====== 高さ伝搬の骨格（flex） ====== */
+.fw-fit{
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+  min-width:0; min-height:0;
+}
+.fw-card{
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+}
+.fw-body{
+  flex:1 1 auto;
+  display:flex; flex-direction:column;
+  overflow:hidden;           /* 中でスクロールを持つ */
+  min-height:0;              /* ★ 子 overflow を有効化 */
+  padding:12px;
+}
 
-/* 親に追従＆内部スクロール（既存のクラスと整合） */
-.fw-fit { width: 100%; height: 100%; }
-.fw-card { display: flex; flex-direction: column; height: 100%; }
-.fw-body { flex: 1 1 auto; overflow: hidden; padding: 12px; }
-.fw-scroll { overflow: auto; max-height: 100%; }
+/* 中間ラッパ：上に固定ブロック＋下にスクロール箱を置くための器 */
+.section-grow{
+  display:flex; flex-direction:column;
+  flex:1 1 0%;               /* ★ 0% 基準で残り高さを受け取る */
+  min-height:0;              /* ★ 必須 */
+}
 
-/* リスト領域の配分（2ペイン風のとき/単独のとき） */
-.job-list { max-height: 160px; }
-.job-list-full { max-height: calc(100% - 16px); }
-.point-list { max-height: 200px; }
-.point-list-full { max-height: calc(100% - 16px); }
+/* 内側のスクロール領域（ここで確実にスクロールを発生させる） */
+.list-pane{
+  flex:1 1 0%;               /* ★ 0% 基準で下側を伸縮 */
+  min-height:0;              /* ★ 必須 */
+  overflow:auto;             /* ← スクロール発生点 */
+}
+
+/* 見た目：インライン編集の統一 */
+.editable-label{ cursor:pointer; border-bottom:1px dotted currentColor; }
+.editable-label:hover{ opacity:.9; }
+.jobname-wrap,.pointname-wrap{ display:inline-flex; align-items:center; gap:6px; min-width:0; }
+.jobname-input,.pointname-input{ width:100%; max-width:100%; }
+
+/* モバイル余白（任意） */
+@media (max-width: 400px){
+  .fw-body{ padding:8px; }
+}
 
 
 </style>
