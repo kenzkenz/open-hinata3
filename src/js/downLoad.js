@@ -13947,3 +13947,33 @@ function bringSelectedLayerToTop(mapKey, layerId) {
     }
     return true;
 }
+
+// 引数・戻り値なし。map は this.$store.state.map01 固定。
+// 中心座標 → GSI逆ジオ → muni で整形し store.state.address と prefId を更新。
+export function addressFromMapCenter () {
+    const { lng, lat } = store.state.map01.getCenter();
+
+    axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
+        params: { lon: lng, lat: lat }
+    })
+        .then(({ data }) => {
+            const res = data && data.results;
+            if (!res) { store.state.address = ''; return; }
+            try {
+                const muni0 = muni[Number(res.muniCd)];
+                if (!muni0) { store.state.address = ''; return; }
+                // 期待フォーマット: "prefId,prefName,cityCode,cityName"
+                const [prefId, prefName, , cityName] = muni0.split(',');
+                const lv01 = res.lv01Nm || '';
+
+                store.state.address = `${prefName}${cityName}${lv01}`;
+                store.state.prefId  = prefId;
+            } catch (_) {
+                store.state.address = '';
+            }
+        })
+        .catch(() => {
+            store.state.address = '';
+        });
+}
+
