@@ -3465,7 +3465,7 @@ export default {
     centerMarker: null,
     compass: null,
 
-    rtkWindowMs: 2000,   // 無視する時間窓（ms）
+    rtkWindowMs: 5000,   // 無視する時間窓（ms）
     lastRtkAt: 0,      // 直近でRTK級を測位したタイムスタンプ(ms)
 
     logEnabled: false,          // ロギングON/OFF
@@ -4558,11 +4558,11 @@ export default {
 
       const EPS = 1e-12
       // 同一点 or ほぼ同一点 → ズーム変更なしで center だけ固定
-      // if (Math.abs(dxu) < EPS && Math.abs(dyu) < EPS) {
-      //   const opts = { center: [cx, cy] }
-      //   animate ? map.easeTo({ ...opts, duration: 300 }) : map.jumpTo(opts)
-      //   return
-      // }
+      if (Math.abs(dxu) < EPS && Math.abs(dyu) < EPS) {
+        const opts = { center: [cx, cy] }
+        animate ? map.easeTo({ ...opts, duration: 300 }) : map.jumpTo(opts)
+        return
+      }
 
       // 必要スケール（worldSize = 512 * 2^z、ピクセルで収まる条件）
       const needScaleX = (Math.abs(dxu) < EPS) ? Infinity : (halfW / (512 * Math.abs(dxu)))
@@ -4579,11 +4579,11 @@ export default {
       zReq = Math.max(zReq, zMin)
 
       // 変更が微小なら何もしない（ちらつき防止）
-      // if (Math.abs(zReq - curZ) < hysteresis) {
-      //   const opts = { center: [cx, cy] }
-      //   animate ? map.easeTo({ ...opts, duration: 200 }) : map.jumpTo(opts)
-      //   return
-      // }
+      if (Math.abs(zReq - curZ) < hysteresis) {
+        const opts = { center: [cx, cy] }
+        animate ? map.easeTo({ ...opts, duration: 200 }) : map.jumpTo(opts)
+        return
+      }
 
       // ★ ここが変更点：ズームインも許可（以前は Math.min(curZ, zReq) でアウトのみだった）
       const targetZ = zReq
@@ -4591,7 +4591,6 @@ export default {
       // animate ? map.easeTo({ ...opts, duration: 300, padding: 0 }) : map.jumpTo(opts)
 
       map.setZoom(targetZ)
-
 
     },
 
@@ -7655,6 +7654,45 @@ export default {
     /** =========================
      * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
      * ========================= */
+    /**
+     * 単発キック + 一時watchで生存確認 → 反応なければ本体watchを再登録
+     * 依存: startWatchPosition(), stopWatchPosition()
+     * グローバルな新プロパティは不要（ローカル変数だけで動く）
+     */
+    reviveWatchNow() {
+      let alive = false;        // 一時watchが反応したらtrue
+      let tempWatchId = null;
+
+      // 1) 一時watchを起動（軽量・即解除目的）
+      try {
+        tempWatchId = navigator.geolocation.watchPosition(
+            () => { alive = true; if (tempWatchId != null) navigator.geolocation.clearWatch(tempWatchId); tempWatchId = null; },
+            ()  => { /* 無視：失敗でも後段で判断 */ },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 3000 }
+        );
+      } catch (_) {}
+
+      // 2) 単発キック（測位スタックを刺激）
+      try {
+        navigator.geolocation.getCurrentPosition(
+            () => { /* 成功しても“本体watchが動いたか”は alive で判断 */ },
+            ()  => { /* 失敗は後段の再登録で吸収 */ },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 3000 }
+        );
+      } catch (_) {}
+
+      // 3) 1.5秒待っても alive にならなければ、本体watchを再登録
+      setTimeout(() => {
+        try { if (tempWatchId != null) navigator.geolocation.clearWatch(tempWatchId); } catch(_) {}
+        tempWatchId = null;
+
+        if (!alive) {
+          try { this.stopWatchPosition(); } catch(_) {}
+          try { this.startWatchPosition(); } catch(_) {}
+        }
+      }, 1500);
+    },
+
 
 // 測位を途中でキャンセルし、結果を確定
     cancelKansoku () {
@@ -9582,7 +9620,13 @@ export default {
                       this.snapLngLat,
                       { padding: this.isSmall500 ? 80 : 120, animate: true }
                   );
-                  this.updateLocationAndCoordinates?.(position);
+                  this.updateLocationAndCoordinates(position);
+                } else {
+                  this.$store.state.loading3 = true
+                  this.$store.state.loadingMessage3 = '座標品質悪化'
+                  setTimeout(() => {
+                    this.$store.state.loading3 = false
+                  },1000)
                 }
               }
             } catch (e) {
