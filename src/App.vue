@@ -236,7 +236,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         <!-- 親サイズに追従（高さ伝搬の起点） -->
         <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
           <v-card class="fw-card">
-
             <!-- ヘッダー：ジョブ名インライン編集＋一覧へ戻る -->
             <v-card-title class="d-flex align-center text-h6">
               <span v-if="!currentJobName">ジョブ選択</span>
@@ -249,10 +248,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 ジョブ:
                 <template v-if="!editingJobName">
-      <span class="editable-label ml-1" @click="startEditJobName">
-        {{ currentJobName }}
-        <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
-      </span>
+            <span class="editable-label ml-1" @click="startEditJobName">
+              {{ currentJobName }}
+              <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
+            </span>
                 </template>
                 <template v-else>
                   <v-text-field
@@ -270,29 +269,45 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   />
                 </template>
               </div>
-
-              <!-- ここには何も置かない（ボタンはタイトルの外へ） -->
             </v-card-title>
 
-            <!-- ▼ タイトルの“1行下”：右端寄せの行を追加（Vuetify3） -->
-            <v-card-subtitle class="d-flex justify-end px-4 pt-1">
+            <!-- ▼ 操作行（不透明） -->
+            <div class="d-flex justify-end px-4 pt-1" style="gap:6px; opacity:1;">
               <v-btn
                   size="small"
                   variant="outlined"
+                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+                  @click="downloadCsv2"
+              >
+                CSV
+              </v-btn>
+
+              <v-btn
+                  size="small"
+                  variant="outlined"
+                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+                  @click="exportCsv2Sima"
+              >
+                SIMA
+              </v-btn>
+
+              <v-btn
+                  color="primary"
+                  variant="flat"
+                  density="comfortable"
+                  rounded="xl"
+                  class="font-weight-bold"
                   :disabled="showJobListOnly"
                   @click="showJobListOnly = true"
               >
                 ジョブ一覧
               </v-btn>
-            </v-card-subtitle>
-
-
+            </div>
 
             <v-divider thickness="4" />
 
             <!-- 本文：単画面切替（高さは flex で伝搬） -->
             <v-card-text class="fw-body">
-
               <!-- ========== ジョブ一覧画面（常に全ジョブ） ========== -->
               <template v-if="showJobListOnly">
                 <!-- 新規ジョブ -->
@@ -339,7 +354,13 @@ import SakuraEffect from './components/SakuraEffect.vue';
                           >
                             {{ job.count }}
                           </v-chip>
-                          <v-btn icon size="x-small" variant="text" aria-label="ジョブを削除" @click.stop="deleteJob(job)">
+                          <v-btn
+                              icon
+                              size="x-small"
+                              variant="text"
+                              aria-label="ジョブを削除"
+                              @click.stop="deleteJob(job)"
+                          >
                             <v-icon size="22">mdi-close</v-icon>
                           </v-btn>
                         </template>
@@ -378,10 +399,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                               @mouseleave="hoverPointId = null"
                           >
                             <template v-if="editingPointId !== pt.point_id">
-                          <span class="editable-label" @click.stop="startEditPointName(pt)">
-                            {{ pt.point_name }}
-                            <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
-                          </span>
+                        <span class="editable-label" @click.stop="startEditPointName(pt)">
+                          {{ pt.point_name }}
+                          <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
+                        </span>
                             </template>
                             <template v-else>
                               <v-text-field
@@ -402,15 +423,21 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         </template>
 
                         <template #subtitle>
-                      <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                        {{ pt.address }}
-                        &nbsp;
-                        X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-                      </span>
+                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                      {{ pt.address }}
+                      &nbsp;
+                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                    </span>
                         </template>
 
                         <template #append>
-                          <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
+                          <v-btn
+                              icon
+                              size="x-small"
+                              variant="text"
+                              aria-label="ポイントを削除"
+                              @click.stop="deletePoint(pt)"
+                          >
                             <v-icon size="22">mdi-trash-can-outline</v-icon>
                           </v-btn>
                         </template>
@@ -423,6 +450,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card>
         </div>
       </FloatingWindow>
+
 
 
 
@@ -9445,13 +9473,6 @@ export default {
       this._elevHandler = handler;
     },
 
-    /** window.postMessage 経由の受信 */
-    unbindExternalElevationListener() {
-      if (this._elevHandler) {
-        window.removeEventListener('oh3:elevation', this._elevHandler);
-        this._elevHandler = null;
-      }
-    },
     bindElevationPostMessage() {
       const onMsg = (ev) => {
         const d = ev?.data || {};
@@ -9524,19 +9545,36 @@ export default {
             try {
               const isUpdateLocation = this.saveGeoMetrics(position);
               if (isUpdateLocation) {
-
-
                 /**
                  * ここらへんに仕掛ければいいか？
                  */
-                this.currentLngLat = [Number(position.coords.longitude), Number(position.coords.latitude)]
-                this.maybeFocusCenterIncludePoint(
-                    this.currentLngLat,
-                    this.snapLngLat,
-                    { padding: this.isSmall500 ? 80 : 120, animate: true }
-                )
-
-                this.updateLocationAndCoordinates?.(position);
+                // 位置更新ハンドラ内（this 版）
+                const c = position.coords || {};
+                const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+                const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+                const quality = this.getGeoQualityLabel(acc, altAcc);
+                const nowTs = position.timestamp || Date.now();
+                // RTK抑止ウィンドウ判定
+                const allowUpdate =
+                    quality === 'RTK級' ||
+                    !this.lastRtkAt ||
+                    (nowTs - this.lastRtkAt) > this.rtkWindowMs;
+                // ←← 通常処理は if の中だけで実行
+                if (allowUpdate) {
+                  if (quality === 'RTK級') {
+                    this.lastRtkAt = nowTs; // RTK級検出時は基準更新
+                  }
+                  this.currentLngLat = [
+                    Number(position.coords.longitude),
+                    Number(position.coords.latitude)
+                  ];
+                  this.maybeFocusCenterIncludePoint(
+                      this.currentLngLat,
+                      this.snapLngLat,
+                      { padding: this.isSmall500 ? 80 : 120, animate: true }
+                  );
+                  this.updateLocationAndCoordinates?.(position);
+                }
               }
             } catch (e) {
               console.warn('[geo] update/save error', e);
