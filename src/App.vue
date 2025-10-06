@@ -7764,207 +7764,241 @@ export default {
     },
 
 // 観測開始：入力検証→状態初期化→インターバルで収集開始
+// 観測開始：入力検証→状態初期化→（非並列）連鎖タイマで収集開始
     kansokuStart () {
-      this.clearCurrentMarker()   // 残っている緑丸を消す
+      this.clearCurrentMarker();   // 残っている緑丸を消す
 
-      addressFromMapCenter()
+      // 中心住所の更新（メソッド化している想定）
+      try { this.addressFromMapCenter?.(); } catch {}
 
-      if (!this.canStartKansoku) return
-      if (this.kansokuPhase !== 'idle') return
-      if (this.kansokuPhase === 'observing') return
+      if (!this.canStartKansoku) return;
+      if (this.kansokuPhase !== 'idle') return;
+      if (this.kansokuPhase === 'observing') return;
 
       if (this.kansokuTimer) {
-        clearInterval(this.kansokuTimer)
-        this.kansokuTimer = null
+        clearTimeout(this.kansokuTimer);
+        this.kansokuTimer = null;
       }
 
-      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim()
+      const raw = (this.tenmei == null) ? '' : String(this.tenmei).trim();
       if (!raw) {
-        this.tenmeiError = '点名は必須です'
-        alert('点名を入力してください')
-        return
-      }
-      try { localStorage.setItem('tenmei', raw) } catch (_) {}
-      this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw
-
-      this.pendingObservation = null
-
-      // セッション初期化と準備
-      this._resetKansokuSession()
-      this.initKansokuCsvIfNeeded()
-
-      this.kansokuRunning   = true
-      this.kansokuRemaining = Number(this.kansokuCount) || 1
-      this.kansokuPhase     = 'observing'
-
-      // インターバル算出
-      this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec)
-      const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000))
-
-      // 即時1回（＝最初のtick）※ n を見て停止判定もここで行う
-      this._tickKansoku()
-
-      // 以後は毎tickで n を見て止める
-      this.kansokuTimer = setInterval(() => this._tickKansoku(), intervalMs)
-    },
-
-
-// 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
-    kansokuCollectOnce() {
-      if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
-        this.kansokuStop(); return;
-      }
-      if (!this.torokuPointLngLat) {
-        console.warn('[kansoku] 赤丸(測位点)が未設定です');
+        this.tenmeiError = '点名は必須です';
+        alert('点名を入力してください');
         return;
       }
+      try { localStorage.setItem('tenmei', raw) } catch (_) {}
+      this.currentPointName = this.ensureUniqueTenmei ? this.ensureUniqueTenmei(raw) : raw;
 
-      const parse = this.parseNumberLike || ((v) => {
-        if (v == null) return null;
-        if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-        const s = String(v).trim()
-            .replace(/^[\s:=>\u3000：＝＞]+/, '')
-            .replace(',', '.');
-        const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
-        const n = m ? Number(m[0]) : NaN;
-        return Number.isFinite(n) ? n : null;
-      });
-      const fix3 = this.toFixed3 || ((n) => (Number.isFinite(n) ? n.toFixed(3) : ''));
+      this.pendingObservation = null;
 
-      const _this = this;
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+      // セッション初期化と準備
+      this._resetKansokuSession();
+      this.initKansokuCsvIfNeeded();
 
-      function epsgFromLabelOrAuto(lat, lon) {
-        try {
-          const label = (_this.$store && _this.$store.state)
-              ? (_this.$store.state.s_zahyokei || _this.$store.state.zahyokei || '')
-              : '';
-          const m = /公共座標\s*(\d+)系/.exec(label);
-          if (m) {
-            const z = Number(m[1]);
-            if (z >= 1 && z <= 19) return 6668 + z;
-          }
-          let zAuto = Math.round((lon - 129) / 2) + 1;
-          if (zAuto < 1) zAuto = 1;
-          if (zAuto > 19) zAuto = 19;
-          return 6668 + zAuto;
-        } catch {
-          return null;
+      this.kansokuRunning   = true;
+      this.kansokuRemaining = Number(this.kansokuCount) || 1;
+      this.kansokuPhase     = 'observing';
+
+      // 非並列化：同時発火を禁止するフラグ
+      this.gpsPending = false;
+
+      // インターバル算出
+      this.sampleIntervalSec = this.clampInterval(this.sampleIntervalSec);
+      const intervalMs = Math.max(100, Math.round(Number(this.sampleIntervalSec) * 1000));
+
+      const tickOnce = async () => {
+        if (!this.kansokuRunning) return;
+        if (this.kansokuRemaining <= 0) { this.kansokuStop(); return; }
+
+        if (this.gpsPending) {
+          // 返り待ち中は短い遅延で再試行
+          this.kansokuTimer = setTimeout(tickOnce, 50);
+          return;
         }
-      }
-      navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            try {
-              const c = pos.coords || {};
-              const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-              const quality  = _this.getGeoQualityLabel(accuracy, altAcc);
+        this.gpsPending = true;
+        try {
+          await this.kansokuCollectOnce(); // 1回分だけ、終了を待つ
+        } finally {
+          this.gpsPending = false;
+          if (this.kansokuRunning) {
+            this.kansokuTimer = setTimeout(tickOnce, intervalMs);
+          }
+        }
+      };
 
-              const nowTs = pos.timestamp || Date.now();
-              if (quality === 'RTK級') {
-                _this.lastRtkAt = nowTs;
-              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= (_this.rtkWindowMs || 1000)) {
-                return;
-              }
+      // 即時1回（＝最初のtick）
+      tickOnce();
+    },
 
-              let lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              let lon = (typeof c.longitude === 'number') ? c.longitude : null;
-              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                if (_this.torokuPointLngLat) {
-                  lat = _this.torokuPointLngLat.lat;
-                  lon = _this.torokuPointLngLat.lng;
-                } else {
-                  console.warn('[kansoku] invalid device coords and no anchor');
-                  return;
+// 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
+    // 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
+    kansokuCollectOnce() {
+      return new Promise((resolve) => {
+        if (!this.kansokuRunning || this.kansokuRemaining <= 0) {
+          this.kansokuStop();
+          return resolve();
+        }
+        if (!this.torokuPointLngLat) {
+          console.warn('[kansoku] 赤丸(測位点)が未設定です');
+          return resolve();
+        }
+
+        const parse = this.parseNumberLike || ((v) => {
+          if (v == null) return null;
+          if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+          const s = String(v).trim()
+              .replace(/^[\s:=>\u3000：＝＞]+/, '')
+              .replace(',', '.');
+          const m = s.match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+          const n = m ? Number(m[0]) : NaN;
+          return Number.isFinite(n) ? n : null;
+        });
+        const fix3 = this.toFixed3 || ((n) => (Number.isFinite(n) ? n.toFixed(3) : ''));
+
+        const _this = this;
+        const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+
+        function epsgFromLabelOrAuto(lat, lon) {
+          try {
+            const label = (_this.$store && _this.$store.state)
+                ? (_this.$store.state.s_zahyokei || _this.$store.state.zahyokei || '')
+                : '';
+            const m = /公共座標\s*(\d+)系/.exec(label);
+            if (m) {
+              const z = Number(m[1]);
+              if (z >= 1 && z <= 19) return 6668 + z;
+            }
+            let zAuto = Math.round((lon - 129) / 2) + 1;
+            if (zAuto < 1) zAuto = 1;
+            if (zAuto > 19) zAuto = 19;
+            return 6668 + zAuto;
+          } catch {
+            return null;
+          }
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              try {
+                if (!_this.kansokuRunning || _this.kansokuRemaining <= 0) { return resolve(); }
+
+                const c = pos.coords || {};
+                const accuracy = (typeof c.accuracy === 'number') ? c.accuracy : null;
+                const altAcc   = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+                const quality  = _this.getGeoQualityLabel(accuracy, altAcc);
+
+                const nowTs = pos.timestamp || Date.now();
+                if (quality === 'RTK級') {
+                  _this.lastRtkAt = nowTs;
+                } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= (_this.rtkWindowMs || 1000)) {
+                  return resolve(); // RTK混入抑止ウィンドウ内は棄却
                 }
-              }
 
-              const baseLon = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lng))
-                  ? _this.torokuPointLngLat.lng : lon;
-              const baseLat = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lat))
-                  ? _this.torokuPointLngLat.lat : lat;
-
-              const epsg = epsgFromLabelOrAuto(baseLat, baseLon);
-
-              let X = null, Y = null, csLabel = '';
-              if (epsg) {
-                try {
-                  if (typeof proj4 !== 'function') console.warn('[kansoku] proj4 未ロードです');
-                  const out = proj4('EPSG:4326', 'EPSG:' + epsg, [lon, lat]);
-                  if (out && Number.isFinite(out[0]) && Number.isFinite(out[1])) {
-                    Y = out[0];
-                    X = out[1];
-                  }
-                  const zone = epsg - 6668;
-                  csLabel = '公共座標' + zone + '系';
-                } catch (e) {
-                  console.warn('[kansoku] proj4 transform failed', e);
-                }
-              } else {
-                console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
-              }
-
-              const haeN = parse(c.altitude);
-
-              let hOut = '';
-              const pH = Number(_this?.pointElevation?.hOrthometric);
-              const eH = Number(_this?.externalElevation?.hOrthometric);
-              if (Number.isFinite(pH)) {
-                hOut = pH;
-              } else if (Number.isFinite(eH)) {
-                hOut = eH;
-              } else if (Number.isFinite(haeN)) {
-                try {
-                  const H = await calcOrthometric(lon, lat, haeN);
-                  if (Number.isFinite(H)) {
-                    hOut = H;
+                let lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+                let lon = (typeof c.longitude === 'number') ? c.longitude : null;
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                  if (_this.torokuPointLngLat) {
+                    lat = _this.torokuPointLngLat.lat;
+                    lon = _this.torokuPointLngLat.lng;
                   } else {
+                    console.warn('[kansoku] invalid device coords and no anchor');
+                    return resolve();
+                  }
+                }
+
+                const baseLon = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lng))
+                    ? _this.torokuPointLngLat.lng : lon;
+                const baseLat = (_this.torokuPointLngLat && Number.isFinite(_this.torokuPointLngLat.lat))
+                    ? _this.torokuPointLngLat.lat : lat;
+
+                const epsg = epsgFromLabelOrAuto(baseLat, baseLon);
+
+                let X = null, Y = null, csLabel = '';
+                if (epsg) {
+                  try {
+                    if (typeof proj4 !== 'function') console.warn('[kansoku] proj4 未ロードです');
+                    const out = proj4('EPSG:4326', 'EPSG:' + epsg, [lon, lat]);
+                    if (out && Number.isFinite(out[0]) && Number.isFinite(out[1])) {
+                      Y = out[0];
+                      X = out[1];
+                    }
+                    const zone = epsg - 6668;
+                    csLabel = '公共座標' + zone + '系';
+                  } catch (e) {
+                    console.warn('[kansoku] proj4 transform failed', e);
+                  }
+                } else {
+                  console.warn('[kansoku] EPSG 決定に失敗 (label/auto)');
+                }
+
+                const haeN = parse(c.altitude);
+
+                let hOut = '';
+                const pH = Number(_this?.pointElevation?.hOrthometric);
+                const eH = Number(_this?.externalElevation?.hOrthometric);
+                if (Number.isFinite(pH)) {
+                  hOut = pH;
+                } else if (Number.isFinite(eH)) {
+                  hOut = eH;
+                } else if (Number.isFinite(haeN)) {
+                  try {
+                    const H = await calcOrthometric(lon, lat, haeN);
+                    if (Number.isFinite(H)) {
+                      hOut = H;
+                    } else {
+                      hOut = `${fix3(haeN)}(HAE)`;
+                    }
+                  } catch {
                     hOut = `${fix3(haeN)}(HAE)`;
                   }
-                } catch {
-                  hOut = `${fix3(haeN)}(HAE)`;
+                } else {
+                  hOut = '';
                 }
-              } else {
-                hOut = '';
+
+                let hNum = parse(hOut);
+                if (hNum != null && hNum < 0) {
+                  hOut = '';
+                } else if (hNum != null) {
+                  hOut = fix3(hNum);
+                } else {
+                  hOut = '';
+                }
+
+                _this.initKansokuCsvIfNeeded();
+                _this.kansokuCsvRows.push([
+                  _this.$_jstLocal(),
+                  lat, lon,
+                  X, Y, csLabel,
+                  accuracy,
+                  quality,
+                  'kansoku',
+                  hOut,
+                  Number.isFinite(haeN) ? fix3(haeN) : ''
+                ]);
+                _this.refreshPendingObservation(2); // 2件目からサマリー表示
+              } catch (e) {
+                console.warn('[kansoku] collect error', e);
+              } finally {
+                if (_this.kansokuRunning) {
+                  _this.kansokuRemaining -= 1;
+                  if (_this.kansokuRemaining <= 0) _this.kansokuStop();
+                }
+                resolve();
               }
-
-              let hNum = parse(hOut);
-              if (hNum != null && hNum < 0) {
-                hOut = '';
-              } else if (hNum != null) {
-                hOut = fix3(hNum);
-              } else {
-                hOut = '';
+            },
+            (err) => {
+              console.warn('[kansoku] getCurrentPosition error', err);
+              if (_this.kansokuRunning) {
+                _this.kansokuRemaining -= 1;
+                if (_this.kansokuRemaining <= 0) _this.kansokuStop();
               }
-
-              _this.initKansokuCsvIfNeeded();
-              _this.kansokuCsvRows.push([
-                _this.$_jstLocal(),
-                lat, lon,
-                X, Y, csLabel,
-                accuracy,
-                quality,
-                'kansoku',
-                hOut,
-                Number.isFinite(haeN) ? fix3(haeN) : ''
-              ]);
-              _this.refreshPendingObservation(2); // 2件目からサマリー表示
-
-            } catch (e) {
-              console.warn('[kansoku] collect error', e);
-            } finally {
-              _this.kansokuRemaining -= 1;
-              if (_this.kansokuRemaining <= 0) _this.kansokuStop();
-            }
-          },
-          (err) => {
-            console.warn('[kansoku] getCurrentPosition error', err);
-            _this.kansokuRemaining -= 1;
-            if (_this.kansokuRemaining <= 0) _this.kansokuStop();
-          },
-          opt
-      );
+              resolve();
+            },
+            opt
+        );
+      });
     },
+
 
 // サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う
     async commitCsv2Point() {
@@ -9022,37 +9056,6 @@ export default {
       }
     },
 
-    /** ピッカーの行クリックで、その点へズーム＆赤丸を（必要に応じて）描画 */
-    // focusPointOnMap(pt) {
-    //   try {
-    //     const map = (this.$store?.state?.map01) || this.map01;
-    //     if (!map) return;
-    //
-    //     const lng = Number(pt?.lng);
-    //     const lat = Number(pt?.lat);
-    //     if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-    //       console.warn('[focusPointOnMap] invalid lng/lat', pt);
-    //       return;
-    //     }
-    //
-    //     try {
-    //       if (window.mapboxgl?.LngLatBounds) {
-    //         const bb = new window.mapboxgl.LngLatBounds([lng, lat], [lng, lat]);
-    //         map.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 0 });
-    //       } else {
-    //         map.fitBounds?.([[lng, lat], [lng, lat]], { padding: 80, maxZoom: 18, duration: 0 });
-    //       }
-    //     } catch (e) {
-    //       console.warn('[focusPointOnMap] fitBounds failed', e);
-    //     }
-    //
-    //     const label = String(pt?.point_name ?? pt?.name ?? '');
-    //     this.plotTorokuPoint?.({ lng, lat }, label, { deferLabel: false });
-    //   } catch (e) {
-    //     console.warn('[focusPointOnMap] error', e);
-    //   }
-    // },
-
     /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
     loadJobsFromStorage() {
       try {
@@ -9081,34 +9084,6 @@ export default {
         this.$store.state.zahyokei = '公共座標' + zone + '系';
       } else {
         this.$store.state.zahyokei = '';
-      }
-    },
-
-    /** 測位クリックの購読を開始（on('click')） */
-    attachTorokuPointClick () {
-      const map = this.$store.state.map01;
-      if (!map) return;
-
-      if (this.onMapClickForToroku) {
-        this.enableTorokuPointClick = true;
-        return;
-      }
-
-      const bind = () => {
-        this.enableTorokuPointClick = true;
-        this.onMapClickForToroku = (e) => {
-          if (!this.enableTorokuPointClick) return;
-          if (!e || !e.lngLat) return;
-          this.handleTorokuMapClick(e.lngLat);
-        };
-        map.on('click', this.onMapClickForToroku);
-      };
-
-      try {
-        if (map.isStyleLoaded && map.isStyleLoaded()) bind();
-        else map.once('load', bind);
-      } catch (_) {
-        map.once('load', bind);
       }
     },
 
@@ -9330,7 +9305,6 @@ export default {
       try { map.moveLayer(LAB); }   catch (_) {}
 
       this.torokuPointLngLat = { lng, lat };
-      this._lastTorokuFeatureId = fid;
       this.updateChainLine();
     },
 
