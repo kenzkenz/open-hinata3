@@ -273,6 +273,20 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
             <!-- ▼ 操作行（不透明） -->
             <div class="d-flex justify-end px-4 pt-1" style="gap:6px; opacity:1;">
+              <v-switch
+                  v-model="autoCloseJobPicker"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  class="autoclose-switch"
+                  style="line-height:1; transform: translateY(-4px);"
+              >
+                <template #label>
+                  <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
+                </template>
+              </v-switch>
+
+
               <v-btn
                   size="small"
                   variant="outlined"
@@ -3552,6 +3566,8 @@ export default {
     currentLngLat: null,
 
     suppressUntil: 0, // タッチ操作終了から20秒は抑止
+
+    autoCloseJobPicker: false,
 
     aaa: null,
   }),
@@ -8789,11 +8805,10 @@ export default {
 
     /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
     async pickExistingJob(job) {
-      // ▼ 「次回から表示しない」＆ isSmall500 のときはジョブピッカーを閉じて即作業に入る
-      let hideTips = false
-      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1' } catch (_) {}
-      if (!(this.isSmall500 && hideTips)) {
-        // 条件を満たさない場合のみ、誘導ダイアログを出す（dontShowKey により必要なら自動スキップ）
+      // ▼ チュートリアルダイアログは残す（DONT_SHOW_KEY が '1' でない限り毎回表示）
+      let hideTips = false;
+      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1'; } catch (_) {}
+      if (!hideTips) {
         this.$store.dispatch('messageDialog/open', {
           id: 'openJobPicker',
           title: '次の操作は？',
@@ -8801,23 +8816,26 @@ export default {
               '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
               '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
           options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
-        })
-      } else {
-        // スモール画面＆次回非表示→ジョブピッカーを即閉
-        this.onJobEndClick()
-        this.jobPickerOpen = false;
-        this.$store.dispatch('hideFloatingWindow', 'job-picker');
+        });
       }
 
-      this.pointsForCurrentJob = []
-      const id   = String(job.id || '')
-      const name = String(job.name || '')
-      if (!id) return
+      // ▼ 選択ジョブの設定
+      this.pointsForCurrentJob = [];
+      const id   = String(job?.id ?? job?.job_id ?? '');
+      const name = String(job?.name ?? job?.job_name ?? '');
+      if (!id) return;
 
-      this.currentJobId   = id
-      this.currentJobName = name
+      this.currentJobId   = id;
+      this.currentJobName = name;
 
-      await this.loadPointsForJob(id)
+      // ▼ ポイント読み込み（fit=true は既定）
+      await this.loadPointsForJob(id);
+
+      // ▼ 自動クローズはトグルのみで制御（画面サイズ分岐なし）
+      if (this.autoCloseJobPicker) {
+        this.jobPickerOpen = false;
+        try { this.$store.dispatch('hideFloatingWindow', 'job-picker'); } catch {}
+      }
     },
 
     /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
@@ -8849,7 +8867,7 @@ export default {
 
       const features = [];
 
-      // 手計算のバウンディングボックス
+      // 手計算のバウンディングボックス（本処理）
       let minLng =  Infinity, minLat =  Infinity;
       let maxLng = -Infinity, maxLat = -Infinity;
 
@@ -8873,10 +8891,7 @@ export default {
         const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
         console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
 
-        if (!hasLngLat) {
-          skip += 1;
-          continue;
-        }
+        if (!hasLngLat) { skip += 1; continue; }
         ok += 1;
 
         // bbox 更新
@@ -8885,16 +8900,10 @@ export default {
         if (lat < minLat) minLat = lat;
         if (lat > maxLat) maxLat = lat;
 
-        // const rowArray = [
-        //   name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
-        //   fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng), ts,
-        // ];
-        // alert(r.address)
         const rowArray = [
           name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
           fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
-          String(r.address ?? ''),                                // ★ 所在
-          // String(r.observe_count ?? r.observed_count ?? ''),      // ★ 測位回数
+          String(r.address ?? ''), // 所在
           ts
         ];
 
@@ -8956,7 +8965,6 @@ export default {
             });
           }
 
-          // 手計算 bbox で fitBounds（Mapbox/MapLibre 両対応）
           const bboxValid =
               Number.isFinite(minLng) && Number.isFinite(minLat) &&
               Number.isFinite(maxLng) && Number.isFinite(maxLat);
@@ -8965,10 +8973,10 @@ export default {
             const pad = 80;
             console.log('[loadPointsForJob] fitBounds(array bbox)');
             if (options.fit) {
-              map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {padding: pad, maxZoom: 18, duration: 0});
+              map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
             } else {
-              const last = this.pointsForCurrentJob.at(-1)
-              map.setCenter([last.lng, last.lat])
+              const last = this.pointsForCurrentJob.at(-1);
+              map.setCenter([last.lng, last.lat]);
             }
           } else {
             console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
@@ -8980,6 +8988,7 @@ export default {
 
       try { this.updateChainLine(); } catch (_) {}
     },
+
 
     /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
     async deletePoint(pt) {
@@ -13714,7 +13723,12 @@ export default {
     }
     // android対応まとめ-----------------------------------------------------------
 
-
+    try {
+      const saved = localStorage.getItem('jobpicker_autoclose');
+      this.autoCloseJobPicker = (saved === '1'); // 未保存なら false のまま
+    } catch (_) {
+      this.autoCloseJobPicker = false;
+    }
 
 
     // 既存ジョブをローカルから復元（まだサーバなし）
@@ -13906,6 +13920,9 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
+    autoCloseJobPicker(v) {
+      try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
+    },
     isContextMenu(value) {
       if (value) {
         this.detachForContextMenu = attachMapRightClickMenu(this.contextMenuObject);
