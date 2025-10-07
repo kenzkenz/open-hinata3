@@ -5756,7 +5756,6 @@ export async function pngDownload() {
         const pngBlob = await (await fetch(imageDataUrl)).blob();
         zip.file('map-image.png', pngBlob);
 
-        // ----- ここはあなたの元コードそのまま（bounds→world file→SIMA→DXF） -----
         const bounds = map01.getBounds();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
@@ -5831,6 +5830,9 @@ export async function pngDownload() {
     const currentZoom = map01.getZoom();
     map01.zoomTo(currentZoom + 1e-14);
 }
+
+
+
 
 // PNG Blob → Baseline TIFF（無圧縮 RGB, 8bit, 単一ストリップ）
 async function encodePNGToBaselineTIFF(pngBlob, width, height) {
@@ -14136,3 +14138,8 @@ export function downloadBlob (blob, filename = 'map.png') {
  *    OffscreenCanvas + WebWorker のタイル合成レンダリング版を別途追加可能。
  */
 
+// // 例1: DPI指定（現在の可視範囲をそのまま高解像度化）
+// await exportVisibleMapHiRes(store.state.map01, { dpi: 300, filename: 'oh3-300dpi.png' })
+//
+// // 例2: ピクセル直指定（A3横・300dpi相当）
+// await exportVisibleMapHiRes(store.state.map01, { widthPx: 4961, heightPx: 3508 })
