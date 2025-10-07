@@ -50,8 +50,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               color="primary"
-              @click="jobPickerFWOpen();openJobPicker();"
-          aria-label="Job Picker を開く"
+              @click="jobPickerFWOpen"
+              aria-label="Job Picker を開く"
           >
             リスト
           </v-btn>
@@ -88,9 +88,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
+              :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
               :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
               @click="startTorokuHere"
-          aria-label="測位地点を新規追加"
+              aria-label="測位地点を新規追加"
           >
             測位
           </v-btn>
@@ -228,14 +229,80 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :default-top="10"
           :default-left="10"
           :default-width="400"
-          :default-height="430"
+          :default-height="700"
           :keepAspectRatio="false"
           :showMaxRestore="false"
           @close="jobPickerOpen = false"
       >
         <!-- 親サイズに追従（高さ伝搬の起点） -->
-        <div class="fw-fit" @mousedown.stop @pointerdown.stop @touchstart.stop>
+        <div class="fw-fit"
+             @mousedown.stop @pointerdown.stop @touchstart.stop
+        >
           <v-card class="fw-card">
+            <!-- ▼ 操作行（不透明） -->
+            <div class="d-flex justify-end px-4 pt-1"
+                 style="
+                      gap:6px;
+                      opacity:1;
+                      margin-top: 10px;
+                      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+                  ">
+              <v-switch
+                  v-model="autoCloseJobPicker"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  class="autoclose-switch"
+                  style="line-height:1; transform: translateY(-4px);"
+              >
+                <template #label>
+                  <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
+                </template>
+              </v-switch>
+
+              <v-btn
+                  color="primary"
+                  variant="flat"
+                  density="comfortable"
+                  rounded="xl"
+                  class="font-weight-bold"
+                  :disabled="showJobListOnly"
+                  @click="showJobListOnly = true"
+              >
+                一覧
+              </v-btn>
+
+              <v-btn
+                  size="small"
+                  variant="outlined"
+                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+                  @click="downloadCsv2"
+              >
+                CSV
+              </v-btn>
+
+              <v-btn
+                  size="small"
+                  variant="outlined"
+                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+                  @click="exportCsv2Sima"
+              >
+                SIMA
+              </v-btn>
+
+              <!-- ===== Option D: ハイライト（パルス）※軽量CSS、実行中は停止 ===== -->
+              <v-btn
+                  size="small"
+                  color="primary"
+                  variant="flat"
+                  class="font-weight-bold pulse-once"
+                  :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
+                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+                  @click="startTorokuHere"
+              >
+                &nbsp;測&nbsp;位&nbsp;
+              </v-btn>
+            </div>
             <!-- ヘッダー：ジョブ名インライン編集＋一覧へ戻る -->
             <v-card-title class="d-flex align-center text-h6">
               <span v-if="!currentJobName">ジョブ選択</span>
@@ -271,52 +338,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </v-card-title>
 
-            <!-- ▼ 操作行（不透明） -->
-            <div class="d-flex justify-end px-4 pt-1" style="gap:6px; opacity:1;">
-              <v-switch
-                  v-model="autoCloseJobPicker"
-                  color="primary"
-                  density="compact"
-                  hide-details
-                  class="autoclose-switch"
-                  style="line-height:1; transform: translateY(-4px);"
-              >
-                <template #label>
-                  <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
-                </template>
-              </v-switch>
 
-
-              <v-btn
-                  size="small"
-                  variant="outlined"
-                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
-                  @click="downloadCsv2"
-              >
-                CSV
-              </v-btn>
-
-              <v-btn
-                  size="small"
-                  variant="outlined"
-                  :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
-                  @click="exportCsv2Sima"
-              >
-                SIMA
-              </v-btn>
-
-              <v-btn
-                  color="primary"
-                  variant="flat"
-                  density="comfortable"
-                  rounded="xl"
-                  class="font-weight-bold"
-                  :disabled="showJobListOnly"
-                  @click="showJobListOnly = true"
-              >
-                ジョブ一覧
-              </v-btn>
-            </div>
 
             <v-divider thickness="4" />
 
@@ -338,7 +360,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         @keydown.left.stop
                         @keydown.right.stop
                     />
-                    <v-btn color="primary" @click="createNewJob">作成</v-btn>
+                    <v-btn color="primary" @click="createNewJob(); showJobListOnly = false">作成</v-btn>
                   </div>
                   <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
                 </div>
@@ -346,7 +368,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <v-divider thickness="4" class="my-3" />
 
                 <!-- 既存ジョブ一覧：中間ラッパ(section-grow)＋中でスクロール(list-pane) -->
-                <div v-if="jobList && jobList.length" class="section-grow">
+                <div v-if="showJobListOnly" class="section-grow">
                   <div class="text-caption mb-2">既存のジョブ</div>
 
                   <div class="list-pane">
@@ -394,8 +416,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <div class="section-grow">
                   <div class="d-flex align-center justify-space-between mb-1">
                     <div class="text-caption">
-                      <span v-if="currentJobName">{{ currentJobName }}のポイント</span>
-                      （{{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}）
+<!--                      <span v-if="currentJobName">{{ currentJobName }}のポイント</span>-->
+                      {{ (pointsForCurrentJob && pointsForCurrentJob.length) || 0 }}地点計測済み
                     </div>
                   </div>
 
@@ -949,7 +971,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               >
                 測位開始
               </v-btn>
-              <!-- ★ 1000回を選んで“観測中”のときだけ表示 -->
+
               <v-btn
                   v-if="kansokuRunning && [86400, 1000, 100, 50].includes(Number(kansokuCount))"
                   variant="outlined"
@@ -976,14 +998,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   v-for="(row, idx) in kansokuCsvRows.slice(1)"
                   :key="idx"
                   :style="{
-            fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
-            fontSize: '12px',
-            lineHeight: '1.6',
-            padding: '2px 8px',
-            borderBottom: '1px dashed rgba(255,255,255,.08)',
-            backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
-            whiteSpace: 'nowrap'
-          }"
+                    fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+                    fontSize: '12px',
+                    lineHeight: '1.6',
+                    padding: '2px 8px',
+                    borderBottom: '1px dashed rgba(255,255,255,.08)',
+                    backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+                    whiteSpace: 'nowrap'
+                  }"
               >
           <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
             {{ row[7] }}
@@ -991,8 +1013,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 {{ fmtAcc(row[6]) }}
                 {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
                 {{ row[5] }}
-                {{ row[0] }}
                 {{ fmtHumanHeight(row[9]) }}
+                {{ row[0] }}
               </div>
             </div>
             <v-alert
@@ -7850,8 +7872,7 @@ export default {
     kansokuStart () {
       this.clearCurrentMarker();   // 残っている緑丸を消す
 
-      // 中心住所の更新（メソッド化している想定）
-      try { this.addressFromMapCenter?.(); } catch {}
+      addressFromMapCenter()
 
       if (!this.canStartKansoku) return;
       if (this.kansokuPhase !== 'idle') return;
@@ -8724,7 +8745,7 @@ export default {
       this.$store.dispatch('messageDialog/open', {
         id: 'openJobPicker',
         title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>',
+        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>',
         options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
       })
       let hideTips = false
@@ -8851,7 +8872,7 @@ export default {
           id: 'openJobPicker',
           title: '次の操作は？',
           contentHtml:
-              '<p style="margin-bottom: 20px;">測位するにはジョブリストを閉じて画面左下の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
+              '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
               '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
           options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
         });
@@ -9578,78 +9599,163 @@ export default {
     },
 
 // 現在地追跡（watchPosition）・距離線 UI
+    /**
+     * ポーリング版
+     */
     startWatchPosition () {
       if (!('geolocation' in navigator)) {
         console.warn('[geo] navigator.geolocation 未対応');
         return;
       }
-      this.stopWatchPosition();
+      // 既存の停止処理（watch用）。加えてポーリング用タイマーも潰す
+      try { this.stopWatchPosition(); } catch (_) {}
+      if (this.geoPollTimer) { clearInterval(this.geoPollTimer); this.geoPollTimer = null; }
 
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 };
-      this.watchId = navigator.geolocation.watchPosition(
-          (position) => {
-            this.geoLastTs = position.timestamp || Date.now();
-            try {
-              const isUpdateLocation = this.saveGeoMetrics(position);
-              if (isUpdateLocation) {
-                /**
-                 * ここらへんに仕掛ければいいか？
-                 */
-                // 位置更新ハンドラ内（this 版）
-                const c = position.coords || {};
-                const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
-                const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-                const quality = this.getGeoQualityLabel(acc, altAcc);
-                const nowTs = position.timestamp || Date.now();
-                // RTK抑止ウィンドウ判定
-                const allowUpdate =
-                    quality === 'RTK級' ||
-                    !this.lastRtkAt ||
-                    (nowTs - this.lastRtkAt) > this.rtkWindowMs;
-                // ←← 通常処理は if の中だけで実行
-                if (allowUpdate) {
-                  if (quality === 'RTK級') {
-                    this.lastRtkAt = nowTs; // RTK級検出時は基準更新
+      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 900 }; // 1秒ポーリングに合わせて短め
+      let busy = false; // 重複リクエスト防止ローカルフラグ
+
+      const tick = () => {
+        if (busy) return;
+        busy = true;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+              this.geoLastTs = position.timestamp || Date.now();
+              try {
+                const isUpdateLocation = this.saveGeoMetrics(position);
+                if (isUpdateLocation) {
+                  const c = position.coords || {};
+                  const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+                  const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+                  const quality = this.getGeoQualityLabel(acc, altAcc);
+                  const nowTs = position.timestamp || Date.now();
+
+                  const allowUpdate =
+                      quality === 'RTK級' ||
+                      !this.lastRtkAt ||
+                      (nowTs - this.lastRtkAt) > this.rtkWindowMs;
+
+                  if (allowUpdate) {
+                    if (quality === 'RTK級') this.lastRtkAt = nowTs;
+
+                    this.currentLngLat = [
+                      Number(position.coords.longitude),
+                      Number(position.coords.latitude)
+                    ];
+
+                    this.maybeFocusCenterIncludePoint(
+                        this.currentLngLat,
+                        this.snapLngLat,
+                        { padding: this.isSmall500 ? 80 : 120, animate: true }
+                    );
+
+                    this.updateLocationAndCoordinates(position);
+                  } else {
+                    this.$store.state.loading3 = true;
+                    this.$store.state.loadingMessage3 = '座標品質悪化';
+                    setTimeout(() => { this.$store.state.loading3 = false; }, 1000);
                   }
-                  this.currentLngLat = [
-                    Number(position.coords.longitude),
-                    Number(position.coords.latitude)
-                  ];
-                  this.maybeFocusCenterIncludePoint(
-                      this.currentLngLat,
-                      this.snapLngLat,
-                      { padding: this.isSmall500 ? 80 : 120, animate: true }
-                  );
-                  this.updateLocationAndCoordinates(position);
-                } else {
-                  this.$store.state.loading3 = true
-                  this.$store.state.loadingMessage3 = '座標品質悪化'
-                  setTimeout(() => {
-                    this.$store.state.loading3 = false
-                  },1000)
                 }
+              } catch (e) {
+                console.warn('[geo] update/save error', e);
+              } finally {
+                busy = false;
               }
-            } catch (e) {
-              console.warn('[geo] update/save error', e);
-            }
-          },
-          (error) => {
-            console.warn('[geo] error', error);
-          },
-          opt
-      );
+            },
+            (error) => {
+              console.warn('[geo] error(getCurrentPosition)', error);
+              busy = false;
+            },
+            opt
+        );
+      };
 
-      if (this.s_isKuiuchi) {
-        this.isTracking = false;
-      } else {
-        this.isTracking = true;
-      }
-      try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
+      // 起動時のUI状態・ログは従来どおり
+      this.isTracking = !this.s_isKuiuchi;
+      try { history('現在位置単発取得ポーリング開始(1s)', window.location.href); } catch(_) {}
 
       this.attachGpsLineClick();
-
       try { if (this.logEnabled) this.maybeLogPoint('start'); } catch(_) {}
+
+      // 1秒ごとに単発取得。即時1回も実行。
+      this.geoPollTimer = setInterval(tick, 1000);
+      tick();
     },
+    /**
+     * 通常版
+     */
+//     startWatchPosition () {
+//       if (!('geolocation' in navigator)) {
+//         console.warn('[geo] navigator.geolocation 未対応');
+//         return;
+//       }
+//       this.stopWatchPosition();
+//
+//       const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 };
+//       this.watchId = navigator.geolocation.watchPosition(
+//           (position) => {
+//             this.geoLastTs = position.timestamp || Date.now();
+//             try {
+//               const isUpdateLocation = this.saveGeoMetrics(position);
+//               if (isUpdateLocation) {
+//                 /**
+//                  * ここらへんに仕掛ければいいか？
+//                  */
+//                 // 位置更新ハンドラ内（this 版）
+//                 const c = position.coords || {};
+//                 const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+//                 const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+//                 const quality = this.getGeoQualityLabel(acc, altAcc);
+//                 const nowTs = position.timestamp || Date.now();
+//                 // RTK抑止ウィンドウ判定
+//                 const allowUpdate =
+//                     quality === 'RTK級' ||
+//                     !this.lastRtkAt ||
+//                     (nowTs - this.lastRtkAt) > this.rtkWindowMs;
+//                 // ←← 通常処理は if の中だけで実行
+//                 if (allowUpdate) {
+//                   if (quality === 'RTK級') {
+//                     this.lastRtkAt = nowTs; // RTK級検出時は基準更新
+//                   }
+//                   this.currentLngLat = [
+//                     Number(position.coords.longitude),
+//                     Number(position.coords.latitude)
+//                   ];
+//                   this.maybeFocusCenterIncludePoint(
+//                       this.currentLngLat,
+//                       this.snapLngLat,
+//                       { padding: this.isSmall500 ? 80 : 120, animate: true }
+//                   );
+//                   this.updateLocationAndCoordinates(position);
+//                 } else {
+//                   this.$store.state.loading3 = true
+//                   this.$store.state.loadingMessage3 = '座標品質悪化'
+//                   setTimeout(() => {
+//                     this.$store.state.loading3 = false
+//                   },1000)
+//                 }
+//               }
+//             } catch (e) {
+//               console.warn('[geo] update/save error', e);
+//             }
+//           },
+//           (error) => {
+//             console.warn('[geo] error', error);
+//           },
+//           opt
+//       );
+//
+//       if (this.s_isKuiuchi) {
+//         this.isTracking = false;
+//       } else {
+//         this.isTracking = true;
+//       }
+//       try { history('現在位置継続取得スタート(最小)', window.location.href); } catch(_) {}
+//
+//       this.attachGpsLineClick();
+//
+//       try { if (this.logEnabled) this.maybeLogPoint('start'); } catch(_) {}
+//     },
     stopWatchPosition () {
       if (this.watchId !== null) {
         try { navigator.geolocation.clearWatch(this.watchId); } catch(_) {}
@@ -11814,9 +11920,24 @@ export default {
       // on load オンロード
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
-        // const params = this.parseUrlParams()
-        // console.log(params)
         map.on('load',async () => {
+
+          const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+          if (isTouch) {
+            // ピンチズームは許可したまま、回転だけ無効化
+            map.touchZoomRotate.enable();         // ピンチズームは生かす
+            map.touchZoomRotate.disableRotation(); // 2本指の回転ジェスチャーを無効に
+
+            // （マウスの右ドラッグ回転も止めたいなら）
+            // map.dragRotate.disable();
+
+            // （2本指 上下でのピッチも止めたいなら）
+            // if (map.touchPitch && map.touchPitch.disable) map.touchPitch.disable();
+          }
+
+
+
 
           // クリック位置に円 → 内部にある layerA, layerB の地物を拾い、idProperty でハイライト
           const refreshRadiusHighlightObj = {
@@ -14831,6 +14952,23 @@ html.oh3-embed #map01 {
 @media (max-width: 500px){
   .fw-body{ padding:8px; }
 }
+
+/* Option D: パルス（淡い心拍風）。実行中やビジー中は付かない想定 */
+.pulse-anim {
+  animation: pulseGlow 1.4s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(33,150,243,0.45); }
+  70% { box-shadow: 0 0 0 12px rgba(33,150,243,0); }
+  100% { box-shadow: 0 0 0 0 rgba(33,150,243,0); }
+}
+
+
+/* 微調整（読みやすさ向上） */
+.tracking-wider { letter-spacing: .03em; }
+
+.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
+
 
 </style>
 
