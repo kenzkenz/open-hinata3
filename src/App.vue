@@ -338,8 +338,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </v-card-title>
 
-
-
             <v-divider thickness="4" />
 
             <!-- 本文：単画面切替（高さは flex で伝搬） -->
@@ -426,6 +424,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                       <v-list-item
                           v-for="pt in pointsForCurrentJob"
                           :key="pt.point_id"
+                          @click.stop="panToPointXY(pt)"
                       >
                         <!-- タイトル：ポイント名インライン編集（70%幅） -->
                         <template #title>
@@ -448,22 +447,22 @@ import SakuraEffect from './components/SakuraEffect.vue';
                                   hide-details
                                   autofocus
                                   class="name-input-70"
-                                  @change="commitPointName(pt)"
+                                  @change.stop="commitPointName(pt)"
                                   @keydown.esc.stop="cancelPointNameEdit"
                                   @keydown.left.stop
                                   @keydown.right.stop
-                                  @blur="commitPointName(pt)"
+                                  @blur.stop="commitPointName(pt)"
                               />
                             </template>
                           </div>
                         </template>
 
                         <template #subtitle>
-                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                      {{ pt.address }}
-                      &nbsp;
-                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-                    </span>
+                          <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                            {{ pt.address }}
+                            &nbsp;
+                            X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                          </span>
                         </template>
 
                         <template #append>
@@ -7628,6 +7627,27 @@ export default {
     /**
      * ここから観測関係
      */
+    panToPointXY(pt) {
+      const map = this.map01;
+      const lon = Number(pt.lng);
+      const lat = Number(pt.lat);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+        console.warn('[panToPointXY] 無効な座標', pt);
+        return;
+      }
+
+      const currentZoom = (typeof map.getZoom === 'function') ? map.getZoom() : undefined;
+      const easing = (t) => t * (2 - t);
+
+      map.easeTo({
+        center: [lon, lat],
+        zoom: Number.isFinite(currentZoom) ? currentZoom : undefined, // ズーム据え置き
+        duration: 800,
+        easing,
+        animate: true
+      });
+    },
+
     startEditJobName () {
       this.tempJobName = String(this.currentJobName || '')
       this.lastCommittedJobName = this.tempJobName

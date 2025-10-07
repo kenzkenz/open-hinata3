@@ -156,7 +156,7 @@ try {
         case 'job_points.list': {
             $job_id = (int)($_POST['job_id'] ?? 0);
             if ($job_id <= 0) { echo json_encode(['ok'=>false,'error'=>'job_id は必須']); exit; }
-            $stmt = $pdo->prepare('SELECT * FROM job_points WHERE job_id=? ORDER BY point_id ASC');
+            $stmt = $pdo->prepare('SELECT * FROM job_points WHERE job_id=? ORDER BY point_id DESC');
             $stmt->execute([$job_id]);
             echo json_encode(['ok'=>true,'data'=>$stmt->fetchAll()], JSON_UNESCAPED_UNICODE); exit;
         }
