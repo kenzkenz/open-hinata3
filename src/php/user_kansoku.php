@@ -100,7 +100,7 @@ try {
         case 'jobs.update_note': {
             $job_id   = (int)($_POST['job_id'] ?? 0);
             $job_note = trim((string)($_POST['job_note'] ?? $_POST['note'] ?? ''));
-            if ($job_id <= 0 || $job_note === '') { echo json_encode(['ok'=>false,'error'=>'job_id と job_note は必須']); exit; }
+            if ($job_id <= 0 ) { echo json_encode(['ok'=>false,'error'=>'job_id と job_note は必須']); exit; }
             $stmt = $pdo->prepare('UPDATE jobs SET note = ? WHERE job_id = ?');
             $stmt->execute([$job_note, $job_id]);
             $stmt2 = $pdo->prepare('SELECT * FROM jobs WHERE job_id = ?');
@@ -180,8 +180,8 @@ try {
             $stmt->execute([$point_id]);
             echo json_encode(['ok'=>true,'data'=>['deleted_id'=>$point_id]], JSON_UNESCAPED_UNICODE); exit;
         }
-        // -------------------- job_points.rename --------------------
-        case 'job_points.rename': {
+        // -------------------- job_points.update_name --------------------
+        case 'job_points.update_name': {
             $point_id   = (int)($_POST['point_id'] ?? 0);
             $point_name = trim((string)($_POST['point_name'] ?? ''));
             if ($point_id <= 0 || $point_name === '') {
@@ -189,6 +189,20 @@ try {
             }
             $stmt = $pdo->prepare('UPDATE job_points SET point_name = ? WHERE point_id = ?');
             $stmt->execute([$point_name, $point_id]);
+
+            $stmt2 = $pdo->prepare('SELECT * FROM job_points WHERE point_id = ?');
+            $stmt2->execute([$point_id]);
+            echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
+        }
+        // -------------------- job_points.update_address --------------------
+        case 'job_points.update_address': {
+            $point_id   = (int)($_POST['point_id'] ?? 0);
+            $address = trim((string)($_POST['address'] ?? ''));
+            if ($point_id <= 0 ) {
+                echo json_encode(['ok'=>false,'error'=>'point_id と point_address は必須'], JSON_UNESCAPED_UNICODE); exit;
+            }
+            $stmt = $pdo->prepare('UPDATE job_points SET address = ? WHERE point_id = ?');
+            $stmt->execute([$address, $point_id]);
 
             $stmt2 = $pdo->prepare('SELECT * FROM job_points WHERE point_id = ?');
             $stmt2->execute([$point_id]);

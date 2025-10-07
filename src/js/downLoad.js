@@ -13977,3 +13977,162 @@ export function addressFromMapCenter () {
         });
 }
 
+// OH3: 画面に見えている範囲（可視範囲）を高解像度PNGでエクスポートする（関数版）
+// 使い方：
+//   import { exportVisibleMapHiRes } from "./exportHiRes.js";
+//   await exportVisibleMapHiRes(map, { dpi:300, filename:"oh3-300dpi.png" });
+//   // またはピクセル直指定：await exportVisibleMapHiRes(map, { widthPx:4961, heightPx:3508 })
+// 前提：MapLibre GL JS。第一引数 map は既存の maplibregl.Map インスタンス（例：store.state.map01）。
+// 備考：
+//  - CORS 未設定のタイル/スプライトが混ざると toBlob が失敗します（サーバ側で A-C-A-O を付与）。
+//  - 超巨大サイズは WebGL 制限で失敗することがあります（maxSide/maxPixels で抑制）。
+
+export async function exportVisibleMapHiRes (map, opts = {}) {
+    if (!map || typeof map.getBounds !== 'function') {
+        console.warn('[exportVisibleMapHiRes] map instance required')
+        return
+    }
+
+    const {
+        dpi = 300,            // 目標DPI（CSS 96dpi基準）
+        scale = 1,            // 追加倍率
+        widthPx = null,       // 出力横ピクセル固定
+        heightPx = null,      // 出力縦ピクセル固定
+        filename = `oh3-visible-${dpi}dpi.png`,
+        background = '#ffffff', // 背景（透過が良ければ 'transparent'）
+        maxSide = 8000,       // 一辺の上限
+        maxPixels = 50e6      // 総画素上限（50MP）
+    } = opts
+
+    const baseCanvas = map.getCanvas()
+    const currentDpr = window.devicePixelRatio || 1
+    const viewW = baseCanvas.width / currentDpr
+    const viewH = baseCanvas.height / currentDpr
+    const aspect = viewW / viewH
+
+    let targetW, targetH
+    if (Number.isFinite(widthPx) || Number.isFinite(heightPx)) {
+        if (Number.isFinite(widthPx) && Number.isFinite(heightPx)) {
+            targetW = Math.round(widthPx)
+            targetH = Math.round(heightPx)
+        } else if (Number.isFinite(widthPx)) {
+            targetW = Math.round(widthPx)
+            targetH = Math.round(widthPx / aspect)
+        } else {
+            targetH = Math.round(heightPx)
+            targetW = Math.round(heightPx * aspect)
+        }
+    } else {
+        const pixelRatioGoal = Math.max(1, (dpi / 96) * scale)
+        targetW = Math.round(viewW * pixelRatioGoal)
+        targetH = Math.round(viewH * pixelRatioGoal)
+    }
+
+    // セーフガード
+    if (Math.max(targetW, targetH) > maxSide) {
+        const k = maxSide / Math.max(targetW, targetH)
+        targetW = Math.floor(targetW * k)
+        targetH = Math.floor(targetH * k)
+    }
+    if ((targetW * targetH) > maxPixels) {
+        const k = Math.sqrt(maxPixels / (targetW * targetH))
+        targetW = Math.floor(targetW * k)
+        targetH = Math.floor(targetH * k)
+    }
+
+    const bounds = map.getBounds()
+    const style = JSON.parse(JSON.stringify(map.getStyle()))
+
+    const container = document.createElement('div')
+    container.id = 'oh3-hires-export-temp'
+    container.style.position = 'fixed'
+    container.style.left = '-100000px'
+    container.style.top = '0'
+    container.style.width = targetW + 'px'
+    container.style.height = targetH + 'px'
+    container.style.pointerEvents = 'none'
+    container.style.background = background
+    document.body.appendChild(container)
+
+    const pixelRatio = Math.max(1, Math.min(4, Math.ceil(targetW / viewW)))
+    const map2 = new maplibregl.Map({
+        container,
+        style,
+        center: map.getCenter(),
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+        pitch: map.getPitch(),
+        interactive: false,
+        preserveDrawingBuffer: true,
+        fadeDuration: 0,
+        attributionControl: false,
+        trackResize: false,
+        pixelRatio
+    })
+
+    try {
+        await new Promise(resolve => {
+            map2.once('load', () => {
+                map2.fitBounds([
+                    [bounds.getWest(), bounds.getSouth()],
+                    [bounds.getEast(), bounds.getNorth()]
+                ], { padding: 0, animate: false })
+            })
+            map2.once('idle', () => resolve())
+        })
+
+        const blob = await canvasToBlob(map2.getCanvas())
+        downloadBlob(blob, filename)
+    } catch (e) {
+        console.error('[exportVisibleMapHiRes] failed:', e)
+        alert('高解像度出力に失敗しました。サイズを下げるか、CORS設定をご確認ください。')
+    } finally {
+        try { map2.remove() } catch (e) {}
+        try { container.remove() } catch (e) {}
+    }
+}
+
+export function canvasToBlob (canvas, type = 'image/png', quality) {
+    return new Promise((resolve, reject) => {
+        if (canvas.toBlob) {
+            canvas.toBlob((blob) => {
+                if (blob) resolve(blob); else reject(new Error('toBlob returned null'))
+            }, type, quality)
+        } else {
+            try {
+                const dataUrl = canvas.toDataURL(type, quality)
+                const arr = dataUrl.split(',')
+                const mime = arr[0].match(/:(.*?);/)[1]
+                const bstr = atob(arr[1])
+                let n = bstr.length
+                const u8arr = new Uint8Array(n)
+                while (n--) u8arr[n] = bstr.charCodeAt(n)
+                resolve(new Blob([u8arr], { type: mime }))
+            } catch (err) {
+                reject(err)
+            }
+        }
+    })
+}
+
+export function downloadBlob (blob, filename = 'map.png') {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/* --- 補足 ---
+ * 1) 紙サイズ→ピクセル変換：
+ *    例 A3 横（420×297mm）を 300dpi → 4961×3508px 目安。
+ *    const mmToInch = (mm) => mm / 25.4
+ *    const px = (mm, dpi) => Math.round(mmToInch(mm) * dpi)
+ *
+ * 2) 品質をさらに上げたい場合：
+ *    OffscreenCanvas + WebWorker のタイル合成レンダリング版を別途追加可能。
+ */
+

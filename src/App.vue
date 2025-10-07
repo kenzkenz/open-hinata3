@@ -225,10 +225,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 variant="outlined"
                 hide-details="auto"
                 autofocus
+                @keydown.stop
+                @keydown.left.stop
+                @keydown.right.stop
+                @keydown.up.stop
+                @keydown.down.stop
             />
             <v-textarea
                 v-model="jobEditDialog.note"
-                label="ノート"
                 variant="outlined"
                 hide-details="auto"
                 auto-grow
@@ -236,6 +240,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 max-rows="8"
                 class="mt-3"
                 placeholder="このジョブのメモ（任意）"
+                @keydown.stop
+                @keydown.left.stop
+                @keydown.right.stop
+                @keydown.up.stop
+                @keydown.down.stop
             />
           </v-card-text>
           <v-divider />
@@ -247,7 +256,48 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-
+      <!-- ポイント編集ダイアログ（jobEditDialog と同じ流儀） -->
+      <v-dialog v-model="pointEditDialog.open" max-width="520">
+        <v-card>
+          <v-card-title class="text-h6">ポイントを編集</v-card-title>
+          <v-divider />
+          <v-card-text class="pt-4">
+            <v-text-field
+                v-model.trim="pointEditDialog.name"
+                label="ポイント名"
+                variant="outlined"
+                hide-details="auto"
+                autofocus
+                @keydown.stop
+                @keydown.left.stop
+                @keydown.right.stop
+                @keydown.up.stop
+                @keydown.down.stop
+            />
+            <v-textarea
+                v-model="pointEditDialog.address"
+                variant="outlined"
+                hide-details="auto"
+                auto-grow
+                rows="3"
+                max-rows="8"
+                class="mt-3"
+                placeholder="このポイントの所在"
+                @keydown.stop
+                @keydown.left.stop
+                @keydown.right.stop
+                @keydown.up.stop
+                @keydown.down.stop
+            />
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closePointEditDialog" :disabled="pointEditDialog.saving">キャンセル</v-btn>
+            <v-btn color="primary" :loading="pointEditDialog.saving" :disabled="!canSavePoint" @click="savePointEditDialog">更新</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <!-- =========================
         JOBピッカー UI（簡略版・全文）
@@ -374,7 +424,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               </div>
             </v-card-title>
 
-            <v-divider thickness="4" />
+            <v-divider thickness="2" />
 
             <!-- 本文：単画面切替（高さは flex で伝搬） -->
             <v-card-text class="fw-body">
@@ -401,7 +451,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
                 </div>
 
-                <v-divider thickness="4" class="my-3" />
+                <v-divider thickness="2" class="my-3" />
 
                 <!-- 既存ジョブ一覧：中間ラッパ(section-grow)＋中でスクロール(list-pane) -->
                 <div v-if="showJobListOnly" class="section-grow">
@@ -433,7 +483,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                             &nbsp;&nbsp;{{ job.note }}
                           </div>
                         </template>
-
 
                         <template #append>
                           <v-chip
@@ -505,25 +554,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                               @mouseleave="hoverPointId = null"
                           >
                             <template v-if="editingPointId !== pt.point_id">
-                        <span class="editable-label" @click.stop="startEditPointName(pt)">
-                          {{ pt.point_name }}
-                          <v-icon x-small class="ml-1" v-show="hoverPointId === pt.point_id">mdi-pencil</v-icon>
-                        </span>
-                            </template>
-                            <template v-else>
-                              <v-text-field
-                                  v-model="tempPointName"
-                                  density="compact"
-                                  variant="outlined"
-                                  hide-details
-                                  autofocus
-                                  class="name-input-70"
-                                  @change.stop="commitPointName(pt)"
-                                  @keydown.esc.stop="cancelPointNameEdit"
-                                  @keydown.left.stop
-                                  @keydown.right.stop
-                                  @blur.stop="commitPointName(pt)"
-                              />
+                              {{ pt.point_name }}
                             </template>
                           </div>
                         </template>
@@ -537,6 +568,16 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         </template>
 
                         <template #append>
+                          <!-- 縦3点（ケバブ）ボタン：クリックでダイアログ -->
+                          <v-btn
+                              icon
+                              size="small"
+                              variant="text"
+                              class="ml-2"
+                              @click.stop="openPointEditDialog(pt)"
+                          >
+                            <v-icon>mdi-dots-vertical</v-icon>
+                          </v-btn>
                           <v-btn
                               icon
                               size="x-small"
@@ -3223,8 +3264,6 @@ function xyFromCoordString(s) {
   return null;
 }
 
-const API = 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php'
-
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogMyroom from '@/components/Dialog-myroom'
@@ -3672,7 +3711,17 @@ export default {
       note: '',
       saving: false,
     },
+    pointEditDialog: {
+      open: false,
+      pointId: '',
+      origName: '',
+      origAddress: '',
+      name: '',
+      address: '',
+      saving: false,
+    },
 
+    apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
 
     aaa: null,
   }),
@@ -3715,6 +3764,10 @@ export default {
       'drawFeature',
       'geo'
     ]),
+    canSavePoint () {
+      const name = (this.pointEditDialog.name || '').trim()
+      return Boolean(name)
+    },
     s_printMap: {
       get() {
         return this.$store.state.printMap;
@@ -7711,6 +7764,95 @@ export default {
     /**
      * ここから観測関係
      */
+    // ========= ケバブ：ダイアログ編集 =========
+    openPointEditDialog (pt) {
+      const d = this.pointEditDialog
+      d.pointId = pt.point_id
+      d.origName = String(pt.point_name || '')
+      d.origAddress = String(pt.address || '')
+      d.name = d.origName
+      d.address = d.origAddress
+      d.open = true
+    },
+    closePointEditDialog () {
+      const d = this.pointEditDialog
+      d.open = false
+      d.pointId = ''
+      d.origName = ''
+      d.origAddress = ''
+      d.name = ''
+      d.address = ''
+    },
+
+    async savePointEditDialog () {
+      const d = this.pointEditDialog
+      if (d.saving) return
+      const id   = d.pointId
+      const name = (d.name || '').trim()
+      const addr = d.address || ''
+
+      const needRename = name && name !== d.origName
+      const needAddr   = addr !== d.origAddress
+
+      if (!needRename && !needAddr) {
+        this.closePointEditDialog()
+        return
+      }
+
+      d.saving = true
+      try {
+        // 1) 名前変更（必要なときだけ）
+        if (needRename) {
+          const fd1 = new FormData()
+          fd1.append('action', 'job_points.update_name')
+          fd1.append('point_id', id)
+          fd1.append('point_name', name)
+          const r1 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd1 })
+          const j1 = await r1.json().catch(() => ({}))
+          if (!j1?.ok) throw new Error(j1?.error || 'points.update failed')
+        }
+
+        // 2) 住所更新（必要なときだけ）
+        if (needAddr) {
+          const fd2 = new FormData()
+          fd2.append('action', 'job_points.update_address')
+          fd2.append('point_id', id)
+          fd2.append('address', addr)
+          const r2 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd2 })
+          const j2 = await r2.json().catch(() => ({}))
+          if (!j2?.ok) throw new Error(j2?.error || 'points.update_address failed')
+        }
+
+        // ローカル反映
+        const rec = this.pointsForCurrentJob.find(p => String(p.point_id) === id)
+        if (rec) {
+          if (needRename) rec.point_name = name
+          if (needAddr)   rec.address    = addr
+        }
+
+        const SRC = 'oh-toroku-point-src'
+        const LAB   = 'oh-toroku-point-label';
+        const f = this._torokuFC.features.find(f => f.properties.id === id)
+        if (f) {
+          f.properties.label = name
+          f.properties.name  = name
+          const map = this.map01
+          map.getSource(SRC).setData(this._torokuFC)
+          map.triggerRepaint()
+          console.log(this._torokuFC)
+        }
+        this.pointEditDialog.saving = false
+        // ダイアログ閉じる＆orig更新
+        d.origName = name
+        d.origAddress = addr
+        this.closePointEditDialog()
+      } catch (e) {
+        console.error('[point edit] save failed:', e)
+        alert('ポイントの更新に失敗しました')
+        d.saving = false
+      }
+    },
+
     // kebab → ダイアログオープン
     openJobEditDialog (job) {
       const id   = String(job?.id ?? job?.job_id ?? '')
@@ -7752,7 +7894,7 @@ export default {
           fd1.append('action', 'jobs.update')
           fd1.append('job_id', id)
           fd1.append('job_name', name)
-          const r1 = await fetch(API, { method: 'POST', body: fd1 })
+          const r1 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd1 })
           const j1 = await r1.json().catch(() => ({}))
           if (!j1?.ok) throw new Error(j1?.error || 'jobs.rename failed')
         }
@@ -7763,7 +7905,7 @@ export default {
           fd2.append('action', 'jobs.update_note')
           fd2.append('job_id', id)
           fd2.append('note', note)
-          const r2 = await fetch(API, { method: 'POST', body: fd2 })
+          const r2 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd2 })
           const j2 = await r2.json().catch(() => ({}))
           if (!j2?.ok) throw new Error(j2?.error || 'jobs.update_note failed')
         }
@@ -7779,7 +7921,6 @@ export default {
           // currentJobNote を使っているなら併せて
           if (needNote)   this.currentJobNote = note
         }
-
         // ダイアログ閉じる
         this.jobEditDialog.origName = name
         this.jobEditDialog.origNote = note
@@ -7790,7 +7931,7 @@ export default {
         this.jobEditDialog.saving = false
       }
     },
-    
+
     panToPointXY(pt) {
       const map = this.map01;
       const lon = Number(pt.lng);
@@ -14028,49 +14169,66 @@ export default {
       window.addEventListener('touchend',   stopOnMenu, { capture: true, passive: true });
     }
 
-    if (this.s_isAndroid){
-      let startY;
-      let isTouching = false;
-      let currentTarget = null;
-      let initialScrollTop = 0;
-      document.addEventListener('touchstart', (e) => {
-        const target = e.target.closest('.fw-fit');
+    if (this.s_isAndroid) {
+      const contentSelector = '.fw-fit'; // スクロールさせたい要素
+      const stopOnContent = (e) => {
+        // オーバーレイ内の操作は外へ伝播させない（外側パン/ズームを無効化）
+        const target = e.target.closest(contentSelector);
         if (target) {
-          startY = e.touches[0].clientY; // タッチ開始位置を記録
-          initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
-          isTouching = true;
-          currentTarget = target;
-          target.style.overflowY = 'auto'; // スクロールを強制的に有効化
-          target.style.touchAction = 'manipulation';
-          // **イベント伝播を防ぐ**
+          // ここでは preventDefault は原則しない（ネイティブの慣性を殺さない）
           e.stopPropagation();
         }
-      }, { passive: true, capture: true });
+      };
 
-      // タッチ移動時の処理
-      document.addEventListener('touchmove', (e) => {
-        if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
-        const moveY = e.touches[0].clientY;
-        const deltaY = startY - moveY; // 移動量を計算
-        // スクロール位置を更新
-        currentTarget.scrollTop += deltaY;
-        startY = moveY; // 開始位置を現在の位置に更新
-        // **Android でスクロールが無視されないようにする**
-        e.preventDefault();
-        e.stopPropagation();
-
-      }, { passive: true, capture: true });
-
-      // タッチ終了時の処理
-      document.addEventListener('touchend', () => {
-        if (currentTarget) {
-          currentTarget.style.overflowY = ''; // スクロール設定をリセット
-        }
-        currentTarget = null; // 現在のターゲットをリセット
-        isTouching = false; // タッチ中フラグをOFF
-        initialScrollTop = 0; // 初期スクロール位置をリセット
-      });
+      // キャプチャは使うが、対象が content の時だけ止める
+      window.addEventListener('touchstart', stopOnContent, { capture: true, passive: true });
+      window.addEventListener('touchmove',  stopOnContent, { capture: true, passive: true });
+      window.addEventListener('touchend',   stopOnContent, { capture: true, passive: true });
     }
+
+    // if (this.s_isAndroid){
+    //   let startY;
+    //   let isTouching = false;
+    //   let currentTarget = null;
+    //   let initialScrollTop = 0;
+    //   document.addEventListener('touchstart', (e) => {
+    //     const target = e.target.closest('.fw-fit');
+    //     if (target) {
+    //       startY = e.touches[0].clientY; // タッチ開始位置を記録
+    //       initialScrollTop = target.scrollTop; // 初期スクロール位置を記録
+    //       isTouching = true;
+    //       currentTarget = target;
+    //       target.style.overflowY = 'auto'; // スクロールを強制的に有効化
+    //       target.style.touchAction = 'manipulation';
+    //       // **イベント伝播を防ぐ**
+    //       e.stopPropagation();
+    //     }
+    //   }, { passive: true, capture: true });
+    //
+    //   // タッチ移動時の処理
+    //   document.addEventListener('touchmove', (e) => {
+    //     if (!isTouching || !currentTarget) return; // タッチが開始されていなければ処理しない
+    //     const moveY = e.touches[0].clientY;
+    //     const deltaY = startY - moveY; // 移動量を計算
+    //     // スクロール位置を更新
+    //     currentTarget.scrollTop += deltaY;
+    //     startY = moveY; // 開始位置を現在の位置に更新
+    //     // **Android でスクロールが無視されないようにする**
+    //     e.preventDefault();
+    //     e.stopPropagation();
+    //
+    //   }, { passive: true, capture: true });
+    //
+    //   // タッチ終了時の処理
+    //   document.addEventListener('touchend', () => {
+    //     if (currentTarget) {
+    //       currentTarget.style.overflowY = ''; // スクロール設定をリセット
+    //     }
+    //     currentTarget = null; // 現在のターゲットをリセット
+    //     isTouching = false; // タッチ中フラグをOFF
+    //     initialScrollTop = 0; // 初期スクロール位置をリセット
+    //   });
+    // }
     // android対応まとめ-----------------------------------------------------------
 
     try {
