@@ -213,6 +213,42 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
       <!-- <v-btn @click="test">test</v-btn>-->
 
+      <!-- ジョブ編集ダイアログ -->
+      <v-dialog v-model="jobEditDialog.open" max-width="520">
+        <v-card>
+          <v-card-title class="text-h6">ジョブを編集</v-card-title>
+          <v-divider />
+          <v-card-text class="pt-4">
+            <v-text-field
+                v-model.trim="jobEditDialog.name"
+                label="ジョブ名"
+                variant="outlined"
+                hide-details="auto"
+                autofocus
+            />
+            <v-textarea
+                v-model="jobEditDialog.note"
+                label="ノート"
+                variant="outlined"
+                hide-details="auto"
+                auto-grow
+                rows="3"
+                max-rows="8"
+                class="mt-3"
+                placeholder="このジョブのメモ（任意）"
+            />
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closeJobEditDialog" :disabled="jobEditDialog.saving">キャンセル</v-btn>
+            <v-btn color="primary" :loading="jobEditDialog.saving" @click="saveJobEditDialog">更新</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+
+
       <!-- =========================
         JOBピッカー UI（簡略版・全文）
         - 一覧：常に全ジョブ表示
@@ -352,12 +388,14 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         v-model.trim="jobName"
                         label="ジョブ名"
                         variant="outlined"
-                        density="comfortable"
-                        hide-details="auto"
-                        class="flex-1-1"
+                        density="compact"
+                        hide-details
+                        class="flex-1-1 py-0 my-0"
+                        style="--v-input-control-height: 30px;"
                         @keydown.left.stop
                         @keydown.right.stop
                     />
+
                     <v-btn color="primary" @click="createNewJob(); showJobListOnly = false">作成</v-btn>
                   </div>
                   <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
@@ -370,13 +408,33 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   <div class="text-caption mb-2">既存のジョブ</div>
 
                   <div class="list-pane">
+
                     <v-list density="compact" nav>
                       <v-list-item
                           v-for="job in jobList"
                           :key="job.id"
                           :title="job.name"
+                          :ripple="true"
                           @click="pickExistingJob(job); showJobListOnly = false"
                       >
+                        <!-- ▼ ここだけ置き換え -->
+                        <template #title>
+                          <div class="job-title-tight">
+                            <div class="job-title__name text-truncate">
+                              {{ job.name }}
+                            </div>
+                          </div>
+                        </template>
+                        <template #subtitle>
+                          <div
+                              class="job-title__note text-truncate"
+                              :title="job.note"
+                          >
+                            &nbsp;&nbsp;{{ job.note }}
+                          </div>
+                        </template>
+
+
                         <template #append>
                           <v-chip
                               v-if="Number(job.count) > 0"
@@ -385,9 +443,21 @@ import SakuraEffect from './components/SakuraEffect.vue';
                               color="red"
                               class="rounded-pill mr-1"
                               style="min-width:22px; height:22px; padding:0 6px; display:inline-flex; align-items:center; justify-content:center; font-weight:700;"
+                          >{{ job.count }}</v-chip>
+
+                          <!-- ★ 追加：縦三点メニュー（編集ダイアログ） -->
+                          <v-btn
+                              icon
+                              size="x-small"
+                              variant="text"
+                              aria-label="ジョブを編集"
+                              class="mr-1"
+                              @click.stop="openJobEditDialog(job)"
                           >
-                            {{ job.count }}
-                          </v-chip>
+                            <v-icon size="20">mdi-dots-vertical</v-icon>
+                          </v-btn>
+
+                          <!-- 既存：削除 -->
                           <v-btn
                               icon
                               size="x-small"
@@ -400,6 +470,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         </template>
                       </v-list-item>
                     </v-list>
+
                   </div>
                 </div>
 
@@ -3152,6 +3223,8 @@ function xyFromCoordString(s) {
   return null;
 }
 
+const API = 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php'
+
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogMyroom from '@/components/Dialog-myroom'
@@ -3589,6 +3662,17 @@ export default {
     suppressUntil: 0, // タッチ操作終了から20秒は抑止
 
     autoCloseJobPicker: false,
+
+    jobEditDialog: {
+      open: false,
+      jobId: '',
+      origName: '',
+      origNote: '',
+      name: '',
+      note: '',
+      saving: false,
+    },
+
 
     aaa: null,
   }),
@@ -7627,6 +7711,86 @@ export default {
     /**
      * ここから観測関係
      */
+    // kebab → ダイアログオープン
+    openJobEditDialog (job) {
+      const id   = String(job?.id ?? job?.job_id ?? '')
+      const name = String(job?.name ?? job?.job_name ?? '')
+      const note = String(job?.note ?? '')
+      if (!id) return
+      this.jobEditDialog.jobId    = id
+      this.jobEditDialog.origName = name
+      this.jobEditDialog.origNote = note
+      this.jobEditDialog.name     = name
+      this.jobEditDialog.note     = note
+      this.jobEditDialog.open     = true
+    },
+
+    closeJobEditDialog () {
+      this.jobEditDialog.open   = false
+      this.jobEditDialog.saving = false
+    },
+
+    async saveJobEditDialog () {
+      if (this.jobEditDialog.saving) return
+      const id   = this.jobEditDialog.jobId
+      const name = (this.jobEditDialog.name || '').trim()
+      const note = this.jobEditDialog.note ?? ''
+
+      const needRename = name && name !== this.jobEditDialog.origName
+      const needNote   = note !== this.jobEditDialog.origNote
+
+      if (!needRename && !needNote) {
+        this.closeJobEditDialog()
+        return
+      }
+
+      this.jobEditDialog.saving = true
+      try {
+        // 1) 名前変更（必要なときだけ）
+        if (needRename) {
+          const fd1 = new FormData()
+          fd1.append('action', 'jobs.update')
+          fd1.append('job_id', id)
+          fd1.append('job_name', name)
+          const r1 = await fetch(API, { method: 'POST', body: fd1 })
+          const j1 = await r1.json().catch(() => ({}))
+          if (!j1?.ok) throw new Error(j1?.error || 'jobs.rename failed')
+        }
+
+        // 2) ノート更新（必要なときだけ）
+        if (needNote) {
+          const fd2 = new FormData()
+          fd2.append('action', 'jobs.update_note')
+          fd2.append('job_id', id)
+          fd2.append('note', note)
+          const r2 = await fetch(API, { method: 'POST', body: fd2 })
+          const j2 = await r2.json().catch(() => ({}))
+          if (!j2?.ok) throw new Error(j2?.error || 'jobs.update_note failed')
+        }
+
+        // ローカル反映：jobList / current*
+        const rec = this.jobList.find(j => String(j.id ?? j.job_id) === id)
+        if (rec) {
+          if (needRename) rec.name = name
+          if (needNote)   rec.note = note
+        }
+        if (String(this.currentJobId) === id) {
+          if (needRename) this.currentJobName = name
+          // currentJobNote を使っているなら併せて
+          if (needNote)   this.currentJobNote = note
+        }
+
+        // ダイアログ閉じる
+        this.jobEditDialog.origName = name
+        this.jobEditDialog.origNote = note
+        this.closeJobEditDialog()
+      } catch (e) {
+        console.error('[job edit] save failed:', e)
+        alert('ジョブの更新に失敗しました')
+        this.jobEditDialog.saving = false
+      }
+    },
+    
     panToPointXY(pt) {
       const map = this.map01;
       const lon = Number(pt.lng);
@@ -8816,6 +8980,7 @@ export default {
       const toUi = (r) => ({
         id: String(r.job_id),
         name: r.job_name,
+        note: r.note,
         createdAt: r.created_at,
         count: Number(r.point_count ?? 0),
       });
@@ -14989,6 +15154,9 @@ html.oh3-embed #map01 {
 
 .oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
 
+.job-title__note{
+
+}
 
 </style>
 

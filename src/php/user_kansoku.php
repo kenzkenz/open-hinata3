@@ -96,6 +96,17 @@ try {
             $stmt2->execute([$job_id]);
             echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
         }
+        // -------------------- jobs.update（★ノート変更） --------------------
+        case 'jobs.update_note': {
+            $job_id   = (int)($_POST['job_id'] ?? 0);
+            $job_note = trim((string)($_POST['job_note'] ?? $_POST['note'] ?? ''));
+            if ($job_id <= 0 || $job_note === '') { echo json_encode(['ok'=>false,'error'=>'job_id と job_note は必須']); exit; }
+            $stmt = $pdo->prepare('UPDATE jobs SET note = ? WHERE job_id = ?');
+            $stmt->execute([$job_note, $job_id]);
+            $stmt2 = $pdo->prepare('SELECT * FROM jobs WHERE job_id = ?');
+            $stmt2->execute([$job_id]);
+            echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
+        }
 
         // -------------------- jobs.delete --------------------
         case 'jobs.delete': {
