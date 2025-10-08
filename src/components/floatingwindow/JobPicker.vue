@@ -131,7 +131,7 @@
                     v-for="job in jobList"
                     :key="job.id"
                     :ripple="true"
-                    @click="$emit('pick-job', job)"
+                    @click="pickExistingJob(job); showJobListOnly = false"
                 >
                   <template #title>
                     <div class="job-title-tight">
@@ -545,10 +545,17 @@ export default {
       },
 
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
+
+      SRC: 'oh-toroku-point-src',
+      L: 'oh-toroku-point',
+      LAB: 'oh-toroku-point-label',
+
+
     }
   },
   computed: {
     ...mapState([
+      'map01',
       'userId',
       'myNickname',
       'isKuiuchi',
@@ -1983,33 +1990,17 @@ export default {
       const fd = new FormData();
       fd.append('action', 'jobs.list');
       fd.append('user_id', this.userId);
-      let res;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+      const res = await fetch(this.apiForJobPicker, {
           method: 'POST',
           body: fd,
         });
-      } catch (e) {
-        console.error('[jobs.list] ネットワーク失敗', e);
-        alert('ジョブ一覧の取得に失敗しました: ' + (e?.message || e));
-        return;
-      }
-      const ct = res.headers.get('content-type') || '';
-      let data;
-      try {
-        data = ct.includes('application/json') ? await res.json() : JSON.parse(await res.text());
-      } catch (e) {
-        console.error('[jobs.list] JSON解析失敗', e);
-        alert('ジョブ一覧の解析に失敗しました');
-        return;
-      }
+      const data = await res.json()
       if (!data?.ok) {
         const msg = data?.error || 'サーバーエラー';
         alert('ジョブ一覧の取得に失敗しました：' + msg);
         console.error('[jobs.list] server says:', data);
         return;
       }
-      // console.log(JSON.stringify(data, null, 2));
       const toUi = (r) => ({
         id: String(r.job_id),
         name: r.job_name,
@@ -2018,7 +2009,149 @@ export default {
         count: Number(r.point_count ?? 0),
       });
       this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
-      console.log(this.jobList);
+    },
+
+    /** 既存ジョブ選択 → 現在ジョブに設定 */
+    async pickExistingJob(job) {
+      const hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1'
+      if (!hideTips) {
+        this.$store.dispatch('messageDialog/open', {
+          id: 'openJobPicker',
+          title: '次の操作は？',
+          contentHtml:
+              '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
+              '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
+          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
+        });
+      }
+      this.pointsForCurrentJob = [];
+      this.currentJobId   = job.id;
+      this.currentJobName = job.name;
+
+      await this.loadPointsForJob(this.currentJobId);
+
+      if (this.autoCloseJobPicker) {
+        this.jobPickerOpen = false;
+        this.$store.dispatch('hideFloatingWindow', 'job-picker')
+      }
+    },
+
+    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
+    async loadPointsForJob(jobId, options = { fit: true }) {
+      const fd = new FormData();
+      fd.append('action', 'job_points.list');
+      fd.append('job_id', String(jobId));
+
+      const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data?.ok || !Array.isArray(data.data)) {
+        console.error('[job_points.list] サーバーエラー', data);
+        alert('測位点の取得に失敗しました');
+        return;
+      }
+
+      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
+
+      const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
+      const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
+      const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
+
+      const features = [];
+
+      // 手計算のバウンディングボックス（本処理）
+      let minLng =  Infinity, minLat =  Infinity;
+      let maxLng = -Infinity, maxLat = -Infinity;
+
+      let ok = 0, skip = 0;
+
+      for (const r of this.pointsForCurrentJob) {
+        const name   = String(r.point_name ?? '');
+        const Xavg   = Number(r.x_north);
+        const Yavg   = Number(r.y_east);
+        const hOrtho = Number(r.h_orthometric);
+        const pole   = Number(r.antenna_height);
+        const hAtAnt = Number(r.h_at_antenna);
+        const hae    = Number(r.hae_ellipsoidal);
+        const diff   = Number(r.xy_diff);
+        const cs     = String(r.crs_label ?? '');
+        const ts     = String(r.observed_at ?? '');
+        const lng    = Number(r.lng);
+        const lat    = Number(r.lat);
+
+        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
+
+        if (!hasLngLat) { skip += 1; continue; }
+        ok += 1;
+
+        // bbox 更新
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+
+        const rowArray = [
+          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
+          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
+          String(r.address ?? ''), // 所在
+          ts
+        ];
+
+        features.push({
+          type: 'Feature',
+          properties: {
+            id: String(r.point_id),
+            label: name,
+            name:  name,
+            oh3_csv2_row: rowArray,
+            pendingLabel: false
+          },
+          geometry: { type: 'Point', coordinates: [lng, lat] }
+        });
+      }
+
+      const map = this.map01;
+      this._torokuFC = { type: 'FeatureCollection', features };
+
+      if (!map.getSource(this.SRC)) map.addSource(this.SRC, { type: 'geojson', data: this._torokuFC });
+      else map.getSource(this.SRC).setData(this._torokuFC);
+
+      if (!map.getLayer(this.L)) {
+        map.addLayer({
+          id: this.L,
+          type: 'circle',
+          source: this.SRC,
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#ff3b30',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+      }
+      if (!map.getLayer(this.LAB)) {
+        map.addLayer({
+          id: this.LAB,
+          type: 'symbol',
+          source: this.SRC,
+          layout: {
+            'text-field': ['get', 'label'],
+            'text-size': 16,
+            'text-offset': [0, 0.5],
+            'text-anchor': 'top',
+            'text-allow-overlap': true
+          },
+          paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+        });
+      }
+
+      if (options.fit) {
+        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
+      } else {
+        const last = this.pointsForCurrentJob.at(-1);
+        map.setCenter([last.lng, last.lat]);
+      }
+
+      this.updateChainLine();
     },
 
     /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
@@ -2081,191 +2214,7 @@ export default {
       }
     },
 
-    /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
-    async pickExistingJob(job) {
-      // ▼ チュートリアルダイアログは残す（DONT_SHOW_KEY が '1' でない限り毎回表示）
-      let hideTips = false;
-      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1'; } catch (_) {}
-      if (!hideTips) {
-        this.$store.dispatch('messageDialog/open', {
-          id: 'openJobPicker',
-          title: '次の操作は？',
-          contentHtml:
-              '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
-              '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
-          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
-        });
-      }
 
-      // ▼ 選択ジョブの設定
-      this.pointsForCurrentJob = [];
-      const id   = String(job?.id ?? job?.job_id ?? '');
-      const name = String(job?.name ?? job?.job_name ?? '');
-      if (!id) return;
-
-      this.currentJobId   = id;
-      this.currentJobName = name;
-
-      // ▼ ポイント読み込み（fit=true は既定）
-      await this.loadPointsForJob(id);
-
-      // ▼ 自動クローズはトグルのみで制御（画面サイズ分岐なし）
-      if (this.autoCloseJobPicker) {
-        this.jobPickerOpen = false;
-        try { this.$store.dispatch('hideFloatingWindow', 'job-picker'); } catch {}
-      }
-    },
-
-    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
-    async loadPointsForJob(jobId, options = { fit: true }) {
-      const fd = new FormData();
-      fd.append('action', 'job_points.list');
-      fd.append('job_id', String(jobId));
-
-      let res, data;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-        data = await res.json();
-      } catch (e) {
-        console.error('[job_points.list] ネットワーク失敗', e);
-        alert('サーバーから測位点を取得できませんでした');
-        return;
-      }
-      if (!data?.ok || !Array.isArray(data.data)) {
-        console.error('[job_points.list] サーバーエラー', data);
-        alert('測位点の取得に失敗しました');
-        return;
-      }
-
-      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
-
-      const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
-      const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
-      const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
-
-      const features = [];
-
-      // 手計算のバウンディングボックス（本処理）
-      let minLng =  Infinity, minLat =  Infinity;
-      let maxLng = -Infinity, maxLat = -Infinity;
-
-      const total = this.pointsForCurrentJob.length;
-      let ok = 0, skip = 0;
-
-      for (const r of this.pointsForCurrentJob) {
-        const name   = String(r.point_name ?? '');
-        const Xavg   = Number(r.x_north);
-        const Yavg   = Number(r.y_east);
-        const hOrtho = Number(r.h_orthometric);
-        const pole   = Number(r.antenna_height);
-        const hAtAnt = Number(r.h_at_antenna);
-        const hae    = Number(r.hae_ellipsoidal);
-        const diff   = Number(r.xy_diff);
-        const cs     = String(r.crs_label ?? '');
-        const ts     = String(r.observed_at ?? '');
-        const lng    = Number(r.lng);
-        const lat    = Number(r.lat);
-
-        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
-        console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
-
-        if (!hasLngLat) { skip += 1; continue; }
-        ok += 1;
-
-        // bbox 更新
-        if (lng < minLng) minLng = lng;
-        if (lng > maxLng) maxLng = lng;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-
-        const rowArray = [
-          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
-          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
-          String(r.address ?? ''), // 所在
-          ts
-        ];
-
-        features.push({
-          type: 'Feature',
-          properties: {
-            id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
-            label: name,
-            name:  name,
-            oh3_csv2_row: rowArray,
-            pendingLabel: false
-          },
-          geometry: { type: 'Point', coordinates: [lng, lat] }
-        });
-      }
-
-      console.log('[loadPointsForJob] summary', {
-        total, ok, skip,
-        bbox: { minLng, minLat, maxLng, maxLat },
-        bboxValid:
-            Number.isFinite(minLng) && Number.isFinite(minLat) &&
-            Number.isFinite(maxLng) && Number.isFinite(maxLat)
-      });
-
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (map) {
-          const SRC  = 'oh-toroku-point-src';
-          const L    = 'oh-toroku-point';
-          const LAB  = 'oh-toroku-point-label';
-
-          this._torokuFC = { type: 'FeatureCollection', features };
-
-          if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-          else map.getSource(SRC).setData(this._torokuFC);
-
-          if (!map.getLayer(L)) {
-            map.addLayer({
-              id: L, type: 'circle', source: SRC,
-              paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff3b30',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
-          }
-          if (!map.getLayer(LAB)) {
-            map.addLayer({
-              id: LAB, type: 'symbol', source: SRC,
-              layout: {
-                'text-field': ['get', 'label'],
-                'text-size': 16,
-                'text-offset': [0, 0.5],
-                'text-anchor': 'top',
-                'text-allow-overlap': true
-              },
-              paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-            });
-          }
-
-          const bboxValid =
-              Number.isFinite(minLng) && Number.isFinite(minLat) &&
-              Number.isFinite(maxLng) && Number.isFinite(maxLat);
-
-          if (bboxValid && typeof map.fitBounds === 'function') {
-            const pad = 80;
-            console.log('[loadPointsForJob] fitBounds(array bbox)');
-            if (options.fit) {
-              map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
-            } else {
-              const last = this.pointsForCurrentJob.at(-1);
-              map.setCenter([last.lng, last.lat]);
-            }
-          } else {
-            console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
-          }
-        }
-      } catch (e) {
-        console.warn('[points] render failed (続行)', e);
-      }
-
-      try { this.updateChainLine(); } catch (_) {}
-    },
 
 
     /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
