@@ -171,7 +171,7 @@
                         size="x-small"
                         variant="text"
                         aria-label="ジョブを削除"
-                        @click.stop="$emit('delete-job', job)"
+                        @click.stop="deleteJob(job)"
                     >
                       <v-icon size="22">mdi-close</v-icon>
                     </v-btn>
@@ -2156,7 +2156,7 @@ export default {
 
     /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
     async deleteJob(job) {
-      const id = String(job?.id ?? job?.job_id ?? '');
+      const id = String(job.id);
       if (!id) return;
       if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
 
@@ -2165,7 +2165,7 @@ export default {
       fd.append('job_id', id);
 
       try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
+        const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
         const data = await res.json();
         if (!data?.ok) {
           alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
@@ -2173,7 +2173,7 @@ export default {
         }
 
         // 一覧から除去
-        this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
+        this.jobList = this.jobList.filter(j => String(j.id) !== id);
 
         // ★ ここがポイント：現在のJOBを消したなら、赤丸/線/一覧を全クリア
         if (String(this.currentJobId) === id) {
@@ -2181,18 +2181,11 @@ export default {
           this.currentJobName = '';
 
           // 地図の赤丸（登録点）とラベルを消す
-          try {
-            const map = (this.$store?.state?.map01) || this.map01;
-            if (map) {
-              const SRC = 'oh-toroku-point-src';
-              const L   = 'oh-toroku-point';
-              const LAB = 'oh-toroku-point-label';
-              try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch {}
-              try { if (map.getLayer(L))   map.removeLayer(L); }   catch {}
-              try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-            }
-          } catch (e) {
-            console.warn('[jobs.delete] map clear failed (ignored)', e);
+          const map = this.map01;
+          if (map) {
+            try { if (map.getLayer(this.LAB)) map.removeLayer(this.LAB); } catch {}
+            try { if (map.getLayer(this.L))   map.removeLayer(this.L); }   catch {}
+            try { if (map.getSource(this.SRC)) map.removeSource(this.SRC); } catch {}
           }
 
           // 内部キャッシュも空に
@@ -2202,11 +2195,11 @@ export default {
           this.torokuPointLngLat = null;
 
           // 結線も消す
-          try { this.clearChainLine?.(); } catch {}
+          this.clearChainLine()
         }
 
         // バッジ/一覧を再取得
-        try { await this.refreshJobs(); } catch {}
+        await this.refreshJobs()
 
       } catch (e) {
         console.error('[jobs.delete] 失敗', e);
