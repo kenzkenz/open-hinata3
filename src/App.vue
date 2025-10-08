@@ -327,6 +327,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
             @pointerdown.stop
             @touchstart.stop
         >
+        </JobPicker>
 
 <!--        &lt;!&ndash; 親サイズに追従（高さ伝搬の起点） &ndash;&gt;-->
 <!--        <div class="fw-fit"-->

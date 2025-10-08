@@ -25,8 +25,8 @@
             density="comfortable"
             rounded="xl"
             class="font-weight-bold"
-            :disabled="ui.showJobListOnly"
-            @click="ui.showJobListOnly = true"
+            :disabled="showJobListOnly"
+            @click="showJobListOnly = true"
         >
           一覧
         </v-btn>
@@ -67,18 +67,18 @@
         <span v-if="!currentJobName">ジョブ選択</span>
 
         <div v-else class="name-edit-wrap"
-             @mouseenter="ui.hoverJobName = true"
-             @mouseleave="ui.hoverJobName = false">
+             @mouseenter="hoverJobName = true"
+             @mouseleave="hoverJobName = false">
           ジョブ:
-          <template v-if="!ui.editingJobName">
+          <template v-if="!editingJobName">
             <span class="editable-label ml-1" @click="startEditJobName">
               {{ currentJobName }}
-              <v-icon x-small class="ml-1" v-show="ui.hoverJobName">mdi-pencil</v-icon>
+              <v-icon x-small class="ml-1" v-show="hoverJobName">mdi-pencil</v-icon>
             </span>
           </template>
           <template v-else>
             <v-text-field
-                v-model="ui.tempJobName"
+                v-model="tempJobName"
                 density="compact"
                 variant="outlined"
                 hide-details
@@ -99,13 +99,13 @@
       <!-- 本文 -->
       <v-card-text class="fw-body">
         <!-- ========== ジョブ一覧画面 ========== -->
-        <template v-if="ui.showJobListOnly">
+        <template v-if="showJobListOnly">
           <!-- 新規ジョブ -->
           <div class="mb-4">
             <div class="text-caption mb-2">新規ジョブを作成</div>
             <div class="d-flex ga-2">
               <v-text-field
-                  v-model.trim="ui.newJobName"
+                  v-model.trim="newJobName"
                   label="ジョブ名"
                   variant="outlined"
                   density="compact"
@@ -117,7 +117,7 @@
               />
               <v-btn color="primary" :disabled="!canCreateJob" @click="createNewJob">作成</v-btn>
             </div>
-            <div v-if="ui.jobNameError" class="text-error text-caption mt-1">{{ ui.jobNameError }}</div>
+            <div v-if="jobNameError" class="text-error text-caption mt-1">{{ jobNameError }}</div>
           </div>
 
           <v-divider thickness="2" class="my-3" />
@@ -200,8 +200,8 @@
                 >
                   <template #title>
                     <div class="name-edit-wrap"
-                         @mouseenter="ui.hoverPointId = pt.point_id"
-                         @mouseleave="ui.hoverPointId = null">
+                         @mouseenter="hoverPointId = pt.point_id"
+                         @mouseleave="hoverPointId = null">
                       {{ pt.point_name }}
                     </div>
                   </template>
@@ -227,13 +227,13 @@
     </v-card>
 
     <!-- ジョブ編集ダイアログ -->
-    <v-dialog v-model="ui.jobEdit.open" max-width="520">
+    <v-dialog v-model="jobEditDialog.open" max-width="520">
       <v-card>
         <v-card-title class="text-h6">ジョブを編集</v-card-title>
         <v-divider />
         <v-card-text class="pt-4">
           <v-text-field
-              v-model.trim="ui.jobEdit.name"
+              v-model.trim="jobEditDialog.name"
               label="ジョブ名"
               variant="outlined"
               hide-details="auto"
@@ -245,7 +245,7 @@
               @keydown.down.stop
           />
           <v-textarea
-              v-model="ui.jobEdit.note"
+              v-model="jobEditDialog.note"
               variant="outlined"
               hide-details="auto"
               auto-grow
@@ -263,20 +263,20 @@
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="closeJobEditDialog" :disabled="ui.jobEdit.saving">キャンセル</v-btn>
-          <v-btn color="primary" :loading="ui.jobEdit.saving" @click="saveJobEditDialog">更新</v-btn>
+          <v-btn variant="text" @click="closeJobEditDialog" :disabled="jobEditDialog.saving">キャンセル</v-btn>
+          <v-btn color="primary" :loading="jobEditDialog.saving" @click="saveJobEditDialog">更新</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- ポイント編集ダイアログ -->
-    <v-dialog v-model="ui.pointEdit.open" max-width="520">
+    <v-dialog v-model="pointEditDialog.open" max-width="520">
       <v-card>
         <v-card-title class="text-h6">ポイントを編集</v-card-title>
         <v-divider />
         <v-card-text class="pt-4">
           <v-text-field
-              v-model.trim="ui.pointEdit.name"
+              v-model.trim="pointEditDialog.name"
               label="ポイント名"
               variant="outlined"
               hide-details="auto"
@@ -288,7 +288,7 @@
               @keydown.down.stop
           />
           <v-textarea
-              v-model="ui.pointEdit.address"
+              v-model="pointEditDialog.address"
               variant="outlined"
               hide-details="auto"
               auto-grow
@@ -306,8 +306,8 @@
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="closePointEditDialog" :disabled="ui.pointEdit.saving">キャンセル</v-btn>
-          <v-btn color="primary" :loading="ui.pointEdit.saving" :disabled="!canSavePoint" @click="savePointEditDialog">更新</v-btn>
+          <v-btn variant="text" @click="closePointEditDialog" :disabled="pointEditDialog.saving">キャンセル</v-btn>
+          <v-btn color="primary" :loading="pointEditDialog.saving" :disabled="!canSavePoint" @click="savePointEditDialog">更新</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -315,6 +315,69 @@
 </template>
 
 <script>
+function toNum(v) {
+  if (v == null) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const s = String(v).trim().replace(/,/g, '');
+  if (s === '') return null;              // ★ 追加：空文字は無効
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function xyFromProps(props) {
+  if (!props) return null;
+  const candidates = [
+    ['補正後X座標', '補正後Y座標'],
+    ['X座標', 'Y座標'],
+    ['X', 'Y'],
+  ];
+  for (const [kx, ky] of candidates) {
+    const x = toNum(props[kx]);
+    const y = toNum(props[ky]);
+    if (x != null && y != null) {
+      return { x, y, _meta: { keyX: kx, keyY: ky, valueX: x, valueY: y } };
+    }
+  }
+  return null;
+}
+function pickNearestVertex(map, lngLat, snapPx = 16, layerIds = null) {
+  if (!map || !lngLat) return null;
+  const p = map.project(lngLat);
+  const bbox = [{ x: p.x - snapPx, y: p.y - snapPx }, { x: p.x + snapPx, y: p.y + snapPx }];
+
+  let features = [];
+  try {
+    features = map.queryRenderedFeatures([bbox[0], bbox[1]], layerIds ? { layers: layerIds } : {});
+  } catch(_) {
+    features = map.queryRenderedFeatures([bbox[0], bbox[1]]);
+  }
+  if (!features.length) return null;
+
+  let best = null, bestDist = Infinity, bestProps = null;
+
+  const pushCandidate = (coord, props) => {
+    const pp = map.project({ lng: coord[0], lat: coord[1] });
+    const d = Math.hypot(pp.x - p.x, pp.y - p.y);
+    if (d < bestDist) { bestDist = d; best = { lng: coord[0], lat: coord[1] }; bestProps = props || null; }
+  };
+
+  for (const f of features) {
+    const g = f?.geometry; if (!g) continue;
+    const t = g.type, props = f.properties || {};
+    if (t === 'Point') { pushCandidate(g.coordinates, props); continue; }
+    if (t === 'MultiPoint') { for (const c of g.coordinates) pushCandidate(c, props); continue; }
+    if (t === 'Polygon') { for (const ring of g.coordinates) for (const c of ring) pushCandidate(c, props); continue; }
+    if (t === 'MultiPolygon') { for (const poly of g.coordinates) for (const ring of poly) for (const c of ring) pushCandidate(c, props); continue; }
+    // LineString 系は対象外
+  }
+  if (!best || bestDist > snapPx) return null;
+  return { ...best, __anchor: true, __snapped: true, properties: bestProps };
+}
+
+function epsgFromZahyokei(label, zahyokeiList) {
+  if (!label || !Array.isArray(zahyokeiList)) return null;
+  const hit = zahyokeiList.find(e => e.kei === label);
+  return hit?.code || null;
+}
 function xyFromLngLat(lng, lat, epsg) {
   const [E, N] = proj4('EPSG:4326', epsg, [lng, lat]);
   if (!Number.isFinite(E) || !Number.isFinite(N)) return null;
