@@ -105,7 +105,7 @@
             <div class="text-caption mb-2">新規ジョブを作成</div>
             <div class="d-flex ga-2">
               <v-text-field
-                  v-model.trim="newJobName"
+                  v-model.trim="jobName"
                   label="ジョブ名"
                   variant="outlined"
                   density="compact"
@@ -196,7 +196,7 @@
                 <v-list-item
                     v-for="pt in pointsForCurrentJob"
                     :key="pt.point_id"
-                    @click.stop="$emit('pan-to-point', pt)"
+                    @click.stop="panToPointXY(pt)"
                 >
                   <template #title>
                     <div class="name-edit-wrap"
@@ -214,7 +214,7 @@
                     <v-btn icon size="small" variant="text" class="ml-2" @click.stop="openPointEditDialog(pt)">
                       <v-icon>mdi-dots-vertical</v-icon>
                     </v-btn>
-                    <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="$emit('delete-point', pt)">
+                    <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint">
                       <v-icon size="22">mdi-trash-can-outline</v-icon>
                     </v-btn>
                   </template>
@@ -560,11 +560,13 @@ export default {
       'myNickname',
       'isKuiuchi',
     ]),
+    canCreateJob () {
+      return (this.jobName || '').trim().length > 0
+    },
     canSavePoint () {
       const name = (this.pointEditDialog.name || '').trim()
       return Boolean(name)
     },
-
     // 測位中(= 観測フェーズ)だけクラスを付ける
     observingClass() {
       return (this.kansokuPhase === 'observing' && this.kansokuRunning)
@@ -832,20 +834,9 @@ export default {
     },
 
     panToPointXY(pt) {
-      const map = this.map01;
-      const lon = Number(pt.lng);
-      const lat = Number(pt.lat);
-      if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
-        console.warn('[panToPointXY] 無効な座標', pt);
-        return;
-      }
-
-      const currentZoom = (typeof map.getZoom === 'function') ? map.getZoom() : undefined;
       const easing = (t) => t * (2 - t);
-
-      map.easeTo({
-        center: [lon, lat],
-        zoom: Number.isFinite(currentZoom) ? currentZoom : undefined, // ズーム据え置き
+      this.map01.easeTo({
+        center: [Number(pt.lng), Number(pt.lat)],
         duration: 800,
         easing,
         animate: true
@@ -3600,5 +3591,85 @@ export default {
 </script>
 
 <style scoped>
+/* ====== 高さ伝搬の骨格（flex） ====== */
+.fw-fit{
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+  min-width:0; min-height:0;
+}
+.fw-card{
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+}
+.fw-body{
+  flex:1 1 auto;
+  display:flex; flex-direction:column;
+  overflow:hidden;           /* 中でスクロールを持つ */
+  min-height:0;              /* ★ 子 overflow を有効化 */
+  padding:12px;
+}
+
+/* 中間ラッパ：上に固定ブロック＋下にスクロール箱を置くための器 */
+.section-grow{
+  display:flex; flex-direction:column;
+  flex:1 1 0%;               /* ★ 0% 基準で残り高さを受け取る */
+  min-height:0;              /* ★ 必須 */
+}
+
+/* 内側のスクロール領域（ここで確実にスクロールを発生させる） */
+.list-pane{
+  flex:1 1 0%;               /* ★ 0% 基準で下側を伸縮 */
+  min-height:0;              /* ★ 必須 */
+  overflow:auto;             /* ← スクロール発生点 */
+}
+
+/* インライン編集：見た目＆幅 70% */
+.editable-label{ cursor:pointer; border-bottom:1px dotted currentColor; }
+.editable-label:hover{ opacity:.9; }
+
+.name-edit-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  min-width:0;
+}
+
+.name-input-70{
+  flex:0 1 70%;
+  max-width:70%;
+  min-width:140px;           /* お好みで調整 */
+}
+/* Vuetify 内側ラッパへ幅伝搬（v2） */
+.name-input-70 :deep(.v-input),
+.name-input-70 :deep(.v-input__control),
+.name-input-70 :deep(.v-field){ width:100%; }
+/* タイトル直下の操作行を右端寄せに */
+/* scoped でも効くようにシンプルに */
+.title-actions{
+  display:flex;
+  justify-content:flex-end;  /* 右端 */
+  padding:4px 16px 0;        /* タイトルとの間隔 */
+}
+/* モバイル余白（任意） */
+@media (max-width: 500px){
+  .fw-body{ padding:8px; }
+}
+
+/* Option D: パルス（淡い心拍風）。実行中やビジー中は付かない想定 */
+.pulse-anim {
+  animation: pulseGlow 1.4s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(33,150,243,0.45); }
+  70% { box-shadow: 0 0 0 12px rgba(33,150,243,0); }
+  100% { box-shadow: 0 0 0 0 rgba(33,150,243,0); }
+}
+
+
+/* 微調整（読みやすさ向上） */
+.tracking-wider { letter-spacing: .03em; }
+
+.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
 
 </style>
