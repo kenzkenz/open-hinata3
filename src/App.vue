@@ -8,7 +8,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!-- ジョブピッカー -->
+      <!--  -->
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column; bottom: 70px;">
@@ -178,6 +178,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
 
       </div>
+
+
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
         <v-card>
