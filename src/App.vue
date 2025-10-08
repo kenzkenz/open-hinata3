@@ -10776,6 +10776,16 @@ export default {
       }
       history('現在位置取得',window.location.href)
     },
+
+
+
+
+
+
+
+
+
+
     btnPosition() {
       try {
         if (document.querySelector('#map01').clientWidth < Number(document.querySelector('.terrain-btn-div').style.left.replace('px',''))) {
