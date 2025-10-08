@@ -315,6 +315,8 @@
 </template>
 
 <script>
+import {mapState} from "vuex";
+
 function toNum(v) {
   if (v == null) return null;
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
@@ -546,6 +548,11 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'userId',
+      'myNickname',
+      'isKuiuchi',
+    ]),
     canSavePoint () {
       const name = (this.pointEditDialog.name || '').trim()
       return Boolean(name)
@@ -2011,6 +2018,7 @@ export default {
         count: Number(r.point_count ?? 0),
       });
       this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
+      console.log(this.jobList);
     },
 
     /** ジョブ削除（サーバ消去が成功したらUI側も除去） */

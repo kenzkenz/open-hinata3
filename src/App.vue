@@ -323,6 +323,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           @close="jobPickerOpen = false"
       >
         <JobPicker
+            ref="jobPicker"
             @mousedown.stop
             @pointerdown.stop
             @touchstart.stop
@@ -2366,10 +2367,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                            onJobEndClick(true)"
                     >杭打</v-btn>
                     <v-btn icon
-                           @click="jobPickerFWOpen();
-                           isKuiuchi = false;
-                           isTracking = false
-                           openJobPicker()"
+                           @click="openJobPicker"
                     >測位</v-btn>
                   </div>
                 </v-speed-dial>
@@ -2519,7 +2517,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <script>
 import firebase, { db } from '@/firebase'
 import store from '@/store'
-import { toRaw } from 'vue'
+import { nextTick } from 'vue'
 import {closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
 import shp from "shpjs"
@@ -8987,17 +8985,14 @@ export default {
 
 // ジョブ管理（Picker/作成/削除/選択/一覧）
     /** ジョブピッカーを開き、サーバ一覧を最新化 */
-    openJobPicker() {
-      this.jobPickerOpen = true;
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
-            '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
-      })
-      this.showJobListOnly = true
-      this.refreshJobs();
+    async openJobPicker() {
+      this.isKuiuchi = false
+      this.isTracking = false
+      // まず緑丸を必ず消す
+      this.$store.dispatch('showFloatingWindow', 'job-picker');
+      this.isJobMenu = true
+      await nextTick()                                     // マウント待ち
+      this.$refs.jobPicker.openJobPicker()
     },
 
     /** 新規ジョブ作成 → 現在ジョブに設定 → 一覧更新 → ピッカー閉じ */
@@ -9691,14 +9686,6 @@ export default {
 
       this.torokuPointLngLat = { lng, lat };
       this.updateChainLine();
-    },
-
-    /** ジョブピッカーをフローティングで開く */
-    jobPickerFWOpen() {
-      // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
-      this.$store.dispatch('showFloatingWindow', 'job-picker');
-      this.isJobMenu = true
     },
 
     /** 確定赤丸描画：確定座標と点名で赤丸を追加（レイヤは既存前提） */
