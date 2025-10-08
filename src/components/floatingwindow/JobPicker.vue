@@ -214,7 +214,7 @@
                     <v-btn icon size="small" variant="text" class="ml-2" @click.stop="openPointEditDialog(pt)">
                       <v-icon>mdi-dots-vertical</v-icon>
                     </v-btn>
-                    <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint">
+                    <v-btn icon size="x-small" variant="text" aria-label="ポイントを削除" @click.stop="deletePoint(pt)">
                       <v-icon size="22">mdi-trash-can-outline</v-icon>
                     </v-btn>
                   </template>
@@ -2198,22 +2198,19 @@ export default {
       }
     },
 
-
-
-
     /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
     async deletePoint(pt) {
-      const pointId = String(pt?.point_id ?? pt?.id ?? '');
+      const pointId = String(pt.point_id);
       if (!pointId) return;
 
-      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt?.point_name ?? pt?.name ?? ''}`)) return;
+      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt.point_name}`)) return;
 
       const fd = new FormData();
       fd.append('action', 'job_points.delete');
       fd.append('point_id', pointId);
 
       try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+        const res = await fetch(this.apiForJobPicker, {
           method: 'POST',
           body: fd,
         });
@@ -2222,30 +2219,24 @@ export default {
           alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
           return;
         }
-
         // 1) 一覧（=唯一の真実源）から除去
-        this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
-            x => String(x.point_id ?? x.id) !== pointId
+        this.pointsForCurrentJob = this.pointsForCurrentJob.filter(x =>
+            String(x.point_id) !== pointId
         );
-
         // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
         try {
-          const map = (this.$store?.state?.map01) || this.map01;
+          const map = this.map01;
           if (map) {
-            const SRC   = 'oh-toroku-point-src';
-            const LAYER = 'oh-toroku-point';
-            const LAB   = 'oh-toroku-point-label';
-
             const fc = { type: 'FeatureCollection', features: [] };
             for (const r of (this.pointsForCurrentJob || [])) {
-              const lng = Number(r?.lng), lat = Number(r?.lat);
+              const lng = Number(r.lng), lat = Number(r.lat);
               if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
               fc.features.push({
                 type: 'Feature',
                 properties: {
-                  id: `pt_${String(r.point_id ?? r.id ?? Math.random()*1e6|0)}`,
-                  label: String(r.point_name ?? r.name ?? ''),
-                  name:  String(r.point_name ?? r.name ?? ''),
+                  id: `pt_${String(r.point_id)}`,
+                  label: String(r.point_name),
+                  name:  String(r.point_name),
                   pendingLabel: false,
                 },
                 geometry: { type: 'Point', coordinates: [lng, lat] }
@@ -2254,15 +2245,15 @@ export default {
 
             this._torokuFC = fc;
 
-            if (map.getSource(SRC)) {
-              map.getSource(SRC).setData(fc);
+            if (map.getSource(this.SRC)) {
+              map.getSource(this.SRC).setData(fc);
             } else {
-              map.addSource(SRC, { type: 'geojson', data: fc });
-              if (!map.getLayer(LAYER)) {
+              map.addSource(this.SRC, { type: 'geojson', data: fc });
+              if (!map.getLayer(this.L)) {
                 map.addLayer({
-                  id: LAYER,
+                  id: this.L,
                   type: 'circle',
-                  source: SRC,
+                  source: this.SRC,
                   paint: {
                     'circle-radius': 6,
                     'circle-color': '#ff3b30',
@@ -2271,11 +2262,11 @@ export default {
                   }
                 });
               }
-              if (!map.getLayer(LAB)) {
+              if (!map.getLayer(this.LAB)) {
                 map.addLayer({
-                  id: LAB,
+                  id: this.LAB,
                   type: 'symbol',
-                  source: SRC,
+                  source: this.SRC,
                   layout: {
                     'text-field': ['get', 'label'],
                     'text-size': 16,
