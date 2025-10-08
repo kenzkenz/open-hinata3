@@ -56,7 +56,7 @@
             class="font-weight-bold pulse-once"
             :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
             :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
-            @click="$emit('request-start-toroku-here')"
+            @click="startTorokuHere"
         >
           &nbsp;測&nbsp;位&nbsp;
         </v-btn>
@@ -311,6 +311,194 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 測位  -->
+    <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false" :persistent="kansokuPhase === 'await' || kansokuRunning">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <span>{{ currentJobName }}</span>
+          <v-spacer />
+          <v-chip
+              v-if="kansokuAverages?.n === kansokuCount"
+              color="red"
+              variant="flat"
+              size="small"
+              class="font-weight-bold"
+          >
+            測位終了
+          </v-chip>
+        </v-card-title>
+
+        <v-card-text>
+          <div class="oh3-grid-4col">
+            <!-- a: 点名（100%） -->
+            <v-text-field
+                v-model="tenmei"
+                label="点名"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                clearable
+                class="oh3-col-flex g-a"
+                :error-messages="tenmeiError"
+                @update:modelValue="handleTenmeiInput"
+                :disabled="kansokuRunning"
+            />
+
+            <!-- b: 測位回数（100%） -->
+            <v-select
+                :menu-props="{
+                    maxHeight: '300px',
+                    overflow: 'scroll',
+                    contentClass: 'scrollable-menu elevation-8'
+                  }"
+                v-model="kansokuCount"
+                :items="kansokuItems"
+                label="測位回数"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="oh3-col-fixed g-b"
+                :disabled="kansokuRunning"
+            />
+
+            <!-- c: 間隔（50%） -->
+            <v-text-field
+                v-model.number="sampleIntervalSec"
+                type="number"
+                label="間隔（秒）"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                class="oh3-col-fixed g-c"
+                :step="0.1" :min="1.0" :max="60"
+                :disabled="kansokuRunning"
+            />
+
+            <!-- d: アンテナ高（50%） -->
+            <v-text-field
+                v-model.number="offsetCm"
+                type="number"
+                label="アンテナ高（m）"
+                variant="outlined"
+                density="compact"
+                hide-details="auto"
+                class="oh3-col-fixed g-d"
+                :step="0.01" :min="0.00" :max="300"
+                :disabled="kansokuRunning"
+            />
+          </div>
+
+          <!-- ボタン行：右寄せ＆広めの間隔 -->
+          <div class="d-flex align-center flex-wrap justify-start ga-4 mt-3">
+            <v-btn
+                @click="kansokuStart"
+                :disabled="!canStartKansoku"
+                :title="startHint"
+                :loading="kansokuRunning"
+            >
+              測位開始
+            </v-btn>
+
+            <v-btn
+                v-if="kansokuRunning && [86400, 1000, 100, 50].includes(Number(kansokuCount))"
+                variant="outlined"
+                color="warning"
+                @click="cancelKansoku"
+            >
+              測位停止
+            </v-btn>
+            <div v-if="kansokuPhase === 'await'" class="d-flex ga-3">
+              <v-btn color="primary" @click="onClickSaveObservation">保存</v-btn>
+              <v-btn variant="outlined" color="error" @click="onClickDiscardObservation">破棄</v-btn>
+            </div>
+          </div>
+
+          <div
+              class="kansoku-list"
+              v-stick-bottom.smooth="{ threshold: 40 }"
+              style="height:180px; overflow-y:auto; overflow-x:auto; border:1px solid var(--v-theme-outline); border-radius:8px; padding:8px; margin:12px 0;"
+          >
+            <div v-if="!kansokuCsvRows || kansokuCsvRows.length <= 1" style="opacity:.6; white-space:nowrap;"></div>
+
+            <div
+                v-else
+                v-for="(row, idx) in kansokuCsvRows.slice(1)"
+                :key="idx"
+                :style="{
+                    fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace`,
+                    fontSize: '12px',
+                    lineHeight: '1.6',
+                    padding: '2px 8px',
+                    borderBottom: '1px dashed rgba(255,255,255,.08)',
+                    backgroundColor: idx % 2 === 0 ? '#f7f7f7' : '#ffffff',
+                    whiteSpace: 'nowrap'
+                  }"
+            >
+          <span :style="{ color: row[7] === 'RTK級' ? '#16a34a' : undefined, fontWeight: row[7] === 'RTK級' ? '600' : undefined }">
+            {{ row[7] }}
+          </span>
+              {{ fmtAcc(row[6]) }}
+              {{ fmtXY(row[3]) }}, {{ fmtXY(row[4]) }}
+              {{ row[5] }}
+              {{ fmtHumanHeight(row[9]) }}
+              {{ row[0] }}
+            </div>
+          </div>
+          <v-alert
+              v-if="pendingObservation"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mt-2 py-1 px-2"
+              style="font-size:14px; line-height:1.2;"
+          >
+            <!-- ここを追加：観測中も表示 -->
+            <v-chip
+                v-if="pendingObservation && (kansokuPhase==='observing' || kansokuPhase==='await')"
+                :color="kakusaColor"
+                variant="flat"
+                class="font-weight-bold px-4"
+                :class="observingClass"
+                style="position: absolute; right: 10px;"
+            >
+              {{ `${pendingObservation.diffTxt}m` }}
+            </v-chip>
+            <div class="text-body-2" style="color:black; font-weight:700;">測位結果</div>
+
+            <!-- ★ 追加：点名 -->
+            <div class="mt-1" style="color:black;">
+              点名：{{ (currentPointName || tenmei || '').trim() || '未設定' }}
+            </div>
+
+            <div class="mt-1" :style="`color:${kakusaColor};`">
+              較差：XY={{ pendingObservation.diffTxt }}m
+            </div>
+            <div class="mt-1" style="color:black;">
+              平均 (n={{ pendingObservation.n }})：X={{ pendingObservation.XavgTxt }}Y={{ pendingObservation.YavgTxt }}
+            </div>
+            <div v-if="pendingObservation.HavgTxt" class="mt-1" style="color:black;">
+              H={{ pendingObservation.HavgTxt }}m
+            </div>
+            <div class="mt-1" style="color:black;">
+              アンテナ高：{{ Number.isFinite(+offsetCm) ? (+offsetCm).toFixed(2) : '' }} m              </div>
+          </v-alert>
+
+          <div class="d-flex align-center mt-2" style="gap: 8px; flex-wrap: nowrap;">
+            <v-spacer></v-spacer>
+            <v-btn
+                variant="text"
+                density="compact"
+                class="text-none pa-0"
+                style="min-width:auto; padding:0;"
+                @click="closeTorokuDialog"
+                :disabled="kansokuPhase !== 'idle'"
+            >閉じる</v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -2325,8 +2513,8 @@ export default {
     /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
     startTorokuHere () {
       this.$store.dispatch('hideFloatingWindow', 'job-picker');
-      try { this.detachGpsLineClick(); } catch {}
-      try { this.clearGpsLine(); } catch {}
+      this.detachGpsLineClick();
+      this.clearGpsLine();
       this.gpsLineAnchorLngLat = null;
       this.enableGpsLineClick  = false;
       this.distance = null;
@@ -2349,84 +2537,54 @@ export default {
 
       navigator.geolocation.getCurrentPosition(
           function success (pos) {
-            try {
-              const c   = pos && pos.coords ? pos.coords : {};
-              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
-              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                console.warn('[startTorokuHere] invalid geolocation coords', c);
-                return;
-              }
-
-              const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-
-              const q      = _this.getGeoQualityLabel(acc, altAcc);
-
-              const nowTs = pos.timestamp || Date.now();
-              if (q === 'RTK級') {
-                _this.lastRtkAt = nowTs;
-              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
-                return;
-              }
-
-              _this.torokuPointLngLat = { lng: lon, lat };
-              _this.upsertCurrentMarker(lon, lat);   // 緑丸
-
-              const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
-              _this.torokuPointMeta      = meta;
-              _this.torokuPointQuality   = meta.quality;
-              _this.torokuPointQualityAt = meta.at;
-
-              try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
-              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
-
-              const map =
-                  (_this.$store && _this.$store.state && _this.$store.state.map01)
-                      ? _this.$store.state.map01
-                      : _this.map01;
-
-              const ANIM_MS  = Number.isFinite(Number(_this.torokuAnimMs)) ? Number(_this.torokuAnimMs) : 700;
-              const DELAY_MS = Number.isFinite(Number(_this.torokuDialogDelayMs)) ? Number(_this.torokuDialogDelayMs) : 1000;
-
-              const openDialogOnce = () => {
-                if (_this._torokuDialogOpened) return;
-                _this._torokuDialogOpened = true;
-                _this.kansokuRunning   = false;
-                _this.kansokuRemaining = 0;
-                _this.kansokuCsvRows   = null;
-                _this.dialogForToroku  = true;
-              };
-
-              const armAfterAnim = () => {
-                const fallbackMs = ANIM_MS + DELAY_MS + 300;
-                _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
-
-                const onEnd = () => {
-                  try { map.off('moveend', onEnd); } catch {}
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, DELAY_MS);
-                };
-                try { map.on('moveend', onEnd); } catch {}
-              };
-
-              try {
-                if (map && map.easeTo) {
-                  map.easeTo({ center: [lon, lat], duration: ANIM_MS });
-                  _this._torokuDialogOpened = false;
-                  armAfterAnim();
-                } else if (map && map.jumpTo) {
-                  map.jumpTo({ center: [lon, lat] });
-                  _this._torokuDialogOpened = false;
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, 600);
-                } else {
-                  openDialogOnce();
-                }
-              } catch {
-                openDialogOnce();
-              }
-            } catch (e) {
-              console.warn('[startTorokuHere] success handler error', e);
+            const c   = pos && pos.coords ? pos.coords : {};
+            const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
+            const lon = (typeof c.longitude === 'number') ? c.longitude : null;
+            if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+              console.warn('[startTorokuHere] invalid geolocation coords', c);
+              return;
             }
+
+            const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
+            const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
+
+            const q      = _this.getGeoQualityLabel(acc, altAcc);
+
+            const nowTs = pos.timestamp || Date.now();
+            if (q === 'RTK級') {
+              _this.lastRtkAt = nowTs;
+            } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
+              return;
+            }
+
+            _this.torokuPointLngLat = { lng: lon, lat };
+            _this.upsertCurrentMarker(lon, lat);   // 緑丸
+
+            const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
+            _this.torokuPointMeta      = meta;
+            _this.torokuPointQuality   = meta.quality;
+            _this.torokuPointQualityAt = meta.at;
+
+            try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
+            try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
+
+            const map =
+                (_this.$store && _this.$store.state && _this.$store.state.map01)
+                    ? _this.$store.state.map01
+                    : _this.map01;
+
+            const openDialogOnce = () => {
+              if (_this._torokuDialogOpened) return;
+              _this._torokuDialogOpened = true;
+              _this.kansokuRunning   = false;
+              _this.kansokuRemaining = 0;
+              _this.kansokuCsvRows   = null;
+              _this.dialogForToroku  = true;
+            };
+            map.easeTo({ center: [lon, lat], duration: _this.torokuAnimMs });
+            _this._torokuDialogOpened = false;
+            const fallbackMs = _this.torokuAnimMs + _this.torokuDialogDelayMs + 300;
+            _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
           },
           function error (err) {
             console.warn('[startTorokuHere] getCurrentPosition error', err);
@@ -2474,7 +2632,7 @@ export default {
     /** ジョブピッカーをフローティングで開く */
     jobPickerFWOpen() {
       // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
+      this.clearCurrentMarker()
       this.$store.dispatch('showFloatingWindow', 'job-picker');
       this.isJobMenu = true
     },
@@ -3581,10 +3739,40 @@ export default {
   100% { box-shadow: 0 0 0 0 rgba(33,150,243,0); }
 }
 
+/* v-dialog の中で左右いっぱいに広がる 3 列。点名が残り幅をすべて受け持つ */
+.oh3-grid-3col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px 220px; /* 左が可変、右2つは固定幅 */
+  align-items: center;
+  gap: 8px;
+}
+.oh3-grid-4col {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 150px 150px; /* 左が可変、右3つは固定幅 */
+  align-items: center;
+  gap: 8px;
+}
+/* 点名は可変幅でグリッド領域ぴったりに */
+.oh3-col-flex {
+  width: 100%;
+}
+/* 右2つのセレクトは固定幅。Vuetifyの入力は内部で100%になるので、ラッパーに幅を指定 */
+.oh3-col-fixed {
+  width: 150px;
+}
 
-/* 微調整（読みやすさ向上） */
-.tracking-wider { letter-spacing: .03em; }
-
-.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
-
+/* 狭い画面では 1 列にフォールバック */
+@media (max-width: 640px) {
+  .oh3-grid-3col {
+    grid-template-columns: 1fr;
+  }
+  .oh3-grid-4col {
+    grid-template-columns: 1fr;
+  }
+  .oh3-col-fixed {
+    width: 100%;
+  }
+}
 </style>
