@@ -665,6 +665,48 @@ export default {
     },
   },
   methods: {
+    setSourceAndLayer(fc) {
+      const map = this.map01
+      if (map.getSource(this.SRC)) {
+        map.getSource(this.SRC).setData(fc);
+      } else {
+        map.addSource(this.SRC, { type: 'geojson', data: fc });
+        if (!map.getLayer(this.L)) {
+          map.addLayer({
+            id: this.L,
+            type: 'circle',
+            source: this.SRC,
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#ff3b30',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+        }
+        if (!map.getLayer(this.LAB)) {
+          map.addLayer({
+            id: this.LAB,
+            type: 'symbol',
+            source: this.SRC,
+            layout: {
+              'text-field': ['get', 'label'],
+              'text-size': 16,
+              'text-offset': [0, 0.5],
+              'text-anchor': 'top',
+              'text-allow-overlap': true
+            },
+            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
+          });
+        }
+      }
+      try { map.moveLayer(this.L); } catch (_) {}
+      try { map.moveLayer(this.LAB); }   catch (_) {}
+    },
+
+
+
+
     // ========= ケバブ：ダイアログ編集 =========
     openPointEditDialog (pt) {
       const d = this.pointEditDialog
@@ -1944,16 +1986,14 @@ export default {
       fd.append('user_name',this.myNickname);
       fd.append('job_name',job_name);
 
-      const r = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
+      const r = await fetch(this.apiForJobPicker, { method:'POST', body: fd });
       const rJson = await r.json();
 
       // ★ ここを追加：作成直後に現在ジョブへ反映
       this.currentJobId   = String(rJson.data.job_id);
       this.currentJobName = job_name;
-      try {
-        localStorage.setItem('oh3_current_job_id',   this.currentJobId);
-        localStorage.setItem('oh3_current_job_name', this.currentJobName);
-      } catch (_) {}
+      localStorage.setItem('oh3_current_job_id',   this.currentJobId);
+      localStorage.setItem('oh3_current_job_name', this.currentJobName);
 
       await this.onJobCreatedSuccess();
 
@@ -1963,9 +2003,7 @@ export default {
         contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>',
         options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
       })
-      let hideTips = false
-      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1' } catch (_) {}
-      if (hideTips) {
+      if (this.DONT_SHOW_KEY) {
         this.jobPickerOpen = false;
         this.$store.dispatch('hideFloatingWindow', 'job-picker');
       }
@@ -2102,46 +2140,15 @@ export default {
 
       const map = this.map01;
       this._torokuFC = { type: 'FeatureCollection', features };
-
-      if (!map.getSource(this.SRC)) map.addSource(this.SRC, { type: 'geojson', data: this._torokuFC });
-      else map.getSource(this.SRC).setData(this._torokuFC);
-
-      if (!map.getLayer(this.L)) {
-        map.addLayer({
-          id: this.L,
-          type: 'circle',
-          source: this.SRC,
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#ff3b30',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
+      this.setSourceAndLayer(this._torokuFC)
+      if(this._torokuFC.features.length > 0){
+        if (options.fit) {
+          map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
+        } else {
+          const last = this.pointsForCurrentJob.at(-1);
+          map.setCenter([last.lng, last.lat]);
+        }
       }
-      if (!map.getLayer(this.LAB)) {
-        map.addLayer({
-          id: this.LAB,
-          type: 'symbol',
-          source: this.SRC,
-          layout: {
-            'text-field': ['get', 'label'],
-            'text-size': 16,
-            'text-offset': [0, 0.5],
-            'text-anchor': 'top',
-            'text-allow-overlap': true
-          },
-          paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-        });
-      }
-
-      if (options.fit) {
-        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
-      } else {
-        const last = this.pointsForCurrentJob.at(-1);
-        map.setCenter([last.lng, last.lat]);
-      }
-
       this.updateChainLine();
     },
 
@@ -2244,40 +2251,7 @@ export default {
             }
 
             this._torokuFC = fc;
-
-            if (map.getSource(this.SRC)) {
-              map.getSource(this.SRC).setData(fc);
-            } else {
-              map.addSource(this.SRC, { type: 'geojson', data: fc });
-              if (!map.getLayer(this.L)) {
-                map.addLayer({
-                  id: this.L,
-                  type: 'circle',
-                  source: this.SRC,
-                  paint: {
-                    'circle-radius': 6,
-                    'circle-color': '#ff3b30',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                  }
-                });
-              }
-              if (!map.getLayer(this.LAB)) {
-                map.addLayer({
-                  id: this.LAB,
-                  type: 'symbol',
-                  source: this.SRC,
-                  layout: {
-                    'text-field': ['get', 'label'],
-                    'text-size': 16,
-                    'text-offset': [0, 0.5],
-                    'text-anchor': 'top',
-                    'text-allow-overlap': true
-                  },
-                  paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-                });
-              }
-            }
+            this.setSourceAndLayer(fc)
           }
         } catch (e) {
           console.warn('[deletePoint] map repaint failed', e);
@@ -2340,13 +2314,10 @@ export default {
 
     /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
     clearTorokuPoint () {
-      const map = this.$store.state.map01; if (!map) return;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
-      try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
+      const map = this.map01; if (!map) return;
+      try { if (map.getLayer(this.L)) map.removeLayer(this.L); } catch(_) {}
+      try { if (map.getLayer(this.LAB)) map.removeLayer(this.LAB); } catch(_) {}
+      try { if (map.getSource(this.SRC)) map.removeSource(this.SRC); } catch(_) {}
       this.torokuPointLngLat = null;
       this.updateChainLine(); // 結線も消す
     },
@@ -2475,10 +2446,6 @@ export default {
         console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
       }
 
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-
       if (!this._torokuFC) {
         this._torokuFC = { type:'FeatureCollection', features: [] };
       }
@@ -2498,50 +2465,7 @@ export default {
         geometry: { type: 'Point', coordinates: [lng, lat] }
       });
 
-      if (map.getSource(SRC)) {
-        try { map.getSource(SRC).setData(this._torokuFC); }
-        catch (_) { try { map.removeSource(SRC); } catch(e) {}
-          map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        }
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-      }
-      console.log(this._torokuFC)
-
-      if (!map.getLayer(LAYER)) {
-        map.addLayer({
-          id: LAYER,
-          type: 'circle',
-          source: SRC,
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#ff3b30',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
-      }
-      if (!map.getLayer(LAB)) {
-        map.addLayer({
-          id: LAB,
-          type: 'symbol',
-          source: SRC,
-          layout: {
-            'text-field': ['get', 'label'],
-            'text-size': 16,
-            'text-offset': [0, 0.5],
-            'text-anchor': 'top',
-            'text-allow-overlap': true
-          },
-          paint: {
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 1.0
-          }
-        });
-      }
-
-      try { map.moveLayer(LAYER); } catch (_) {}
-      try { map.moveLayer(LAB); }   catch (_) {}
+      this.setSourceAndLayer(this._torokuFC)
 
       this.torokuPointLngLat = { lng, lat };
       this.updateChainLine();
