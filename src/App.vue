@@ -8,7 +8,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
   <v-app>
     <v-main>
 
-      <!--  -->
+      <!-- 測位  -->
       <div v-if="isJobMenu"
            class="oh-left-bottom-tools mt-2"
            style="display:flex; flex-direction:column; bottom: 70px;">
@@ -38,7 +38,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               @click="onJobEndClick(true)"
-          aria-label="JOBを終了"
+              aria-label="JOBを終了"
           >
             終了
           </v-btn>
@@ -3309,6 +3309,7 @@ import attachMapRightClickMenu, {
 import {refreshRadiusHighlight} from "@/js/utils/radius-highlight";
 import {registerDemTintProtocol} from "@/js/utils/dem-tint-protocol";
 import Encoding from 'encoding-japanese'
+import jobPicker from "@/components/floatingwindow/JobPicker.vue";
 
 export default {
   name: 'App',
@@ -9756,41 +9757,12 @@ export default {
 
     /** ジョブ終了処理（クリーンアップ含む） */
     onJobEndClick(isCleanup) {
+      this.$refs.jobPicker.onJobEndClick()
       if (isCleanup) {
         this.jobPickerOpen = false;
         this.isJobMenu = false;
         this.$store.dispatch('hideFloatingWindow', 'job-picker');
       }
-      // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
-      try {
-        if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
-      } catch {}
-      this.kansokuRunning   = false;
-      this.kansokuRemaining = 0;
-
-      try { this.clearTorokuPoint(); } catch {}
-      this._torokuFC = { type: 'FeatureCollection', features: [] };
-      this._lastTorokuFeatureId = null;
-      this.torokuPointLngLat = null;
-
-      this.kansokuCsvRows = null;
-      this.csv2Points = [];
-
-      this.currentJobId = null;
-      this.currentJobName = '';
-      try {
-        localStorage.removeItem('oh3_current_job_id');
-        localStorage.removeItem('oh3_current_job_name');
-      } catch {}
-
-      try { this.$emit?.('job-ended'); } catch {}
-      try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
-
-      this.pointsForCurrentJob = [];
-
-      this.clearChainLineOnly()
-
     },
 
     /** =========================

@@ -2568,10 +2568,7 @@ export default {
             try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
             try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
 
-            const map =
-                (_this.$store && _this.$store.state && _this.$store.state.map01)
-                    ? _this.$store.state.map01
-                    : _this.map01;
+            const map = _this.map01;
 
             const openDialogOnce = () => {
               if (_this._torokuDialogOpened) return;
@@ -2703,22 +2700,17 @@ export default {
       this.torokuPointLngLat = { lng, lat };
     },
 
-    /** ジョブ終了処理（クリーンアップ含む） */
-    onJobEndClick(isCleanup) {
-      if (isCleanup) {
-        this.jobPickerOpen = false;
-        this.isJobMenu = false;
-        this.$store.dispatch('hideFloatingWindow', 'job-picker');
-      }
+    /** ジョブ終了処理 */
+    onJobEndClick() {
       // まず緑丸を必ず消す
-      try { this.clearCurrentMarker(); } catch {}
+      this.clearCurrentMarker();
       try {
         if (this.kansokuTimer) { clearInterval(this.kansokuTimer); this.kansokuTimer = null; }
       } catch {}
       this.kansokuRunning   = false;
       this.kansokuRemaining = 0;
 
-      try { this.clearTorokuPoint(); } catch {}
+      this.clearTorokuPoint();
       this._torokuFC = { type: 'FeatureCollection', features: [] };
       this._lastTorokuFeatureId = null;
       this.torokuPointLngLat = null;
@@ -2728,18 +2720,11 @@ export default {
 
       this.currentJobId = null;
       this.currentJobName = '';
-      try {
-        localStorage.removeItem('oh3_current_job_id');
-        localStorage.removeItem('oh3_current_job_name');
-      } catch {}
-
-      try { this.$emit?.('job-ended'); } catch {}
-      try { window.dispatchEvent(new CustomEvent('oh3:job:ended')); } catch {}
+      localStorage.removeItem('oh3_current_job_id');
+      localStorage.removeItem('oh3_current_job_name');
 
       this.pointsForCurrentJob = [];
-
       this.clearChainLineOnly()
-
     },
 
     /** =========================
