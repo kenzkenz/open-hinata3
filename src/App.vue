@@ -1708,10 +1708,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     </v-fab>
                   </template>
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
-<!--                    <v-btn icon-->
-<!--                           @click="toggleWatchPosition('t');-->
-<!--                           onJobEndClick(true)"-->
-<!--                    >追跡</v-btn>-->
                     <v-btn icon
                            @click="toggleWatchPosition('k');
                            onJobEndClick(true)"
@@ -3034,10 +3030,6 @@ export default {
       'drawFeature',
       'geo'
     ]),
-    canSavePoint () {
-      const name = (this.pointEditDialog.name || '').trim()
-      return Boolean(name)
-    },
     s_printMap: {
       get() {
         return this.$store.state.printMap;
@@ -3045,81 +3037,6 @@ export default {
       set(value) {
         this.$store.state.printMap = value
       }
-    },
-    // 測位中(= 観測フェーズ)だけクラスを付ける
-    observingClass() {
-      return (this.kansokuPhase === 'observing' && this.kansokuRunning)
-          ? 'oh-chip-heartbeat'
-          : ''; // それ以外は剥がす
-    },
-    kakusaColor() {
-     const diff = Number(this.pendingObservation.diffTxt)
-      console.log(diff)
-      if (diff < 0.03) {
-        return 'blue'
-      } else if (diff < 0.06) {
-        return 'orange'
-      } else {
-        return '#c00'
-      }
-    },
-    canStartKansoku () {
-      if (this.kansokuPhase !== 'idle') return false;  // ← フェーズでブロック
-      if (!this.currentJobId) return false;
-      if (!this.torokuPointLngLat) return false;
-      const name = (this.tenmei || '').trim();
-      if (!name) return false;
-      if (!('geolocation' in navigator)) return false;
-      return true;
-    },
-    startHint () {
-      if (this.kansokuPhase === 'await') return '保存か破棄を選択してください';
-      if (this.kansokuPhase === 'observing') return '測位中です';
-      if (!this.currentJobId) return 'ジョブ未選択';
-      if (!this.torokuPointLngLat) return '観測点(赤丸)が未設定';
-      if (!(this.tenmei||'').trim()) return '点名が未入力';
-      return '測位開始';
-    },
-    hasSecond() {
-      return !!(this.currentJobId && this.pointsForCurrentJob && this.pointsForCurrentJob.length);
-    },
-    visibleJobs() {
-      if (this.showAllJobs) return this.jobList || [];
-      if (!this.currentJobId) return this.jobList || []; // 未選択時は全部見せる
-      return (this.jobList || []).filter(j => String(j.id) === String(this.currentJobId));
-    },
-    hasSingleVisibleJob() {
-      if (this.visibleJobs.length === 1) {
-        return true;
-      } else {
-        return false;
-      }
-    },
-    kansokuAverages () {
-      const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows.slice(1) : [];
-      if (!rows.length) return { n: 0, lat: null, lon: null, X: null, Y: null };
-
-      let nLL = 0, sumLat = 0, sumLon = 0;
-      let nXY = 0, sumX = 0, sumY = 0;
-
-      for (const r of rows) {
-        const lat = Number(r[1]), lon = Number(r[2]);
-        const X   = Number(r[3]), Y   = Number(r[4]);
-
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          sumLat += lat; sumLon += lon; nLL++;
-        }
-        if (Number.isFinite(X) && Number.isFinite(Y)) {
-          sumX += X; sumY += Y; nXY++;
-        }
-      }
-      return {
-        n: Math.max(nLL, nXY),
-        lat: nLL ? (sumLat / nLL) : null,
-        lon: nLL ? (sumLon / nLL) : null,
-        X:   nXY ? (sumX   / nXY) : null,
-        Y:   nXY ? (sumY   / nXY) : null,
-      };
     },
     s_isKuiuchi: {
       get() {
@@ -3137,10 +3054,6 @@ export default {
       } else {
         return ''
       }
-    },
-    canUpload() {
-      const pairs = (this.gcpList || []).filter(g => Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
-      return pairs.length >= 2 && !!this.affineM && !this.isUploading;
     },
     s_showConfirm: {
       get() {
@@ -3330,11 +3243,6 @@ export default {
     s_finishLineFire () {
       return this.$store.state.finishLineFire
     },
-    gcpWithImageCoord() {
-      return this.gcpList
-          .map((gcp, index) => ({ gcp, index }))
-          .filter(item => item.gcp.imageCoord !== null);
-    },
     buttons0() {
       const btns =
           [
@@ -3404,9 +3312,6 @@ export default {
     s_saveHistoryFire () {
       return this.$store.state.saveHistoryFire
     },
-    s_jdpCode () {
-      return this.$store.state.jdpCode
-    },
     s_jdpCoordinates () {
       if (this.$store.state.jdpCoordinates) {
         if (this.$store.state.jdpCoordinates[0]) {
@@ -3421,9 +3326,6 @@ export default {
     s_isDrawAll() {
       return this.s_isDrawCircle || this.s_isDrawPoint || this.s_isDrawLine;
     },
-    // s_isDrawCircle_and_Point() {
-    //   return [this.s_isDrawCircle, this.s_isDrawPoint];
-    // },
     s_updatePermalinkFire: {
       get() {
         return this.$store.state.updatePermalinkFire
@@ -3908,10 +3810,6 @@ export default {
     s_isCursorOnPanel () {
       return this.$store.state.isCursorOnPanel
     },
-    showUploadButton() {
-      // アップロードボタンの表示条件
-      return this.gcpList && this.gcpList.length >= 4 && this.showWarpCanvas;
-    },
   },
   methods: {
     maybeFocusCenterIncludePoint(aLngLat, bLngLat, opts) {
@@ -4022,71 +3920,12 @@ export default {
 
     },
 
-    focusTwoPoints (aLngLat, bLngLat, { padding, maxZoom, duration } = {}) {
-      const A = Array.isArray(aLngLat) ? aLngLat.map(Number) : null; // [lng,lat]
-      const B = Array.isArray(bLngLat) ? bLngLat.map(Number) : null;
-      if (!A && !B) return;
-
-      const map = (this.$store?.state?.map01) || this.map01 || this.map;
-      if (!map || typeof map.fitBounds !== 'function') return;
-
-      const pad = (typeof padding === 'number') ? padding : (this.isSmall500 ? 80 : 120);
-      const opts = { padding: pad, maxZoom: (typeof maxZoom === 'number') ? maxZoom : 18, duration: (typeof duration === 'number') ? duration : 0 };
-
-      if (A && B) {
-        const minLng = Math.min(A[0], B[0]), minLat = Math.min(A[1], B[1]);
-        const maxLng = Math.max(A[0], B[0]), maxLat = Math.max(A[1], B[1]);
-        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], opts);
-      } else if (A || B) {
-        map.setCenter((A || B));
-      }
-    },
     // ====== ポイント名のインライン編集 ======
-    startEditPointName (pt) {
-      const cur = String(pt?.point_name ?? '')
-      if (!cur) return
-      this.editingPointId = pt.point_id || pt.id
-      this.tempPointName = cur
-    },
+
     cancelPointNameEdit () {
       this.editingPointId = null
       this.tempPointName = ''
       this.pointRenameInFlight = false
-    },
-    async commitPointName (pt) {
-      const pid = String(pt?.point_id ?? pt?.id ?? '')
-      if (!pid) return this.cancelPointNameEdit()
-      const newName = (this.tempPointName || '').trim()
-      if (!newName || newName === pt.point_name) return this.cancelPointNameEdit()
-      if (this.pointRenameInFlight) return
-      this.pointRenameInFlight = true
-      try {
-        await this.updatePointNameOnServer(pid, newName)
-        // ローカル配列を更新
-        pt.point_name = newName
-        // 地図ラベル（GeoJSON）も更新
-        try {
-          const SRC = 'oh-toroku-point-src'
-          const LAB   = 'oh-toroku-point-label';
-          const f = this._torokuFC?.features?.find(f => f?.properties?.id === pid)
-          if (f) {
-            f.properties.label = newName
-            f.properties.name  = newName
-            const map = this.map01
-            map.getSource(SRC).setData(this._torokuFC)
-            map.triggerRepaint()
-            console.log(this._torokuFC)
-          }
-        } catch (e) {
-          console.warn('[commitPointName] map label update skipped:', e)
-        }
-      } catch (err) {
-        console.error('[job_points.rename] failed:', err)
-        alert('点名の変更に失敗しました')
-      } finally {
-        this.pointRenameInFlight = false
-        this.cancelPointNameEdit()
-      }
     },
     async updatePointNameOnServer (pointId, newName) {
       const fd = new FormData()
@@ -4283,38 +4122,6 @@ export default {
       this.mapCoordMarkers?.forEach(m => m.remove());
       this.mapCoordMarkers = [];
     },
-    generateWorldFileOLd() {
-      const img = document.getElementById('warp-image');
-      if (!img) {
-        console.warn('image not found');
-        return null
-      }
-
-      const pairs = (this.gcpList || []).filter(g =>
-          (Array.isArray(g.imageCoord) || Array.isArray(g.imageCoordCss)) && Array.isArray(g.mapCoord)
-      );
-      if (pairs.length < 2) {
-        console.warn('GCPは2点以上必要です');
-        return null
-      }
-
-      const srcNat = pairs.map(g => imageCssToNatural(g.imageCoordCss || g.imageCoord, img));
-      const srcUp = srcNat.map(([x, y]) => [x, -y]);
-      const dstUp = pairs.map(g => lngLatToMerc(g.mapCoord));
-
-      let Mup;
-      if (pairs.length === 2) {
-        Mup = fitSimilarity2P(srcUp, dstUp)
-      } else {
-        Mup = fitAffineRobust(srcUp, dstUp, 4)
-      }
-      const FLIP_Y = [1, 0, 0, 0, -1, 0];
-      const M = composeAffine(Mup, FLIP_Y);
-
-      this._lastAffineM = M;
-      this.affineM = M;
-      return worldFileFromAffine(M);
-    },
     onConfirmOk () {
       const s = this.$store.state
       const r = s.confirmResolve;
@@ -4488,69 +4295,22 @@ export default {
 
         handleConfirm() {
           drawConfirm()
-          // let minPoints
-          // if (vm.s_isDrawPolygon) {
-          //   minPoints = this.minPolygonPoints
-          // } else if (vm.s_isDrawLine) {
-          //   minPoints = this.minLinePoints
-          // }
-          // vm.tempLineCoordsGuide = dedupeCoords(vm.tempLineCoordsGuide)
-          // if (vm.tempLineCoordsGuide.length < minPoints) {
-          //   store.state.loadingMessage3 = `ポイントが足りません。最低${minPoints}点必要です。`
-          //   store.state.loading3 = true
-          //   setTimeout(() => {
-          //     store.state.loading3 = false
-          //   }, 2000)
-          //   return
-          // }
-          // vm.finishDrawing()
-          // this.resetDraw();
         }
 
         handleUndo() {
-          // if (vm.tempLineCoordsGuide.length > 0) {
-          //   vm.removeLastVertex()
-          // }
           removeLastVertex()
         }
 
         handleCancel() {
           drawCancel()
-          // this.resetDraw();
-          // if (vm.s_editEnabled) {
-          //   vm.map01.getSource('click-circle-source').setData(vm.prevGeojson)
-          //   vm.finishDrawing()
-          //   vm.clickCircleGeojsonText = JSON.stringify(vm.prevGeojson)
-          //   vm.prevGeojson = null
-          // }
         }
 
-        resetDraw() {
-          vm.finishLine()
-          vm.$store.state.showDrawConfrim = false
-        }
       }
       // DrawToolインスタンス化
       this.drawTool = new DrawTool(this.map01);
     },
     mapillaryClose() {
       mapillaryFilterRiset()
-    },
-    async mapillaryUserNameInput() {
-      // if (!this.s_mapillaryUserName) {
-      //   alert('ユーザー名を記入してください。')
-      //   return
-      // }
-      const map01 = this.$store.state.map01
-      this.$store.state.filter360 = null
-      this.$store.state.targetSeq = null
-      map01.setFilter('oh-mapillary-images', this.$store.state.filter360)
-      map01.setPaintProperty('oh-mapillary-images', 'circle-color', '#35AF6D');
-      await queryMapillaryByUserDatesViewport(map01, {
-        username: this.s_mapillaryUserName,
-        start: this.s_mapillaryStartDate,
-        end: this.s_mapillaryEndDate
-      })
     },
     exDrawOpen() {
       this.$store.dispatch('showFloatingWindow', 'exdraw');
@@ -4563,12 +4323,7 @@ export default {
       }
     },
     popupDialogClose() {
-      // const map01 = this.$store.state.map01
-      // const id = store.state.drawFeatureId
-      // const tgtProp = 'label'
-      // const value = document.querySelector('.point-text').value
-      // this.$store.state.clickCircleGeojsonText = geojsonUpdate (map01,null,clickCircleSource.iD,id,tgtProp,value)
-      const id = store.state.drawFeatureId
+    const id = store.state.drawFeatureId
       lavelUpdate(null, id)
       this.s_popupDialog = false;
     },
@@ -4785,40 +4540,11 @@ export default {
       }
     },
     async test () {
-
       this.$store.dispatch('showFloatingWindow', 'job-picker');
       this.isJobMenu = true
-
-      // const tileJson = await fetchGsiTileTest()
-      // console.log(tileJson)
-      // const converTileJson = convertGsiTileJson2(tileJson)
-      // console.log(converTileJson)
     },
     openPaintEditorWindow() {
       this.$store.dispatch('showFloatingWindow', 'painteditor');
-    },
-    onPaintUpdate({ circle, symbol }) {
-      console.log(circle)
-      // Circle 設定反映
-      // Object.entries(circle).forEach(([prop, val]) => {
-      //   this.map.setPaintProperty('oh-point-circle-layer', prop, val)
-      // })
-      // // Symbol 設定反映
-      // this.map.setLayoutProperty(
-      //     'oh-point-symbol-layer',
-      //     'text-field',
-      //     symbol['text-field']
-      // )
-      // this.map.setPaintProperty(
-      //     'oh-point-symbol-layer',
-      //     'text-size',
-      //     symbol['text-size']
-      // )
-      // this.map.setPaintProperty(
-      //     'oh-point-symbol-layer',
-      //     'text-color',
-      //     symbol['text-color']
-      // )
     },
     onWidthChangedForMapillary() {
       try {
@@ -4833,9 +4559,6 @@ export default {
     openWindow() {
       this.$store.dispatch('showFloatingWindow', 'qrcode');
     },
-    closeWindow() {
-      this.$refs.floating.close();
-    },
     async cachesCrear() {
         await caches.delete('raster-tile-cache');
         await caches.delete('vector-tile-cache');
@@ -4846,12 +4569,6 @@ export default {
       const vm = this
       store.state.loading2 = true
       store.state.loadingMessage = 'タイルダウンロード中'
-      // キャッシュを毎回クリア
-      // if ('caches' in window) {
-      //   await caches.delete('raster-tile-cache');
-      //   await caches.delete('vector-tile-cache');
-      // }
-      // 1) ポリゴンから BBOX を取得
       let bbox = getBBoxFromPolygon(this.$store.state.featureForOfflineBbox)
 
       if (!navigator.serviceWorker.controller) {
@@ -5239,10 +4956,7 @@ export default {
       }
       this.showTileDialog = false
     },
-    onImageLoad() {
-      this.imageLoaded = true;
-      console.log('Image loaded');
-    },
+
     // 親コンポーネント methods 内に置く
     openTileUploadDialog(payload) {
       const {
@@ -5323,361 +5037,6 @@ export default {
       console.warn('openTileUploadDialog: unknown kind', kind);
     },
 
-    // openTileUploadDialog(affineM, blobFromChild = null) {
-    //   // 1) PNG Blob を決める（子が渡してきたものを最優先）
-    //   const makeFromCanvas = () => new Promise((resolve, reject) => {
-    //     const canvas = document.querySelector('#warp-canvas');
-    //     if (!canvas || !canvas.toBlob) return reject(new Error('warp canvas not found'));
-    //     if (canvas.width === 0 || canvas.height === 0) return reject(new Error('invalid canvas size'));
-    //     canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
-    //   });
-    //
-    //   const ensureBlob = blobFromChild
-    //       ? Promise.resolve(blobFromChild)
-    //       : makeFromCanvas(); // フォールバック（将来の互換用）
-    //
-    //   ensureBlob.then((blob) => {
-    //     const baseName = this.s_gazoName || 'converted';
-    //     /**
-    //      * blobから実ファイルに差し替え
-    //      */
-    //     // const convertedImage = new File([blob], `${baseName}.png`, { type: 'image/png' });
-    //     const convertedImage = this.pendingFile
-    //     // 2) ワールドファイルは affineM から生成（引数必須）
-    //     const worldFileContent = this.generateWorldFile(affineM);
-    //     console.log(worldFileContent);
-    //     if (!worldFileContent) throw new Error('World file generation failed');
-    //     /**
-    //      * .pgwをjgwに変更
-    //      */
-    //     const worldFile = new File([worldFileContent], `${baseName}.jgw`, { type: 'text/plain' });
-    //
-    //     // 3) store に保存してダイアログを開く
-    //     this.$store.commit('setTiffAndWorldFile', [convertedImage, worldFile]);
-    //     this.showTileDialog = true;
-    //     // デバッグ
-    //     console.log('World File Content:', worldFileContent);
-    //     console.log('Saved Files:', { image: convertedImage.name, world: worldFile.name });
-    //   }).catch(err => {
-    //     console.error('openTileUploadDialog failed:', err);
-    //   });
-    // },
-
-
-    clearWarp() {
-      this.showOriginal = true;
-      this.showWarpCanvas = false;
-      const canvas = document.getElementById('warp-canvas');
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
-      }
-      this.showOriginal = true; // 変換前を表示
-      this.showWarpCanvas = false; // 変換後を非表示
-      this.showWarpCanvas = false;
-    },
-    // previewAffineWarp() {
-    //   this.$nextTick(() => {
-    //     ensureOpenCvReady(() => {
-    //       const canvas = document.getElementById('warp-canvas');
-    //       const map = this.$store.state.map01;
-    //       const img = document.getElementById('warp-image');
-    //
-    //       if (!canvas || !img || !map || typeof window.cv === 'undefined') {
-    //         console.warn('必要な要素またはOpenCVが読み込まれていません');
-    //         return;
-    //       }
-    //
-    //       if (!img.complete) {
-    //         img.onload = () => this.previewAffineWarp();
-    //         return;
-    //       }
-    //
-    //       const src = window.cv.imread('warp-image');
-    //       if (src.empty() || src.cols === 0 || src.rows === 0) {
-    //         console.error('Failed to load image into Mat');
-    //         src.delete();
-    //         return;
-    //       }
-    //       console.log('Image size:', src.cols, src.rows);
-    //
-    //       if (this.gcpList.length < 4) {
-    //         console.warn('GCPが4点以上必要です');
-    //         return;
-    //       }
-    //
-    //       const from = this.gcpList.slice(0, 4).map(gcp => gcp.imageCoord);
-    //       const to = this.gcpList.slice(0, 4).map(gcp => convertLngLatToImageXY(gcp.mapCoord, map, img));
-    //
-    //       console.log('From points:', from);
-    //       console.log('To points:', to);
-    //
-    //       const minX = Math.min(...to.map(p => p[0]));
-    //       const maxX = Math.max(...to.map(p => p[0]));
-    //       const minY = Math.min(...to.map(p => p[1]));
-    //       const maxY = Math.max(...to.map(p => p[1]));
-    //
-    //       const scaleX = src.cols / (maxX - minX);
-    //       const scaleY = src.rows / (maxY - minY);
-    //       const scaledTo = to.map(p => [
-    //         (p[0] - minX) * scaleX,
-    //         (p[1] - minY) * scaleY
-    //       ]);
-    //       console.log('Scaled To points:', scaledTo);
-    //
-    //       canvas.width = src.cols; // 580
-    //       canvas.height = src.rows; // 506
-    //       const size = new window.cv.Size(src.cols, src.rows);
-    //
-    //       try {
-    //         const dst = new window.cv.Mat();
-    //         const srcQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-    //           from[0][0], from[0][1],
-    //           from[1][0], from[1][1],
-    //           from[2][0], from[2][1],
-    //           from[3][0], from[3][1]
-    //         ].map(Number));
-    //         const dstQuad = window.cv.matFromArray(4, 1, window.cv.CV_32FC2, [
-    //           scaledTo[0][0], scaledTo[0][1],
-    //           scaledTo[1][0], scaledTo[1][1],
-    //           scaledTo[2][0], scaledTo[2][1],
-    //           scaledTo[3][0], scaledTo[3][1]
-    //         ].map(Number));
-    //
-    //         const warpMat = window.cv.getPerspectiveTransform(srcQuad, dstQuad);
-    //         if (warpMat.empty()) {
-    //           console.error('Invalid transformation matrix');
-    //           srcQuad.delete();
-    //           dstQuad.delete();
-    //           src.delete();
-    //           dst.delete();
-    //           return;
-    //         }
-    //
-    //         window.cv.warpPerspective(src, dst, warpMat, size, window.cv.INTER_LINEAR, window.cv.BORDER_CONSTANT, new window.cv.Scalar());
-    //
-    //         if (dst.empty()) {
-    //           console.error('Transformation failed, output Mat is empty');
-    //         } else {
-    //           window.cv.imshow('warp-canvas', dst);
-    //           console.log('Transformation applied');
-    //         }
-    //
-    //         src.delete();
-    //         dst.delete();
-    //         srcQuad.delete();
-    //         dstQuad.delete();
-    //         warpMat.delete();
-    //         this.showWarpCanvas = true;
-    //       } catch (e) {
-    //         console.error('OpenCV処理中にエラーが発生しました:', e);
-    //       }
-    //     });
-    //   });
-    // },
-    // clearWarpCanvas() {
-    //   const canvas = document.querySelector('#warp-canvas');
-    //   if (!canvas) return;
-    //   const ctx = canvas.getContext('2d');
-    //   if (ctx) {
-    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //   }
-    //   this.showWarpCanvas = false;
-    // },
-
-    removeFloatingImage() {
-      if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
-      this.clearWarp()
-      // アップロード画像とGCP関連
-      this.uploadedImageUrl = null;
-      this.gcpList = [];
-      this.hoveredRow = null;
-
-      // マーカー類の削除（存在する場合に限り）
-      this.removeImageMarkers?.();
-      this.removeMapMarkers?.();
-
-      // 保存済みローカルデータの削除
-      localStorage.removeItem('savedGcp');
-      localStorage.removeItem('savedImage');
-
-      // 仮ワープCanvasの消去（サイズは維持し、クリアのみ）
-      const canvas = document.querySelector('#warp-canvas');
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx?.clearRect(0, 0, canvas.width, canvas.height);
-        // 👇 サイズは0にしないことで次回の描画が可能になる
-        // canvas.width = 0;
-        // canvas.height = 0;
-      }
-
-      // Blobや一時ファイルがあればnullにして明示的に削除（例: Vuexに保持している場合）
-      this.$store.commit('setTiffAndWorldFile', null);
-
-      // 自分自身の表示も消す
-      this.showFloatingImage = false;
-
-      console.log('画像・GCP・Canvas・一時データをすべて削除しました');
-    },
-
-
-    // removeFloatingImage() {
-    //   if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
-    //
-    //   // アップロード画像とGCP関連
-    //   this.uploadedImageUrl = null;
-    //   this.gcpList = [];
-    //   this.hoveredRow = null;
-    //
-    //   // マーカー類の削除（存在する場合に限り）
-    //   this.removeImageMarkers?.();
-    //   this.removeMapMarkers?.();
-    //
-    //   // 保存済みローカルデータの削除
-    //   localStorage.removeItem('savedGcp');
-    //   localStorage.removeItem('savedImage');
-    //
-    //   // 仮ワープCanvasの消去
-    //   const canvas = document.querySelector('#warp-canvas');
-    //   if (canvas) {
-    //     const ctx = canvas.getContext('2d');
-    //     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    //     canvas.width = 0; // サイズを0にして明示的に無効化
-    //     canvas.height = 0;
-    //   }
-    //
-    //   // Blobや一時ファイルがあればnullにして明示的に削除（例: Vuexに保持している場合）
-    //   this.$store.commit('setTiffAndWorldFile', null);
-    //
-    //   // 自分自身の表示も消す
-    //   this.showFloatingImage = false;
-    //
-    //   console.log('画像・GCP・Canvas・一時データをすべて削除しました');
-    // },
-
-    // removeFloatingImage() {
-    //   if (!confirm('本当に画像とGCPをすべて削除しますか？')) return;
-    //
-    //   this.uploadedImageUrl = null;
-    //   this.gcpList = [];
-    //   this.hoveredRow = null;
-    //
-    //   // マーカー類の削除（関数が分かれていると仮定）
-    //   this.removeImageMarkers?.();
-    //   this.removeMapMarkers?.();
-    //
-    //   // 保存済みデータもクリア
-    //   localStorage.removeItem('savedGcp');
-    //   localStorage.removeItem('savedImage');
-    //
-    //   // 仮ワープ表示を消す処理があるならここで（例）
-    //   this.removeWarpPreview?.();
-    //
-    //   console.log('画像とGCPをすべて削除しました');
-    // },
-    removeImageMarkers() {
-      // 画像側のマーカーDOMを全て削除
-      const container = this.$el.querySelector('.floating-image-panel');
-      const markers = container?.querySelectorAll('.image-marker');
-      markers?.forEach(marker => marker.remove());
-    },
-    removeMapMarkers() {
-      if (this.mapCoordMarkers && this.mapCoordMarkers.length > 0) {
-        this.mapCoordMarkers.forEach(marker => marker.remove());
-        this.mapCoordMarkers = [];
-      }
-    },
-    // ✅ GCPをlocalStorageに保存
-    saveGcpToLocal() {
-      try {
-        localStorage.setItem('oh3_gcp_backup', JSON.stringify(this.gcpList));
-        alert('GCPを保存しました');
-      } catch (e) {
-        alert('保存に失敗しました');
-      }
-    },
-    // ✅ localStorageから復元
-    loadGcpFromLocal() {
-      const raw = localStorage.getItem('oh3_gcp_backup');
-      if (!raw) {
-        alert('保存されたGCPが見つかりません');
-        return;
-      }
-      try {
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) throw new Error();
-        this.gcpList = parsed;
-        // 地図マーカーを再描画（画像マーカーは自動）
-        this.updateMapMarkers?.();
-        alert('GCPを復元しました');
-      } catch (e) {
-        alert('復元に失敗しました');
-      }
-    },
-    resetGcp() {
-      if (!confirm('GCPをリセットしてよろしいですか？')) return;
-      // GCP一覧を初期化
-      this.gcpList = [];
-      // 地図側マーカーが存在すれば削除
-      if (this.mapCoordMarkers && Array.isArray(this.mapCoordMarkers)) {
-        this.mapCoordMarkers.forEach(marker => marker.remove());
-        this.mapCoordMarkers = [];
-      }
-      // ※画像側マーカーは gcpList が空になれば v-for 側で自動的に非表示になる
-    },
-    removeGcp(index) {
-      this.gcpList.splice(index, 1);
-      this.updateMapMarkers(); // 地図側更新
-    },
-    updateImageCoordX(i, val) {
-      const num = parseFloat(val);
-      if (!this.gcpList[i].imageCoord) this.gcpList[i].imageCoord = [0, 0];
-      this.gcpList[i].imageCoord[0] = isNaN(num) ? 0 : num;
-    },
-    updateImageCoordY(i, val) {
-      const num = parseFloat(val);
-      if (!this.gcpList[i].imageCoord) this.gcpList[i].imageCoord = [0, 0];
-      this.gcpList[i].imageCoord[1] = isNaN(num) ? 0 : num;
-    },
-    updateMapCoordLng(i, val) {
-      const num = parseFloat(val);
-      if (!this.gcpList[i].mapCoord) this.gcpList[i].mapCoord = [0, 0];
-      this.gcpList[i].mapCoord[0] = isNaN(num) ? 0 : num;
-      this.updateMapMarkers(); // 地図マーカー再描画（オプション）
-    },
-    updateMapCoordLat(i, val) {
-      const num = parseFloat(val);
-      if (!this.gcpList[i].mapCoord) this.gcpList[i].mapCoord = [0, 0];
-      this.gcpList[i].mapCoord[1] = isNaN(num) ? 0 : num;
-      this.updateMapMarkers(); // 地図マーカー再描画（オプション）
-    },
-    startDragging(event, index) {
-      const imgBox = event.target.closest('.floating-image-panel');
-      if (!imgBox) return;
-
-      const onMouseMove = (e) => {
-        const rect = imgBox.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        this.gcpList[index].imageCoord = [x, y];
-
-        // 👇 ここでログ出す（ドラッグ中リアルタイム）
-        console.log(`GCP[${index}].imageCoord = [${x.toFixed(1)}, ${y.toFixed(1)}]`);
-      };
-
-      const onMouseUp = () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-
-        const [x, y] = this.gcpList[index].imageCoord;
-        // 👇 ドラッグ終了後に最終位置をログ出す
-        console.log(`GCP[${index}] ドラッグ完了 → [${x.toFixed(1)}, ${y.toFixed(1)}]`);
-      };
-
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    },
     updateMapMarkers() {
       const map = this.$store.state.map01;
 
@@ -5722,14 +5081,6 @@ export default {
         this.mapCoordMarkers.push(marker);
       });
     },
-    getImageMarkerStyle([x, y]) {
-      return {
-        position: 'absolute',
-        left: `${x}px`,
-        top: `${y}px`,
-        transform: 'translate(-50%, -50%)',
-      };
-    },
     onMapClick(e) {
       if (!this.gcpList.length || this.gcpList.length === 0) {
         return;
@@ -5744,23 +5095,6 @@ export default {
       last.mapCoord = lngLat;
       console.log(`地図クリック: [${lngLat[0].toFixed(6)}, ${lngLat[1].toFixed(6)}] をセット`);
 
-    },
-    onImageClick(event) {
-      const imgEl = event.target;
-      const rect = imgEl.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      this.gcpList.push({
-        imageCoord: [x, y],
-        mapCoord: null
-      });
-      console.log(`画像クリック: [${x.toFixed(1)}, ${y.toFixed(1)}] を追加`);
-      // GCP登録時に次の操作を明示
-      // if (this.gcpList.length === 0 || this.gcpList[this.gcpList.length - 1].mapCoord !== null) {
-      //   this.gcpStep = 'image'; // 次は画像をクリックしてください
-      // } else {
-      //   this.gcpStep = 'map'; // 次は地図をクリックしてください
-      // }
     },
     test0 () {
       const vm = this
@@ -5897,116 +5231,9 @@ export default {
     },
     async undo() {
       drawUndo()
-      // if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-      //   alert('編集不可です！！')
-      //   return
-      // }
-      // const map = this.$store.state.map01
-      // const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      // if (this.history.length > 0) {
-      //   this.redoStack.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
-      //   this.mainGeojson = this.history.pop();
-      //
-      //   /**
-      //    *注意 不安定
-      //    */
-      //   const { added, removed, modified } = diffGeoJSON(this.mainGeojson, mainSourceGeojson)
-      //   console.log('新規:', added);
-      //   console.log('削除:', removed);
-      //   console.log('変更:', modified);
-      //   if (modified.length > 0) {
-      //     await saveDrowFeatures(modified)
-      //   }
-      //   // 新規の時は逆に削除
-      //   if (added.length > 0) {
-      //     const ids = added.map(f => f.properties.id)
-      //     await featuresDelete(ids)
-      //   }
-      //   // removedのときは復活
-      //   if (removed.length > 0) {
-      //     const ids = removed.map(f => f.properties.id)
-      //     console.log(ids)
-      //     await featuresRestore(ids)
-      //     // const configFeature = removed.find(f => f.properties.id === 'config')
-      //     // if (configFeature) {
-      //     //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
-      //     // }
-      //   }
-      //   /**
-      //    * ここまで
-      //    */
-      //
-      //   // 反映
-      //   map.getSource('click-circle-source').setData(this.mainGeojson);
-      //   store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
-      //   this.updatePermalink()
-      //   if (this.s_editEnabled) {
-      //     getAllVertexPoints(map, this.mainGeojson);
-      //     setAllMidpoints(map, this.mainGeojson);
-      //   }
-      //   generateSegmentLabelGeoJSON(this.mainGeojson)
-      //   generateStartEndPointsFromGeoJSON(this.mainGeojson)
-      //
-      // }
-      // markaersRemove()
-      // this.updatePermalink()
-
     },
     async redo() {
       drawRedo()
-      // if (!this.$store.state.isEditable && !this.$store.state.isMine) {
-      //   alert('編集不可です！！')
-      //   return
-      // }
-      // if (this.redoStack.length > 0) {
-      //   const map = this.$store.state.map01
-      //   const mainSourceGeojson = map.getSource('click-circle-source')._data;
-      //   this.history.push(JSON.parse(JSON.stringify(mainSourceGeojson)));
-      //   this.mainGeojson = this.redoStack.pop();
-      //
-      //   /**
-      //    *注意 不安定
-      //    */
-      //   const { added, removed, modified } = diffGeoJSON(mainSourceGeojson, this.mainGeojson);
-      //   console.log('新規:', added);
-      //   console.log('削除:', removed);
-      //   console.log('変更:', modified);
-      //   if (modified.length > 0) {
-      //     await saveDrowFeatures(modified)
-      //   }
-      //   // addedのときは復活
-      //   if (added.length > 0) {
-      //     const ids = added.map(f => f.properties.id)
-      //     console.log(ids)
-      //     await featuresRestore(ids)
-      //     // const configFeature = removed.find(f => f.properties.id === 'config')
-      //     // if (configFeature) {
-      //     //   this.mainGeojson.features = [...this.mainGeojson.features,configFeature]
-      //     // }
-      //   }
-      //   // removedのときは削除
-      //   if (removed.length > 0) {
-      //     const ids = removed.map(feature => feature.properties.id)
-      //     await featuresDelete(ids)
-      //   }
-      //   /**
-      //    * ここまで
-      //    */
-      //
-      //   // 反映
-      //   map.getSource('click-circle-source').setData(this.mainGeojson);
-      //
-      //   this.$store.state.clickCircleGeojsonText = JSON.stringify(this.mainGeojson)
-      //   if (this.s_editEnabled) {
-      //     getAllVertexPoints(map, this.mainGeojson);
-      //     setAllMidpoints(map, this.mainGeojson);
-      //   }
-      //   generateSegmentLabelGeoJSON(this.mainGeojson)
-      //   generateStartEndPointsFromGeoJSON(this.mainGeojson)
-      //   generateSegmentLabelGeoJSON(this.mainGeojson)
-      //   markaersRemove()
-      //   this.updatePermalink()
-      // }
     },
     finishLine () {
       this.isDrawingLine = false;
@@ -6032,79 +5259,9 @@ export default {
       this.tempPolygonCoords = []
       this.tempLineCoordsCoords = []
     },
-
-    startDraw() {
-      this.isDrawing = true
-      // すぐマウス座標反映
-      document.body.style.cursor = ''
-    },
     endDraw() {
       this.isDrawing = false
       document.body.style.cursor = ''
-    },
-    async captureAndPostToX() {
-
-      if (window.innerWidth < 1000) {
-        this.openX()
-        return
-      }
-
-      // 1. ローディング表示
-      store.state.loading2 = true;
-      store.state.loadingMessage = '画面をキャプチャ中です。';
-
-      // 2. 地図DIV取得
-      const mapDiv = document.getElementById(this.mapDivId);
-      if (!mapDiv) {
-        alert("地図が見つかりません");
-        store.state.loading2 = false;
-        return;
-      }
-
-      // 3. 地図を微妙に動かしてレンダリング強制
-      const map01 = this.$store.state.map01;
-      const currentZoom = map01.getZoom();
-      map01.zoomTo(currentZoom + 0.00000000000000000000000000001);
-
-      // 4. idleになったらキャプチャ〜アップロード
-      map01.once('idle', async () => {
-        // --- canvas生成・描画・画像化 ---
-        // MapLibreのcanvas要素取得
-        const canvas = map01.getCanvas();
-        const imageData = canvas.toDataURL("image/png");
-        // PNGファイルを追加
-        const blob = await fetch(imageData).then(res => res.blob());
-
-        // アップロード
-        const formData = new FormData();
-        formData.append('file', blob);
-        formData.append('spaUrl', window.location.href);
-
-        // サーバーにアップロード
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/x-upload.php', { method: 'POST', body: formData });
-        const data = await res.json();
-        const shareUrl = data.shareUrl;
-
-        // 5. intent/tweetを2回開く
-        const tweetText = this.tweetText || "";
-        const intentUrl = "https://twitter.com/intent/tweet?text=" +
-            encodeURIComponent('少々おまちください。まだ入力できません。' + "\n\n" + shareUrl);
-        const intentUrl2 = "https://twitter.com/intent/tweet?text=" +
-            encodeURIComponent(tweetText + "\n" + shareUrl);
-
-        // 1回目
-        setTimeout(() => {
-          let win = window.open(intentUrl, '_blank');
-          // 4秒後に閉じて再度開く
-          setTimeout(() => {
-            if (win) win.close();
-            setTimeout(() => {
-              window.open(intentUrl2, '_blank');
-              store.state.loading2 = false;
-            }, 500);
-          }, 3000);
-        },4000)
-      });
     },
     openDialog() {
       this.showXDialog = true;
@@ -6145,27 +5302,6 @@ export default {
       //   store.state.loading2 = false;
       // });
 
-    },
-    downloadImage() {
-      // ファイル名
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const fileName = `oh3capture_${y}${m}${day}.png`;
-      if (!this.imgUrl) return;
-      const link = document.createElement("a");
-      link.download = fileName;
-      link.href = this.imgUrl;
-      link.click();
-    },
-    openX() {
-      const intentUrl =
-          "https://twitter.com/intent/tweet?text=" +
-          encodeURIComponent('#openhinata3 #OH3' + "\n" + this.$store.state.url);
-      // window.open(intentUrl, "_blank");
-      // 1回目
-      const win = window.open(intentUrl, '_blank');
     },
     deleteAllforDraw () {
       this.s_editEnabled = false
@@ -6631,15 +5767,6 @@ export default {
       document.querySelector('#draw-indicato-text').innerHTML = 'TXT'
       this.finishLine()
     },
-    drawRotate () {
-      // rotateLassoSelected(90)
-      const featuresRotateDiv = document.querySelector('.features-rotate-div')
-      if (featuresRotateDiv.style.display === 'none' || featuresRotateDiv.style.display === '') {
-        featuresRotateDiv.style.display = 'block'
-      } else {
-        featuresRotateDiv.style.display = 'none'
-      }
-    },
     save () {
       this.saveSelectedPointFeature()
       // Firestore に保存
@@ -7031,111 +6158,20 @@ export default {
       map.zoomOut({duration: 500})
     },
 
-    /**
-     * ここから観測関係
-     */
-
-
-
-
-
-
-
-
     /** =========================
      * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
      * ========================= */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
+    // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
     async downloadCsv2() {
       this.$refs.jobPicker.downloadCsvForSokui()
     },
-
-// SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
+    // SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
     async exportCsv2Sima() {
       this.$refs.jobPicker.downloadSimaForSokui()
     },
-
     /** =========================
      * 杭打関連（測位点登録・赤丸表示・ジョブ管理・結線表示）
      * ========================= */
-
-// 現在地の緑丸（1個だけ表示）関連
-    /** 現在地マーカー（緑丸）を完全削除 */
-    clearCurrentDot () {
-      const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
-      if (!map) return;
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
-    },
-
-
-    /** 現在地マーカー（緑丸）を 1 個だけ追加 or 更新（座標必須） */
-    upsertCurrentMarker(lng, lat) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map || !Number.isFinite(lng) || !Number.isFinite(lat)) return;
-
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-
-      const fc = {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: {},
-          geometry: { type: 'Point', coordinates: [lng, lat] }
-        }]
-      };
-
-      if (map.getSource(SRC)) {
-        map.getSource(SRC).setData(fc);
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: fc });
-        if (!map.getLayer(LAYER)) {
-          map.addLayer({
-            id: LAYER,
-            type: 'circle',
-            source: SRC,
-            paint: {
-              'circle-radius': 7,
-              'circle-color': '#22c55e',       // 緑
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-        }
-      }
-    },
-
-    /** 現在地マーカー（緑丸）を完全削除（↑と同義。呼び出し箇所ごとに命名差分あり） */
-    clearCurrentMarker() {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) return;
-
-      const SRC   = 'oh-current-src';
-      const LAYER = 'oh-current';
-
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch {}
-      try { if (map.getSource(SRC))  map.removeSource(SRC); } catch {}
-    },
-
 
     /** 現在保持している赤丸（FeatureCollection）から、時系列順の [lng,lat] の配列を構築 */
     buildChainCoordinates() {
@@ -7218,16 +6254,6 @@ export default {
       }
     },
 
-    /** ラインの明示クリア（他からも呼びやすい名前） */
-    clearChainLine() {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) return;
-      const SRC = 'oh-chain-src';
-      const LYR = 'oh-chain-layer';
-      try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-    },
-
     /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
     setLineMode(mode) {
       this.$refs.jobPicker.setLineMode(mode)
@@ -7243,419 +6269,6 @@ export default {
       this.isJobMenu = true
       await nextTick()                                     // マウント待ち
       this.$refs.jobPicker.openJobPicker()
-    },
-
-
-    /** 新規作成成功後の一覧更新 */
-    async onJobCreatedSuccess() {
-      await this.refreshJobs();
-    },
-
-    /** サーバからジョブ一覧取得 → UIへ反映 */
-    async refreshJobs() {
-      const fd = new FormData();
-      fd.append('action', 'jobs.list');
-      fd.append('user_id', this.userId);
-      let res;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-          method: 'POST',
-          body: fd,
-        });
-      } catch (e) {
-        console.error('[jobs.list] ネットワーク失敗', e);
-        alert('ジョブ一覧の取得に失敗しました: ' + (e?.message || e));
-        return;
-      }
-      const ct = res.headers.get('content-type') || '';
-      let data;
-      try {
-        data = ct.includes('application/json') ? await res.json() : JSON.parse(await res.text());
-      } catch (e) {
-        console.error('[jobs.list] JSON解析失敗', e);
-        alert('ジョブ一覧の解析に失敗しました');
-        return;
-      }
-      if (!data?.ok) {
-        const msg = data?.error || 'サーバーエラー';
-        alert('ジョブ一覧の取得に失敗しました：' + msg);
-        console.error('[jobs.list] server says:', data);
-        return;
-      }
-      // console.log(JSON.stringify(data, null, 2));
-      const toUi = (r) => ({
-        id: String(r.job_id),
-        name: r.job_name,
-        note: r.note,
-        createdAt: r.created_at,
-        count: Number(r.point_count ?? 0),
-      });
-      this.jobList = Array.isArray(data.data) ? data.data.map(toUi) : [];
-    },
-
-    /** ジョブ削除（サーバ消去が成功したらUI側も除去） */
-    async deleteJob(job) {
-      const id = String(job?.id ?? job?.job_id ?? '');
-      if (!id) return;
-      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
-
-      const fd = new FormData();
-      fd.append('action', 'jobs.delete');
-      fd.append('job_id', id);
-
-      try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!data?.ok) {
-          alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
-          return;
-        }
-
-        // 一覧から除去
-        this.jobList = (this.jobList || []).filter(j => String(j.id ?? j.job_id) !== id);
-
-        // ★ ここがポイント：現在のJOBを消したなら、赤丸/線/一覧を全クリア
-        if (String(this.currentJobId) === id) {
-          this.currentJobId   = null;
-          this.currentJobName = '';
-
-          // 地図の赤丸（登録点）とラベルを消す
-          try {
-            const map = (this.$store?.state?.map01) || this.map01;
-            if (map) {
-              const SRC = 'oh-toroku-point-src';
-              const L   = 'oh-toroku-point';
-              const LAB = 'oh-toroku-point-label';
-              try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch {}
-              try { if (map.getLayer(L))   map.removeLayer(L); }   catch {}
-              try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-            }
-          } catch (e) {
-            console.warn('[jobs.delete] map clear failed (ignored)', e);
-          }
-
-          // 内部キャッシュも空に
-          this._torokuFC = { type: 'FeatureCollection', features: [] };
-          this._lastTorokuFeatureId = null;
-          this.pointsForCurrentJob = [];
-          this.torokuPointLngLat = null;
-
-          // 結線も消す
-          try { this.clearChainLine?.(); } catch {}
-        }
-
-        // バッジ/一覧を再取得
-        try { await this.refreshJobs(); } catch {}
-
-      } catch (e) {
-        console.error('[jobs.delete] 失敗', e);
-        alert('削除に失敗しました：' + (e?.message || e));
-      }
-    },
-
-    /** 既存ジョブ選択 → 現在ジョブに設定 → そのジョブの点を地図＆一覧に反映 */
-    async pickExistingJob(job) {
-      // ▼ チュートリアルダイアログは残す（DONT_SHOW_KEY が '1' でない限り毎回表示）
-      let hideTips = false;
-      try { hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1'; } catch (_) {}
-      if (!hideTips) {
-        this.$store.dispatch('messageDialog/open', {
-          id: 'openJobPicker',
-          title: '次の操作は？',
-          contentHtml:
-              '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
-              '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
-          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
-        });
-      }
-
-      // ▼ 選択ジョブの設定
-      this.pointsForCurrentJob = [];
-      const id   = String(job?.id ?? job?.job_id ?? '');
-      const name = String(job?.name ?? job?.job_name ?? '');
-      if (!id) return;
-
-      this.currentJobId   = id;
-      this.currentJobName = name;
-
-      // ▼ ポイント読み込み（fit=true は既定）
-      await this.loadPointsForJob(id);
-
-      // ▼ 自動クローズはトグルのみで制御（画面サイズ分岐なし）
-      if (this.autoCloseJobPicker) {
-        this.jobPickerOpen = false;
-        try { this.$store.dispatch('hideFloatingWindow', 'job-picker'); } catch {}
-      }
-    },
-
-    /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
-    async loadPointsForJob(jobId, options = { fit: true }) {
-      const fd = new FormData();
-      fd.append('action', 'job_points.list');
-      fd.append('job_id', String(jobId));
-
-      let res, data;
-      try {
-        res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-        data = await res.json();
-      } catch (e) {
-        console.error('[job_points.list] ネットワーク失敗', e);
-        alert('サーバーから測位点を取得できませんでした');
-        return;
-      }
-      if (!data?.ok || !Array.isArray(data.data)) {
-        console.error('[job_points.list] サーバーエラー', data);
-        alert('測位点の取得に失敗しました');
-        return;
-      }
-
-      this.pointsForCurrentJob = Array.isArray(data.data) ? data.data : [];
-
-      const fmt3    = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '');
-      const fmtPole = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '');
-      const fmtDeg8 = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(8) : '');
-
-      const features = [];
-
-      // 手計算のバウンディングボックス（本処理）
-      let minLng =  Infinity, minLat =  Infinity;
-      let maxLng = -Infinity, maxLat = -Infinity;
-
-      const total = this.pointsForCurrentJob.length;
-      let ok = 0, skip = 0;
-
-      for (const r of this.pointsForCurrentJob) {
-        const name   = String(r.point_name ?? '');
-        const Xavg   = Number(r.x_north);
-        const Yavg   = Number(r.y_east);
-        const hOrtho = Number(r.h_orthometric);
-        const pole   = Number(r.antenna_height);
-        const hAtAnt = Number(r.h_at_antenna);
-        const hae    = Number(r.hae_ellipsoidal);
-        const diff   = Number(r.xy_diff);
-        const cs     = String(r.crs_label ?? '');
-        const ts     = String(r.observed_at ?? '');
-        const lng    = Number(r.lng);
-        const lat    = Number(r.lat);
-
-        const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
-        console.log('[loadPointsForJob] row', { point_id: r.point_id ?? r.id, name, lng, lat, hasLngLat });
-
-        if (!hasLngLat) { skip += 1; continue; }
-        ok += 1;
-
-        // bbox 更新
-        if (lng < minLng) minLng = lng;
-        if (lng > maxLng) maxLng = lng;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-
-        const rowArray = [
-          name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
-          fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
-          String(r.address ?? ''), // 所在
-          ts
-        ];
-
-        features.push({
-          type: 'Feature',
-          properties: {
-            id: String(r.point_id ?? r.id ?? `${lng},${lat}`),
-            label: name,
-            name:  name,
-            oh3_csv2_row: rowArray,
-            pendingLabel: false
-          },
-          geometry: { type: 'Point', coordinates: [lng, lat] }
-        });
-      }
-
-      console.log('[loadPointsForJob] summary', {
-        total, ok, skip,
-        bbox: { minLng, minLat, maxLng, maxLat },
-        bboxValid:
-            Number.isFinite(minLng) && Number.isFinite(minLat) &&
-            Number.isFinite(maxLng) && Number.isFinite(maxLat)
-      });
-
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (map) {
-          const SRC  = 'oh-toroku-point-src';
-          const L    = 'oh-toroku-point';
-          const LAB  = 'oh-toroku-point-label';
-
-          this._torokuFC = { type: 'FeatureCollection', features };
-
-          if (!map.getSource(SRC)) map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-          else map.getSource(SRC).setData(this._torokuFC);
-
-          if (!map.getLayer(L)) {
-            map.addLayer({
-              id: L, type: 'circle', source: SRC,
-              paint: {
-                'circle-radius': 6,
-                'circle-color': '#ff3b30',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
-          }
-          if (!map.getLayer(LAB)) {
-            map.addLayer({
-              id: LAB, type: 'symbol', source: SRC,
-              layout: {
-                'text-field': ['get', 'label'],
-                'text-size': 16,
-                'text-offset': [0, 0.5],
-                'text-anchor': 'top',
-                'text-allow-overlap': true
-              },
-              paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-            });
-          }
-
-          const bboxValid =
-              Number.isFinite(minLng) && Number.isFinite(minLat) &&
-              Number.isFinite(maxLng) && Number.isFinite(maxLat);
-
-          if (bboxValid && typeof map.fitBounds === 'function') {
-            const pad = 80;
-            console.log('[loadPointsForJob] fitBounds(array bbox)');
-            if (options.fit) {
-              map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: pad, maxZoom: 18, duration: 0 });
-            } else {
-              const last = this.pointsForCurrentJob.at(-1);
-              map.setCenter([last.lng, last.lat]);
-            }
-          } else {
-            console.warn('[loadPointsForJob] fitBounds skip (no valid bbox or map.fitBounds missing)');
-          }
-        }
-      } catch (e) {
-        console.warn('[points] render failed (続行)', e);
-      }
-
-      try { this.updateChainLine(); } catch (_) {}
-    },
-
-
-    /** ピッカーからポイント削除 → サーバ成功後に UI/地図も同期 */
-    async deletePoint(pt) {
-      const pointId = String(pt?.point_id ?? pt?.id ?? '');
-      if (!pointId) return;
-
-      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt?.point_name ?? pt?.name ?? ''}`)) return;
-
-      const fd = new FormData();
-      fd.append('action', 'job_points.delete');
-      fd.append('point_id', pointId);
-
-      try {
-        const res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
-          method: 'POST',
-          body: fd,
-        });
-        const data = await res.json();
-        if (!data?.ok) {
-          alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
-          return;
-        }
-
-        // 1) 一覧（=唯一の真実源）から除去
-        this.pointsForCurrentJob = (this.pointsForCurrentJob || []).filter(
-            x => String(x.point_id ?? x.id) !== pointId
-        );
-
-        // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
-        try {
-          const map = (this.$store?.state?.map01) || this.map01;
-          if (map) {
-            const SRC   = 'oh-toroku-point-src';
-            const LAYER = 'oh-toroku-point';
-            const LAB   = 'oh-toroku-point-label';
-
-            const fc = { type: 'FeatureCollection', features: [] };
-            for (const r of (this.pointsForCurrentJob || [])) {
-              const lng = Number(r?.lng), lat = Number(r?.lat);
-              if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
-              fc.features.push({
-                type: 'Feature',
-                properties: {
-                  id: `pt_${String(r.point_id ?? r.id ?? Math.random()*1e6|0)}`,
-                  label: String(r.point_name ?? r.name ?? ''),
-                  name:  String(r.point_name ?? r.name ?? ''),
-                  pendingLabel: false,
-                },
-                geometry: { type: 'Point', coordinates: [lng, lat] }
-              });
-            }
-
-            this._torokuFC = fc;
-
-            if (map.getSource(SRC)) {
-              map.getSource(SRC).setData(fc);
-            } else {
-              map.addSource(SRC, { type: 'geojson', data: fc });
-              if (!map.getLayer(LAYER)) {
-                map.addLayer({
-                  id: LAYER,
-                  type: 'circle',
-                  source: SRC,
-                  paint: {
-                    'circle-radius': 6,
-                    'circle-color': '#ff3b30',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                  }
-                });
-              }
-              if (!map.getLayer(LAB)) {
-                map.addLayer({
-                  id: LAB,
-                  type: 'symbol',
-                  source: SRC,
-                  layout: {
-                    'text-field': ['get', 'label'],
-                    'text-size': 16,
-                    'text-offset': [0, 0.5],
-                    'text-anchor': 'top',
-                    'text-allow-overlap': true
-                  },
-                  paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('[deletePoint] map repaint failed', e);
-        }
-
-        try {
-          await this.refreshJobs(); // バッジ件数があるなら
-        } catch (e) {
-          console.warn('[deletePoint] refresh after delete failed', e);
-        }
-
-      } catch (e) {
-        console.error('[job_points.delete] 失敗', e);
-        alert('削除に失敗しました：' + (e?.message || e));
-      }
-    },
-
-    /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
-    loadJobsFromStorage() {
-      try {
-        const raw = localStorage.getItem('oh3_jobs');
-        const arr = raw ? JSON.parse(raw) : [];
-        this.jobList = Array.isArray(arr) ? arr : [];
-      } catch {
-        this.jobList = [];
-      }
-
-      // ★ 初回起動時は未選択にするため、直近選択の復元はしない
-      this.currentJobId = null;
-      this.currentJobName = '';
     },
 
 // 測位点（赤丸）: 設置/クリック/レイヤ管理
@@ -7674,182 +6287,8 @@ export default {
       }
     },
 
-    /** 測位クリック発火時：赤丸位置（＝緑丸も）をセットしてダイアログを開く */
-    handleTorokuMapClick (lngLat) {
-      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // 緑丸表示・更新
-      try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
-      try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
-      this.dialogForToroku = true;
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      this.kansokuCsvRows = null;
-    },
-
-    /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
-    clearTorokuPoint () {
-      const map = this.$store.state.map01; if (!map) return;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-      try { if (map.getLayer(LAYER)) map.removeLayer(LAYER); } catch(_) {}
-      try { if (map.getLayer(LAB)) map.removeLayer(LAB); } catch(_) {}
-      try { if (map.getSource(SRC)) map.removeSource(SRC); } catch(_) {}
-      this.torokuPointLngLat = null;
-      this.updateChainLine(); // 結線も消す
-    },
-
     startTorokuHere () {
       this.$refs.jobPicker.startTorokuHere()
-    },
-
-    /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */
-    async plotTorokuPoint (lngLat, label, opts = {}) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
-
-      const lng = Number(lngLat?.lng);
-      const lat = Number(lngLat?.lat);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
-      }
-
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-
-      if (!this._torokuFC) {
-        this._torokuFC = { type:'FeatureCollection', features: [] };
-      }
-
-      const wantDefer = opts?.deferLabel === true;
-      const text = wantDefer ? '' : (label || this.currentPointName || this.tenmei || '');
-      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
-
-      this._torokuFC.features.push({
-        type: 'Feature',
-        properties: {
-          id: fid,
-          label: text,
-          name: text,
-          pendingLabel: wantDefer ? true : false,
-        },
-        geometry: { type: 'Point', coordinates: [lng, lat] }
-      });
-
-      if (map.getSource(SRC)) {
-        try { map.getSource(SRC).setData(this._torokuFC); }
-        catch (_) { try { map.removeSource(SRC); } catch(e) {}
-          map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        }
-      } else {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-      }
-      console.log(this._torokuFC)
-
-      if (!map.getLayer(LAYER)) {
-        map.addLayer({
-          id: LAYER,
-          type: 'circle',
-          source: SRC,
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#ff3b30',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
-      }
-      if (!map.getLayer(LAB)) {
-        map.addLayer({
-          id: LAB,
-          type: 'symbol',
-          source: SRC,
-          layout: {
-            'text-field': ['get', 'label'],
-            'text-size': 16,
-            'text-offset': [0, 0.5],
-            'text-anchor': 'top',
-            'text-allow-overlap': true
-          },
-          paint: {
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 1.0
-          }
-        });
-      }
-
-      try { map.moveLayer(LAYER); } catch (_) {}
-      try { map.moveLayer(LAB); }   catch (_) {}
-
-      this.torokuPointLngLat = { lng, lat };
-      this.updateChainLine();
-    },
-
-    /** 確定赤丸描画：確定座標と点名で赤丸を追加（レイヤは既存前提） */
-    confirmTorokuPointAtCurrent(name, rowArray) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
-
-      // ★ 座標は “常に” torokuPointLngLat から取得（pending/lastIdは使わない）
-      const lng = Number(this?.torokuPointLngLat?.lng);
-      const lat = Number(this?.torokuPointLngLat?.lat);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[toroku] confirm failed: no torokuPointLngLat');
-        return;
-      }
-
-      // ★ 赤丸フィーチャを追加
-      const fid = 'pt_' + Date.now() + '_' + (Math.random() * 1e6 | 0);
-      const feature = {
-        type: 'Feature',
-        properties: {
-          id: fid,
-          label: String(name || ''),
-          name:  String(name || ''),
-          oh3_csv2_row: JSON.stringify(rowArray)
-        },
-        geometry: { type: 'Point', coordinates: [lng, lat] }
-      };
-
-      if (!this._torokuFC) this._torokuFC = { type: 'FeatureCollection', features: [] };
-      this._torokuFC.features.push(feature);
-
-      // ★ 地図へ反映（なければ作成／あれば更新）
-      if (map?.getSource(SRC)) {
-        map.getSource(SRC).setData(this._torokuFC);
-      } else if (map) {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        if (!map.getLayer(LAYER)) {
-          map.addLayer({
-            id: LAYER, type: 'circle', source: SRC,
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#ff3b30',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-        }
-        if (!map.getLayer(LAB)) {
-          map.addLayer({
-            id: LAB, type: 'symbol', source: SRC,
-            layout: {
-              'text-field': ['get', 'label'],
-              'text-size': 16,
-              'text-offset': [0, 0.5],
-              'text-anchor': 'top',
-              'text-allow-overlap': true
-            },
-            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-          });
-        }
-      }
-
-      // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
-      this.torokuPointLngLat = { lng, lat };
     },
 
     /** ジョブ終了処理（クリーンアップ含む） */
@@ -7866,7 +6305,7 @@ export default {
      * 追跡関連（現在地追跡・距離線・ログ出力）
      * ========================= */
 
-// 外部標高（ドロガー）受信
+    // 外部標高（ドロガー）受信
     /** 外部標高の正規化セット */
     setExternalElevation(payload) {
       const norm = this.extractElevationFrom(payload);
@@ -7943,7 +6382,7 @@ export default {
       return null;
     },
 
-// 現在地追跡（watchPosition）・距離線 UI
+    // 現在地追跡（watchPosition）・距離線 UI
     /**
      * ポーリング版
      */
@@ -8389,7 +6828,7 @@ export default {
       }
     },
 
-// 追跡ログ（移動履歴）
+    // 追跡ログ（移動履歴）
     requestClearLog() { this.confirmClearLog = true; },
     doClearLog() {
       if (this.logEnabled) this.stopTrackLog();
@@ -8532,103 +6971,8 @@ export default {
       this.$_downloadBlob(blob, `track_${this.$_jstStamp()}.sim`);
     },
 
-// 点名（連番）管理
-    loadTenmeiFromStorage() {
-      try {
-        const v = localStorage.getItem('tenmei') || '';
-        this.tenmei = String(v);
-        this.tenmeiError = '';
-      } catch (_) {}
-    },
-    handleTenmaiPrefixInput(v) {
-      if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
-      v = (v == null) ? '' : String(v).trim();
-
-      if (v === '') {
-        this.tenmaiPrefix = '';
-        this.tenmaiPrefixError = '';
-        try { localStorage.removeItem('tenmaiPrefix'); } catch(_) {}
-        return;
-      }
-
-      if (!this.isValidTenmaiPrefix(v)) {
-        this.tenmaiPrefixError = '英数字、ハイフン、アンダースコアのみ（最大12文字）で入力してください。';
-        this.tenmaiPrefix = v;
-        return;
-      }
-
-      this.tenmaiPrefix = v;
-      this.tenmaiPrefixError = '';
-      try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
-    },
-    isValidTenmaiPrefix(v) { return /^[0-9A-Za-z_-]{1,12}$/.test(String(v)); },
-
-    handleTenmeiInput(v) {
-      if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
-      let s = (v == null) ? '' : String(v).trim();
-      s = s.replace(/[\r\n]/g, '').replace(/,/g, '');
-      this.tenmei = s;
-      this.tenmeiError = '';
-      try { localStorage.setItem('tenmei', s); } catch (_) {}
-    },
-    ensureUniqueTenmei(base) {
-      const name = (base || '').trim();
-      if (!name) return '';
-
-      // 既に使われている名称の集合をサーバー・地図・ローカルから統合
-      const used = new Set();
-
-      // a) サーバー由来（ジョブ内の既存点）
-      if (Array.isArray(this.pointsForCurrentJob)) {
-        for (const p of this.pointsForCurrentJob) {
-          const n = p?.point_name ?? p?.name;
-          if (n) used.add(String(n));
-        }
-      }
-
-      // b) 地図上に描画済み（現在セッション内）
-      if (this._torokuFC?.features) {
-        for (const f of this._torokuFC.features) {
-          const n = f?.properties?.name ?? f?.properties?.label;
-          if (n) used.add(String(n));
-        }
-      }
-
-      // c) ローカル一時（未送信の csv2Points など）
-      if (Array.isArray(this.csv2Points)) {
-        for (const p of this.csv2Points) {
-          const n = p?.name;
-          if (n) used.add(String(n));
-        }
-      }
-
-      // そのまま空いていれば採用
-      if (!used.has(name)) return name;
-
-      // 末尾が数字なら +1、なければ 1 を付与して空くまでインクリメント
-      const m = name.match(/^(.*?)(\d+)$/);
-      const root = m ? m[1] : name;
-      let n = m ? (parseInt(m[2], 10) + 1) : 1;
-
-      let cand = root + String(n);
-      while (used.has(cand)) { n += 1; cand = root + String(n); }
-      return cand;
-    },
 
 // 汎用ユーティリティ（日時/保存/クランプ/終了処理）
-// 色分け: 較差 <=0.02: success, <=0.05: warning, それ以外: error
-
-    fmtLL(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(5) : v; },
-    fmtXY(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(3) : v; },
-    fmtAcc(v){ const n = Number(v); return Number.isFinite(n) ? n.toFixed(2) : v; },
-    fmtHumanHeight(v) {
-      if (v == null || v === '') return '';
-      const nDirect = Number(v);
-      if (Number.isFinite(nDirect)) return nDirect.toFixed(3);
-      const n = this.parseNumberLike(v);
-      if (n == null) return '';
-      return n.toFixed(3);
-    },
     $_jstLocal() {
       const p = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Tokyo',
@@ -8678,34 +7022,6 @@ export default {
       a.click();
       a.remove();
     },
-    clampInterval(val) {
-      const MIN = 1.0;
-      const MAX = 60;
-      const STEP = 0.1;
-
-      let n = Number(val);
-      if (!Number.isFinite(n)) n = MIN;
-      n = Math.round(n / STEP) * STEP;
-      if (n < MIN) n = MIN;
-      if (n > MAX) n = MAX;
-      n = Number(n.toFixed(3));
-      return n;
-    },
-
-
-
-
-
-
-
-
-    // ここまで
-
-
-
-
-
-
 
     updateLocationAndCoordinates(position) {
       const map = this.$store.state.map01
@@ -8793,15 +7109,9 @@ export default {
       }
       history('現在位置取得',window.location.href)
     },
-
-
-
-
-
-
-
-
-
+    /**
+     * ここまで
+     */
 
     btnPosition() {
       try {
@@ -12266,10 +10576,6 @@ export default {
     } catch (_) {
       this.autoCloseJobPicker = false;
     }
-
-
-    // 既存ジョブをローカルから復元（まだサーバなし）
-    this.loadJobsFromStorage();
 
     // ---- GPSライン描画 用の状態 ----
     this.gpsLineIds = this.gpsLineIds ?? {
