@@ -581,7 +581,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
-      
+
       <v-dialog v-model="s_dialogForVersion" max-width="500px">
         <v-card>
           <v-card-title>
@@ -1031,83 +1031,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-<!--      <v-dialog v-model="printDialog" max-width="500px">-->
-<!--        <v-card>-->
-<!--          <v-card-title>-->
-<!--            印刷設定-->
-<!--          </v-card-title>-->
-<!--          <v-card-text>-->
-<!--            <v-textarea-->
-<!--                v-model="s_printTitleText"-->
-<!--                label="タイトル"-->
-<!--                auto-grow-->
-<!--                rows="3"-->
-<!--                outlined-->
-<!--                @input="configChange('title-text',s_printTitleText)"-->
-<!--            />-->
-<!--            <v-text-field-->
-<!--                v-model="s_textPx"-->
-<!--                label="フォントサイズ"-->
-<!--                type="number"-->
-<!--                variant="outlined"-->
-<!--                min="0"-->
-<!--                max="100"-->
-<!--                @input="configChange('font-size',s_textPx)"-->
-<!--            />-->
-<!--            <v-select-->
-<!--                v-model="s_titleColor"-->
-<!--                :items="titleColors"-->
-<!--                item-title="label"-->
-<!--                item-value="color"-->
-<!--                label="色を選択してください"-->
-<!--                @update:modelValue="configChange('fill-color',s_titleColor)"-->
-<!--            />-->
-<!--            <v-select-->
-<!--                v-model="titleScale"-->
-<!--                :items="titleScales"-->
-<!--                item-title="label"-->
-<!--                item-value="zoom"-->
-<!--                label="縮尺率固定"-->
-<!--                @update:modelValue="setZoom()"-->
-<!--            />-->
-<!--            <v-select-->
-<!--                v-model="s_titleDirection"-->
-<!--                :items="titleDirections"-->
-<!--                item-title="label"-->
-<!--                item-value="direction"-->
-<!--                label="印刷方向を選択してください"-->
-<!--                @update:modelValue="configChange('direction',s_titleDirection)"-->
-<!--            />-->
-<!--          </v-card-text>-->
-<!--          <v-card-actions>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            <v-btn color="blue-darken-1" text @click="printDialog = false">Close</v-btn>-->
-<!--          </v-card-actions>-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
-
-<!--      <v-dialog v-model="s_mapillaryDialog" fullscreen>-->
-<!--        <v-card>-->
-<!--&lt;!&ndash;          <v-card-title style="height: 0">&ndash;&gt;-->
-<!--&lt;!&ndash;            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; margin-top: -10px!important;"><i class="fa-solid fa-xmark hover close-btn"></i></div>&ndash;&gt;-->
-<!--&lt;!&ndash;          </v-card-title>&ndash;&gt;-->
-<!--          <v-card-text style="padding: 0">-->
-<!--            <div class="close-btn-div" @click="s_mapillaryDialog = false" style="z-index: 101!important; color: #0d47a1; position: absolute;top:10px;right:15px;"><i class="fa-solid fa-xmark hover close-btn"></i></div>-->
-<!--            <div class="mapillary-container2" :width="mapillaryWidth" :style="`height: ${mapillarHeight}`"></div>-->
-<!--            <div style="position: absolute;bottom: 10px;left: 10px;z-index: 100">-->
-<!--              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>-->
-<!--            </div>-->
-<!--          </v-card-text>-->
-<!--&lt;!&ndash;          <v-card-actions style="height: 20px!important;">&ndash;&gt;-->
-<!--&lt;!&ndash;            <div style="margin-bottom: 10px;">&ndash;&gt;-->
-<!--&lt;!&ndash;              <span class="attribution-date" style="margin-left: 20px;"></span><span class="attribution-username" style="margin-left: 10px;"></span>&ndash;&gt;-->
-<!--&lt;!&ndash;            </div>&ndash;&gt;-->
-<!--&lt;!&ndash;            <v-spacer></v-spacer>&ndash;&gt;-->
-<!--&lt;!&ndash;            <v-btn color="blue-darken-1" text @click="s_mapillaryDialog = false">Close</v-btn>&ndash;&gt;-->
-<!--&lt;!&ndash;          </v-card-actions>&ndash;&gt;-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
 
       <v-dialog v-model="dialogForImagePng" max-width="500px">
         <v-card>
@@ -1632,13 +1555,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <!--        <v-btn @click="test">test</v-btn>-->
 
-<!--        <div class="test" style="height: 100px; width: 100px;">-->
-<!--          aaaaaa-->
-<!--        </div>-->
-
-
-
-        <!--        <img class='loadingImg' src="https://kenzkenz.xsrv.jp/open-hinata3/img/icons/loading2.gif">-->
         <div v-for="mapName in mapNames" :key="mapName" :id=mapName :style="mapSize[mapName]" v-show="(mapName === 'map01'|| mapName === 'map02' && s_map2Flg)" @click="btnPosition">
           <v-progress-linear  v-if="s_loading && !noProgress" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
           <v-progress-linear  v-if="s_loading2 && !noProgress" style="z-index: 1" indeterminate color="blue"></v-progress-linear>
@@ -1816,7 +1732,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <div id="right-top-div" v-show="mapName === 'map01' && !isIframe">
             <div v-if="!s_isPrint">
               <div v-if="isRightDiv">
-<!--                <div v-if="isRightDiv2">-->
                   <div v-for="btn in buttons0" :key="btn.key" style="margin-bottom:10px;">
                     <MiniTooltip :text="btn.text" :offset-x="0" :offset-y="2">
                       <v-btn
@@ -1837,7 +1752,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         </template>
                       </v-btn>
                     </MiniTooltip>
-<!--                  </div>-->
                 </div>
                 <FanMenu class="fan-menu-0" layout="vertical" :offset-x="fanMenuOffsetX" :column-break-index="10">
                   <template v-slot:center>
@@ -1939,8 +1853,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <dialog-info :mapName=mapName />
           <dialog2 :mapName=mapName />
           <dialogShare v-if="mapName === 'map01'" :mapName=mapName @open-floating="openWindow" />
-<!--          <DialogChibanzuList :mapName=mapName />-->
-<!--          <DialogDrawConfig v-if="mapName === 'map01'" :mapName=mapName />-->
 
         </div>
       </div>
@@ -1992,7 +1904,6 @@ import {
   changes_printMap03,
   compressImageToUnder10MB,
   convertFromEPSG4326,
-  convertGsiTileJson2,
   csvGenerateForUserPng,
   ddSimaUpload,
   dedupeCoords,
@@ -2009,8 +1920,7 @@ import {
   extractFirstFeaturePropertiesAndCheckCRS,
   extractSimaById,
   featureCollectionAdd,
-  fetchGsiTileTest,
-  fetchMapillaryPanosInViewport, fitClickCircleAll,
+  fitClickCircleAll,
   fncPngDl,
   geocode,
   geojsonAddLayer,
@@ -2047,10 +1957,8 @@ import {
   pmtilesGenerate,
   pmtilesGenerateForUser2,
   pngDownload,
-  pngLoad,
   printDirectionChange,
   queryMapillaryByUserDatesViewport,
-  removeAllWhitespace,
   removeThumbnailMarkerByKey,
   sanitizeLongText,
   scaleAndRotateLassoSelected,
@@ -2068,7 +1976,8 @@ import {
   userSimaSet,
   vertexAndMidpoint,
   zahyokei,
-  zipDownloadSimaText
+  zipDownloadSimaText,
+  pngLoad
 } from '@/js/downLoad'
 
 /* ======== GCPワープ改善ユーティリティ ======== */
@@ -2650,14 +2559,6 @@ function xyFromLngLat(lng, lat, epsg) {
   return { x: N, y: E }; // ★ X=北, Y=東 に統一
 }
 
-
-// "A,B" 形式の現在地座標を {x,y} に（必須）
-function xyFromCoordString(s) {
-  const arr = (s || '').split(/[, ]+/).map(toNum).filter(v => v != null);
-  if (arr.length >= 2) return { x: arr[0], y: arr[1] };
-  return null;
-}
-
 import axios from "axios"
 import DialogMenu from '@/components/Dialog-menu'
 import DialogMyroom from '@/components/Dialog-myroom'
@@ -2667,9 +2568,8 @@ import Dialog2 from '@/components/Dialog2'
 import DialogShare from "@/components/Dialog-share"
 import DialogDrawConfig from "@/components/Dialog-draw-config"
 import pyramid, {
-  autoCloseAllPolygons,
   colorNameToRgba, createSquarePolygonAtCenter,
-  deleteAll, featuresDelete, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON,
+  deleteAll,
   geojsonCreate,
   geojsonUpdate, getAllVertexPoints, lavelUpdate, setAllMidpoints,
 } from '@/js/pyramid'
@@ -2680,24 +2580,11 @@ import maplibregl from 'maplibre-gl'
 import { Protocol, PMTiles } from "pmtiles"
 import { useGsiTerrainSource } from 'maplibre-gl-gsi-terrain'
 import {
-  chibanzuSources,
-  cityGeojsonLabelLayer,
-  cityGeojsonLineLayer,
-  cityGeojsonPolygonLayer,
-  cityGeojsonSource, clickCircleLayerEx,
   clickCircleSource,
   extLayer,
   extSource,
-  geotiffLayer,
-  geotiffSource,
-  monoLayers,
-  monoSources,
   osmBrightLayers,
   osmBrightSources,
-  paleLayer,
-  paleSource,
-  publicSources,
-  registerDemColorProtocol, registerDemFloodProtocol,
   vertexSource,
   zenkokuChibanzuAddLayer
 } from "@/js/layers"
@@ -2717,7 +2604,6 @@ import drawMethods, {
   drawConfirm,
   drawRedo,
   drawUndo,
-  finishDrawing,
   pushSnapshotDebounced,
   removeLastVertex
 } from "@/js/draw";
@@ -2726,7 +2612,6 @@ import attachMapRightClickMenu, {
   buildBookmarksMenu,
   buildGoogleMapsSearchUrl,
   buildJosmRemoteUrlByCenter,
-  buildMapillaryUrl,
   buildOsmEditorUrl,
   buildRapidMapillaryUrl,
   buildRapidUrl, buildRoutingMenuORS, buildShortLinksMenu,
@@ -2741,9 +2626,7 @@ import attachMapRightClickMenu, {
   setSvPin,
 } from "@/js/utils/context-menu";
 import {refreshRadiusHighlight} from "@/js/utils/radius-highlight";
-import {registerDemTintProtocol} from "@/js/utils/dem-tint-protocol";
 import Encoding from 'encoding-japanese'
-import jobPicker from "@/components/floatingwindow/JobPicker.vue";
 
 export default {
   name: 'App',
@@ -2839,16 +2722,6 @@ export default {
       '日本測地系16系', '日本測地系17系', '日本測地系18系',
       '日本測地系19系'
     ],
-    // items: [
-    //   'WGS84',
-    //   '公共座標1系', '公共座標2系', '公共座標3系',
-    //   '公共座標4系', '公共座標5系', '公共座標6系',
-    //   '公共座標7系', '公共座標8系', '公共座標9系',
-    //   '公共座標10系', '公共座標11系', '公共座標12系',
-    //   '公共座標13系', '公共座標14系', '公共座標15系',
-    //   '公共座標16系', '公共座標17系', '公共座標18系',
-    //   '公共座標19系','日本測地系1系'
-    // ],
     dialogForDxfApp: false,
     windowWidth: window.innerWidth,
     // transparent: 1,
