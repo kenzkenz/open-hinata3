@@ -22,8 +22,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
               color="primary"
               class="mr-2"
           >
-            <v-btn @click="setLineMode('point')" value="point" size="x-small" class="px-3 text-none">単点</v-btn>
-            <v-btn @click="setLineMode('chain')" value="chain" size="x-small" class="px-3 text-none">結線</v-btn>
+            <v-btn @click="setLineMode('point')" value="point" size="x-small">単点</v-btn>
+            <v-btn @click="setLineMode('chain')" value="chain" size="x-small">結線</v-btn>
           </v-btn-toggle>
 
           <div class="text-subtitle-2">
@@ -50,7 +50,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               color="primary"
-              @click="jobPickerFWOpen"
+              @click="openJobPicker"
               aria-label="Job Picker を開く"
           >
             リスト
@@ -62,7 +62,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+              :disabled="disabledForSokui"
               @click="downloadCsv2"
               aria-label="CSVをダウンロード"
           >
@@ -75,7 +75,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn
               icon
               size="small"
-              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+              :disabled="disabledForSokui"
               @click="exportCsv2Sima"
               aria-label="SIMをダウンロード"
           >
@@ -89,7 +89,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
               icon
               size="small"
               :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
-              :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+              :disabled="disabledForSokui"
               @click="startTorokuHere"
               aria-label="測位地点を新規追加"
           >
@@ -3689,6 +3689,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'disabledForSokui',
       'isContextMenu',
       'userId',
       'myNickname',
@@ -8633,169 +8634,12 @@ export default {
 
 // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
     async downloadCsv2() {
-      try {
-        if (!this.currentJobId) {
-          alert('ジョブが未選択です');
-          return;
-        }
-
-        const fd = new FormData();
-        fd.append('action', 'job_points.list');
-        fd.append('job_id', String(this.currentJobId));
-
-        let res, payload;
-        try {
-          res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-          payload = await res.json();
-        } catch (e) {
-          console.error('[downloadCsv2] fetch失敗', e);
-          alert('サーバーから測位点を取得できませんでした');
-          return;
-        }
-        const list = Array.isArray(payload?.data) ? payload.data : [];
-        if (list.length === 0) {
-          alert('このジョブの測位点はありません');
-          return;
-        }
-
-        // ★ 見出し：最後から2番目 = 測位日時の直前
-        const header = [
-          '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
-          '所在',
-          '測位回数',          // ← 追加（last-2）
-          '測位日時'
-        ];
-
-        const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
-        const fmt3    = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
-        const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
-        const fmtDeg8 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(8) : '');
-        const esc = (v) => {
-          if (v == null) return '';
-          const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-        };
-
-        const rows = [header];
-
-        for (const r of list) {
-          // サーバ側のフィールド名に幅を持たせて取り込む
-          const obsCount =
-              Number(r.observe_count ?? r.obs_count ?? r.sample_count ?? r.n ?? r.count);
-          rows.push([
-            esc(String(r.point_name ?? '')),
-            esc(fmt3(r.x_north)),
-            esc(fmt3(r.y_east)),
-            esc(fmt3(r.h_orthometric)),
-            esc(fmtPole(r.antenna_height)),
-            esc(fmt3(r.h_at_antenna)),
-            esc(fmt3(r.hae_ellipsoidal)),
-            esc(fmt3(r.xy_diff)),
-            esc(String(r.crs_label ?? '')),
-            esc(fmtDeg8(r.lat)),
-            esc(fmtDeg8(r.lng)),
-            esc(String(r.address ?? '')),
-            esc(Number.isFinite(obsCount) ? obsCount : ''), // ← 追加（last-2）
-            esc(String(r.observed_at ?? ''))
-          ]);
-        }
-
-        const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-
-        // ファイル名 = JOB名 + ポイント数（既存仕様）
-        const jobNameRaw = String(this.currentJobName || 'JOB');
-        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-        const pointCount = Array.isArray(list) ? list.length : 0;
-        const fname = `${jobNameSafe}_${pointCount}点.csv`;
-
-        const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fname;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 0);
-      } catch (e) {
-        console.warn('[csv2] download error', e);
-      }
+      this.$refs.jobPicker.downloadCsvForSokui()
     },
 
 // SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
-    async exportCsv2Sima(title) {
-      try {
-        const jobId = this.currentJobId;
-        if (!jobId) { alert('ジョブを選択してください'); return; }
-
-        let rows = Array.isArray(this.pointsForCurrentJob) ? this.pointsForCurrentJob : [];
-        if (!rows.length) {
-          const fd = new FormData();
-          fd.append('action', 'job_points.list');
-          fd.append('job_id', String(jobId));
-          const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
-          const data = await res.json();
-          if (!data?.ok || !Array.isArray(data.data)) { alert('ポイントの取得に失敗しました'); return; }
-          rows = data.data;
-        }
-        if (!rows.length) { alert('このジョブにポイントがありません'); return; }
-
-        const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-        const csLabel  = String(rows[0]?.crs_label
-            ?? this.$store?.state?.s_zahyokei
-            ?? this.$store?.state?.zahyokei
-            ?? '');
-
-        const head = [
-          `G00,01,${siteName} 座標`,
-          `Z00,座標データ,`,
-          `G01,座標系,${csLabel}`,
-          `A00,`
-        ];
-
-        const num  = (v) => (v===''||v==null) ? NaN : Number(v);
-        const fmt3 = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(3) : '';
-
-        let n = 0;
-        const a01 = rows.map(r => {
-          const name = String(r.point_name ?? '');
-          const X = fmt3(r.x_north);
-          const Y = fmt3(r.y_east);
-
-          let Hn = num(r.h_orthometric);
-          if (!Number.isFinite(Hn)) {
-            const hAtAnt = num(r.h_at_antenna);
-            const pole   = num(r.antenna_height);
-            if (Number.isFinite(hAtAnt) && Number.isFinite(pole)) Hn = hAtAnt - pole;
-          }
-          if (!Number.isFinite(Hn)) {
-            const eH = num(this?.externalElevation?.hOrthometric);
-            if (Number.isFinite(eH)) Hn = eH;
-          }
-          const hasH = Number.isFinite(Hn);
-          const H = hasH ? fmt3(Hn) : null;
-
-          if (!name || !X || !Y) return null;
-          n += 1;
-          return hasH
-              ? `A01,${n},${name},${X},${Y},${H},`
-              : `A01,${n},${name},${X},${Y},`;
-        }).filter(Boolean);
-
-        if (!a01.length) { console.warn('[sima] no valid rows'); return; }
-
-        const simTxt   = [...head, ...a01].join('\r\n') + '\r\n';
-        const sjisBytes = this.$_toShiftJisBytes(simTxt);
-        const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
-
-        // ===== ここが変更点：CSVと同じ命名規則 =====
-        const jobNameRaw  = String(this.currentJobName || 'JOB');
-        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-        const pointCount  = a01.length; // 実際に出力したA01件数
-        const fname       = `${jobNameSafe}_${pointCount}点.sim`;
-
-        this.$_downloadBlob(blob, fname);
-      } catch (e) {
-        console.warn('[sima] export error', e);
-        alert('SIMA出力に失敗しました');
-      }
+    async exportCsv2Sima() {
+      this.$refs.jobPicker.downloadSimaForSokui()
     },
 
     /** =========================
@@ -8978,10 +8822,7 @@ export default {
 
     /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
     setLineMode(mode) {
-      if (mode !== 'point' && mode !== 'chain') return;
-      if (this.kansokuPhase === 'observing') return;
-      this.lineMode = mode;
-      this.updateChainLine();
+      this.$refs.jobPicker.setLineMode(mode)
     },
 
 // ジョブ管理（Picker/作成/削除/選択/一覧）
@@ -9493,117 +9334,8 @@ export default {
       this.updateChainLine(); // 結線も消す
     },
 
-    /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
     startTorokuHere () {
-      this.$store.dispatch('hideFloatingWindow', 'job-picker');
-      try { this.detachGpsLineClick(); } catch {}
-      try { this.clearGpsLine(); } catch {}
-      this.gpsLineAnchorLngLat = null;
-      this.enableGpsLineClick  = false;
-      this.distance = null;
-      this.isTracking = false;
-      this.s_isKuiuchi = false;
-
-      try { if (this._torokuDialogTimer) { clearTimeout(this._torokuDialogTimer); this._torokuDialogTimer = null; } } catch {}
-      this._torokuDialogOpened = false;
-
-      if (!(navigator && navigator.geolocation)) {
-        console.warn('[startTorokuHere] geolocation not supported');
-        return;
-      }
-
-      const _this = this;
-      if (typeof _this.rtkWindowMs !== 'number') _this.rtkWindowMs = 1000;
-      if (typeof _this.lastRtkAt   !== 'number') _this.lastRtkAt   = 0;
-
-      const opt = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
-
-      navigator.geolocation.getCurrentPosition(
-          function success (pos) {
-            try {
-              const c   = pos && pos.coords ? pos.coords : {};
-              const lat = (typeof c.latitude  === 'number') ? c.latitude  : null;
-              const lon = (typeof c.longitude === 'number') ? c.longitude : null;
-              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                console.warn('[startTorokuHere] invalid geolocation coords', c);
-                return;
-              }
-
-              const acc    = (typeof c.accuracy === 'number') ? c.accuracy : null;
-              const altAcc = (typeof c.altitudeAccuracy === 'number') ? c.altitudeAccuracy : null;
-
-              const q      = _this.getGeoQualityLabel(acc, altAcc);
-
-              const nowTs = pos.timestamp || Date.now();
-              if (q === 'RTK級') {
-                _this.lastRtkAt = nowTs;
-              } else if (_this.lastRtkAt && (nowTs - _this.lastRtkAt) <= _this.rtkWindowMs) {
-                return;
-              }
-
-              _this.torokuPointLngLat = { lng: lon, lat };
-              _this.upsertCurrentMarker(lon, lat);   // 緑丸
-
-              const meta = { quality: q || 'unknown', at: Date.now(), source: 'navigator' };
-              _this.torokuPointMeta      = meta;
-              _this.torokuPointQuality   = meta.quality;
-              _this.torokuPointQualityAt = meta.at;
-
-              try { _this.$emit?.('toroku-point', { lng: lon, lat }); } catch {}
-              try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat: { lng: lon, lat } } })); } catch {}
-
-              const map =
-                  (_this.$store && _this.$store.state && _this.$store.state.map01)
-                      ? _this.$store.state.map01
-                      : _this.map01;
-
-              const ANIM_MS  = Number.isFinite(Number(_this.torokuAnimMs)) ? Number(_this.torokuAnimMs) : 700;
-              const DELAY_MS = Number.isFinite(Number(_this.torokuDialogDelayMs)) ? Number(_this.torokuDialogDelayMs) : 1000;
-
-              const openDialogOnce = () => {
-                if (_this._torokuDialogOpened) return;
-                _this._torokuDialogOpened = true;
-                _this.kansokuRunning   = false;
-                _this.kansokuRemaining = 0;
-                _this.kansokuCsvRows   = null;
-                _this.dialogForToroku  = true;
-              };
-
-              const armAfterAnim = () => {
-                const fallbackMs = ANIM_MS + DELAY_MS + 300;
-                _this._torokuDialogTimer = setTimeout(openDialogOnce, fallbackMs);
-
-                const onEnd = () => {
-                  try { map.off('moveend', onEnd); } catch {}
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, DELAY_MS);
-                };
-                try { map.on('moveend', onEnd); } catch {}
-              };
-
-              try {
-                if (map && map.easeTo) {
-                  map.easeTo({ center: [lon, lat], duration: ANIM_MS });
-                  _this._torokuDialogOpened = false;
-                  armAfterAnim();
-                } else if (map && map.jumpTo) {
-                  map.jumpTo({ center: [lon, lat] });
-                  _this._torokuDialogOpened = false;
-                  _this._torokuDialogTimer = setTimeout(openDialogOnce, 600);
-                } else {
-                  openDialogOnce();
-                }
-              } catch {
-                openDialogOnce();
-              }
-            } catch (e) {
-              console.warn('[startTorokuHere] success handler error', e);
-            }
-          },
-          function error (err) {
-            console.warn('[startTorokuHere] getCurrentPosition error', err);
-          },
-          opt
-      );
+      this.$refs.jobPicker.startTorokuHere()
     },
 
     /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */

@@ -51,6 +51,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.692,
+    disabledForSokui: true,
     printMap: 'map01',
     isContextMenu: true,
     isKuiuchi: false,

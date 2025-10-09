@@ -34,8 +34,8 @@
         <v-btn
             size="small"
             variant="outlined"
-            :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
-            @click="$emit('request-download-csv')"
+            :disabled="disabledForSokuiCalc"
+            @click="downloadCsvForSokui"
         >
           CSV
         </v-btn>
@@ -43,8 +43,8 @@
         <v-btn
             size="small"
             variant="outlined"
-            :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
-            @click="$emit('request-export-sima')"
+            :disabled="disabledForSokuiCalc"
+            @click="downloadSimaForSokui"
         >
           SIMA
         </v-btn>
@@ -55,7 +55,7 @@
             variant="flat"
             class="font-weight-bold pulse-once"
             :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
-            :disabled="torokuBusy || kansokuRunning || !String(currentJobId || '').trim()"
+            :disabled="disabledForSokuiCalc"
             @click="startTorokuHere"
         >
           &nbsp;測&nbsp;位&nbsp;
@@ -584,7 +584,6 @@ import maplibregl from "maplibre-gl";
 export default {
   name: 'JobPointPanelBody',
   props: {
-    // 状態（親から）
   },
   emits: [
   ],
@@ -743,11 +742,23 @@ export default {
   },
   computed: {
     ...mapState([
+      'disabledForSokui',
       'map01',
       'userId',
       'myNickname',
       'isKuiuchi',
     ]),
+    s_disabledForSokui: {
+      get() {
+        return this.$store.state.disabledForSokui
+      },
+      set(value) {
+        this.$store.state.disabledForSokui = value
+      }
+    },
+    disabledForSokuiCalc() {
+      return this.torokuBusy || this.kansokuRunning || !String(this.currentJobId || '').trim()
+    },
     canCreateJob () {
       return (this.jobName || '').trim().length > 0
     },
@@ -1171,7 +1182,7 @@ export default {
       // ← ボタンは v-if の条件を満たさなくなるので自動で非表示に戻る
     },
 
-// 観測停止：タイマ停止・サマリー確定・フェーズ遷移
+    // 観測停止：タイマ停止・サマリー確定・フェーズ遷移
     kansokuStop() {
       this.kansokuRunning = false;
       this.kansokuRemaining = 0;
@@ -1195,7 +1206,7 @@ export default {
       this.kansokuPhase = this.pendingObservation ? 'await' : 'idle';
     },
 
-// 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了
+    // 保存：commit → 緑丸消去 → 一覧/件数を再取得 → セッション終了
     async onClickSaveObservation() {
       if (this.kansokuTimer) {
         clearInterval(this.kansokuTimer);
@@ -1216,7 +1227,7 @@ export default {
       }
     },
 
-// 破棄：ログ消去・緑丸消去・待機へ戻す（点は保存しない）
+    // 破棄：ログ消去・緑丸消去・待機へ戻す（点は保存しない）
     onClickDiscardObservation() {
       if (this.kansokuTimer) {
         clearInterval(this.kansokuTimer);
@@ -1297,13 +1308,13 @@ export default {
       };
     },
 
-// 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2）
+    // 観測中プレビュー：n件に達したら軽量サマリーを表示（既定 minN=2）
     refreshPendingObservation(minN = 2) {
       const sum = this.summarizeObservationLight?.();
       this.pendingObservation = (sum && sum.n >= minN) ? sum : null;
     },
 
-// 1回の観測CSVヘッダを用意（未初期化時のみ）
+    // 1回の観測CSVヘッダを用意（未初期化時のみ）
     initKansokuCsvIfNeeded() {
       if (!this.kansokuCsvRows) {
         this.kansokuCsvRows = [[
@@ -1312,8 +1323,7 @@ export default {
       }
     },
 
-// 観測開始：入力検証→状態初期化→インターバルで収集開始
-// 観測開始：入力検証→状態初期化→（非並列）連鎖タイマで収集開始
+    // 測位開始
     kansokuStart () {
       this.clearCurrentMarker();   // 残っている緑丸を消す
 
@@ -1373,7 +1383,6 @@ export default {
           }
         }
       };
-
       // 即時1回（＝最初のtick）
       tickOnce();
     },
@@ -1789,96 +1798,80 @@ export default {
       }
     },
 
-// サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
-    async downloadCsv2() {
-      try {
-        if (!this.currentJobId) {
-          alert('ジョブが未選択です');
-          return;
-        }
-
-        const fd = new FormData();
-        fd.append('action', 'job_points.list');
-        fd.append('job_id', String(this.currentJobId));
-
-        let res, payload;
-        try {
-          res = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
-          payload = await res.json();
-        } catch (e) {
-          console.error('[downloadCsv2] fetch失敗', e);
-          alert('サーバーから測位点を取得できませんでした');
-          return;
-        }
-        const list = Array.isArray(payload?.data) ? payload.data : [];
-        if (list.length === 0) {
-          alert('このジョブの測位点はありません');
-          return;
-        }
-
-        // ★ 見出し：最後から2番目 = 測位日時の直前
-        const header = [
-          '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
-          '所在',
-          '測位回数',          // ← 追加（last-2）
-          '測位日時'
-        ];
-
-        const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
-        const fmt3    = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
-        const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
-        const fmtDeg8 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(8) : '');
-        const esc = (v) => {
-          if (v == null) return '';
-          const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-          return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-        };
-
-        const rows = [header];
-
-        for (const r of list) {
-          // サーバ側のフィールド名に幅を持たせて取り込む
-          const obsCount =
-              Number(r.observe_count ?? r.obs_count ?? r.sample_count ?? r.n ?? r.count);
-          rows.push([
-            esc(String(r.point_name ?? '')),
-            esc(fmt3(r.x_north)),
-            esc(fmt3(r.y_east)),
-            esc(fmt3(r.h_orthometric)),
-            esc(fmtPole(r.antenna_height)),
-            esc(fmt3(r.h_at_antenna)),
-            esc(fmt3(r.hae_ellipsoidal)),
-            esc(fmt3(r.xy_diff)),
-            esc(String(r.crs_label ?? '')),
-            esc(fmtDeg8(r.lat)),
-            esc(fmtDeg8(r.lng)),
-            esc(String(r.address ?? '')),
-            esc(Number.isFinite(obsCount) ? obsCount : ''), // ← 追加（last-2）
-            esc(String(r.observed_at ?? ''))
-          ]);
-        }
-
-        const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
-
-        // ファイル名 = JOB名 + ポイント数（既存仕様）
-        const jobNameRaw = String(this.currentJobName || 'JOB');
-        const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-        const pointCount = Array.isArray(list) ? list.length : 0;
-        const fname = `${jobNameSafe}_${pointCount}点.csv`;
-
-        const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fname;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 0);
-      } catch (e) {
-        console.warn('[csv2] download error', e);
+    // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
+    async downloadCsvForSokui() {
+      if (!this.currentJobId) {
+        alert('ジョブが未選択です');
+        return;
       }
+
+      const fd = new FormData();
+      fd.append('action', 'job_points.list');
+      fd.append('job_id', String(this.currentJobId));
+      const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
+      const data = await res.json();
+
+      const list = Array.isArray(data.data) ? data.data : [];
+      if (list.length === 0) {
+        alert('このジョブの測位点はありません');
+        return;
+      }
+
+      // ★ 見出し：最後から2番目 = 測位日時の直前
+      const header = [
+        '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
+        '所在','測位回数','測位日時'
+      ];
+
+      const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
+      const fmt3    = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
+      const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
+      const fmtDeg8 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(8) : '');
+      const esc = (v) => {
+        if (v == null) return '';
+        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+      };
+
+      const rows = [header];
+
+      for (const r of list) {
+        rows.push([
+          esc(String(r.point_name ?? '')),
+          esc(fmt3(r.x_north)),
+          esc(fmt3(r.y_east)),
+          esc(fmt3(r.h_orthometric)),
+          esc(fmtPole(r.antenna_height)),
+          esc(fmt3(r.h_at_antenna)),
+          esc(fmt3(r.hae_ellipsoidal)),
+          esc(fmt3(r.xy_diff)),
+          esc(String(r.crs_label ?? '')),
+          esc(fmtDeg8(r.lat)),
+          esc(fmtDeg8(r.lng)),
+          esc(String(r.address ?? '')),
+          esc(Number(r.observe_count)),
+          esc(String(r.observed_at ?? ''))
+        ]);
+      }
+
+      const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
+
+      // ファイル名 = JOB名 + ポイント数（既存仕様）
+      const jobNameRaw = String(this.currentJobName || 'JOB');
+      const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
+      const pointCount = Array.isArray(list) ? list.length : 0;
+      const fname = `${jobNameSafe}_${pointCount}点.csv`;
+
+      const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 0);
     },
 
-// SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
-    async exportCsv2Sima(title) {
+    // SIMA 出力（A01点列のみ。ラインは規格外のため非対応）
+    async downloadSimaForSokui() {
       try {
         const jobId = this.currentJobId;
         if (!jobId) { alert('ジョブを選択してください'); return; }
@@ -1888,23 +1881,17 @@ export default {
           const fd = new FormData();
           fd.append('action', 'job_points.list');
           fd.append('job_id', String(jobId));
-          const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method:'POST', body: fd });
+          const res  = await fetch(this.apiForJobPicker, { method:'POST', body: fd });
           const data = await res.json();
           if (!data?.ok || !Array.isArray(data.data)) { alert('ポイントの取得に失敗しました'); return; }
           rows = data.data;
         }
         if (!rows.length) { alert('このジョブにポイントがありません'); return; }
 
-        const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-        const csLabel  = String(rows[0]?.crs_label
-            ?? this.$store?.state?.s_zahyokei
-            ?? this.$store?.state?.zahyokei
-            ?? '');
-
         const head = [
-          `G00,01,${siteName} 座標`,
+          `G00,01,OH3出力座標`,
           `Z00,座標データ,`,
-          `G01,座標系,${csLabel}`,
+          `G01,座標系,${rows[0].crs_label}`,
           `A00,`
         ];
 
@@ -2333,8 +2320,8 @@ export default {
         if (options.fit) {
           map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
         } else {
-          const last = this.pointsForCurrentJob.at(-1);
-          map.setCenter([last.lng, last.lat]);
+          const first = this.pointsForCurrentJob[0]
+          map.setCenter([first.lng, first.lat]);
         }
       }
       this.updateChainLine();
@@ -2510,7 +2497,7 @@ export default {
       this.updateChainLine(); // 結線も消す
     },
 
-    /** 左下ボタン「測位」：現在地を取得→緑丸→ダイアログ（アニメ後） */
+    /**  */
     startTorokuHere () {
       this.$store.dispatch('hideFloatingWindow', 'job-picker');
       this.detachGpsLineClick();
@@ -3592,7 +3579,6 @@ export default {
         this.centerMarker = new maplibregl.Marker({ color: 'green' })
             .setLngLat([longitude, latitude])
             .addTo(map);
-        // alert(888)
         this.currentLngLat = [longitude, latitude];
       } else {
         this.centerMarker.setLngLat([longitude, latitude]);
@@ -3643,8 +3629,17 @@ export default {
       }
       history('現在位置取得',window.location.href)
     },
-
-  }
+  },
+  watch: {
+    // 計算値が変わったら、親へ v-model で反映
+    disabledForSokuiCalc: {
+      handler (v) {
+        this.s_disabledForSokui = v
+      },
+      immediate: true,
+      flush: 'post',      // ← DOM 更新後に通知（チラつき抑制）
+    }
+  },
 }
 </script>
 
