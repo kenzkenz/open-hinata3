@@ -277,7 +277,7 @@
         <v-card-text class="pt-4">
           <v-text-field
               v-model.trim="pointEditDialog.name"
-              label="ポイント名"
+              label="点名"
               variant="outlined"
               hide-details="auto"
               autofocus
