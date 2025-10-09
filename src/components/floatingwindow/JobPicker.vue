@@ -3745,9 +3745,6 @@ export default {
 
 /* 狭い画面では 1 列にフォールバック */
 @media (max-width: 640px) {
-  .oh3-grid-3col {
-    grid-template-columns: 1fr;
-  }
   .oh3-grid-4col {
     grid-template-columns: 1fr;
   }

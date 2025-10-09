@@ -2875,119 +2875,6 @@ export default {
 
     confirmClearLog: false,
 
-    onMapClickForToroku: null,
-    enableTorokuPointClick: false,
-
-    dialogForToroku: false,
-
-    kansokuItems: [1, 10, 20, 50, 100, 1000, 86400],
-    kansokuCount: 10, // 既定値
-    // 追加: 0〜100cm のセレクト
-    offsetCm: 0,
-    // offsetCmItems: Array.from({ length: 101 }, (_, i) => ({ title: `${i}cm`, value: i })),
-
-    rtkPng: null,
-
-    kansokuRunning: false,
-    kansokuRemaining: 0,
-    kansokuTimer: null,
-    kansokuCsvRows: null, // [['timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType'], ...]
-
-    torokuPointLngLat: null,
-
-    // 測位点メタを保持
-    torokuPointQuality: null, // 'RTK級' など
-    torokuPointQualityAt: null, // 記録時刻（ms）
-
-    tenmei: '',        // 入力値
-    tenmeiError: '',   // エラーメッセージ表示用
-
-    currentPointName: '',
-
-    externalElevation: null, // { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN: number|null }
-
-    torokuAnimMs: 700,        // センタリングのアニメ時間(ms)
-    torokuDialogDelayMs: 0, // moveend後に待つ時間(ms)
-
-    sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
-
-    torokuDisabled: false,   // ★ ダイアログCloseで復帰
-
-    isJobMenu: false,     // ← 左下メニューの表示制御（isなんとか）
-    torokuBusy: false,    // ←（多重測位防止）
-
-    jobPickerOpen: false,    // Job Picker の v-model
-    jobPickerBusy: false,    // ← 先頭アンダースコア禁止版（多重オープン防止）
-
-    jobList: [],              // 既存ジョブ（最小構成）
-    jobName: '',              // 新規用
-    jobNameError: '',         // バリデーション表示
-
-    // 現在選択中（UIで使う想定）
-    currentJobId: null,
-    currentJobName: '',
-
-    useServerOnly: true,
-
-    pointsForCurrentJob: [],   // ← 新設：現在選択中ジョブのポイント一覧
-
-    showAllJobs: false, // ←追加：基本はfalse = 選択中のみ表示
-
-    pendingObservation: null, // 観測停止後のプレビュー用 { n, Xavg, Yavg, diff }
-
-    kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
-
-    // 単点/結線の唯一のソース。'point' か 'chain'
-    lineMode: localStorage.getItem('oh3_line_mode') || 'point',
-
-    DONT_SHOW_KEY: 'oh3.hideJobTips',
-
-    editingJobName: false,
-    hoverJobName: false,
-    tempJobName: '',
-    jobNameDebounceTimer: null,
-
-    contextMenuObject: {},
-
-    detachForContextMenu: null,
-
-    kansokuInFlight: false,  // 1tick内の重複実行を防ぐ
-
-    editingPointId: null,
-    tempPointName: '',
-    hoverPointId: null,
-    pointRenameInFlight: false,
-
-    showJobListOnly: true, // 起動時は一覧。ジョブ選択時に false（ポイント全高）にする
-
-    snapLngLat: null,
-    currentLngLat: null,
-
-    suppressUntil: 0, // タッチ操作終了から20秒は抑止
-
-    autoCloseJobPicker: false,
-
-    jobEditDialog: {
-      open: false,
-      jobId: '',
-      origName: '',
-      origNote: '',
-      name: '',
-      note: '',
-      saving: false,
-    },
-    pointEditDialog: {
-      open: false,
-      pointId: '',
-      origName: '',
-      origAddress: '',
-      name: '',
-      address: '',
-      saving: false,
-    },
-
-    apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
-
     aaa: null,
   }),
   computed: {
@@ -11639,16 +11526,6 @@ html.oh3-embed #map01 {
   0% { box-shadow: 0 0 0 0 rgba(33,150,243,0.45); }
   70% { box-shadow: 0 0 0 12px rgba(33,150,243,0); }
   100% { box-shadow: 0 0 0 0 rgba(33,150,243,0); }
-}
-
-
-/* 微調整（読みやすさ向上） */
-.tracking-wider { letter-spacing: .03em; }
-
-.oh-toolbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px; background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-bottom:1px solid rgba(0,0,0,0.08); min-height:40px; }
-
-.job-title__note{
-
 }
 
 </style>
