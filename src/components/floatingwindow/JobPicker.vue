@@ -742,6 +742,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'isAndroid',
       'disabledForSokui',
       'map01',
       'userId',
@@ -3629,6 +3630,18 @@ export default {
       }
       history('現在位置取得',window.location.href)
     },
+  },
+  mounted() {
+    if (this.isAndroid) {
+      const stopOnMenu = (e) => {
+        const content = e.target.closest('.v-overlay__content.scrollable-menu');
+        if (content) e.stopPropagation();   // ← スクロールはネイティブに任せる
+      };
+      // 伝播を止めるには capture: true で早期にフック
+      window.addEventListener('touchstart', stopOnMenu, { capture: true, passive: true });
+      window.addEventListener('touchmove',  stopOnMenu, { capture: true, passive: true });
+      window.addEventListener('touchend',   stopOnMenu, { capture: true, passive: true });
+    }
   },
   watch: {
     // 計算値が変わったら、親へ v-model で反映

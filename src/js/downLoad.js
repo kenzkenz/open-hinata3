@@ -4579,11 +4579,6 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
         store.state.loading2 = true;
         // FormDataを作成
 
-
-
-// alert(transparent)
-//         console.log(transparent)
-
         const formData = new FormData();
         formData.append("file", filePath);
         formData.append("srs", srsCode);
@@ -4596,9 +4591,9 @@ export async function tileGenerateForUser(imageExtension, worldFileExtension, is
         formData.append("blackLuma",  '24');                     // 0..255, 黒域を抜く閾値
         formData.append("whiteLuma",  '235');                    // 0..255, 白域を抜く閾値
 
-// 片側だけ抜きたい時：無効側は -1
-// 例) 黒だけ → blackLuma='24', whiteLuma='-1'
-//     白だけ → blackLuma='-1', whiteLuma='235'
+        // 片側だけ抜きたい時：無効側は -1
+        // 例) 黒だけ → blackLuma='24', whiteLuma='-1'
+        //     白だけ → blackLuma='-1', whiteLuma='235'
 
         try {
             let phpUrl = ''
