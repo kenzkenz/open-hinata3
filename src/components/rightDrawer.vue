@@ -88,9 +88,9 @@
           </div>
         </div>
 
-        <v-btn v-if="s_rightDrawerTitle === '2025登記所地図'" style="width: 100%; margin-top: 20px;" @click="openDialog">
-          オンライン申請用ZIPを作成（検証中）
-        </v-btn>
+<!--        <v-btn v-if="s_rightDrawerTitle === '2025登記所地図'" style="width: 100%; margin-top: 20px;" @click="openDialog">-->
+<!--          オンライン申請用ZIPを作成（検証中）-->
+<!--        </v-btn>-->
 
 <!--        <v-btn v-if="s_rightDrawerTitle === '2025登記所地図'" style="width: 100%; margin-top: 20px;" @click="openToki">-->
 <!--          地番をコピーして登記情報提供サービスを開く-->

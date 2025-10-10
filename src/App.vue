@@ -2875,6 +2875,8 @@ export default {
 
     confirmClearLog: false,
 
+    isJobMenu: false,
+
     aaa: null,
   }),
   computed: {
@@ -6181,6 +6183,7 @@ export default {
     /** ジョブ終了処理（クリーンアップ含む） */
     onJobEndClick(isCleanup) {
       this.$refs.jobPicker.onJobEndClick()
+      this.isJobMenu = false
       if (isCleanup) {
         this.jobPickerOpen = false;
         this.isJobMenu = false;
