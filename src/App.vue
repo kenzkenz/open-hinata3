@@ -2877,6 +2877,8 @@ export default {
 
     isJobMenu: false,
 
+    lineMode: false,
+
     aaa: null,
   }),
   computed: {
@@ -6098,57 +6100,12 @@ export default {
       }
     },
 
-    /** ライン（結線モード時のみ）を再描画。点が 2 未満 or 単点モードなら削除 */
-    updateChainLine() {
-      try {
-        const map = (this.$store?.state?.map01) || this.map01;
-        if (!map) return;
-
-        const SRC = 'oh-chain-src';
-        const LYR = 'oh-chain-layer';
-
-        // 単点 or 点2未満 → ライン削除
-        const coords = (this.lineMode === 'chain') ? this.buildChainCoordinates() : [];
-        if (!coords || coords.length < 2) {
-          try { if (map.getLayer(LYR)) map.removeLayer(LYR); } catch {}
-          try { if (map.getSource(SRC)) map.removeSource(SRC); } catch {}
-          return;
-        }
-
-        const line = {
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: coords },
-          properties: {}
-        };
-
-        if (map.getSource(SRC)) {
-          map.getSource(SRC).setData(line);
-        } else {
-          map.addSource(SRC, { type: 'geojson', data: line });
-        }
-        if (!map.getLayer(LYR)) {
-          map.addLayer({
-            id: LYR,
-            type: 'line',
-            source: SRC,
-            paint: {
-              'line-width': 3,
-              'line-color': '#1e88e5'
-            }
-          });
-          try { map.moveLayer(LYR); } catch {}
-        }
-      } catch (e) {
-        console.warn('[chain] updateChainLine failed', e);
-      }
-    },
-
     /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
     setLineMode(mode) {
       this.$refs.jobPicker.setLineMode(mode)
     },
 
-// ジョブ管理（Picker/作成/削除/選択/一覧）
+    // ジョブ管理（Picker/作成/削除/選択/一覧）
     /** ジョブピッカーを開き、サーバ一覧を最新化 */
     async openJobPicker() {
       this.isKuiuchi = false
@@ -6160,7 +6117,7 @@ export default {
       this.$refs.jobPicker.openJobPicker()
     },
 
-// 測位点（赤丸）: 設置/クリック/レイヤ管理
+    // 測位点（赤丸）: 設置/クリック/レイヤ管理
     /** マップ中央のゾーンから座標系ラベルを推定し store に反映 */
     zahyoGet() {
       const map = this.map01
@@ -7120,30 +7077,142 @@ export default {
         this.$store.state.dialogs.layerDialog[mapName].style.display = 'none'
       }
     },
+    // 非表示化（極小化）
+    hideMap02Min () {
+      const c = document.getElementById('map02')
+      if (!c) return
+      // まず負荷軽減（Optional）
+      try { this.map02?.setTerrain?.(null) } catch(_) {}
+      try { this.map02?.setPitch?.(0) } catch(_) {}
+
+      // 極小化 + 反応停止（※ display:none は使わない）
+      c.style.width = '1px'
+      c.style.height = '1px'
+      c.style.pointerEvents = 'none'
+      c.style.visibility = 'hidden'
+
+      // 極小サイズに合わせる
+      try { this.map02?.resize() } catch(_) {}
+    },
+
+    // 再表示（黒対策の順序）
+    showMap02Safe () {
+      const c = document.getElementById('map02')
+      if (!c) return
+
+      // 1) まず実サイズに戻す（あなたの既存バインドを優先）
+      c.style.width = ''
+      c.style.height = ''
+      c.style.visibility = ''         // ← layoutに乗る
+      c.style.pointerEvents = ''      // ← 先に解凍
+
+      // 2) レイアウトが確定するまで2フレ待ってから resize
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try { this.map02?.resize() } catch(_) {}
+
+          // 3) それでも黒なら “軽いキック” を入れる
+          try {
+            const z = this.map02.getZoom()
+            this.map02.setZoom(z + 1e-6) // ほぼ同値ズームで再描画を強制
+          } catch(_) {}
+
+          // 4) まだ黒なら最後の保険：スタイル再適用（重いが確実）
+          this.$nextTick(() => {
+            if (!this.map02 || this._map02Awake) return
+            this._map02Awake = true
+            setTimeout(() => { this._map02Awake = false }, 500)
+
+            // 直近500ms以内に1度だけ試す
+            try {
+              const st = this.map02.getStyle()
+              this.map02.setStyle(st) // 非同期で再ロード
+            } catch(_) {}
+          })
+        })
+      })
+    },
+
+    // ボタントグルに組み込み
     btnClickSplit () {
       if (this.s_map2Flg) {
-        this.mapSize.map01.width = '100%'
-        this.mapSize.map01.height = '100%'
+        // 1画面へ：極小化
         this.s_map2Flg = false
-      } else {
-        if (window.innerWidth > 1000) {
-          document.querySelector('.terrain-btn-div').style.left = ''
-          document.querySelector('.terrain-btn-div').style.right = '10px'
-          this.mapSize.map01.width = '50%'
-          this.mapSize.map01.height = '100%'
-        } else {
-          this.mapSize.map01.width = '100%'
-          this.mapSize.map01.height = '50%'
-          this.mapSize.map02.width = '100%'
-          this.mapSize.map02.height = '50%'
-          this.mapSize.map02.top = '50%'
-        }
-        this.s_map2Flg = true
-        if (popups.length > 0) {
-          closeAllPopups()
-        }
+        this.mapSize.map01.width  = '100%'
+        this.mapSize.map01.height = '100%'
+        this.hideMap02Min()
+        return
       }
+
+      // 2画面へ：サイズ先に決める（既存ロジック）
+      if (window.innerWidth > 1000) {
+        this.mapSize.map01.width  = '50%'
+        this.mapSize.map01.height = '100%'
+      } else {
+        this.mapSize.map01.width  = '100%'
+        this.mapSize.map01.height = '50%'
+        this.mapSize.map02.width  = '100%'
+        this.mapSize.map02.height = '50%'
+        this.mapSize.map02.top    = '50%'
+      }
+      this.s_map2Flg = true
+
+      this.$nextTick(() => {
+        // map02をまだ作ってないなら一度だけ初期化
+        if (!this.map02) {
+          this.map02 = new maplibregl.Map({
+            container: 'map02',
+            style: this.map01.getStyle(),
+            center: this.map01.getCenter(),
+            zoom: this.map01.getZoom(),
+            pitch: 0,
+            bearing: this.map01.getBearing(),
+            antialias: false,
+            preserveDrawingBuffer: false,
+          })
+
+          // iOSのWebGL喪失対応
+          const canvas = this.map02.getCanvas?.()
+          if (canvas) {
+            canvas.addEventListener('webglcontextlost', (e) => {
+              e.preventDefault()
+              this._map02CtxLost = true
+            })
+            canvas.addEventListener('webglcontextrestored', () => {
+              try { this.map02.setStyle(this.map02.getStyle()) } catch(_) {}
+              this._map02CtxLost = false
+            })
+          }
+        }
+
+        this.showMap02Safe()
+        if (typeof closeAllPopups === 'function') closeAllPopups()
+      })
     },
+    // btnClickSplit () {
+    //   if (this.s_map2Flg) {
+    //     this.mapSize.map01.width = '100%'
+    //     this.mapSize.map01.height = '100%'
+    //     this.s_map2Flg = false
+    //   } else {
+    //     if (window.innerWidth > 1000) {
+    //       document.querySelector('.terrain-btn-div').style.left = ''
+    //       document.querySelector('.terrain-btn-div').style.right = '10px'
+    //       this.mapSize.map01.width = '50%'
+    //       this.mapSize.map01.height = '100%'
+    //     } else {
+    //       this.mapSize.map01.width = '100%'
+    //       this.mapSize.map01.height = '50%'
+    //       this.mapSize.map02.width = '100%'
+    //       this.mapSize.map02.height = '50%'
+    //       this.mapSize.map02.top = '50%'
+    //     }
+    //     this.s_map2Flg = true
+    //     if (popups.length > 0) {
+    //       closeAllPopups()
+    //     }
+    //   }
+    // },
     // パーマリンク作成
     updatePermalink() {
       if (this.$store.state.isOffline) {
