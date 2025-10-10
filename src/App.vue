@@ -334,22 +334,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn @click="mapillaryFilterOpen">フィルタ</v-btn>
         </div>
       </FloatingWindow>
-      <!-- EXドロー -->
-      <FloatingWindow
-          windowId="exdraw"
-          :title="`EXドロー`"
-          type="normal"
-          :default-top="20"
-          :default-right="150"
-          :default-width="400"
-          :default-height="400"
-          :keepAspectRatio="false"
-      >
-        <ExDraw
-            :id="Number(s_pmtiles0Id)"
-            @update:paint="onPaintUpdate"
-        />
-      </FloatingWindow>
+
       <!-- ペイントエディター -->
       <FloatingWindow
           windowId="painteditor"
@@ -1693,7 +1678,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
               <MiniTooltip text="測位" :offset-x="4" :offset-y="-2">
                 <v-speed-dial
                     location="top center"
-                    transition="scale-transition"
                 >
                   <template v-slot:activator="{ props: activatorProps }">
                     <v-fab
@@ -2593,7 +2577,6 @@ import debounce from 'lodash/debounce'
 import * as math from 'mathjs'
 import FloatingWindow from '@/components/floatingwindow/FloatingWindow';
 import PaintEditor from '@/components/floatingwindow/PaintEditor'
-import ExDraw from '@/components/floatingwindow/ExDraw'
 import VDialogIframe from "@/components/V-dialog/V-dialog-Iframe";
 import drawMethods, {
   drawCancel,
@@ -2642,7 +2625,6 @@ export default {
     MiniTooltip,
     FloatingWindow,
     PaintEditor,
-    ExDraw,
     VDialogIframe,
     MessageDialog,
     MapillaryFilter,
@@ -3163,7 +3145,6 @@ export default {
         // { key: 'fix', text: '画面固定', label: '固定', color: this.s_isDrawFix ? 'green' : 'blue', click: this.toggleDrawFix },
         { key: 'config', text: '各種設定', label: '設定', color: 'blue', click: this.drawConfig },
         { key: 'dl', text: '各種ダウンロード', label: 'DL', style: 'background-color: navy!important;', click: this.dialogForDlOpen },
-        // { key: 'ex', text: 'ex', label: 'ex', style: 'background-color: navy!important;', click: this.exDrawOpen },
         { key: 'delete', text: '全削除', icon: 'mdi-delete', color: 'error', click: this.deleteAllforDraw },
 
         { key: 'close', text: '閉じる', color: 'green', icon: 'mdi-close',  click: this.drawClose }
@@ -4202,9 +4183,6 @@ export default {
     },
     mapillaryClose() {
       mapillaryFilterRiset()
-    },
-    exDrawOpen() {
-      this.$store.dispatch('showFloatingWindow', 'exdraw');
     },
     drawListOpen() {
       if (this.showDrawListDrawer) {
@@ -6152,83 +6130,6 @@ export default {
      * 追跡関連（現在地追跡・距離線・ログ出力）
      * ========================= */
 
-    // 外部標高（ドロガー）受信
-    /** 外部標高の正規化セット */
-    setExternalElevation(payload) {
-      const norm = this.extractElevationFrom(payload);
-      if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
-      this.externalElevation = norm;
-      try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
-    },
-
-    /** window.dispatchEvent('oh3:elevation', { ... }) を購読 */
-    bindExternalElevationListener() {
-      const handler = (ev) => {
-        const d = ev?.detail || {};
-        this.setExternalElevation(d);
-      };
-      if (this._elevHandler) window.removeEventListener('oh3:elevation', this._elevHandler);
-      window.addEventListener('oh3:elevation', handler);
-      this._elevHandler = handler;
-    },
-
-    bindElevationPostMessage() {
-      const onMsg = (ev) => {
-        const d = ev?.data || {};
-        if (d && d.type === 'oh3:elevation') return this.setExternalElevation(d);
-        if (d && (d.lat != null || d.longitude != null)) {
-          const maybe = this.extractElevationFrom(d);
-          if (maybe) this.setExternalElevation(maybe);
-        }
-      };
-      if (this._elevPM) window.removeEventListener('message', this._elevPM);
-      window.addEventListener('message', onMsg);
-      this._elevPM = onMsg;
-    },
-
-    /** 外部データから標高を抽出・正規化 */
-    extractElevationFrom(payload) {
-      if (!payload || typeof payload !== 'object') return null;
-
-      const pick = (...names) => {
-        for (const k of names) {
-          for (const key of Object.keys(payload)) {
-            if (key.toLowerCase() === k.toLowerCase()) return payload[key];
-          }
-        }
-        return undefined;
-      };
-
-      let hOrtho = pick('hOrthometric','orthometricHeight','orthometric','h_msl','msl','elevation','height','altMSL','z','H','h');
-      let hEll  = pick('hEllipsoidal','ellipsoidalHeight','ellipsoidal','hae','alt','altitude','altEllipsoid');
-      let geoidN = pick('geoidN','N','geoid','geoidSeparation','geoidSep');
-
-      const toNum = (v) => {
-        if (v == null) return NaN;
-        if (typeof v === 'number') return v;
-        if (typeof v === 'string') {
-          const s = v.replace(',', '.').trim();
-          const n = Number(s);
-          return Number.isFinite(n) ? n : NaN;
-        }
-        return NaN;
-      };
-      const nOrtho = toNum(hOrtho);
-      const nEll   = toNum(hEll);
-      const nN     = toNum(geoidN);
-
-      if (Number.isFinite(nOrtho)) {
-        return { hType: 'orthometric', hMeters: nOrtho, geoidN: Number.isFinite(nN) ? nN : null, hOrthometric: nOrtho };
-      }
-
-      if (Number.isFinite(nEll) && Number.isFinite(nN)) {
-        const h = nEll - nN;
-        return { hType: 'ellipsoidal', hMeters: nEll, geoidN: nN, hOrthometric: h };
-      }
-
-      return null;
-    },
-
     // 現在地追跡（watchPosition）・距離線 UI
     /**
      * ポーリング版
@@ -8101,28 +8002,28 @@ export default {
           m = 'moveend'
         }
         mapA.on(m, () => {
-          // throttle(() => {
           if (!syncing) {
-            syncing = true
-            mapB.setCenter(mapA.getCenter())
-            mapB.setZoom(mapA.getZoom())
-            mapB.setBearing(mapA.getBearing())
-            if (vm.$store.state.isPitch) mapB.setPitch(mapA.getPitch())
-            syncing = false
+            if (vm.s_map2Flg) {
+              syncing = true
+              mapB.setCenter(mapA.getCenter())
+              mapB.setZoom(mapA.getZoom())
+              mapB.setBearing(mapA.getBearing())
+              if (vm.$store.state.isPitch) mapB.setPitch(mapA.getPitch())
+              syncing = false
+            }
           }
-          // }, 100); // 100msの間隔で発火
         })
         mapB.on(m, () => {
-          // throttle(() => {
           if (!syncing) {
-            syncing = true
-            mapA.setCenter(mapB.getCenter())
-            mapA.setZoom(mapB.getZoom())
-            mapA.setBearing(mapB.getBearing())
-            if (vm.$store.state.isPitch) mapA.setPitch(mapB.getPitch())
-            syncing = false
+            if (vm.s_map2Flg) {
+              syncing = true
+              mapA.setCenter(mapB.getCenter())
+              mapA.setZoom(mapB.getZoom())
+              mapA.setBearing(mapB.getBearing())
+              if (vm.$store.state.isPitch) mapA.setPitch(mapB.getPitch())
+              syncing = false
+            }
           }
-          // }, 100); // 100msの間隔で発火
         })
       }
       syncMaps(this.$store.state.map01, this.$store.state.map02)
@@ -10430,11 +10331,7 @@ export default {
     } catch (_) {
       this.csv2Points = [];
     }
-
-     this.bindExternalElevationListener()
-
-     this.bindElevationPostMessage()
-
+    
     // fire-and-forget（初回計算前にWasmを温める）
     ensureGeoid().catch(e => console.warn('[geoid] init failed', e));
 
@@ -12628,19 +12525,18 @@ select {
 }
 
 /* 初期状態：少し下＋小さく＋透明 */
+/*
 .oh-sd .fab-actions > .v-btn {
   opacity: 0;
   transform: translateY(8px) scale(0.96);
   transition: opacity .18s ease, transform .22s ease;
 }
 
-/* 開いたとき（Vuetifyが付与するクラス） */
 .oh-sd.v-speed-dial--active .fab-actions > .v-btn {
   opacity: 1;
   transform: none;
 }
 
-/* 段階的に出す（stagger） */
 .oh-sd .fab-actions > .v-btn:nth-child(1) { transition-delay: .03s; }
 .oh-sd .fab-actions > .v-btn:nth-child(2) { transition-delay: .08s; }
 .oh-sd .fab-actions > .v-btn:nth-child(3) { transition-delay: .13s; }
@@ -12648,6 +12544,7 @@ select {
 @keyframes oh-blink {
   50% { filter: brightness(1.25); }
 }
+*/
 
 @media (prefers-reduced-motion: reduce) {
   .point-info-drawer .v-navigation-drawer{ transition: none !important; }
