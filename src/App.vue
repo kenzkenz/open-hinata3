@@ -2366,27 +2366,6 @@ export async function fetchElevation(lon, lat, zoom = 15) {
   }
 }
 
-function computeAffineMatrix(from, to) {
-  const A = math.matrix([
-    [from[0][0], from[0][1], 1],
-    [from[1][0], from[1][1], 1],
-    [from[2][0], from[2][1], 1]
-  ]);
-  const Bx = math.matrix([to[0][0], to[1][0], to[2][0]]);
-  const By = math.matrix([to[0][1], to[1][1], to[2][1]]);
-  const Ainv = math.inv(A);
-  const coeffX = math.multiply(Ainv, Bx);
-  const coeffY = math.multiply(Ainv, By);
-  return {
-    a: coeffX.get([0]),
-    b: coeffX.get([1]),
-    c: coeffX.get([2]),
-    d: coeffY.get([0]),
-    e: coeffY.get([1]),
-    f: coeffY.get([2])
-  };
-}
-
 function ensureOpenCvReady(callback) {
   if (window.cv && window.cv.imread) {
     callback();
@@ -2394,51 +2373,6 @@ function ensureOpenCvReady(callback) {
     setTimeout(() => ensureOpenCvReady(callback), 100);
   }
 }
-
-function autoCompleteGcpToRectangle(gcpList) {
-  if (gcpList.length !== 2) return gcpList;
-
-  const [gcp1, gcp2] = gcpList;
-  const [x1, y1] = gcp1.imageCoord;
-  const [x2, y2] = gcp2.imageCoord;
-  const [mx1, my1] = gcp1.mapCoord;
-  const [mx2, my2] = gcp2.mapCoord;
-
-  return [
-    gcp1, // A: 左上
-    gcp2, // C: 右下
-    {     // B: 右上
-      imageCoord: [x2, y1],
-      mapCoord: [mx2, my1]
-    },
-    {     // D: 左下
-      imageCoord: [x1, y2],
-      mapCoord: [mx1, my2]
-    }
-  ];
-}
-
-function convertLngLatToImageXY(lngLat, map, imageElement) {
-  const { lng, lat } = { lng: lngLat[0], lat: lngLat[1] };
-  const projected = map.project([lng, lat], map.getZoom());
-  const bounds = map.getBounds();
-  const topLeft = map.project([bounds.getWest(), bounds.getNorth()], map.getZoom());
-  const bottomRight = map.project([bounds.getEast(), bounds.getSouth()], map.getZoom());
-
-  const scaleX = imageElement.clientWidth / (bottomRight.x - topLeft.x);
-  const scaleY = imageElement.clientHeight / (bottomRight.y - topLeft.y);
-
-  const x = (projected.x - topLeft.x) * scaleX;
-  const y = (projected.y - topLeft.y) * scaleY;
-
-  const clampedX = Math.max(0, Math.min(x, imageElement.clientWidth - 1));
-  const clampedY = Math.max(0, Math.min(y, imageElement.clientHeight - 1));
-
-  console.log('Input LngLat:', { lng, lat }, 'Projected:', projected, 'Bounds:', { topLeft, bottomRight }, 'Scale:', { scaleX, scaleY }, 'Output XY:', { x, y, clampedX, clampedY });
-
-  return [clampedX, clampedY];
-}
-
 
 function fitSimilarity2PExactDown(p1d, p2d, q1, q2){
   // 画像は y 下向き → いったん y 上向きにして厳密相似を解く
@@ -9526,7 +9460,9 @@ export default {
             map.touchZoomRotate.disableRotation()
           }
 
-          map.on('move', async () => {
+          const moveOrMoveene = this.isIphone ? 'moveend' : 'move'
+
+          map.on(moveOrMoveene, async () => {
             const center = map.getCenter(); // マップの中心座標を取得
             const lon = center.lng; // 経度
             const lat = center.lat; // 緯度
@@ -10331,7 +10267,7 @@ export default {
     } catch (_) {
       this.csv2Points = [];
     }
-    
+
     // fire-and-forget（初回計算前にWasmを温める）
     ensureGeoid().catch(e => console.warn('[geoid] init failed', e));
 
