@@ -331,11 +331,38 @@
               <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
             </template>
           </v-switch>
+          <v-switch
+              :model-value="dontShowKey"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="dontShowKey = !dontShowKey"
+          >
+            <template #label>
+              <span style="font-size:13px; line-height:1.1;">チュートリアル</span>
+            </template>
+          </v-switch>
         </v-card-text>
         <v-divider />
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="closeConfigDialog">閉じる</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- メディアノートダイアログ -->
+    <v-dialog v-model="mediaNoteDialog.open" max-width="520">
+      <v-card>
+        <v-card-title class="text-h6">設定</v-card-title>
+        <v-divider />
+        <v-card-text class="pt-4">
+
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeMediaNoteDialog">閉じる</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -622,124 +649,84 @@ export default {
       isTracking: false,
       // isKuiuchi: false,
       geoLastTs: 0,
-
       // 表示・品質関連
       prevQuality: null,
       geoAccAvgAlpha: 0.3, // EWMA 平滑化係数（0<alpha<=1）
-
       // UI 設定
       isHeadingUp: false,
       dialogForWatchPosition: false,
-
       // 既存UI依存（存在すれば使う）
       currentMarker: null,
       centerMarker: null,
       compass: null,
-
       rtkWindowMs: 5000,   // 無視する時間窓（ms）
       lastRtkAt: 0,      // 直近でRTK級を測位したタイムスタンプ(ms)
-
       logEnabled: false,          // ロギングON/OFF
       csvRows: null,              // 2次元配列（ヘッダー含む）
       lastLogAt: 0,               // 直近記録時刻
       lastLogXY: null,            // 直近記録XY {x, y}（X=北, Y=東）
       minLogIntervalMs: 1000,     // 時間間引き（ms）
       minLogDistanceM: 0.3,       // 距離間引き（m）
-
       confirmClearLog: false,
-
       onMapClickForToroku: null,
       enableTorokuPointClick: false,
-
       dialogForToroku: false,
-
       kansokuItems: [1, 10, 20, 50, 100, 1000, 86400],
       kansokuCount: 10, // 既定値
       // 追加: 0〜100cm のセレクト
       offsetCm: 0,
       // offsetCmItems: Array.from({ length: 101 }, (_, i) => ({ title: `${i}cm`, value: i })),
-
       rtkPng: null,
-
       kansokuRunning: false,
       kansokuRemaining: 0,
       kansokuTimer: null,
       kansokuCsvRows: null, // [['timestamp','lat','lon','X','Y','CRS','accuracy','quality','eventType'], ...]
-
       torokuPointLngLat: null,
-
       // 測位点メタを保持
       torokuPointQuality: null, // 'RTK級' など
       torokuPointQualityAt: null, // 記録時刻（ms）
-
       tenmei: 'a',        // 入力値
       tenmeiError: '',   // エラーメッセージ表示用
-
       currentPointName: '',
-
       externalElevation: null, // { hType: 'orthometric'|'ellipsoidal', hMeters: number, geoidN: number|null }
-
       torokuAnimMs: 700,        // センタリングのアニメ時間(ms)
       torokuDialogDelayMs: 0, // moveend後に待つ時間(ms)
-
       sampleIntervalSec: 1.0, // ★ 新規: サンプリング間隔(秒). 0.1〜60を想定
-
       torokuDisabled: false,   // ★ ダイアログCloseで復帰
-
       isJobMenu: false,     // ← 左下メニューの表示制御（isなんとか）
       torokuBusy: false,    // ←（多重測位防止）
-
       jobPickerOpen: false,    // Job Picker の v-model
       jobPickerBusy: false,    // ← 先頭アンダースコア禁止版（多重オープン防止）
-
       jobList: [],              // 既存ジョブ（最小構成）
       jobName: '',              // 新規用
       jobNameError: '',         // バリデーション表示
-
       // 現在選択中（UIで使う想定）
       currentJobId: null,
       currentJobName: '',
-
       useServerOnly: true,
-
       pointsForCurrentJob: [],   // ← 新設：現在選択中ジョブのポイント一覧
-
       showAllJobs: false, // ←追加：基本はfalse = 選択中のみ表示
-
       pendingObservation: null, // 観測停止後のプレビュー用 { n, Xavg, Yavg, diff }
-
       kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
-
       // 単点/結線の唯一のソース。'point' か 'chain'
       lineMode: localStorage.getItem('oh3_line_mode') || 'point',
-
-      DONT_SHOW_KEY: 'oh3.hideJobTips',
-
+      dontShowKey: localStorage.getItem('dont_show_key') || true,
       editingJobName: false,
       hoverJobName: false,
       tempJobName: '',
       jobNameDebounceTimer: null,
-
       contextMenuObject: {},
-
       detachForContextMenu: null,
-
       kansokuInFlight: false,  // 1tick内の重複実行を防ぐ
-
       editingPointId: null,
       tempPointName: '',
       hoverPointId: null,
       pointRenameInFlight: false,
-
       showJobListOnly: true, // 起動時は一覧。ジョブ選択時に false（ポイント全高）にする
-
       snapLngLat: null,
       currentLngLat: null,
-
       suppressUntil: 0, // タッチ操作終了から20秒は抑止
-
       autoCloseJobPicker: false,
-
       jobEditDialog: {
         open: false,
         jobId: '',
@@ -764,13 +751,10 @@ export default {
       mediaNoteDialog: {
         open: false,
       },
-
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
-
       SRC: 'oh-toroku-point-src',
       L: 'oh-toroku-point',
       LAB: 'oh-toroku-point-label',
-
     }
   },
   computed: {
@@ -868,19 +852,6 @@ export default {
         this.$store.state.isKuiuchi = value
       }
     },
-    geoQuality () {
-      const geo = this.$store.state.geo
-      if (geo) {
-        const qualityHtml = geo.quality === 'RTK級' ? '<span style="color: blue;">RTK</span>' : geo.quality
-        return `品質= ${qualityHtml}（${geo.accuracy.toFixed(2)}m）`
-      } else {
-        return ''
-      }
-    },
-    canUpload() {
-      const pairs = (this.gcpList || []).filter(g => Array.isArray(g.imageCoord) && Array.isArray(g.mapCoord));
-      return pairs.length >= 2 && !!this.affineM && !this.isUploading;
-    },
   },
   methods: {
     setSourceAndLayer(fc) {
@@ -922,9 +893,6 @@ export default {
       try { map.moveLayer(this.LAB); }   catch (_) {}
     },
 
-
-
-
     // ========= ダイアログ =========
     openPointEditDialog (pt) {
       const d = this.pointEditDialog
@@ -946,6 +914,10 @@ export default {
     },
     closeConfigDialog () {
       const d = this.configDialog
+      d.open = false
+    },
+    closeMediaNoteDialog () {
+      const d = this.mediaNoteDialog
       d.open = false
     },
 
@@ -1155,47 +1127,8 @@ export default {
     /** =========================
      * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
      * ========================= */
-    /**
-     * 単発キック + 一時watchで生存確認 → 反応なければ本体watchを再登録
-     * 依存: startWatchPosition(), stopWatchPosition()
-     * グローバルな新プロパティは不要（ローカル変数だけで動く）
-     */
-    reviveWatchNow() {
-      let alive = false;        // 一時watchが反応したらtrue
-      let tempWatchId = null;
 
-      // 1) 一時watchを起動（軽量・即解除目的）
-      try {
-        tempWatchId = navigator.geolocation.watchPosition(
-            () => { alive = true; if (tempWatchId != null) navigator.geolocation.clearWatch(tempWatchId); tempWatchId = null; },
-            ()  => { /* 無視：失敗でも後段で判断 */ },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 3000 }
-        );
-      } catch (_) {}
-
-      // 2) 単発キック（測位スタックを刺激）
-      try {
-        navigator.geolocation.getCurrentPosition(
-            () => { /* 成功しても“本体watchが動いたか”は alive で判断 */ },
-            ()  => { /* 失敗は後段の再登録で吸収 */ },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 3000 }
-        );
-      } catch (_) {}
-
-      // 3) 1.5秒待っても alive にならなければ、本体watchを再登録
-      setTimeout(() => {
-        try { if (tempWatchId != null) navigator.geolocation.clearWatch(tempWatchId); } catch(_) {}
-        tempWatchId = null;
-
-        if (!alive) {
-          try { this.stopWatchPosition(); } catch(_) {}
-          try { this.startWatchPosition(); } catch(_) {}
-        }
-      }, 1500);
-    },
-
-
-// 測位を途中でキャンセルし、結果を確定
+    // 測位を途中でキャンセルし、結果を確定
     cancelKansoku () {
       if (!confirm('測位を途中で停止して、ここまでの結果で確定してよろしいですか？')) {
         return;
@@ -2153,7 +2086,7 @@ export default {
       this.updateChainLine();
     },
 
-// ジョブ管理（Picker/作成/削除/選択/一覧）
+    // ジョブ管理（Picker/作成/削除/選択/一覧）
     /** ジョブピッカーを開き、サーバ一覧を最新化 */
     openJobPicker() {
       this.jobPickerOpen = true;
@@ -2162,9 +2095,9 @@ export default {
         title: '次の操作は？',
         contentHtml: '<p style="margin-bottom: 20px;">新規ジョブの作成、または既存のジョブを選択して下さい。</p>' +
             '<p style="color: red; font-weight: 900;">初めての方は新規ジョブを作成してください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
+        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.dontShowKey }
       })
-      this.showJobListOnly = true
+      // this.showJobListOnly = true
       this.refreshJobs();
     },
 
@@ -2195,16 +2128,10 @@ export default {
       localStorage.setItem('oh3_current_job_name', this.currentJobName);
 
       await this.onJobCreatedSuccess();
-
-      this.$store.dispatch('messageDialog/open', {
-        id: 'openJobPicker',
-        title: '次の操作は？',
-        contentHtml: '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>',
-        options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
-      })
-      if (this.DONT_SHOW_KEY) {
+      if (this.dontShowKey) {
         this.jobPickerOpen = false;
         this.$store.dispatch('hideFloatingWindow', 'job-picker');
+        this.startTorokuHere()
       }
     },
 
@@ -2241,7 +2168,7 @@ export default {
 
     /** 既存ジョブ選択 → 現在ジョブに設定 */
     async pickExistingJob(job) {
-      const hideTips = this.DONT_SHOW_KEY && localStorage.getItem(this.DONT_SHOW_KEY) === '1'
+      const hideTips = this.dontShowKey && localStorage.getItem(this.dontShowKey) === '1'
       if (!hideTips) {
         this.$store.dispatch('messageDialog/open', {
           id: 'openJobPicker',
@@ -2249,7 +2176,7 @@ export default {
           contentHtml:
               '<p style="margin-bottom: 20px;">測位するにはジョブリスト右上の<span style="color: navy; font-weight: 900;">『測位』</span>ボタンを操作してください。</p>' +
               '<p>測位データのダウンロードは、画面左下のボタンを操作して下さい。</p>',
-          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.DONT_SHOW_KEY }
+          options: { maxWidth: 400, showCloseIcon: true, dontShowKey: this.dontShowKey }
         });
       }
       this.pointsForCurrentJob = [];
@@ -2588,6 +2515,12 @@ export default {
               _this.kansokuRemaining = 0;
               _this.kansokuCsvRows   = null;
               _this.dialogForToroku  = true;
+              _this.$store.dispatch('messageDialog/open', {
+                id: 'openJobPicker',
+                title: '次の操作は？',
+                contentHtml: '<p style="margin-bottom: 20px;">測位するには左の<span style="color: navy; font-weight: 900;">『測位開始』</span>ボタンをクリックしてください。</p>',
+                options: { maxWidth: 400, showCloseIcon: true, dontShowKey: _this.dontShowKey }
+              })
             };
             map.easeTo({ center: [lon, lat], duration: _this.torokuAnimMs });
             _this._torokuDialogOpened = false;
@@ -3683,6 +3616,9 @@ export default {
     autoCloseJobPicker(v) {
       try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
     },
+    dontShowKey(v) {
+      try { localStorage.setItem('dont_show_key', v ? '1' : '0'); } catch {}
+    },
     // 計算値が変わったら、親へ v-model で反映
     disabledForSokuiCalc: {
       handler (v) {
@@ -3771,21 +3707,7 @@ export default {
   100% { box-shadow: 0 0 0 0 rgba(33,150,243,0); }
 }
 
-/* v-dialog の中で左右いっぱいに広がる 3 列。点名が残り幅をすべて受け持つ */
-.oh3-grid-3col {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px 220px; /* 左が可変、右2つは固定幅 */
-  align-items: center;
-  gap: 8px;
-}
-.oh3-grid-4col {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px 150px 150px; /* 左が可変、右3つは固定幅 */
-  align-items: center;
-  gap: 8px;
-}
+
 /* 点名は可変幅でグリッド領域ぴったりに */
 .oh3-col-flex {
   width: 100%;
@@ -3794,14 +3716,12 @@ export default {
 .oh3-col-fixed {
   width: 150px;
 }
-
 /* 狭い画面では 1 列にフォールバック */
 /* まずエリア割り当て（既に g-a/g-b/g-c/g-d を付けてるので活用） */
 .g-a{ grid-area: a; } /* 点名 */
 .g-b{ grid-area: b; } /* 測位回数 */
 .g-c{ grid-area: c; } /* 間隔 */
 .g-d{ grid-area: d; } /* アンテナ高 */
-
 /* デフォルト（PCなど広い画面）: 4列並び */
 .oh3-grid-4col{
   display:grid;
@@ -3826,4 +3746,29 @@ export default {
   /* グリッド内では各セルが幅を管理するので固定幅指定は外す */
   .oh3-col-fixed{ width: 100%; }
 }
+/* ハートビート（鼓動） */
+.oh-chip-heartbeat {
+  /* ほんの少し大きめに（任意） */
+  transform: translateZ(0);             /* ジャギ回避 */
+  animation: oh-heartbeat 1.0s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+/* 鼓動キーフレーム：ドクン→少し戻る→休む */
+@keyframes oh-heartbeat {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  10%  { transform: scale(1.06); box-shadow: 0 0 0 0.25rem color-mix(in srgb, currentColor 30%, transparent); }
+  20%  { transform: scale(1.12); box-shadow: 0 0 0 0.35rem color-mix(in srgb, currentColor 22%, transparent); }
+  40%  { transform: scale(1.03); box-shadow: 0 0 0 0.15rem color-mix(in srgb, currentColor 18%, transparent); }
+  60%  { transform: scale(1.00); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  100% { transform: scale(1.00); box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
+
+/* 端末の「簡易アニメーション」設定に配慮（OS設定でアニメ抑制時は停止） */
+@media (prefers-reduced-motion: reduce) {
+  .oh-chip-heartbeat {
+    animation: none;
+  }
+}
+
 </style>
