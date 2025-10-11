@@ -227,6 +227,17 @@ export default {
         if (this.finalDontShowKey && this.dontShow) {
           localStorage.setItem(this.finalDontShowKey, '1')
           this.$emit('dont-show-set', this.finalDontShowKey)
+          // ★ 追加：Vuex へも通知
+          try {
+            if (this.useStore && this.$store) {
+              this.$store.dispatch(`${this.ns}/publishEvent`, {
+                type: 'dont-show-set',
+                id: this.dialogId,
+                key: this.finalDontShowKey,
+                ts: Date.now()
+              })
+            }
+          } catch (_) {}
         }
       } catch (_) {}
       if (this.useStore) {

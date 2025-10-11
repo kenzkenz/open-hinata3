@@ -723,7 +723,7 @@ export default {
       kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
       // 単点/結線の唯一のソース。'point' か 'chain'
       lineMode: localStorage.getItem('oh3_line_mode') || 'point',
-      tutorialShow: localStorage.getItem(this.dontShowKey) !== '1',
+      tutorialShow: true,
       dontShowKey: 'tutorial_show',
       editingJobName: false,
       hoverJobName: false,
@@ -790,6 +790,8 @@ export default {
       'myNickname',
       'isKuiuchi',
     ]),
+    lastEvent () { return this.$store.state.messageDialog.lastEvent },
+    eventSeq  () { return this.$store.state.messageDialog.eventSeq  },
     s_disabledForSokui: {
       get() {
         return this.$store.state.disabledForSokui
@@ -3648,16 +3650,23 @@ export default {
       window.addEventListener('touchmove',  stopOnMenu, { capture: true, passive: true });
       window.addEventListener('touchend',   stopOnMenu, { capture: true, passive: true });
     }
+  this.tutorialShow = localStorage.getItem(this.dontShowKey) !== '1'
   },
   watch: {
     autoCloseJobPicker(v) {
       try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
     },
     tutorialShow(v) {
-      if (!v) {
-        localStorage.setItem(this.dontShowKey, '1')
-      } else {
+      if (v) {
         localStorage.removeItem(this.dontShowKey)
+      } else {
+        localStorage.setItem(this.dontShowKey, '1')
+      }
+    },
+    eventSeq () {
+      const ev = this.lastEvent
+      if (ev.type === 'dont-show-set') {
+        this.tutorialShow = false
       }
     },
     // 計算値が変わったら、親へ v-model で反映

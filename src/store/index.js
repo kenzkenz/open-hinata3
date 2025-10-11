@@ -5,46 +5,106 @@ import {haptic} from "@/js/utils/haptics";
 
 // === Message Dialog 用 Vuex モジュール（このファイル内に内蔵） ===
 const messageDialogModule = {
-  namespaced: true,
-  state: () => ({
-    // 複数ダイアログを id ごとに保持
-    registry: {}
-  }),
-  getters: {
-    // 使用例: this.$store.getters['messageDialog/entry']('help')
-    entry: (state) => (id = 'default') => {
-      return state.registry[id] || { open: false, title: '', contentHtml: '', options: {} }
-    }
-  },
-  mutations: {
-    SET_ENTRY (state, { id = 'default', patch = {} }) {
-      const cur = state.registry[id] || {}
-      state.registry = { ...state.registry, [id]: { ...cur, ...patch } }
+    namespaced: true,
+    state: () => ({
+        // 複数ダイアログを id ごとに保持
+        registry: {},
+
+        // ★ 追加: 直近のイベント（グローバル通知用）
+        // 例: { type:'dont-show-set', id:'help', key:'oh3.hideJobTips', ts: 173.0 }
+        lastEvent: null,
+        // ★ 追加: 変更検知用のシーケンス（watch が楽）
+        eventSeq: 0
+    }),
+
+    getters: {
+        // 使用例: this.$store.getters['messageDialog/entry']('help')
+        entry: (state) => (id = 'default') => {
+            return state.registry[id] || { open: false, title: '', contentHtml: '', options: {} }
+        },
+
+        // ★ 追加: “次回から表示しない” が有効かを問い合わせ
+        // 引数 key を省略した場合は entry(options.dontShowKey) を使う
+        isSuppressed: (state, getters) => (id = 'default', key) => {
+            try {
+                const k = key || getters.entry(id)?.options?.dontShowKey
+                if (!k) return false
+                return localStorage.getItem(k) === '1'
+            } catch (_) { return false }
+        }
     },
-    SET_OPEN (state, { id = 'default', open }) {
-      const cur = state.registry[id] || {}
-      state.registry = { ...state.registry, [id]: { ...cur, open: !!open } }
+
+    mutations: {
+        SET_ENTRY (state, { id = 'default', patch = {} }) {
+            const cur = state.registry[id] || {}
+            state.registry = { ...state.registry, [id]: { ...cur, ...patch } }
+        },
+        SET_OPEN (state, { id = 'default', open }) {
+            const cur = state.registry[id] || {}
+            state.registry = { ...state.registry, [id]: { ...cur, open: !!open } }
+        },
+
+        // ★ 追加: イベント格納＆シーケンス更新
+        SET_LAST_EVENT (state, ev) {
+            state.lastEvent = ev
+            state.eventSeq++
+        }
+    },
+
+    actions: {
+        // まとめて開く（タイトル/本文/見た目を同時注入）
+        open ({ commit, getters }, { id = 'default', title, contentHtml, options } = {}) {
+            const key = options && options.dontShowKey
+            // ★ どちらかでOFFにしてあれば開かない
+            try { if (key && localStorage.getItem(key) === '1') return } catch (_) {}
+            commit('SET_ENTRY', { id, patch: { title, contentHtml, options, open: true } })
+        },
+
+        // ★ 追加: 抑止判定つきで開く（呼び出し側が boolean を受け取れる）
+        // 返値: true=開いた / false=抑止された
+        openOnce ({ dispatch }, payload = {}) {
+            const { options } = payload || {}
+            const key = options && options.dontShowKey
+            try { if (key && localStorage.getItem(key) === '1') return false } catch (_) {}
+            dispatch('open', payload)
+            return true
+        },
+
+        close ({ commit }, { id = 'default' } = {}) {
+            commit('SET_OPEN', { id, open: false })
+        },
+
+        setOpen ({ commit }, { id = 'default', open }) {
+            commit('SET_OPEN', { id, open })
+        },
+
+        // 表示中に内容だけ差し替えたいとき
+        update ({ commit }, { id = 'default', patch = {} } = {}) {
+            commit('SET_ENTRY', { id, patch })
+        },
+
+        // ★ 追加: “次回から表示しない” をストア API として提供
+        // 例) this.$store.dispatch('messageDialog/setDontShow', { id:'help', key:'oh3.hideJobTips' })
+        setDontShow ({ commit }, { id = 'default', key }) {
+            if (!key) return
+            try { localStorage.setItem(key, '1') } catch (_) {}
+            // グローバルイベントとして公開
+            commit('SET_LAST_EVENT', { type: 'dont-show-set', id, key, ts: Date.now() })
+        },
+
+        // ★ 追加: 解除（再表示）
+        clearDontShow ({ commit }, { id = 'default', key }) {
+            if (!key) return
+            try { localStorage.removeItem(key) } catch (_) {}
+            commit('SET_LAST_EVENT', { type: 'dont-show-clear', id, key, ts: Date.now() })
+        },
+
+        // ★ 追加: 任意イベントの公開（コンポーネントから叩く用）
+        // 例) this.$store.dispatch('messageDialog/publishEvent', { type:'dont-show-set', id, key, ts:Date.now() })
+        publishEvent ({ commit }, ev) {
+            commit('SET_LAST_EVENT', ev)
+        }
     }
-  },
-  actions: {
-      // まとめて開く（タイトルや本文、見た目も同時に注入）
-      open ({ commit }, { id = 'default', title, contentHtml, options } = {}) {
-          const key = options && options.dontShowKey
-          // ★どちらかでOFFにしてあれば開かない
-          try { if (key && localStorage.getItem(key) === '1') return } catch (_) {}
-          commit('SET_ENTRY', { id, patch: { title, contentHtml, options, open: true } })
-      },
-      close ({ commit }, { id = 'default' } = {}) {
-          commit('SET_OPEN', { id, open: false })
-      },
-      setOpen ({ commit }, { id = 'default', open }) {
-          commit('SET_OPEN', { id, open })
-      },
-      // 表示中に内容だけ差し替えたいとき
-      update ({ commit }, { id = 'default', patch = {} } = {}) {
-          commit('SET_ENTRY', { id, patch })
-      }
-  }
 }
 
 export default createStore({
