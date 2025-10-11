@@ -9,6 +9,7 @@ import VueQrcode from '@chenfengyuan/vue-qrcode'
 import { auth, db } from './firebase'
 import '@/registerServiceWorker';
 import Haptics from '@/js/utils/haptics'
+import VDialogConfirm from '@/components/V-dialog/V-dialog-confirm.vue'
 
 loadFonts()
 
@@ -60,6 +61,7 @@ app.use(vuetify)
 app.component('Dialog', Dialog)
 app.component('Dialog2', Dialog2)
 app.component(VueQrcode.name, VueQrcode)
+app.component('VDialogConfirm', VDialogConfirm)
 app.directive('stick-bottom', stickBottomV3); // ディレクティブをセット
 
 app.mount('#app')

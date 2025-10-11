@@ -555,6 +555,20 @@
     </v-dialog>
 
   </div>
+
+  <VDialogConfirm
+      v-model="confirmDialog.open"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :ok-text="confirmDialog.okText"
+      :cancel-text="confirmDialog.cancelText"
+      :color="confirmDialog.error"
+      :icon="confirmDialog.icon"
+      persistent
+      :@ok="confirmDialog.handleOk"
+      :@cancel="confirmDialog.handleCancel"
+  />
+
 </template>
 
 <script>
@@ -750,6 +764,17 @@ export default {
       },
       mediaNoteDialog: {
         open: false,
+      },
+      confirmDialog: {
+        open: false,
+        title: '確認',
+        message: '',
+        okText: '削除する',
+        cancelText: 'キャンセル',
+        color: 'error',
+        icon: 'mdi-alert-circle',
+        handleOk: null,
+        handleCancel: null,
       },
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
       SRC: 'oh-toroku-point-src',
@@ -2282,7 +2307,7 @@ export default {
     async deleteJob(job) {
       const id = String(job.id);
       if (!id) return;
-      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job?.name ?? job?.job_name ?? ''}`)) return;
+      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job.name}`)) return;
 
       const fd = new FormData();
       fd.append('action', 'jobs.delete');
