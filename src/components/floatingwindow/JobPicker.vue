@@ -4,20 +4,11 @@
     <v-card class="fw-card">
       <!-- 操作行 -->
       <div class="d-flex justify-end px-4 pt-1"
-           style="gap:6px; opacity:1; margin-top:10px; border-bottom:1px solid rgba(0,0,0,.08);">
-        <v-switch
-            :model-value="autoCloseJobPicker"
-            color="primary"
-            density="compact"
-            hide-details
-            class="autoclose-switch"
-            style="line-height:1; transform: translateY(-4px);"
-            @update:model-value="$emit('update:autoCloseJobPicker', $event)"
-        >
-          <template #label>
-            <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
-          </template>
-        </v-switch>
+           style="gap:6px;
+           opacity:1;
+           margin-top:10px;
+           border-bottom:1px solid rgba(0,0,0,.08);"
+      >
 
         <v-btn
             color="primary"
@@ -44,7 +35,7 @@
             size="small"
             variant="outlined"
             :disabled="disabledForSokuiCalc"
-            @click="downloadSimaForSokui"
+            @click.stop="downloadSimaForSokui"
         >
           SIMA
         </v-btn>
@@ -56,10 +47,21 @@
             class="font-weight-bold pulse-once"
             :class="{ 'pulse-anim': !kansokuRunning && !torokuBusy }"
             :disabled="disabledForSokuiCalc"
-            @click="startTorokuHere"
+            @click.stop="startTorokuHere"
         >
           &nbsp;測&nbsp;位&nbsp;
         </v-btn>
+
+        <v-btn
+            icon
+            size="x-small"
+            variant="text"
+            class="mr-1"
+            @click.stop="configDialog.open = true"
+        >
+          <v-icon size="20">mdi-dots-vertical</v-icon>
+        </v-btn>
+
       </div>
 
       <!-- ヘッダー：ジョブ名インライン編集 -->
@@ -308,6 +310,32 @@
           <v-spacer />
           <v-btn variant="text" @click="closePointEditDialog" :disabled="pointEditDialog.saving">キャンセル</v-btn>
           <v-btn color="primary" :loading="pointEditDialog.saving" :disabled="!canSavePoint" @click="savePointEditDialog">更新</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- コンフィグダイアログ -->
+    <v-dialog v-model="configDialog.open" max-width="520">
+      <v-card>
+        <v-card-title class="text-h6">設定</v-card-title>
+        <v-divider />
+        <v-card-text class="pt-4">
+          <v-switch
+              :model-value="autoCloseJobPicker"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="autoCloseJobPicker = !autoCloseJobPicker"
+          >
+            <template #label>
+              <span style="font-size:13px; line-height:1.1;">自動クローズ</span>
+            </template>
+          </v-switch>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeConfigDialog">閉じる</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -644,7 +672,7 @@ export default {
       torokuPointQuality: null, // 'RTK級' など
       torokuPointQualityAt: null, // 記録時刻（ms）
 
-      tenmei: '',        // 入力値
+      tenmei: 'a',        // 入力値
       tenmeiError: '',   // エラーメッセージ表示用
 
       currentPointName: '',
@@ -729,6 +757,10 @@ export default {
         name: '',
         address: '',
         saving: false,
+      },
+      configDialog: {
+        open: false,
+
       },
 
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
@@ -907,7 +939,7 @@ export default {
 
 
 
-    // ========= ケバブ：ダイアログ編集 =========
+    // ========= ダイアログ =========
     openPointEditDialog (pt) {
       const d = this.pointEditDialog
       d.pointId = pt.point_id
@@ -925,6 +957,10 @@ export default {
       d.origAddress = ''
       d.name = ''
       d.address = ''
+    },
+    closeConfigDialog () {
+      const d = this.configDialog
+      d.open = false
     },
 
     async savePointEditDialog () {
@@ -3632,6 +3668,19 @@ export default {
     },
   },
   mounted() {
+    try {
+      const saved = localStorage.getItem('tenmei')
+      if (saved !== null && saved !== undefined) {
+        this.tenmei = saved
+      }
+    } catch (error) {
+    }
+    try {
+      const saved = localStorage.getItem('jobpicker_autoclose');
+      this.autoCloseJobPicker = (saved === '1'); // 未保存なら false のまま
+    } catch (_) {
+      this.autoCloseJobPicker = false;
+    }
     if (this.isAndroid) {
       const stopOnMenu = (e) => {
         const content = e.target.closest('.v-overlay__content.scrollable-menu');
@@ -3644,6 +3693,9 @@ export default {
     }
   },
   watch: {
+    autoCloseJobPicker(v) {
+      try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
+    },
     // 計算値が変わったら、親へ v-model で反映
     disabledForSokuiCalc: {
       handler (v) {

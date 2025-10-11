@@ -10362,12 +10362,7 @@ export default {
     // }
     // android対応まとめ-----------------------------------------------------------
 
-    try {
-      const saved = localStorage.getItem('jobpicker_autoclose');
-      this.autoCloseJobPicker = (saved === '1'); // 未保存なら false のまま
-    } catch (_) {
-      this.autoCloseJobPicker = false;
-    }
+
 
     // ---- GPSライン描画 用の状態 ----
     this.gpsLineIds = this.gpsLineIds ?? {
@@ -10555,9 +10550,6 @@ export default {
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
-    autoCloseJobPicker(v) {
-      try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
-    },
     isContextMenu(value) {
       if (value) {
         this.detachForContextMenu = attachMapRightClickMenu(this.contextMenuObject);
