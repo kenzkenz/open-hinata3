@@ -352,9 +352,9 @@
     </v-dialog>
 
     <!-- メディアノートダイアログ -->
-    <v-dialog v-model="mediaNoteDialog.open" max-width="520">
+    <v-dialog v-model="mediaNoteDialog.open999999999" max-width="520">
       <v-card>
-        <v-card-title class="text-h6">設定</v-card-title>
+        <v-card-title class="text-h6">ノート</v-card-title>
         <v-divider />
         <v-card-text class="pt-4">
 
@@ -565,8 +565,8 @@
       :color="confirmDialog.error"
       :icon="confirmDialog.icon"
       persistent
-      :@ok="confirmDialog.handleOk"
-      :@cancel="confirmDialog.handleCancel"
+      @ok="resolve(true)"
+      @cancel="resolve(false)"
   />
 
 </template>
@@ -767,15 +767,14 @@ export default {
       },
       confirmDialog: {
         open: false,
-        title: '確認',
+        title: '削除',
         message: '',
         okText: '削除する',
         cancelText: 'キャンセル',
         color: 'error',
         icon: 'mdi-alert-circle',
-        handleOk: null,
-        handleCancel: null,
       },
+      resolver: null,
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
       SRC: 'oh-toroku-point-src',
       L: 'oh-toroku-point',
@@ -879,6 +878,15 @@ export default {
     },
   },
   methods: {
+    confirm (options = {}) {
+      Object.assign(this.confirmDialog, options, { open: true })
+      return new Promise(res => { this.resolver = res })
+    },
+    resolve (val) {
+      if (this.resolver) this.resolver(val)
+      this.resolver = null
+      this.confirmDialog.open = false
+    },
     setSourceAndLayer(fc) {
       const map = this.map01
       if (map.getSource(this.SRC)) {
@@ -1222,7 +1230,7 @@ export default {
       this.clearCurrentMarker();
     },
 
-// 観測セッションの可変状態を初期化（タイマ停止・ログ消去）
+    // 観測セッションの可変状態を初期化（タイマ停止・ログ消去）
     _resetKansokuSession () {
       this.kansokuRunning   = false;
       this.kansokuRemaining = 0;
@@ -1231,7 +1239,7 @@ export default {
       this.kansokuAverages  = null;
     },
 
-// 軽量サマリー：CSV（kansokuCsvRows）から X/Y/H の平均と較差を算出
+    // 軽量サマリー：CSV（kansokuCsvRows）から X/Y/H の平均と較差を算出
     summarizeObservationLight() {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
       if (!rows || rows.length <= 1) return null;
@@ -1369,7 +1377,6 @@ export default {
       tickOnce();
     },
 
-// 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
     // 1回分の測位を取得して CSV に追記（必要ならH計算）。残数が尽きたら停止
     kansokuCollectOnce() {
       return new Promise((resolve) => {
@@ -1538,8 +1545,7 @@ export default {
       });
     },
 
-
-// サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う
+    // サマリーから 1 点の平均値を確定保存し、赤丸を追加・サーバ登録も行う
     async commitCsv2Point() {
       try {
         const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows : null;
@@ -1929,7 +1935,7 @@ export default {
      * 杭打関連（測位点登録・赤丸表示・ジョブ管理・結線表示）
      * ========================= */
 
-// 現在地の緑丸（1個だけ表示）関連
+    // 現在地の緑丸（1個だけ表示）関連
     /** 現在地マーカー（緑丸）を完全削除 */
     clearCurrentDot () {
       const map = (this.$store && this.$store.state && this.$store.state.map01) ? this.$store.state.map01 : this.map01;
@@ -2307,7 +2313,11 @@ export default {
     async deleteJob(job) {
       const id = String(job.id);
       if (!id) return;
-      if (!confirm(`このジョブを削除しますか？\nID: ${id}\n名前: ${job.name}`)) return;
+      const ok = await this.confirm({
+        message: `このジョブを削除しますか？<br>ID: ${id}<br>名前: ${job.name}`,
+      })
+      if (!ok) return
+      console.log('削除実行')
 
       const fd = new FormData();
       fd.append('action', 'jobs.delete');
@@ -2360,9 +2370,11 @@ export default {
     async deletePoint(pt) {
       const pointId = String(pt.point_id);
       if (!pointId) return;
-
-      if (!confirm(`このポイントを削除しますか？\nID: ${pointId}\n点名: ${pt.point_name}`)) return;
-
+      const ok = await this.confirm({
+        message: `このポイントを削除しますか？<br>ID: ${pointId}<br>点名: ${pt.point_name}`,
+      })
+      if (!ok) return
+      console.log('削除実行')
       const fd = new FormData();
       fd.append('action', 'job_points.delete');
       fd.append('point_id', pointId);

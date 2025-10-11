@@ -7,13 +7,13 @@
       @update:modelValue="onUpdate"
   >
     <v-card>
-      <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
-        <v-icon v-if="icon" :icon="icon" class="me-1" />
+      <v-card-title class="d-flex align-center ga-2">
+        <v-icon :color="iconColor" v-if="icon" :icon="icon" class="me-1" :size="40" />
         {{ title }}
       </v-card-title>
 
-      <v-card-text class="text-body-2">
-        <slot>{{ message }}</slot>
+      <v-card-text>
+        <slot><span v-html="message"></span></slot>
       </v-card-text>
 
       <v-card-actions class="justify-end">
@@ -36,6 +36,7 @@ export default {
     persistent: { type: Boolean, default: false },
     width: { type: [Number, String], default: 420 },
     color: { type: String, default: 'primary' },
+    iconColor: { type: String, default: 'primary' },
     icon: { type: String, default: null },
     autofocusOk: { type: Boolean, default: true },
   },
