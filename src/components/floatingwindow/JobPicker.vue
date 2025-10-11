@@ -760,7 +760,9 @@ export default {
       },
       configDialog: {
         open: false,
-
+      },
+      mediaNoteDialog: {
+        open: false,
       },
 
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
@@ -768,7 +770,6 @@ export default {
       SRC: 'oh-toroku-point-src',
       L: 'oh-toroku-point',
       LAB: 'oh-toroku-point-label',
-
 
     }
   },
@@ -832,21 +833,6 @@ export default {
       if (!this.torokuPointLngLat) return '観測点(赤丸)が未設定';
       if (!(this.tenmei||'').trim()) return '点名が未入力';
       return '測位開始';
-    },
-    hasSecond() {
-      return !!(this.currentJobId && this.pointsForCurrentJob && this.pointsForCurrentJob.length);
-    },
-    visibleJobs() {
-      if (this.showAllJobs) return this.jobList || [];
-      if (!this.currentJobId) return this.jobList || []; // 未選択時は全部見せる
-      return (this.jobList || []).filter(j => String(j.id) === String(this.currentJobId));
-    },
-    hasSingleVisibleJob() {
-      if (this.visibleJobs.length === 1) {
-        return true;
-      } else {
-        return false;
-      }
     },
     kansokuAverages () {
       const rows = Array.isArray(this.kansokuCsvRows) ? this.kansokuCsvRows.slice(1) : [];
@@ -1261,6 +1247,7 @@ export default {
         this.pendingObservation = null;
         this.kansokuPhase = 'idle';
         this.torokuDisabled = false;
+        this.mediaNoteDialog.open = true;
       }
     },
 
@@ -3809,12 +3796,34 @@ export default {
 }
 
 /* 狭い画面では 1 列にフォールバック */
-@media (max-width: 640px) {
-  .oh3-grid-4col {
-    grid-template-columns: 1fr;
+/* まずエリア割り当て（既に g-a/g-b/g-c/g-d を付けてるので活用） */
+.g-a{ grid-area: a; } /* 点名 */
+.g-b{ grid-area: b; } /* 測位回数 */
+.g-c{ grid-area: c; } /* 間隔 */
+.g-d{ grid-area: d; } /* アンテナ高 */
+
+/* デフォルト（PCなど広い画面）: 4列並び */
+.oh3-grid-4col{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 150px 150px 150px;
+  grid-template-areas: "a b c d";
+  gap: 8px;
+}
+
+/* 640px以下:
+   1段目=点名(2列ぶち抜き)
+   2段目=測位回数(2列ぶち抜き)
+   3段目=間隔 と アンテナ高 を横並び */
+@media (max-width: 640px){
+  .oh3-grid-4col{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "a a"
+      "b b"
+      "c d";
+    gap: 8px;
   }
-  .oh3-col-fixed {
-    width: 100%;
-  }
+  /* グリッド内では各セルが幅を管理するので固定幅指定は外す */
+  .oh3-col-fixed{ width: 100%; }
 }
 </style>
