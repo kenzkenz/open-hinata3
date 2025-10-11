@@ -332,11 +332,10 @@
             </template>
           </v-switch>
           <v-switch
-              :model-value="dontShowKey"
+              v-model="tutorialShow"
               color="primary"
               density="compact"
               hide-details
-              @update:model-value="dontShowKey = !dontShowKey"
           >
             <template #label>
               <span style="font-size:13px; line-height:1.1;">チュートリアル</span>
@@ -724,7 +723,8 @@ export default {
       kansokuPhase: 'idle', // 'idle' | 'observing' | 'await'
       // 単点/結線の唯一のソース。'point' か 'chain'
       lineMode: localStorage.getItem('oh3_line_mode') || 'point',
-      dontShowKey: localStorage.getItem('dont_show_key') || true,
+      tutorialShow: localStorage.getItem(this.dontShowKey) !== '1',
+      dontShowKey: 'tutorial_show',
       editingJobName: false,
       hoverJobName: false,
       tempJobName: '',
@@ -3653,8 +3653,12 @@ export default {
     autoCloseJobPicker(v) {
       try { localStorage.setItem('jobpicker_autoclose', v ? '1' : '0'); } catch {}
     },
-    dontShowKey(v) {
-      try { localStorage.setItem('dont_show_key', v ? '1' : '0'); } catch {}
+    tutorialShow(v) {
+      if (!v) {
+        localStorage.setItem(this.dontShowKey, '1')
+      } else {
+        localStorage.removeItem(this.dontShowKey)
+      }
     },
     // 計算値が変わったら、親へ v-model で反映
     disabledForSokuiCalc: {
