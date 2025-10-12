@@ -338,7 +338,7 @@
               hide-details
           >
             <template #label>
-              <span style="font-size:13px; line-height:1.1;">チュートリアル</span>
+              <span style="font-size:13px; line-height:1.1;">チュートリアル表示</span>
             </template>
           </v-switch>
         </v-card-text>
@@ -351,20 +351,24 @@
     </v-dialog>
 
     <!-- メディアノートダイアログ -->
-    <v-dialog v-model="mediaNoteDialog.open999999999" max-width="520">
-      <v-card>
-        <v-card-title class="text-h6">ノート</v-card-title>
-        <v-divider />
-        <v-card-text class="pt-4">
+    <MediaNoteDialog
+        v-model="mediaDlg"
+        @save="onMediaSave"
+    />
+<!--    <v-dialog v-model="mediaNoteDialog.open" max-width="520">-->
+<!--      <v-card>-->
+<!--        <v-card-title class="text-h6">ノート</v-card-title>-->
+<!--        <v-divider />-->
+<!--        <v-card-text class="pt-4">-->
 
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="closeMediaNoteDialog">閉じる</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+<!--        </v-card-text>-->
+<!--        <v-divider />-->
+<!--        <v-card-actions>-->
+<!--          <v-spacer />-->
+<!--          <v-btn variant="text" @click="closeMediaNoteDialog">閉じる</v-btn>-->
+<!--        </v-card-actions>-->
+<!--      </v-card>-->
+<!--    </v-dialog>-->
 
     <!-- 測位  -->
     <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false" :persistent="kansokuPhase === 'await' || kansokuRunning">
@@ -648,15 +652,20 @@ import {calcOrthometric} from "@/geoid";
 import * as turf from "@turf/turf";
 import Encoding from "encoding-japanese";
 import maplibregl from "maplibre-gl";
+import MediaNoteDialog from "@/components/V-dialog/MediaNoteDialog";
 
 export default {
   name: 'JobPointPanelBody',
+  components: {
+    MediaNoteDialog
+  },
   props: {
   },
   emits: [
   ],
   data () {
     return {
+      mediaDlg: false,
       // 状態
       watchId: null,
       isTracking: false,
@@ -888,6 +897,12 @@ export default {
       if (this.resolver) this.resolver(val)
       this.resolver = null
       this.confirmDialog.open = false
+    },
+    async onMediaSave({ file, kind, note }){
+      const fd = new FormData()
+      if (file) fd.append(kind === 'video' ? 'video' : 'photo', file)
+      fd.append('note', note || '')
+      // 既存APIにPOST（URL/パラメータはOH3の規約に合わせて）
     },
     setSourceAndLayer(fc) {
       const map = this.map01
@@ -1215,7 +1230,7 @@ export default {
         this.pendingObservation = null;
         this.kansokuPhase = 'idle';
         this.torokuDisabled = false;
-        this.mediaNoteDialog.open = true;
+        this.mediaDlg = true
       }
     },
 
