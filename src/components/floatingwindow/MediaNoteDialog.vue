@@ -100,6 +100,7 @@
 
 <script>
 import { compressImageToTarget } from '@/js/utils/image-compress'
+import {mapState} from "vuex";
 export default {
   name: 'MediaNoteDialog',
   props: {
@@ -123,6 +124,9 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'userId',
+    ]),
     canSave(){
       // 画像/動画/ノートのいずれかがあれば保存可能
       return !!this.previewUrl || this.note.trim().length > 0
@@ -152,25 +156,19 @@ export default {
         let outFile = this.file || null
 
         if (kind === 'image' && outFile) {
-          // outFile = await compressImageToTarget(outFile, { targetBytes: imageMaxBytes })
+          outFile = await compressImageToTarget(outFile, { targetBytes: imageMaxBytes })
         }
 
-        const fd = new FormData()
-        fd.append('point_id', String(this.pointId))     // ★ 子でセット
-        fd.append('kind', kind)
-        fd.append('note', note)
-        if (outFile) fd.append('media', outFile, outFile.name || 'media.bin')
+        const fd = new FormData();
+        fd.append('dir', this.userId);
+        fd.append('kind', kind);          // 'image' | 'video'
+        fd.append('media', outFile, outFile.name);
 
-        if (kind === 'image') {
-          fd.append('image_target_bytes', String(imageMaxBytes))
-        } else if (kind === 'video') {
-          fd.append('needs_transcode','1')
-          fd.append('target_bytes', String(videoMaxBytes))
-          fd.append('max_width','1280'); fd.append('max_height','720')
-        }
+        const res = await fetch('https://kenzkenz.net/myphp/sokui_upload.php', { method: 'POST', body: fd });
+        const json = await res.json();
+        // json.ok が true なら json.url / json.abs_path / json.rel_path を次のPHPへ渡してDB更新
 
-        // 親に送って、親がPOSTする
-        // this.$emit('save', { formData: fd, kind, note })
+        console.log(json);
 
         this.$emit('update:modelValue', false)
       } finally { this.saving = false }
