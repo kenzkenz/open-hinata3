@@ -512,7 +512,6 @@ export async function loadColorData() {
             throw new Error(`HTTPエラー: ${response.status}`);
         }
         const data = await response.json();
-        // console.log(data)
         if (data.error) throw new Error(data.error);
 
         const colorMap = {};
@@ -553,8 +552,9 @@ export async function loadColorData() {
 const abc = await loadColorData();
 const chibanzuColors = abc.colorMap
 const isNew = abc.isNew
-// console.log(chibanzuColors)
-// console.log(isNew)
+console.log(chibanzuColors)
+console.log(isNew)
+// alert(JSON.stringify(isNew));
 /**
  *
  * @param getter
@@ -878,6 +878,7 @@ export const cityGeojsonLineLayer = {
 // }
 // NEWな市町村コード一覧
 const newCodes = Object.keys(isNew).filter(k => isNew[k] === 1);
+// alert(JSON.stringify(newCodes));
 
 // 1. 白字＋黒ハロー
 // const newLabelColorOnRed = '#fff';
@@ -898,7 +899,7 @@ const newHaloColorOnRed  = '#000';
 const newLabelColor = '#fff600';    // 普段のNEW（蛍光イエロー）
 const newHaloColor  = '#ff00cc';    // 普段のNEW（蛍光ピンク）
 
-const caseTextColor = [
+let caseTextColor = [
     'case',
     ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
         if (newCodes.includes(code)) {
@@ -914,8 +915,10 @@ const caseTextColor = [
     }),
     '#000' // デフォルト
 ];
-
-const caseTextHaloColor = [
+// alert(JSON.stringify(newCodes, null, 2));
+// alert(JSON.stringify(chibanzuColors, null, 2));
+// alert(JSON.stringify(caseTextColor, null, 2));
+let caseTextHaloColor = [
     'case',
     ...Object.entries(chibanzuColors).flatMap(([code, color]) => {
         if (newCodes.includes(code)) {
@@ -940,7 +943,7 @@ const caseTextHaloColor = [
 //     ]),
 //     ['get', 'N03_004'] // デフォルト: 市区町村名
 // ];
-const caseTextField = [
+let caseTextField = [
     'case',
 
     // ① newCodes に含まれるキーだけを抽出
@@ -964,7 +967,12 @@ const caseTextField = [
 ];
 
 
-
+// alert(JSON.stringify(caseTextField))
+if (newCodes.length === 0) {
+    caseTextField = ['get', 'N03_004']
+    caseTextColor = 'black'
+    caseTextHaloColor = 'white'
+}
 export const cityGeojsonLabelLayer = {
     id: 'oh-city-geojson-label-layer',
     type: 'symbol',
