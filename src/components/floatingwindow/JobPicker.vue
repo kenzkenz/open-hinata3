@@ -352,6 +352,7 @@
 
     <!-- メディアノートダイアログ -->
     <MediaNoteDialog
+        :point-id="lastPointId"
         v-model="mediaDlg"
         @save="onMediaSave"
     />
@@ -652,7 +653,7 @@ import {calcOrthometric} from "@/geoid";
 import * as turf from "@turf/turf";
 import Encoding from "encoding-japanese";
 import maplibregl from "maplibre-gl";
-import MediaNoteDialog from "@/components/V-dialog/MediaNoteDialog";
+import MediaNoteDialog from "@/components/floatingwindow/MediaNoteDialog.vue";
 
 export default {
   name: 'JobPointPanelBody',
@@ -665,6 +666,7 @@ export default {
   ],
   data () {
     return {
+      lastPointId: '',
       mediaDlg: false,
       // 状態
       watchId: null,
@@ -1221,8 +1223,14 @@ export default {
       try {
         await this.commitCsv2Point();
         this.clearCurrentMarker();
-        if (this.currentJobId) await this.loadPointsForJob(this.currentJobId,  { fit: false });
-        try { await this.refreshJobs(); } catch {}
+        await this.loadPointsForJob(this.currentJobId,  { fit: false });
+
+        console.log(this.pointsForCurrentJob)
+        console.log(this.pointsForCurrentJob.at(-1).point_id)
+        this.lastPointId = this.pointsForCurrentJob.at(-1).point_id
+
+
+        await this.refreshJobs();
       } catch (e) {
         console.warn('[save] commit failed', e);
       } finally {

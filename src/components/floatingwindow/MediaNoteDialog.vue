@@ -99,6 +99,7 @@
 </template>
 
 <script>
+import { compressImageToTarget } from '@/js/utils/image-compress'
 export default {
   name: 'MediaNoteDialog',
   props: {
@@ -107,6 +108,7 @@ export default {
     maxWidth:     { type: [Number, String], default: 520 },
     initialNote:  { type: String, default: '' },
     saveColor:    { type: String, default: 'primary' },
+    pointId:      { type: [Number, String], required: true }
   },
   emits: ['update:modelValue', 'save', 'cancel'],
   data(){
@@ -139,6 +141,40 @@ export default {
     this.isMobile = /iPhone|Android.+Mobile/.test(navigator.userAgent)
   },
   methods: {
+    async onSave ({ imageMaxBytes = 1*1024*1024, videoMaxBytes = 5*1024*1024 } = {}) {
+      if (this.saving) return
+      if (!this.pointId) { this.$emit('error','point_id is required'); return }
+
+      this.saving = true
+      try {
+        const kind = this.previewKind || 'none'
+        const note = this.note.trim()
+        let outFile = this.file || null
+
+        if (kind === 'image' && outFile) {
+          // outFile = await compressImageToTarget(outFile, { targetBytes: imageMaxBytes })
+        }
+
+        const fd = new FormData()
+        fd.append('point_id', String(this.pointId))     // ★ 子でセット
+        fd.append('kind', kind)
+        fd.append('note', note)
+        if (outFile) fd.append('media', outFile, outFile.name || 'media.bin')
+
+        if (kind === 'image') {
+          fd.append('image_target_bytes', String(imageMaxBytes))
+        } else if (kind === 'video') {
+          fd.append('needs_transcode','1')
+          fd.append('target_bytes', String(videoMaxBytes))
+          fd.append('max_width','1280'); fd.append('max_height','720')
+        }
+
+        // 親に送って、親がPOSTする
+        // this.$emit('save', { formData: fd, kind, note })
+
+        this.$emit('update:modelValue', false)
+      } finally { this.saving = false }
+    },
     onOpen(){
       this.note = this.initialNote || ''
     },
@@ -179,16 +215,6 @@ export default {
       this.file = null;
       if (this.$refs.fileInputImage) this.$refs.fileInputImage.value = '';
       if (this.$refs.fileInputVideo) this.$refs.fileInputVideo.value = '';
-    },
-    async onSave(){
-      if (this.saving) return;
-      this.saving = true;
-      try{
-        const payload = { file: this.file || null, kind: this.previewKind || null, note: this.note.trim() };
-        this.$emit('save', payload);
-        this.internal = false;
-        this.$emit('update:modelValue', false);
-      } finally { this.saving = false; }
     },
   }
 }
