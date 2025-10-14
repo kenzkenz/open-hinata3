@@ -356,20 +356,6 @@
         v-model="mediaDlg"
         @save="onMediaSave"
     />
-<!--    <v-dialog v-model="mediaNoteDialog.open" max-width="520">-->
-<!--      <v-card>-->
-<!--        <v-card-title class="text-h6">ノート</v-card-title>-->
-<!--        <v-divider />-->
-<!--        <v-card-text class="pt-4">-->
-
-<!--        </v-card-text>-->
-<!--        <v-divider />-->
-<!--        <v-card-actions>-->
-<!--          <v-spacer />-->
-<!--          <v-btn variant="text" @click="closeMediaNoteDialog">閉じる</v-btn>-->
-<!--        </v-card-actions>-->
-<!--      </v-card>-->
-<!--    </v-dialog>-->
 
     <!-- 測位  -->
     <v-dialog class='toroku-div' v-model="dialogForToroku" max-width="850px" :retain-focus="false" :persistent="kansokuPhase === 'await' || kansokuRunning">
@@ -529,7 +515,6 @@
             <div class="mt-1" style="color:black;">
               点名：{{ (currentPointName || tenmei || '').trim() || '未設定' }}
             </div>
-
             <div class="mt-1" :style="`color:${kakusaColor};`">
               較差：XY={{ pendingObservation.diffTxt }}m
             </div>
@@ -1015,8 +1000,7 @@ export default {
           if (needAddr)   rec.address    = addr
         }
 
-        const SRC = 'oh-toroku-point-src'
-        const LAB   = 'oh-toroku-point-label';
+        const SRC = this.SRC
         const f = this._torokuFC.features.find(f => f.properties.id === id)
         if (f) {
           f.properties.label = name
@@ -1806,17 +1790,11 @@ export default {
       }
     },
 
-    // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
-    async downloadCsvForSokui() {
-      if (!this.currentJobId) {
-        alert('ジョブが未選択です');
-        return;
-      }
-
+    async createCsvRows() {
       const fd = new FormData();
       fd.append('action', 'job_points.list');
       fd.append('job_id', String(this.currentJobId));
-      const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
+      const res = await fetch(this.apiForJobPicker, {method: 'POST', body: fd});
       const data = await res.json();
 
       const list = Array.isArray(data.data) ? data.data : [];
@@ -1827,18 +1805,18 @@ export default {
 
       // ★ 見出し：最後から2番目 = 測位日時の直前
       const header = [
-        '点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度',
-        '所在','測位回数','測位日時'
+        '点名', 'X', 'Y', '標高', 'アンテナ高', '標高（アンテナ位置）', '楕円体高', 'XY較差', '座標系', '緯度', '経度',
+        '所在', '測位回数', '測位日時'
       ];
 
       const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
-      const fmt3    = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
+      const fmt3 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
       const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
       const fmtDeg8 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(8) : '');
       const esc = (v) => {
         if (v == null) return '';
         const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
       };
 
       const rows = [header];
@@ -1861,13 +1839,22 @@ export default {
           esc(String(r.observed_at ?? ''))
         ]);
       }
+      return rows;
+    },
+    // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
+    async downloadCsvForSokui() {
+      if (!this.currentJobId) {
+        alert('ジョブが未選択です');
+        return;
+      }
 
+      const rows = await this.createCsvRows()
       const csv = rows.map(r => r.join(',')).join('\r\n') + '\r\n';
 
       // ファイル名 = JOB名 + ポイント数（既存仕様）
       const jobNameRaw = String(this.currentJobName || 'JOB');
       const jobNameSafe = jobNameRaw.replace(/[\\/:*?"<>|]/g, '_').trim() || 'JOB';
-      const pointCount = Array.isArray(list) ? list.length : 0;
+      const pointCount = rows.length - 1;
       const fname = `${jobNameSafe}_${pointCount}点.csv`;
 
       const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -2403,8 +2390,8 @@ export default {
           body: fd,
         });
         const data = await res.json();
-        if (!data?.ok) {
-          alert('ポイント削除に失敗：' + (data?.error || 'サーバーエラー'));
+        if (!data.ok) {
+          alert('ポイント削除に失敗：' + (data.error || 'サーバーエラー'));
           return;
         }
         // 1) 一覧（=唯一の真実源）から除去
@@ -2412,6 +2399,7 @@ export default {
             String(x.point_id) !== pointId
         );
         // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
+        console.log(this.pointsForCurrentJob)
         try {
           const map = this.map01;
           if (map) {
@@ -2430,7 +2418,6 @@ export default {
                 geometry: { type: 'Point', coordinates: [lng, lat] }
               });
             }
-
             this._torokuFC = fc;
             this.setSourceAndLayer(fc)
           }
@@ -2564,14 +2551,14 @@ export default {
 
     /** 確定赤丸描画：確定座標と点名で赤丸を追加（レイヤは既存前提） */
     confirmTorokuPointAtCurrent(name, rowArray) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      const SRC   = 'oh-toroku-point-src';
-      const LAYER = 'oh-toroku-point';
-      const LAB   = 'oh-toroku-point-label';
+      const map = this.map01;
+      const SRC   = this.SRC;
+      const LAYER = this.LAYER;
+      const LAB   = this.LAB;
 
       // ★ 座標は “常に” torokuPointLngLat から取得（pending/lastIdは使わない）
-      const lng = Number(this?.torokuPointLngLat?.lng);
-      const lat = Number(this?.torokuPointLngLat?.lat);
+      const lng = Number(this.torokuPointLngLat.lng);
+      const lat = Number(this.torokuPointLngLat.lat);
       if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
         console.warn('[toroku] confirm failed: no torokuPointLngLat');
         return;
@@ -2594,7 +2581,7 @@ export default {
       this._torokuFC.features.push(feature);
 
       // ★ 地図へ反映（なければ作成／あれば更新）
-      if (map?.getSource(SRC)) {
+      if (map.getSource(SRC)) {
         map.getSource(SRC).setData(this._torokuFC);
       } else if (map) {
         map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
@@ -2623,7 +2610,6 @@ export default {
           });
         }
       }
-
       // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
       this.torokuPointLngLat = { lng, lat };
     },
@@ -3142,7 +3128,7 @@ export default {
       // a) サーバー由来（ジョブ内の既存点）
       if (Array.isArray(this.pointsForCurrentJob)) {
         for (const p of this.pointsForCurrentJob) {
-          const n = p?.point_name ?? p?.name;
+          const n = p.point_name ?? p.name;
           if (n) used.add(String(n));
         }
       }
@@ -3150,7 +3136,7 @@ export default {
       // b) 地図上に描画済み（現在セッション内）
       if (this._torokuFC?.features) {
         for (const f of this._torokuFC.features) {
-          const n = f?.properties?.name ?? f?.properties?.label;
+          const n = f.properties.name ?? f.properties.label;
           if (n) used.add(String(n));
         }
       }
@@ -3158,7 +3144,7 @@ export default {
       // c) ローカル一時（未送信の csv2Points など）
       if (Array.isArray(this.csv2Points)) {
         for (const p of this.csv2Points) {
-          const n = p?.name;
+          const n = p.name;
           if (n) used.add(String(n));
         }
       }
