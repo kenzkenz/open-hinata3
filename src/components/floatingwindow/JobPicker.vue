@@ -19,7 +19,7 @@
             :disabled="showJobListOnly"
             @click="showJobListOnly = true"
         >
-          一覧
+          ジョブ一覧
         </v-btn>
 
         <v-btn
@@ -788,7 +788,7 @@ export default {
       resolver: null,
       apiForJobPicker: 'https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php',
       SRC: 'oh-toroku-point-src',
-      L: 'oh-toroku-point',
+      LAYER: 'oh-toroku-point',
       LAB: 'oh-toroku-point-label',
     }
   },
@@ -912,9 +912,9 @@ export default {
         map.getSource(this.SRC).setData(fc);
       } else {
         map.addSource(this.SRC, { type: 'geojson', data: fc });
-        if (!map.getLayer(this.L)) {
+        if (!map.getLayer(this.LAYER)) {
           map.addLayer({
-            id: this.L,
+            id: this.LAYER,
             type: 'circle',
             source: this.SRC,
             paint: {
@@ -941,7 +941,7 @@ export default {
           });
         }
       }
-      try { map.moveLayer(this.L); } catch (_) {}
+      try { map.moveLayer(this.LAYER); } catch (_) {}
       try { map.moveLayer(this.LAB); }   catch (_) {}
     },
 
@@ -966,10 +966,6 @@ export default {
     },
     closeConfigDialog () {
       const d = this.configDialog
-      d.open = false
-    },
-    closeMediaNoteDialog () {
-      const d = this.mediaNoteDialog
       d.open = false
     },
 
@@ -1227,8 +1223,7 @@ export default {
 
         console.log(this.pointsForCurrentJob)
         console.log(this.pointsForCurrentJob.at(-1).point_id)
-        this.lastPointId = this.pointsForCurrentJob.at(-1).point_id
-
+        this.lastPointId = this.pointsForCurrentJob.at(0).point_id
 
         await this.refreshJobs();
       } catch (e) {
@@ -2368,13 +2363,12 @@ export default {
           const map = this.map01;
           if (map) {
             try { if (map.getLayer(this.LAB)) map.removeLayer(this.LAB); } catch {}
-            try { if (map.getLayer(this.L))   map.removeLayer(this.L); }   catch {}
+            try { if (map.getLayer(this.LAYER))   map.removeLayer(this.LAYER); }   catch {}
             try { if (map.getSource(this.SRC)) map.removeSource(this.SRC); } catch {}
           }
 
           // 内部キャッシュも空に
           this._torokuFC = { type: 'FeatureCollection', features: [] };
-          this._lastTorokuFeatureId = null;
           this.pointsForCurrentJob = [];
           this.torokuPointLngLat = null;
 
@@ -2399,7 +2393,6 @@ export default {
         message: `このポイントを削除しますか？<br>ID: ${pointId}<br>点名: ${pt.point_name}`,
       })
       if (!ok) return
-      console.log('削除実行')
       const fd = new FormData();
       fd.append('action', 'job_points.delete');
       fd.append('point_id', pointId);
@@ -2457,22 +2450,7 @@ export default {
       }
     },
 
-    /** （ローカル限定）ジョブ一覧のテスト読み込み・直近選択の復元 */
-    loadJobsFromStorage() {
-      try {
-        const raw = localStorage.getItem('oh3_jobs');
-        const arr = raw ? JSON.parse(raw) : [];
-        this.jobList = Array.isArray(arr) ? arr : [];
-      } catch {
-        this.jobList = [];
-      }
-
-      // ★ 初回起動時は未選択にするため、直近選択の復元はしない
-      this.currentJobId = null;
-      this.currentJobName = '';
-    },
-
-// 測位点（赤丸）: 設置/クリック/レイヤ管理
+    // 測位点（赤丸）: 設置/クリック/レイヤ管理
     /** マップ中央のゾーンから座標系ラベルを推定し store に反映 */
     zahyoGet() {
       const map = this.map01
@@ -2488,22 +2466,10 @@ export default {
       }
     },
 
-    /** 測位クリック発火時：赤丸位置（＝緑丸も）をセットしてダイアログを開く */
-    handleTorokuMapClick (lngLat) {
-      this.torokuPointLngLat = { lng: lngLat.lng, lat: lngLat.lat };
-      this.upsertCurrentMarker(lngLat.lng, lngLat.lat);  // 緑丸表示・更新
-      try { this.$emit?.('toroku-point', { lng: lngLat.lng, lat: lngLat.lat }); } catch(_) {}
-      try { window.dispatchEvent(new CustomEvent('oh3:toroku:point', { detail: { lngLat } })); } catch(_) {}
-      this.dialogForToroku = true;
-      this.kansokuRunning = false;
-      this.kansokuRemaining = 0;
-      this.kansokuCsvRows = null;
-    },
-
     /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
     clearTorokuPoint () {
       const map = this.map01; if (!map) return;
-      try { if (map.getLayer(this.L)) map.removeLayer(this.L); } catch(_) {}
+      try { if (map.getLayer(this.LAYER)) map.removeLayer(this.LAYER); } catch(_) {}
       try { if (map.getLayer(this.LAB)) map.removeLayer(this.LAB); } catch(_) {}
       try { if (map.getSource(this.SRC)) map.removeSource(this.SRC); } catch(_) {}
       this.torokuPointLngLat = null;
@@ -2596,50 +2562,6 @@ export default {
       );
     },
 
-    /** 明示的に座標とラベルを渡して赤丸を追加（必要ならレイヤ作成） */
-    async plotTorokuPoint (lngLat, label, opts = {}) {
-      const map = (this.$store?.state?.map01) || this.map01;
-      if (!map) { console.warn('[plotTorokuPoint] map not found'); return; }
-
-      const lng = Number(lngLat?.lng);
-      const lat = Number(lngLat?.lat);
-      if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-        console.warn('[plotTorokuPoint] invalid lngLat', lngLat); return;
-      }
-
-      if (!this._torokuFC) {
-        this._torokuFC = { type:'FeatureCollection', features: [] };
-      }
-
-      const wantDefer = opts?.deferLabel === true;
-      const text = wantDefer ? '' : (label || this.currentPointName || this.tenmei || '');
-      const fid = 'pt_' + Date.now() + '_' + (Math.random()*1e6|0);
-
-      this._torokuFC.features.push({
-        type: 'Feature',
-        properties: {
-          id: fid,
-          label: text,
-          name: text,
-          pendingLabel: wantDefer ? true : false,
-        },
-        geometry: { type: 'Point', coordinates: [lng, lat] }
-      });
-
-      this.setSourceAndLayer(this._torokuFC)
-
-      this.torokuPointLngLat = { lng, lat };
-      this.updateChainLine();
-    },
-
-    /** ジョブピッカーをフローティングで開く */
-    jobPickerFWOpen() {
-      // まず緑丸を必ず消す
-      this.clearCurrentMarker()
-      this.$store.dispatch('showFloatingWindow', 'job-picker');
-      this.isJobMenu = true
-    },
-
     /** 確定赤丸描画：確定座標と点名で赤丸を追加（レイヤは既存前提） */
     confirmTorokuPointAtCurrent(name, rowArray) {
       const map = (this.$store?.state?.map01) || this.map01;
@@ -2718,7 +2640,6 @@ export default {
 
       this.clearTorokuPoint();
       this._torokuFC = { type: 'FeatureCollection', features: [] };
-      this._lastTorokuFeatureId = null;
       this.torokuPointLngLat = null;
 
       this.kansokuCsvRows = null;
@@ -2733,88 +2654,7 @@ export default {
       this.clearChainLineOnly()
     },
 
-    /** =========================
-     * 追跡関連（現在地追跡・距離線・ログ出力）
-     * ========================= */
-
-// 外部標高（ドロガー）受信
-    /** 外部標高の正規化セット */
-    setExternalElevation(payload) {
-      const norm = this.extractElevationFrom(payload);
-      if (!norm) { console.warn('[elev] payload has no usable elevation', payload); return; }
-      this.externalElevation = norm;
-      try { this.lastElevationDebugLog?.({ ok:true, norm }); } catch {}
-    },
-
-    /** window.dispatchEvent('oh3:elevation', { ... }) を購読 */
-    bindExternalElevationListener() {
-      const handler = (ev) => {
-        const d = ev?.detail || {};
-        this.setExternalElevation(d);
-      };
-      if (this._elevHandler) window.removeEventListener('oh3:elevation', this._elevHandler);
-      window.addEventListener('oh3:elevation', handler);
-      this._elevHandler = handler;
-    },
-
-    bindElevationPostMessage() {
-      const onMsg = (ev) => {
-        const d = ev?.data || {};
-        if (d && d.type === 'oh3:elevation') return this.setExternalElevation(d);
-        if (d && (d.lat != null || d.longitude != null)) {
-          const maybe = this.extractElevationFrom(d);
-          if (maybe) this.setExternalElevation(maybe);
-        }
-      };
-      if (this._elevPM) window.removeEventListener('message', this._elevPM);
-      window.addEventListener('message', onMsg);
-      this._elevPM = onMsg;
-    },
-
-    /** 外部データから標高を抽出・正規化 */
-    extractElevationFrom(payload) {
-      if (!payload || typeof payload !== 'object') return null;
-
-      const pick = (...names) => {
-        for (const k of names) {
-          for (const key of Object.keys(payload)) {
-            if (key.toLowerCase() === k.toLowerCase()) return payload[key];
-          }
-        }
-        return undefined;
-      };
-
-      let hOrtho = pick('hOrthometric','orthometricHeight','orthometric','h_msl','msl','elevation','height','altMSL','z','H','h');
-      let hEll  = pick('hEllipsoidal','ellipsoidalHeight','ellipsoidal','hae','alt','altitude','altEllipsoid');
-      let geoidN = pick('geoidN','N','geoid','geoidSeparation','geoidSep');
-
-      const toNum = (v) => {
-        if (v == null) return NaN;
-        if (typeof v === 'number') return v;
-        if (typeof v === 'string') {
-          const s = v.replace(',', '.').trim();
-          const n = Number(s);
-          return Number.isFinite(n) ? n : NaN;
-        }
-        return NaN;
-      };
-      const nOrtho = toNum(hOrtho);
-      const nEll   = toNum(hEll);
-      const nN     = toNum(geoidN);
-
-      if (Number.isFinite(nOrtho)) {
-        return { hType: 'orthometric', hMeters: nOrtho, geoidN: Number.isFinite(nN) ? nN : null, hOrthometric: nOrtho };
-      }
-
-      if (Number.isFinite(nEll) && Number.isFinite(nN)) {
-        const h = nEll - nN;
-        return { hType: 'ellipsoidal', hMeters: nEll, geoidN: nN, hOrthometric: h };
-      }
-
-      return null;
-    },
-
-// 現在地追跡（watchPosition）・距離線 UI
+    // 現在地追跡（watchPosition）・距離線 UI
     /**
      * ポーリング版
      */
@@ -3232,69 +3072,7 @@ export default {
       try { this.currentMarker?.remove?.(); } catch(_) {}
       this.startWatchPosition();
     },
-    async toggleWatchPosition (mode, isClose) {
-      this.isTracking = false;
-      this.s_isKuiuchi = false;
-      this.isHeadingUp = false;
-      this.stopWatchPosition();
-      try { this.centerMarker?.remove?.(); } catch(_) {}
-      this.centerMarker = null;
-      try { this.currentMarker?.remove?.(); } catch(_) {}
-      this.currentMarker = null;
-      try { this.compass?.turnOff?.(); } catch(_) {}
-      const map = this.$store?.state?.map01; try { map?.resetNorthPitch?.(); } catch(_) {}
-      this.$store.state.geo = null;
-      try { history('現在位置継続取得ストップ(最小)', window.location.href); } catch(_) {}
-      this.detachGpsLineClick();
-      this.clearGpsLine();
-      this.gpsLineAnchorLngLat = null;
-      if (!isClose) {
-        this.dialogForWatchPosition = true;
-        if (mode === 'k') {
-          this.isTracking = false
-          this.s_isKuiuchi = true
-        } else {
-          this.isTracking = true
-          this.s_isKuiuchi = false
-        }
-      }
-    },
 
-// 追跡ログ（移動履歴）
-    requestClearLog() { this.confirmClearLog = true; },
-    doClearLog() {
-      if (this.logEnabled) this.stopTrackLog();
-      this.clearTrackLog();
-      this.confirmClearLog = false;
-    },
-    toggleTrackLog() {
-      if (this.logEnabled) {
-        this.stopTrackLog();
-      } else {
-        this.startTrackLog();
-      }
-    },
-    startTrackLog() {
-      if (!this.csvRows) {
-        this.csvRows = [[
-          'timestamp','lat','lon','X','Y','CRS',
-          'accuracy','quality','eventType'
-        ]];
-      }
-      this.logEnabled = true;
-      this.lastLogAt = 0;
-      this.lastLogXY = null;
-      try { this.maybeLogPoint('start'); } catch(_) {}
-    },
-    stopTrackLog() {
-      this.logEnabled = false;
-      try { this.maybeLogPoint('stop'); } catch(_) {}
-    },
-    clearTrackLog() {
-      this.csvRows = null;
-      this.lastLogAt = 0;
-      this.lastLogXY = null;
-    },
     maybeLogPoint(eventType = 'point') {
       if (!this.logEnabled) return;
 
@@ -3337,73 +3115,8 @@ export default {
       this.lastLogAt = now;
       this.lastLogXY = { x: xN, y: yE };
     },
-    exportTrackCsv() {
-      if (!this.csvRows || this.csvRows.length <= 1) return;
 
-      const csvEscape = (v) => {
-        if (v == null) return '';
-        const s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
-        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      };
-
-      const csv = this.csvRows
-          .map(row => row.map(csvEscape).join(','))
-          .join('\r\n') + '\r\n';
-
-      this.$_downloadText(
-          csv,
-          `track_${this.$_jstStamp()}.csv`,
-          'text/csv;charset=utf-8;'
-      );
-    },
-    exportTrackSima(title) {
-      if (!this.csvRows || this.csvRows.length <= 1) return;
-
-      const header = this.csvRows[0];
-      const col = (name) => header.indexOf(name);
-      const idx_ts = col('timestamp');
-      const idx_x  = col('X');
-      const idx_y  = col('Y');
-      const idx_cs = col('CRS');
-
-      const rows = this.csvRows.slice(1);
-      if (!rows.length) return;
-
-      const siteName = title || (this.$store?.state?.siteName ?? 'OH3出力');
-      const csLabel  = (rows[0] && rows[0][idx_cs]) || (this.$store?.state?.s_zahyokei || this.$store?.state?.zahyokei || '');
-
-      const head = [
-        `G00,01,${siteName} 座標`,
-        `Z00,座標データ,`,
-        `G01,座標系,${csLabel}`,
-        `A00,`
-      ];
-      const pad = (n, w=2) => String(n).padStart(w, '0');
-
-      let n = 0;
-      const a01 = rows.map(r => {
-        const ts = r[idx_ts];
-        const Xn = Number(r[idx_x]);
-        const Ye = Number(r[idx_y]);
-        if (!Number.isFinite(Xn) || !Number.isFinite(Ye)) return null;
-
-        const d = new Date(ts);
-        const ptName = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-
-        n += 1;
-        return `A01,${n},${ptName},${Xn.toFixed(3)},${Ye.toFixed(3)},,`;
-      }).filter(Boolean);
-
-      if (!a01.length) return;
-
-      const simTxt = [...head, ...a01].join('\r\n') + '\r\n';
-
-      const sjisBytes = this.$_toShiftJisBytes(simTxt);
-      const blob      = new Blob([sjisBytes], { type: 'application/octet-stream' });
-      this.$_downloadBlob(blob, `track_${this.$_jstStamp()}.sim`);
-    },
-
-// 点名（連番）管理
+    // 点名（連番）管理
     loadTenmeiFromStorage() {
       try {
         const v = localStorage.getItem('tenmei') || '';
@@ -3411,29 +3124,6 @@ export default {
         this.tenmeiError = '';
       } catch (_) {}
     },
-    handleTenmaiPrefixInput(v) {
-      if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
-      v = (v == null) ? '' : String(v).trim();
-
-      if (v === '') {
-        this.tenmaiPrefix = '';
-        this.tenmaiPrefixError = '';
-        try { localStorage.removeItem('tenmaiPrefix'); } catch(_) {}
-        return;
-      }
-
-      if (!this.isValidTenmaiPrefix(v)) {
-        this.tenmaiPrefixError = '英数字、ハイフン、アンダースコアのみ（最大12文字）で入力してください。';
-        this.tenmaiPrefix = v;
-        return;
-      }
-
-      this.tenmaiPrefix = v;
-      this.tenmaiPrefixError = '';
-      try { localStorage.setItem('tenmaiPrefix', v); } catch(_) {}
-    },
-    isValidTenmaiPrefix(v) { return /^[0-9A-Za-z_-]{1,12}$/.test(String(v)); },
-
     handleTenmeiInput(v) {
       if (v && v.target && typeof v.target.value !== 'undefined') v = v.target.value;
       let s = (v == null) ? '' : String(v).trim();
@@ -3486,8 +3176,8 @@ export default {
       return cand;
     },
 
-// 汎用ユーティリティ（日時/保存/クランプ/終了処理）
-// 色分け: 較差 <=0.02: success, <=0.05: warning, それ以外: error
+    // 汎用ユーティリティ（日時/保存/クランプ/終了処理）
+    // 色分け: 較差 <=0.02: success, <=0.05: warning, それ以外: error
 
     fmtLL(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(5) : v; },
     fmtXY(v) { const n = Number(v); return Number.isFinite(n) ? n.toFixed(3) : v; },
@@ -3508,15 +3198,6 @@ export default {
         hour12:false
       }).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});
       return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
-    },
-    $_jstStamp() {
-      const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Tokyo',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-      }).formatToParts(new Date()).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
-      return `${parts.year}-${parts.month}-${parts.day}_${parts.hour}-${parts.minute}-${parts.second}`;
     },
     $_toShiftJisBytes(text) {
       try {
@@ -3602,51 +3283,6 @@ export default {
       } else {
         this.centerMarker.setLngLat([longitude, latitude]);
       }
-    },
-    goToCurrentLocation () {
-      const map = this.$store.state.map01
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const userLongitude = position.coords.longitude;
-              const userLatitude = position.coords.latitude;
-              // ユーザーの操作を一時的に無効化
-              map.scrollZoom.disable();
-              map.dragPan.disable();
-              map.keyboard.disable();
-              map.doubleClickZoom.disable();
-              // 現在位置にマップを移動
-              map.flyTo({
-                center: [userLongitude, userLatitude],
-                zoom: 15.01,
-                essential: true // アニメーションを有効にする
-              });
-              // flyToアニメーション完了後にユーザー操作を再度有効化
-              map.once('moveend', () => {
-                map.scrollZoom.enable();
-                // alert('pan')
-                map.dragPan.enable();
-                map.keyboard.enable();
-                map.doubleClickZoom.enable();
-              });
-              // 現在位置にマーカーを追加
-              this.currentMarker = new maplibregl.Marker()
-                  .setLngLat([userLongitude, userLatitude])
-                  // .setPopup(new maplibregl.Popup().setHTML("<strong>現在位置</strong>"))
-                  .addTo(map);
-              // マーカーをクリックしたときにマーカーを削除
-              this.currentMarker.getElement().addEventListener('click', () => {
-                this.currentMarker.remove(); // マーカーをマップから削除
-              });
-            },
-            (error) => {
-              console.error("現在位置の取得に失敗しました:", error);
-            }
-        );
-      } else {
-        console.error("Geolocationはこのブラウザでサポートされていません。");
-      }
-      history('現在位置取得',window.location.href)
     },
   },
   mounted() {

@@ -208,6 +208,51 @@ try {
             $stmt2->execute([$point_id]);
             echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
         }
+        // -------------------- job_points.update_media（超軽量版：常に6項目受領） --------------------
+        case 'job_points.update_media': {
+            $point_id = (int)($_POST['point_id'] ?? 0);
+            if ($point_id <= 0) { echo json_encode(['ok'=>false,'error'=>'point_id は必須']); exit; }
+
+            // 1) 受領値を正規化（空文字→NULL、型を揃える）
+            $note = isset($_POST['note']) ? trim((string)$_POST['note']) : '';
+            $note = ($note === '') ? null : $note;
+
+            $mk = strtolower((string)($_POST['media_kind'] ?? ''));
+            if (!in_array($mk, ['none','image','video'], true)) $mk = 'none';  // enum保護
+
+            $media_path = isset($_POST['media_path']) ? trim((string)$_POST['media_path']) : '';
+            if ($media_path === '') $media_path = null;       // WEB上のURL
+
+            $abs_path = isset($_POST['abs_path']) ? trim((string)$_POST['abs_path']) : '';
+            if ($abs_path === '') $abs_path = null;           // サーバー上のフルパス
+
+            $media_size = ($_POST['media_size'] ?? '');
+            $media_size = ($media_size === '' || $media_size === null) ? null : $media_size;
+
+            $media_processing = ($_POST['media_processing'] ?? '');
+            $media_processing = ($media_processing === '' || $media_processing === null) ? 0 : ((int)$media_processing ? 1 : 0);
+
+            // 2) 一括UPDATE（毎回6カラムすべて更新）
+            $sql = 'UPDATE job_points
+               SET note = :note,
+                   media_kind = :mk,
+                   media_path = :mp,
+                   abs_path = :ap,
+                   media_size = :ms,
+                   media_processing = :mpc
+             WHERE point_id = :pid';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':note'=>$note, ':mk'=>$mk, ':mp'=>$media_path, ':ap'=>$abs_path,
+                ':ms'=>$media_size, ':mpc'=>$media_processing, ':pid'=>$point_id
+            ]);
+
+            // 3) 反映行を返す
+            $stmt2 = $pdo->prepare('SELECT * FROM job_points WHERE point_id = ?');
+            $stmt2->execute([$point_id]);
+            echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
+        }
+
 
         default: {
             echo json_encode(['ok'=>false,'error'=>'未知の action: '.$action], JSON_UNESCAPED_UNICODE); exit;

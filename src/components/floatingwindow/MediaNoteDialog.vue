@@ -145,33 +145,84 @@ export default {
     this.isMobile = /iPhone|Android.+Mobile/.test(navigator.userAgent)
   },
   methods: {
-    async onSave ({ imageMaxBytes = 1*1024*1024, videoMaxBytes = 5*1024*1024 } = {}) {
-      if (this.saving) return
-      if (!this.pointId) { this.$emit('error','point_id is required'); return }
+    async onSave({ imageMaxBytes = 1 * 1024 * 1024 } = {}) {
+      if (this.saving) return;
+      if (!this.pointId) { this.$emit('error', 'point_id is required'); return; }
+      if (!this.userId)  { this.$emit('error', 'userId is required');  return; }
 
-      this.saving = true
+      this.saving = true;
       try {
-        const kind = this.previewKind || 'none'
-        const note = this.note.trim()
-        let outFile = this.file || null
+        const kind = this.previewKind || 'none';  // 'image' | 'video' | 'none'
+        const note = this.note?.trim() || '';
+        let outFile = this.file || null;
 
+        // 画像だけクライアント圧縮
         if (kind === 'image' && outFile) {
-          outFile = await compressImageToTarget(outFile, { targetBytes: imageMaxBytes })
+          outFile = await compressImageToTarget(outFile, { targetBytes: imageMaxBytes });
         }
 
-        const fd = new FormData();
-        fd.append('dir', this.userId);
-        fd.append('kind', kind);          // 'image' | 'video'
-        fd.append('media', outFile, outFile.name);
+        // -------- ① 保存サーバーへ（常に FormData）--------
+        let media_path = ''; // URL
+        let abs_path   = ''; // サーバーフルパス
+        let media_size = ''; // 数値文字列
+        let media_processing = (kind === 'video') ? 1 : 0; // 動画は処理中=1
 
-        const res = await fetch('https://kenzkenz.net/myphp/sokui_upload.php', { method: 'POST', body: fd });
-        const json = await res.json();
-        // json.ok が true なら json.url / json.abs_path / json.rel_path を次のPHPへ渡してDB更新
+        if (outFile && (kind === 'image' || kind === 'video')) {
+          const fd1 = new FormData();
+          fd1.append('dir', this.userId);                          // 例: 'u12345'
+          fd1.append('kind', kind);                                // 'image' | 'video'
+          fd1.append('media', outFile, outFile.name || 'media.bin');
 
-        console.log(json);
+          const r1 = await fetch('https://kenzkenz.net/myphp/sokui_upload.php', {
+            method: 'POST',
+            body: fd1,            // ← Content-Typeは付けない
+            // credentialsやmodeが必要ならここで指定
+          });
 
-        this.$emit('update:modelValue', false)
-      } finally { this.saving = false }
+          let j1 = null;
+          try { j1 = await r1.json(); } catch (_) {}
+          if (r1.ok && j1 && j1.ok) {
+            media_path = j1.url || '';
+            abs_path   = j1.abs_path || '';
+            media_size = j1.size_mb;
+            if (kind === 'video' && (j1.processing === 0 || j1.processing === '0')) {
+              media_processing = 0;
+            }
+          } else {
+            this.$emit('error', (j1 && j1.error) ? j1.error : 'upload failed');
+          }
+        }
+
+        // -------- ② DB保存（FormDataで6項目すべて送る）--------
+        const fd2 = new FormData();
+        fd2.append('action', 'job_points.update_media');
+        fd2.append('point_id', String(this.pointId));
+        fd2.append('note', note);                         // 空でも送る
+        fd2.append('media_kind', kind);                   // 'none' | 'image' | 'video'
+        fd2.append('media_path', media_path);             // URL（空ならPHPでNULL化）
+        fd2.append('abs_path',   abs_path);               // サーバーパス（空→NULL）
+        fd2.append('media_size', media_size);             // '' or 数値文字列
+        fd2.append('media_processing', String(media_processing)); // '0' | '1'
+
+        const r2 = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', {
+          method: 'POST',
+          body: fd2,            // ← JSONではなく FormData
+        });
+        const j2 = await r2.json();
+
+        if (!r2.ok || !j2.ok) {
+          this.$emit('error', (j2 && j2.error) ? j2.error : 'db update failed');
+          return;
+        }
+
+        // 成功
+        this.$emit('save:done', { upload: { media_path, abs_path, media_size }, db: j2.data });
+        this.$emit('update:modelValue', false);
+      } catch (e) {
+        this.$emit('error', e?.message || String(e));
+      } finally {
+        this.saving = false;
+      }
     },
     onOpen(){
       this.note = this.initialNote || ''
