@@ -779,6 +779,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'sokuiHeader',
       'isAndroid',
       'disabledForSokui',
       'map01',
@@ -1803,12 +1804,6 @@ export default {
         return;
       }
 
-      // ★ 見出し
-      const header = [
-        '点名', 'X', 'Y', '標高', 'アンテナ高', '標高（アンテナ位置）', '楕円体高', 'XY較差', '座標系', '緯度', '経度',
-        '所在', '測位回数', '測位日時'
-      ];
-
       const num = (v) => Number.isFinite(Number(v)) ? Number(v) : NaN;
       const fmt3 = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(3) : '');
       const fmtPole = (v) => (Number.isFinite(num(v)) ? num(v).toFixed(2) : '');
@@ -1819,7 +1814,7 @@ export default {
         return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
       };
 
-      const rows = [header];
+      const rows = [this.sokuiHeader];
 
       for (const r of list) {
         rows.push([
@@ -1835,6 +1830,9 @@ export default {
           esc(fmtDeg8(r.lat)),
           esc(fmtDeg8(r.lng)),
           esc(String(r.address ?? '')),
+          esc(String(r.note ?? '')),
+          esc(String(r.media_kind ?? '')),
+          esc(String(r.media_path ?? '')),
           esc(Number(r.observe_count)),
           esc(String(r.observed_at ?? ''))
         ]);
@@ -2188,8 +2186,8 @@ export default {
           body: fd,
         });
       const data = await res.json()
-      if (!data?.ok) {
-        const msg = data?.error || 'サーバーエラー';
+      if (!data.ok) {
+        const msg = data.error || 'サーバーエラー';
         alert('ジョブ一覧の取得に失敗しました：' + msg);
         console.error('[jobs.list] server says:', data);
         return;
@@ -2270,6 +2268,10 @@ export default {
         const ts     = String(r.observed_at ?? '');
         const lng    = Number(r.lng);
         const lat    = Number(r.lat);
+        const note   = String(r.note);
+        const address = String(r.address);
+        const mediaKind = String(r.media_kind);
+        const mediaPath = String(r.media_path);
 
         const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
 
@@ -2285,7 +2287,8 @@ export default {
         const rowArray = [
           name, fmt3(Xavg), fmt3(Yavg), fmt3(hOrtho), fmtPole(pole),
           fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
-          String(r.address ?? ''), // 所在
+          address,
+          note, mediaKind, mediaPath,
           ts
         ];
 
