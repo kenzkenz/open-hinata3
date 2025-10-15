@@ -253,7 +253,6 @@ try {
             echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
         }
 
-
         default: {
             echo json_encode(['ok'=>false,'error'=>'未知の action: '.$action], JSON_UNESCAPED_UNICODE); exit;
         }

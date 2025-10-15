@@ -2230,7 +2230,7 @@ export default {
     },
 
     /** 指定ジョブの測位点をサーバから取得し、地図へ一括反映 + 結線更新 + fitBounds */
-    async loadPointsForJob(jobId, options = { fit: true }) {
+    async loadPointsForJob(jobId, options = { fix: false, fit: true }) {
       const fd = new FormData();
       fd.append('action', 'job_points.list');
       fd.append('job_id', String(jobId));
@@ -2306,11 +2306,13 @@ export default {
       this._torokuFC = { type: 'FeatureCollection', features };
       this.setSourceAndLayer(this._torokuFC)
       if(this._torokuFC.features.length > 0){
-        if (options.fit) {
-          map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
-        } else {
-          const first = this.pointsForCurrentJob[0]
-          map.setCenter([first.lng, first.lat]);
+        if (!options.fix) {
+          if (options.fit) {
+            map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80, maxZoom: 18, duration: 0 });
+          } else {
+            const first = this.pointsForCurrentJob[0]
+            map.setCenter([first.lng, first.lat]);
+          }
         }
       }
       this.updateChainLine();
@@ -2398,36 +2400,10 @@ export default {
         this.pointsForCurrentJob = this.pointsForCurrentJob.filter(x =>
             String(x.point_id) !== pointId
         );
-        // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
-        console.log(this.pointsForCurrentJob)
-        const map = this.map01;
-        if (map) {
-          const fc = { type: 'FeatureCollection', features: [] };
-          for (const r of (this.pointsForCurrentJob || [])) {
-            const lng = Number(r.lng), lat = Number(r.lat);
-            if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
-            fc.features.push({
-              type: 'Feature',
-              properties: {
-                id: `pt_${String(r.point_id)}`,
-                label: String(r.point_name),
-                name:  String(r.point_name),
-                pendingLabel: false,
-              },
-              geometry: { type: 'Point', coordinates: [lng, lat] }
-            });
-          }
-          this._torokuFC = fc;
-          this.setSourceAndLayer(fc)
-        }
-
-
-        try {
-          await this.refreshJobs(); // バッジ件数があるなら
-        } catch (e) {
-          console.warn('[deletePoint] refresh after delete failed', e);
-        }
-
+        // 2) 地図も同期
+        await this.loadPointsForJob(this.currentJobId, {fix : true});
+        // サーバからジョブ一覧取得 → UIへ反映
+        await this.refreshJobs();
       } catch (e) {
         console.error('[job_points.delete] 失敗', e);
         alert('削除に失敗しました：' + (e?.message || e));
