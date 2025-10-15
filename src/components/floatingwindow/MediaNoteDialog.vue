@@ -218,6 +218,7 @@ export default {
         this.$emit('save:done', { upload: { media_path, abs_path, media_size }, db: j2.data });
         // this.$emit('update:modelValue', false);
         this.$emit('loadPointsForJob', this.currentJobId, {fix: true});
+        this.onCancel()
       } catch (e) {
         this.$emit('error', e?.message || String(e));
       } finally {

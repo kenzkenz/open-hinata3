@@ -196,6 +196,7 @@
             <div class="list-pane">
               <v-list density="compact" nav>
                 <v-list-item
+                    lines="three"
                     v-for="pt in pointsForCurrentJob"
                     :key="pt.point_id"
                     @click.stop="panToPointXY(pt)"
@@ -218,7 +219,8 @@
 
                   <template #subtitle>
                     <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                      {{ pt.address }}&nbsp;X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                      {{ pt.address }}<br>
+                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
                     </span>
                   </template>
 
@@ -3614,5 +3616,4 @@ export default {
 @media (min-width: 1280px){
   .media-wrap{ width: 96px; height: 96px; }
 }
-
 </style>
