@@ -200,43 +200,26 @@
                     :key="pt.point_id"
                     @click.stop="panToPointXY(pt)"
                 >
-                  <!-- ← 追加：メディアを行に表示 -->
+                  <!-- サムネ：クリックでプレビューを開く -->
                   <template #prepend>
-                    <div v-if="pt.media_path && pt.media_kind === 'image'" class="media-wrap" @click.stop>
-                      <v-img
-                          :src="pt.media_path"
-                          alt="point image"
-                          class="media-thumb"
-                          :eager="false"
-                      :max-width="84"
-                      :max-height="84"
-                      rounded="lg"
-                      />
+                    <div v-if="pt.media_path && pt.media_kind === 'image'" class="media-wrap" @click.stop="openPreview(pt)">
+                      <v-img :src="pt.media_path" alt="point image" class="media-thumb" :max-width="84" :max-height="84" rounded="lg" />
                     </div>
-                    <div v-else-if="pt.media_path && pt.media_kind === 'video'" class="media-wrap" @click.stop>
-                      <video
-                          class="media-thumb"
-                          :src="pt.media_path"
-                          playsinline
-                          controls
-                          muted
-                          preload="metadata"
-                      ></video>
+                    <div v-else-if="pt.media_path && pt.media_kind === 'video'" class="media-wrap" @click.stop="openPreview(pt)">
+                      <video class="media-thumb" :src="pt.media_path" playsinline muted preload="metadata"></video>
                     </div>
                   </template>
 
                   <template #title>
-                    <div class="name-edit-wrap"
-                         @mouseenter="hoverPointId = pt.point_id"
-                         @mouseleave="hoverPointId = null">
+                    <div class="name-edit-wrap" @mouseenter="hoverPointId = pt.point_id" @mouseleave="hoverPointId = null">
                       {{ pt.point_name }}
                     </div>
                   </template>
 
                   <template #subtitle>
-      <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-        {{ pt.media_path }}&nbsp;{{ pt.address }}&nbsp;X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-      </span>
+                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+                      {{ pt.address }}&nbsp;X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                    </span>
                   </template>
 
                   <template #append>
@@ -588,6 +571,58 @@
       @cancel="resolve(false)"
   />
 
+  <!-- 全画面プレビュー（画像/動画） -->
+  <v-dialog v-model="previewOpen" :fullscreen="true" transition="dialog-bottom-transition" scrim="black">
+    <v-card class="preview-card">
+
+      <div class="preview-toolbar">
+        <div class="left">
+          <div class="filename" :title="previewFilename">{{ previewFilename }}</div>
+        </div>
+        <div class="right">
+          <v-btn
+              icon
+              variant="text"
+              size="large"
+              :aria-label="'ダウンロード'"
+              @click="downloadCurrent"
+          >
+            <v-icon size="32">mdi-download</v-icon>
+          </v-btn>
+          <v-btn
+              icon
+              variant="text"
+              size="large"
+              :aria-label="'閉じる'"
+              @click="previewOpen=false"
+          >
+            <v-icon size="32">mdi-close</v-icon>
+          </v-btn>
+        </div>
+      </div>
+
+      <div class="preview-body" @click="previewOpen=false">
+        <v-img
+            v-if="previewKind==='image'"
+            :src="previewSrc"
+            alt="preview"
+            class="preview-media"
+            :eager="true"
+            cover="false"
+        />
+        <video
+            v-else-if="previewKind==='video'"
+            class="preview-media"
+            :src="previewSrc"
+            controls
+            autoplay
+            playsinline
+            @click.stop
+        ></video>
+      </div>
+    </v-card>
+  </v-dialog>
+
 </template>
 
 <script>
@@ -681,6 +716,10 @@ export default {
   ],
   data () {
     return {
+      previewOpen: false,
+      previewSrc: '',
+      previewKind: 'image', // 'image' | 'video'
+      previewFilename: '',
       lastPointId: '',
       mediaDlg: false,
       // 状態
@@ -916,6 +955,43 @@ export default {
       if (this.resolver) this.resolver(val)
       this.resolver = null
       this.confirmDialog.open = false
+    },
+    openPreview (pt) {
+      if (!pt?.media_path) return
+      this.previewSrc = pt.media_path
+      this.previewKind = pt.media_kind === 'video' ? 'video' : 'image'
+      // URL末尾から簡易ファイル名推定
+      try {
+        const u = new URL(pt.media_path, window.location.href)
+        this.previewFilename = decodeURIComponent((u.pathname.split('/').pop() || '').trim()) || 'media'
+      } catch {
+        this.previewFilename = pt.media_path.split('/').pop() || 'media'
+      }
+      this.previewOpen = true
+    },
+    async downloadCurrent () {
+      if (!this.previewSrc) return
+      const fileName = this.previewFilename || (this.previewKind === 'image' ? 'image' : 'video')
+
+      // 同一オリジン/CORS許可ならBlob経由でdownload属性を効かせる
+      try {
+        const res = await fetch(this.previewSrc, { credentials: 'omit', mode: 'cors' })
+        // CORS拒否でもここでthrowされることがあるのでtry内で処理
+        if (!res.ok) throw new Error('fetch failed')
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+        return
+      } catch (e) {
+        // CORSでブロックされた場合などは新規タブで開いてユーザーに保存してもらう
+        window.open(this.previewSrc, '_blank', 'noopener,noreferrer')
+      }
     },
     async onMediaSave({ file, kind, note }){
       const fd = new FormData()
@@ -3487,4 +3563,56 @@ export default {
 @media (min-width: 1280px){
   .media-wrap{ width: 96px; height: 96px; }
 }
+
+.media-wrap{
+  width: 84px; height: 84px;
+  display:flex; align-items:center; justify-content:center;
+  margin-right: 10px; flex-shrink: 0;
+}
+.media-thumb{
+  width: 100%; height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.12);
+}
+
+/* === プレビュー === */
+.preview-card{
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  background: #111; /* 真っ黒だと白飛び、少しトーンダウン */
+}
+.preview-toolbar{
+  height: 64px;                 /* 56→64 に拡大 */
+  padding: 0 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  color: #fff; background: rgba(0,0,0,.35); backdrop-filter: blur(6px);
+}
+.preview-toolbar .left{
+  display:flex; align-items:center; gap:10px;
+  min-width: 0;
+}
+.preview-toolbar .right{
+  display:flex; align-items:center; gap:6px;
+}
+.filename{
+  max-width: 65vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 15px; opacity: .9;
+}
+.preview-body{
+  flex: 1 1 auto;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px;
+}
+.preview-media{
+  max-width: 100%;
+  max-height: calc(100vh - 64px - 20px);  /* 56→64 に合わせて再計算 */
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.5);
+}
+@media (min-width: 1280px){
+  .media-wrap{ width: 96px; height: 96px; }
+}
+
 </style>
