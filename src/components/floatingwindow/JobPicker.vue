@@ -2030,7 +2030,7 @@ export default {
 
         // ① CSV相当の最後列 “観測日時” でソート、②無ければ push 順
         const toKey = (f) => {
-          const row = f?.properties?.oh3_csv2_row;
+          const row = f.properties.oh3_csv2_row;
           if (!row) return Number.MAX_SAFE_INTEGER;
           try {
             const arr = Array.isArray(row) ? row : JSON.parse(row);
@@ -2265,13 +2265,14 @@ export default {
         const hae    = Number(r.hae_ellipsoidal);
         const diff   = Number(r.xy_diff);
         const cs     = String(r.crs_label ?? '');
-        const ts     = String(r.observed_at ?? '');
+        const observedAt = String(r.observed_at ?? '');
         const lng    = Number(r.lng);
         const lat    = Number(r.lat);
         const note   = String(r.note);
         const address = String(r.address);
         const mediaKind = String(r.media_kind);
         const mediaPath = String(r.media_path);
+        const observeCount = Number(r.observe_count);
 
         const hasLngLat = Number.isFinite(lng) && Number.isFinite(lat);
 
@@ -2289,7 +2290,7 @@ export default {
           fmt3(hAtAnt), fmt3(hae), fmt3(diff), cs, fmtDeg8(lat), fmtDeg8(lng),
           address,
           note, mediaKind, mediaPath,
-          ts
+          observeCount, observedAt
         ];
 
         features.push({

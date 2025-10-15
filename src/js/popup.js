@@ -3622,8 +3622,10 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
-                const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','所在','測位日時'];
+                // const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','所在','測位日時'];
+                const header = store.state.sokuiHeader
                 const row = JSON.parse(props.oh3_csv2_row);
+                console.log(row)
                 const rec = Object.fromEntries(header.map((k, i) => [k, (i < row.length ? row[i] : null)]));
                 console.log(rec)
                 let html0 = ''
