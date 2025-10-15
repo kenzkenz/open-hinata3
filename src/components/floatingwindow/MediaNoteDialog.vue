@@ -109,9 +109,10 @@ export default {
     maxWidth:     { type: [Number, String], default: 520 },
     initialNote:  { type: String, default: '' },
     saveColor:    { type: String, default: 'primary' },
-    pointId:      { type: [Number, String], required: true }
+    pointId:      { type: [Number, String], required: true },
+    currentJobId:        { type: [Number, String], required: true }
   },
-  emits: ['update:modelValue', 'save', 'cancel'],
+  emits: ['save', 'loadPointsForJob'],
   data(){
     return {
       internal: false,
@@ -209,15 +210,14 @@ export default {
           body: fd2,            // ← JSONではなく FormData
         });
         const j2 = await r2.json();
-
         if (!r2.ok || !j2.ok) {
           this.$emit('error', (j2 && j2.error) ? j2.error : 'db update failed');
           return;
         }
-
         // 成功
         this.$emit('save:done', { upload: { media_path, abs_path, media_size }, db: j2.data });
-        this.$emit('update:modelValue', false);
+        // this.$emit('update:modelValue', false);
+        this.$emit('loadPointsForJob', this.currentJobId, {fix: true});
       } catch (e) {
         this.$emit('error', e?.message || String(e));
       } finally {

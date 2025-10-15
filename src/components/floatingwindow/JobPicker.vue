@@ -200,6 +200,31 @@
                     :key="pt.point_id"
                     @click.stop="panToPointXY(pt)"
                 >
+                  <!-- ← 追加：メディアを行に表示 -->
+                  <template #prepend>
+                    <div v-if="pt.media_path && pt.media_kind === 'image'" class="media-wrap" @click.stop>
+                      <v-img
+                          :src="pt.media_path"
+                          alt="point image"
+                          class="media-thumb"
+                          :eager="false"
+                      :max-width="84"
+                      :max-height="84"
+                      rounded="lg"
+                      />
+                    </div>
+                    <div v-else-if="pt.media_path && pt.media_kind === 'video'" class="media-wrap" @click.stop>
+                      <video
+                          class="media-thumb"
+                          :src="pt.media_path"
+                          playsinline
+                          controls
+                          muted
+                          preload="metadata"
+                      ></video>
+                    </div>
+                  </template>
+
                   <template #title>
                     <div class="name-edit-wrap"
                          @mouseenter="hoverPointId = pt.point_id"
@@ -207,11 +232,13 @@
                       {{ pt.point_name }}
                     </div>
                   </template>
+
                   <template #subtitle>
-                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                      {{ pt.address }}&nbsp;X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
-                    </span>
+      <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
+        {{ pt.media_path }}&nbsp;{{ pt.address }}&nbsp;X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+      </span>
                   </template>
+
                   <template #append>
                     <v-btn icon size="small" variant="text" class="ml-2" @click.stop="openPointEditDialog(pt)">
                       <v-icon>mdi-dots-vertical</v-icon>
@@ -222,6 +249,7 @@
                   </template>
                 </v-list-item>
               </v-list>
+
             </div>
           </div>
         </template>
@@ -353,7 +381,9 @@
     <!-- メディアノートダイアログ -->
     <MediaNoteDialog
         :point-id="lastPointId"
+        :current-job-id="currentJobId"
         v-model="mediaDlg"
+        @load-points-for-job="loadPointsForJob"
         @save="onMediaSave"
     />
 
@@ -779,6 +809,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'zahyokei',
       'sokuiHeader',
       'isAndroid',
       'disabledForSokui',
@@ -2235,7 +2266,7 @@ export default {
 
       const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
       const data = await res.json();
-      if (!data?.ok || !Array.isArray(data.data)) {
+      if (!data.ok || !Array.isArray(data.data)) {
         console.error('[job_points.list] サーバーエラー', data);
         alert('測位点の取得に失敗しました');
         return;
@@ -2339,8 +2370,8 @@ export default {
       try {
         const res = await fetch(this.apiForJobPicker, { method: 'POST', body: fd });
         const data = await res.json();
-        if (!data?.ok) {
-          alert('削除に失敗しました：' + (data?.error || 'サーバーエラー'));
+        if (!data.ok) {
+          alert('削除に失敗しました：' + (data.error || 'サーバーエラー'));
           return;
         }
 
@@ -2410,7 +2441,7 @@ export default {
         await this.refreshJobs();
       } catch (e) {
         console.error('[job_points.delete] 失敗', e);
-        alert('削除に失敗しました：' + (e?.message || e));
+        alert('削除に失敗しました：' + (e.message || e));
       }
     },
 
@@ -2432,7 +2463,7 @@ export default {
 
     /** 既存の赤丸レイヤ/ソースを全削除（座標もクリア） */
     clearTorokuPoint () {
-      const map = this.map01; if (!map) return;
+      const map = this.map01;
       try { if (map.getLayer(this.LAYER)) map.removeLayer(this.LAYER); } catch(_) {}
       try { if (map.getLayer(this.LAB)) map.removeLayer(this.LAB); } catch(_) {}
       try { if (map.getSource(this.SRC)) map.removeSource(this.SRC); } catch(_) {}
@@ -2847,7 +2878,7 @@ export default {
         console.warn('[geo] saveGeoMetrics error', e);
       }
     },
-    getGeoQualityLabel (acc, altAcc) {
+    getGeoQualityLabel (acc) {
       if (acc == null) return 'unknown';
       if (acc <= 1)  return 'RTK級';
       if (acc <= 3)  return '高';
@@ -2856,14 +2887,13 @@ export default {
       return '低';
     },
     drawGpsLine (clickLngLat) {
-      const map = this.$store?.state?.map01;
-      if (!map) return;
+      const map = this.map01;
 
-      const s = this.$store?.state || {};
+      const s = this.$store.state;
       const geo = s.geo;
       if (!geo || geo.lat == null || geo.lon == null) return;
 
-      const epsg = epsgFromZahyokei(s.s_zahyokei || s.zahyokei, zahyokei);
+      const epsg = epsgFromZahyokei(this.zahyokei);
       if (!epsg) return;
 
       let p1;
@@ -3039,10 +3069,10 @@ export default {
     maybeLogPoint(eventType = 'point') {
       if (!this.logEnabled) return;
 
-      const s = this.$store?.state || {};
+      const s = this.$store.state || {};
       const geo = s.geo; if (!geo) return;
 
-      const csLabel = s.s_zahyokei || s.zahyokei || '';
+      const csLabel = this.zahyokei;
 
       const jdp = s.jdpCoordinates;
       if (!Array.isArray(jdp) || jdp.length < 2) return;
@@ -3443,4 +3473,18 @@ export default {
   }
 }
 
+.media-wrap{
+  width: 84px; height: 84px;
+  display:flex; align-items:center; justify-content:center;
+  margin-right: 10px; flex-shrink: 0;
+}
+.media-thumb{
+  width: 100%; height: 100%;
+  object-fit: contain;          /* 画像/動画どちらにも効く（v-imgはcontain相当） */
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.12);
+}
+@media (min-width: 1280px){
+  .media-wrap{ width: 96px; height: 96px; }
+}
 </style>
