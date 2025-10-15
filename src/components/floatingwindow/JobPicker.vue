@@ -979,7 +979,7 @@ export default {
           fd1.append('point_name', name)
           const r1 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd1 })
           const j1 = await r1.json().catch(() => ({}))
-          if (!j1?.ok) throw new Error(j1?.error || 'points.update failed')
+          if (!j1.ok) throw new Error(j1.error || 'points.update failed')
         }
 
         // 2) 住所更新（必要なときだけ）
@@ -990,7 +990,7 @@ export default {
           fd2.append('address', addr)
           const r2 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd2 })
           const j2 = await r2.json().catch(() => ({}))
-          if (!j2?.ok) throw new Error(j2?.error || 'points.update_address failed')
+          if (!j2.ok) throw new Error(j2.error || 'points.update_address failed')
         }
 
         // ローカル反映
@@ -1000,13 +1000,12 @@ export default {
           if (needAddr)   rec.address    = addr
         }
 
-        const SRC = this.SRC
         const f = this._torokuFC.features.find(f => f.properties.id === id)
         if (f) {
           f.properties.label = name
           f.properties.name  = name
           const map = this.map01
-          map.getSource(SRC).setData(this._torokuFC)
+          map.getSource(this.SRC).setData(this._torokuFC)
           map.triggerRepaint()
           console.log(this._torokuFC)
         }
@@ -1625,7 +1624,7 @@ export default {
         const Yavg = avg(ys);
         const diff = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
 
-        // ★ 追加：lat/lon の平均（取れなければ null）
+        // ★ 追加：lat/lon の平均
         const latAvg = (lats.length ? avg(lats) : null);
         const lonAvg = (lons.length ? avg(lons) : null);
 
@@ -1790,6 +1789,7 @@ export default {
       }
     },
 
+    // サーバーからデータを取得しCSVのためのrowsを作る
     async createCsvRows() {
       const fd = new FormData();
       fd.append('action', 'job_points.list');
@@ -1803,7 +1803,7 @@ export default {
         return;
       }
 
-      // ★ 見出し：最後から2番目 = 測位日時の直前
+      // ★ 見出し
       const header = [
         '点名', 'X', 'Y', '標高', 'アンテナ高', '標高（アンテナ位置）', '楕円体高', 'XY較差', '座標系', '緯度', '経度',
         '所在', '測位回数', '測位日時'
@@ -1841,7 +1841,7 @@ export default {
       }
       return rows;
     },
-    // サーバから現ジョブの点を取得して CSV ダウンロード（ファイル名は JOB名_件数.csv）
+    // CSV ダウンロード（ファイル名は JOB名_件数.csv）
     async downloadCsvForSokui() {
       if (!this.currentJobId) {
         alert('ジョブが未選択です');
@@ -2400,30 +2400,27 @@ export default {
         );
         // 2) 地図も同期：pointsForCurrentJob から GeoJSON を再構築して差し替え
         console.log(this.pointsForCurrentJob)
-        try {
-          const map = this.map01;
-          if (map) {
-            const fc = { type: 'FeatureCollection', features: [] };
-            for (const r of (this.pointsForCurrentJob || [])) {
-              const lng = Number(r.lng), lat = Number(r.lat);
-              if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
-              fc.features.push({
-                type: 'Feature',
-                properties: {
-                  id: `pt_${String(r.point_id)}`,
-                  label: String(r.point_name),
-                  name:  String(r.point_name),
-                  pendingLabel: false,
-                },
-                geometry: { type: 'Point', coordinates: [lng, lat] }
-              });
-            }
-            this._torokuFC = fc;
-            this.setSourceAndLayer(fc)
+        const map = this.map01;
+        if (map) {
+          const fc = { type: 'FeatureCollection', features: [] };
+          for (const r of (this.pointsForCurrentJob || [])) {
+            const lng = Number(r.lng), lat = Number(r.lat);
+            if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+            fc.features.push({
+              type: 'Feature',
+              properties: {
+                id: `pt_${String(r.point_id)}`,
+                label: String(r.point_name),
+                name:  String(r.point_name),
+                pendingLabel: false,
+              },
+              geometry: { type: 'Point', coordinates: [lng, lat] }
+            });
           }
-        } catch (e) {
-          console.warn('[deletePoint] map repaint failed', e);
+          this._torokuFC = fc;
+          this.setSourceAndLayer(fc)
         }
+
 
         try {
           await this.refreshJobs(); // バッジ件数があるなら
