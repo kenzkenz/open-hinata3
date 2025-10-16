@@ -374,53 +374,22 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 <script>
 
 import LayerManager from '@/components/LayerManager.vue';
-import {iko, jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
+import {jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
-import {user} from "@/authState";
+// import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
 import {extLayer, extSource, konUrls} from "@/js/layers";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import firebase from '@/firebase'
-import { nextTick } from 'vue'
 import store from "@/store";
 import {mapState} from "vuex";
 
-const getFirebaseUid = async () => {
-  if (!user.value) return;
-
-  try {
-    // **Firebase の認証トークンを取得**
-    const token = await user.value.getIdToken();
-    console.log("送信するトークン:", token); // **デバッグ用**
-
-    const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/verify_token.php", {
-      method: "POST", // **POST を使う**
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idToken: token }) // **idToken を送信**
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("エラー:", errorData);
-      return;
-    }
-    const data = await response.json();
-    console.log("取得した UID:", data.uid);
-  } catch (error) {
-    console.error("UID 取得エラー:", error);
-  }
-};
-
 const createUserDirectory = async () => {
-  if (!user.value) return;
+  if (!user1.value) return;
   try {
     // Firebase 認証トークンを取得
-    const token = await user.value.getIdToken();
+    const token = await user1.value.getIdToken();
     // create_directory.php にリクエストを送信
     const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/create_directory.php", {
       method: "POST",
@@ -1287,13 +1256,6 @@ export default {
       document.querySelector('#simaFileInput').click()
       document.querySelector('#simaFileInput').value = ''
     },
-    changeVisible () {
-      const map01 = this.$store.state.map01
-      const map02 = this.$store.state.map01
-      const visibility = this.s_isClickPointsLayer ? "visible" : "none";
-      map01.setLayoutProperty("click-points-layer", "visibility", visibility);
-      map02.setLayoutProperty("click-points-layer", "visibility", visibility);
-    },
     createDirectory () {
       // getFirebaseUid()
       createUserDirectory()
@@ -1460,69 +1422,6 @@ export default {
       this.$store.state.isMenu = true
       this.dialogForUpload = true
       // scrollForAndroid('.v-menu__content')
-    },
-    simaLoad () {
-      this.$store.state.isMenu = true
-      this.$store.state.dialogForSimaApp = true
-    },
-    konjyakuYearInput () {
-      let filterdKonUrls = konUrls.filter(url => {
-        // console.log(url.timeStart)
-        if (url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)) {
-          return true
-        } else if (url.timeEnd <= Number(this.konjyakuYear)) {
-          return true
-        }
-        // return url.timeStart <= Number(this.konjyakuYear) && url.timeEnd >= Number(this.konjyakuYear)u
-      })
-      console.log(JSON.stringify(filterdKonUrls))
-
-      // filterdKonUrls = filterdKonUrls.
-
-      // nameごとに最もtimeEndが大きいものを選択する処理
-      filterdKonUrls = Object.values(filterdKonUrls.reduce((acc, item) => {
-        // nameが未登録、または現在のtimeEndが登録済みより大きければ更新
-        if (!acc[item.name] || item.timeEnd > acc[item.name].timeEnd) {
-          acc[item.name] = item;
-        }
-        return acc;
-      }, {}));
-
-      // 結果を表示
-      console.log(JSON.stringify(filterdKonUrls, null, 2));
-
-      const konSources = []
-      const konLayers = []
-      filterdKonUrls.forEach(url => {
-        konSources.push({
-          id: url.id,
-          obj:{
-            type: 'raster',
-            tiles: url.tiles,
-            scheme: 'tms',
-          }
-        })
-        konLayers.push({
-          id: url.id,
-          source: url.source,
-          name0: url.name,
-          name: url.name + url.time,
-          type: 'raster',
-        })
-      })
-
-      this.s_selectedLayers.map01 = this.s_selectedLayers.map01.filter(layer => layer.id !== 'oh-konzyaku-layer')
-      this.$store.state.watchFlg = true
-      this.s_selectedLayers.map01.unshift(
-          {
-            id: 'oh-konzyaku-layer',
-            label: '今昔マップ',
-            sources: konSources,
-            layers: konLayers,
-            opacity: 1,
-            visibility: true,
-          }
-      )
     },
     changePitch () {
       localStorage.setItem('isPitch',this.s_isPitch)
@@ -1746,7 +1645,7 @@ export default {
           // Vue のリアクティブシステムが更新されるのを待機
           this.$nextTick(() => {
             console.log("✅ emailInput に設定:", this.emailInput);
-            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + user.displayName + 'さん</span>'
+            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー ようこそ' + user.displayName + 'さん</span>'
           });
         } else {
           console.warn("⚠️ ログイン中のユーザーが見つかりません");

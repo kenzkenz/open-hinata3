@@ -850,6 +850,7 @@ export default {
   },
   computed: {
     ...mapState([
+      'addressNoPref',
       'zahyokei',
       'sokuiHeader',
       'isAndroid',
@@ -1820,7 +1821,7 @@ export default {
                 : null;
 
         const haeEllipsoidalNum = haeNumArr.length ? avg(haeNumArr) : null;
-        const addr = String(this.$store.state.address || '');
+        const addr = String(this.addressNoPref || '');
 
         const rowArray = [
           String(name || ''),
@@ -1877,7 +1878,7 @@ export default {
             fd.append('crs_label',      String(csLabel || ''));
             fd.append('observed_at',    _toSql(ts));
             fd.append('observe_count', String(obsCount));
-            fd.append('address', String(this.$store.state.address || '')); // ★追加：所在
+            fd.append('address', String(this.addressNoPref || '')); // ★追加：所在
             try {
               const res  = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/user_kansoku.php', { method: 'POST', body: fd });
               const data = await res.json();

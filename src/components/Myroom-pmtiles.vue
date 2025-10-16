@@ -14,9 +14,7 @@
 <script>
 
 import axios from "axios";
-import {user} from "@/authState";
 import {userPmtile0Set} from "@/js/downLoad";
-import store from "@/store";
 
 export default {
   name: "myroom-pmtiles",

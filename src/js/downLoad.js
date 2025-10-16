@@ -13949,7 +13949,6 @@ function bringSelectedLayerToTop(mapKey, layerId) {
 // 中心座標 → GSI逆ジオ → muni で整形し store.state.address と prefId を更新。
 export function addressFromMapCenter () {
     const { lng, lat } = store.state.map01.getCenter();
-
     axios.get('https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress', {
         params: { lon: lng, lat: lat }
     })
@@ -13964,6 +13963,7 @@ export function addressFromMapCenter () {
                 const lv01 = res.lv01Nm || '';
 
                 store.state.address = `${prefName}${cityName}${lv01}`;
+                store.state.addressNoPref = `${cityName}${lv01}`;
                 store.state.prefId  = prefId;
             } catch (_) {
                 store.state.address = '';

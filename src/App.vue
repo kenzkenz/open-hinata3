@@ -3321,14 +3321,6 @@ export default {
       });
       return result
     },
-    s_addressMini: {
-      get() {
-        return this.$store.state.addressMini
-      },
-      set(value) {
-        this.$store.state.addressMini = value
-      }
-    },
     s_address: {
       get() {
         return this.$store.state.address
@@ -10426,27 +10418,27 @@ export default {
     this.mapillarHeight = (window.innerHeight * 1) + 'px'
 
     window.addEventListener('keydown', this.onKeydown);
-    const checkUser = setInterval(() => {
-      if (user.value && user.value.uid) {
-        const uid = user.value.uid
-        this.uid = uid
-        this.$store.state.userId = uid
-        // capture(uid, true)
-        const map01 = store.state.map01
-        if (map01) {
-          // キーボード監視
-          // document.addEventListener('keydown', this.onKeydown);
-          // map が読込後にマウスムーブ監視
-          // map01.on('mousemove', this.onPolygonMouseMove);
-          // map01.on('mousemove', this.onLineMouseMove);
-
-          capture(uid.value)
-        } else {
-          console.warn("地図がまだ初期化されていません")
-        }
-        clearInterval(checkUser) // UID を取得できたら監視を停止
-      }
-    }, 100)
+    // const checkUser = setInterval(() => {
+    //   if (user.value && user.value.uid) {
+    //     const uid = user.value.uid
+    //     this.uid = uid
+    //     this.$store.state.userId = uid
+    //     // capture(uid, true)
+    //     const map01 = store.state.map01
+    //     if (map01) {
+    //       // キーボード監視
+    //       // document.addEventListener('keydown', this.onKeydown);
+    //       // map が読込後にマウスムーブ監視
+    //       // map01.on('mousemove', this.onPolygonMouseMove);
+    //       // map01.on('mousemove', this.onLineMouseMove);
+    //
+    //       capture(uid.value)
+    //     } else {
+    //       console.warn("地図がまだ初期化されていません")
+    //     }
+    //     clearInterval(checkUser) // UID を取得できたら監視を停止
+    //   }
+    // }, 100)
 
     // 5分おきに実行
     this.intervalId = setInterval(() => {

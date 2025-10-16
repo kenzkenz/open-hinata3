@@ -68,8 +68,6 @@ app.mount('#app')
 
 store.state.oh3App = app
 
-
-
 // ✅ mount 後に実行
 auth.onAuthStateChanged(async user => {
     if (user) {
