@@ -3609,6 +3609,55 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 break
             }
+            case 'oh-terrain22-41-polygon':
+            {
+                let features = map.queryRenderedFeatures(
+                    map.project(coordinates), {layers: [layerId]}
+                )
+                if (features.length === 0) {
+                    features = map.queryRenderedFeatures(
+                        map.project(e.lngLat), {layers: [layerId]}
+                    )
+                }
+                if (features.length === 0) return
+                props = features[0].properties
+                function getTerrainSummary(gcluster15) {
+                    const key = String(gcluster15).trim().toLowerCase();
+                    switch (key) {
+                        case '1':  return '基盤岩山地（上位）';
+                        case '2':  return '基盤岩山地（下位）';
+                        case '3':  return '丘陵性山地（上位）';
+                        case '4':  return '丘陵性山地（下位）';
+                        case '5':  return '山地の谷';
+                        case '6':  return '高地の長大斜面（尾根谷（凹凸）多）（火山斜面、地すべり滑落崖等）';
+                        case '7':  return '高地の長大斜面（尾根谷（凹凸）少）（火山斜面、地すべり土塊等）';
+                        case '8':  return '丘陵化した段丘（上位）';
+                        case '9':  return '丘陵化した段丘（下位）';
+                        case '10': return '開析谷（火山地の谷、段丘崖等）';
+                        case '11a':return '低地の長大斜面（凸部多）（段丘、開析扇状地等）';
+                        case '11b':return '低地の長大斜面（凸部少）（沖積扇状地、砂州等）';
+                        case '12': return '平野（尾根谷（凹凸）多）（谷底平野等）';
+                        case '13': return '平野（微高地）（自然堤防、砂州等）';
+                        case '14': return '平野（氾濫平野等）';
+                        case '15': return '水面高に近い低地（湿地、湖沼跡等）';
+                        // フォールバック（想定外の表記ゆれ対策）
+                        case '11': return '低地の長大斜面（凸部の多少により11a/11b）';
+                        default:   return '不明（該当なし）';
+                    }
+                }
+                const terrainSummary = getTerrainSummary(props.GCLUSTER15)
+
+                let html0 = ''
+
+                if (html.value.indexOf('oh-terrain22-41') === -1) {
+                    html.value += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html0 += '<div style="width: 200px; class="oh-terrain22-41" font-weight: normal; color: #333;line-height: 25px;">'
+                    html0 += terrainSummary
+                    html0 += '<div>'
+                    html.value += html0
+                }
+                break
+            }
             case 'oh-toroku-point':
             case 'oh-toroku-point-label':
             {
