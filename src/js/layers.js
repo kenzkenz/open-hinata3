@@ -339,7 +339,7 @@ const checkUser = setInterval(() => {
         localStorage.setItem('lastNickname', nickname)
         clearInterval(checkUser)
     }
-}, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
+}, 2000) // 5ms → 100ms に変更（CPU負荷軽減のため）
 
 store.state.isOffline = !window.navigator.onLine;
 let convertTileJson = []
@@ -10707,6 +10707,13 @@ const terrain22_41LayerLine = {
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
     {
+        id: 'oh-terrain22',
+        label: "<span style='color: red'>NEW</span>⭐️地形分類図",
+        sources:[terrain22_41Source],
+        layers: [terrain22_41Layer, terrain22_41LayerLine],
+        attribution: '<a href="https://gisstar.gsi.go.jp/terrain2021/" target="_blank">地形分類データ</a>'
+    },
+    {
         id: 'oh-tochikukaku',
         label: "<span style='color: red'>NEW</span>⭐️R07土地区画整理事業",
         sources: [tochikukakuseiriSource],
@@ -12897,12 +12904,7 @@ let layers01 = [
             //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
             //     ext: {name:'extTokijyo'}
             // },
-            {
-                id: 'oh-terrain22',
-                label: "地形分類図",
-                sources:[terrain22_41Source],
-                layers: [terrain22_41Layer, terrain22_41LayerLine],
-            },
+
             {
                 id: 'oh-t23kuLayer',
                 label: "23区テスト",

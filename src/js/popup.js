@@ -3621,38 +3621,85 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
-                function getTerrainSummary(gcluster15) {
-                    const key = String(gcluster15).trim().toLowerCase();
-                    switch (key) {
-                        case '1':  return '基盤岩山地（上位）';
-                        case '2':  return '基盤岩山地（下位）';
-                        case '3':  return '丘陵性山地（上位）';
-                        case '4':  return '丘陵性山地（下位）';
-                        case '5':  return '山地の谷';
-                        case '6':  return '高地の長大斜面（尾根谷（凹凸）多）（火山斜面、地すべり滑落崖等）';
-                        case '7':  return '高地の長大斜面（尾根谷（凹凸）少）（火山斜面、地すべり土塊等）';
-                        case '8':  return '丘陵化した段丘（上位）';
-                        case '9':  return '丘陵化した段丘（下位）';
-                        case '10': return '開析谷（火山地の谷、段丘崖等）';
-                        case '11a':return '低地の長大斜面（凸部多）（段丘、開析扇状地等）';
-                        case '11b':return '低地の長大斜面（凸部少）（沖積扇状地、砂州等）';
-                        case '12': return '平野（尾根谷（凹凸）多）（谷底平野等）';
-                        case '13': return '平野（微高地）（自然堤防、砂州等）';
-                        case '14': return '平野（氾濫平野等）';
-                        case '15': return '水面高に近い低地（湿地、湖沼跡等）';
-                        // フォールバック（想定外の表記ゆれ対策）
-                        case '11': return '低地の長大斜面（凸部の多少により11a/11b）';
-                        default:   return '不明（該当なし）';
+                /**
+                 * GCLUSTER15 と Sinks から 概要 と 色 を返す
+                 * @param {number|string} gcluster15  1..15 の数値（文字でも可）
+                 * @param {number|string|null|undefined} sinks  0 or 1（未定義OK）
+                 * @returns {{summary:string, color:string, subtype?:'11a'|'11b'}}
+                 */
+                function getTerrainInfo(gcluster15, sinks) {
+                    const g = Number(gcluster15);
+                    const s = sinks == null ? null : Number(sinks);
+                    switch (g) {
+                        case 1:
+                            return {
+                                summary: '基盤岩山地（上位）',
+                                color: s === 1 ? 'rgb(154,255,255)' : 'rgb(251,216,15)'
+                            };
+                        case 2:
+                            return { summary: '基盤岩山地（下位）', color: 'rgb(112,79,41)' };
+                        case 3:
+                            return { summary: '丘陵性山地（上位）', color: 'rgb(172,82,50)' };
+                        case 4:
+                            return { summary: '丘陵性山地（下位）', color: 'rgb(243,162,243)' };
+                        case 5:
+                            return { summary: '山地の谷', color: 'rgb(248,3,204)' };
+                        case 6:
+                            return {
+                                summary: '高地の長大斜面（尾根谷（凹凸）多）（火山斜面、地すべり滑落崖等）',
+                                color: s === 1 ? 'rgb(194,251,71)' : 'rgb(249,180,4)'
+                            };
+                        case 7:
+                            return {
+                                summary: '高地の長大斜面（尾根谷（凹凸）少）（火山斜面、地すべり土塊等）',
+                                color: s === 1 ? 'rgb(30,218,74)' : 'rgb(223,134,31)'
+                            };
+                        case 8:
+                            return {
+                                summary: '丘陵化した段丘（上位）',
+                                color: s === 1 ? 'rgb(155,141,169)' : 'rgb(125,162,143)'
+                            };
+                        case 9:
+                            return {
+                                summary: '丘陵化した段丘（下位）',
+                                color: s === 1 ? 'rgb(122,236,40)' : 'rgb(251,147,0)'
+                            };
+                        case 10:
+                            return { summary: '開析谷（火山地の谷、段丘崖等）', color: 'rgb(40,135,108)' };
+                        case 11: {
+                            const isA = s === 0; // 0→11a, 1→11b
+                            return {
+                                summary: isA
+                                    ? '低地の長大斜面（凸部多）（段丘、開析扇状地等）'
+                                    : '低地の長大斜面（凸部少）（沖積扇状地、砂州等）',
+                                color: s === 1 ? 'rgb(31,195,105)' : 'rgb(20,172,132)',
+                                subtype: isA ? '11a' : '11b'
+                            };
+                        }
+                        case 12:
+                            return { summary: '平野（尾根谷（凹凸）多）（谷底平野等）', color: 'rgb(251,154,153)' };
+                        case 13:
+                            return { summary: '平野（微高地）（自然堤防、砂州等）', color: 'rgb(153,131,83)' };
+                        case 14:
+                            return { summary: '平野（氾濫平野等）', color: 'rgb(145,150,185)' };
+                        case 15:
+                            return {
+                                summary: '水面高に近い低地（湿地、湖沼跡等）',
+                                color: s === 1 ? 'rgb(0,183,255)' : 'rgb(255,253,120)'
+                            };
+                        default:
+                            return { summary: '不明（該当なし）', color: 'rgb(200,200,200)' };
                     }
                 }
-                const terrainSummary = getTerrainSummary(props.GCLUSTER15)
+
+                const { summary, color, subtype } = getTerrainInfo(props.GCLUSTER15,props.Sinks)
 
                 let html0 = ''
 
                 if (html.value.indexOf('oh-terrain22-41') === -1) {
-                    html.value += '<div class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
+                    html.value += '<div style="background: ' + color + '" class="layer-label-div">' + getLabelByLayerId(layerId, store.state.selectedLayers) + '</div>'
                     html0 += '<div style="width: 200px; class="oh-terrain22-41" font-weight: normal; color: #333;line-height: 25px;">'
-                    html0 += terrainSummary
+                    html0 += summary
                     html0 += '<div>'
                     html.value += html0
                 }

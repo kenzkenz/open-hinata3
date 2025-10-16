@@ -167,16 +167,16 @@ export default {
     },
   },
   mounted() {
-    const checkUser = setInterval(() => {
-      if (user.value && user.value.uid) {
-        const uid = user.value.uid
-        this.uid = uid
-        this.$store.state.userId = uid
-        this.pmtilesSelect(uid)
-
-        clearInterval(checkUser)
-      }
-    }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
+    // const checkUser = setInterval(() => {
+    //   if (user.value && user.value.uid) {
+    //     const uid = user.value.uid
+    //     this.uid = uid
+    //     this.$store.state.userId = uid
+    //     this.pmtilesSelect(uid)
+    //
+    //     clearInterval(checkUser)
+    //   }
+    // }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
   },
   watch: {
     s_dialogForLink () {

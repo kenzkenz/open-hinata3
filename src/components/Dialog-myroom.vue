@@ -2429,25 +2429,24 @@ export default {
     this.mayroomStyle["max-height"] = maxHeight
     // 非同期で user の UID を監視
     // // -------------------------------------------------------------------
-    const checkUser = setInterval(() => {
-      if (user.value && user.value.uid) {
-        const uid = user.value.uid
-        this.uid = uid
-        this.$store.state.userId = uid
-        this.fetchImages(uid)
-        this.urlSelect(uid)
-        this.tileSelect(uid)
-        this.pmtileSelect(uid)
-        this.xyztileSelect(uid)
-        this.kmzSelect(uid)
-        this.simaSelect(uid)
-        this.xyztileSelectAll()
-        this.pmtileSelectPublic()
-        this.historySelect()
-
-        clearInterval(checkUser)
-      }
-    }, 100) // 5ms → 100ms に変更（CPU負荷軽減のため）
+    // const checkUser = setInterval(() => {
+    //   if (user.value && user.value.uid) {
+    //     const uid = user.value.uid
+    //     this.uid = uid
+    //     this.$store.state.userId = uid
+    //     this.fetchImages(uid)
+    //     this.urlSelect(uid)
+    //     this.tileSelect(uid)
+    //     this.pmtileSelect(uid)
+    //     this.xyztileSelect(uid)
+    //     this.kmzSelect(uid)
+    //     this.simaSelect(uid)
+    //     this.xyztileSelectAll()
+    //     this.pmtileSelectPublic()
+    //     this.historySelect()
+    //     clearInterval(checkUser)
+    //   }
+    // }, 2000) // 5ms → 100ms に変更（CPU負荷軽減のため）
 
 
     // const checkUser = setInterval(() => {
