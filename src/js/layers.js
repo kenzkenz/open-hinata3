@@ -10641,8 +10641,68 @@ const tochikukakuseiriLineLayer = {
         'line-width': 1
     }
 };
-
-
+// ------------------------------------------------------------------
+const terrain22_41Source = {
+    id: "terrain22-41-source", obj:{
+        type: "vector",
+        url: "pmtiles://https://kenzkenz2.xsrv.jp/pmtiles/terrain22_41.pmtiles",
+    }
+}
+const terrain22_41Layer = {
+    id: "oh-terrain22-41-polygon",
+    type: "fill",
+    source: "terrain22-41-source",
+    "source-layer": "terrain22",
+    paint: {
+        "fill-color": [
+            "case",
+            ["all", ["has", "GCLUSTER15"], ["has", "Sinks"]],
+            [
+                "case",
+                ["all", ["==", ["get", "GCLUSTER15"], 1], ["==", ["get", "Sinks"], 0]], "rgb(251,216,15)",
+                ["all", ["==", ["get", "GCLUSTER15"], 1], ["==", ["get", "Sinks"], 1]], "rgb(154,255,255)",
+                ["all", ["==", ["get", "GCLUSTER15"], 2]], "rgb(112,79,41)",
+                ["all", ["==", ["get", "GCLUSTER15"], 3]], "rgb(172,82,50)",
+                ["all", ["==", ["get", "GCLUSTER15"], 4]], "rgb(243,162,243)",
+                ["all", ["==", ["get", "GCLUSTER15"], 5]], "rgb(248,3,204)",
+                ["all", ["==", ["get", "GCLUSTER15"], 6], ["==", ["get", "Sinks"], 0]], "rgb(249,180,4)",
+                ["all", ["==", ["get", "GCLUSTER15"], 6], ["==", ["get", "Sinks"], 1]], "rgb(194,251,71)",
+                ["all", ["==", ["get", "GCLUSTER15"], 7], ["==", ["get", "Sinks"], 0]], "rgb(223,134,31)",
+                ["all", ["==", ["get", "GCLUSTER15"], 7], ["==", ["get", "Sinks"], 1]], "rgb(30,218,74)",
+                ["all", ["==", ["get", "GCLUSTER15"], 8], ["==", ["get", "Sinks"], 0]], "rgb(125,162,143)",
+                ["all", ["==", ["get", "GCLUSTER15"], 8], ["==", ["get", "Sinks"], 1]], "rgb(155,141,169)",
+                ["all", ["==", ["get", "GCLUSTER15"], 9], ["==", ["get", "Sinks"], 0]], "rgb(251,147,0)",
+                ["all", ["==", ["get", "GCLUSTER15"], 9], ["==", ["get", "Sinks"], 1]], "rgb(122,236,40)",
+                ["all", ["==", ["get", "GCLUSTER15"], 10]], "rgb(40,135,108)",
+                ["all", ["==", ["get", "GCLUSTER15"], 11], ["==", ["get", "Sinks"], 0]], "rgb(20,172,132)",
+                ["all", ["==", ["get", "GCLUSTER15"], 11], ["==", ["get", "Sinks"], 1]], "rgb(31,195,105)",
+                ["all", ["==", ["get", "GCLUSTER15"], 12]], "rgb(251,154,153)",
+                ["all", ["==", ["get", "GCLUSTER15"], 13]], "rgb(153,131,83)",
+                ["all", ["==", ["get", "GCLUSTER15"], 14]], "rgb(145,150,185)",
+                ["all", ["==", ["get", "GCLUSTER15"], 15], ["==", ["get", "Sinks"], 0]], "rgb(255,253,120)",
+                ["all", ["==", ["get", "GCLUSTER15"], 15], ["==", ["get", "Sinks"], 1]], "rgb(0,183,255)",
+                "rgb(200,200,200)"
+            ],
+            "rgb(200,200,200)"
+        ],
+    },
+}
+const terrain22_41LayerLine = {
+    id: "oh-terrain22-41-line",
+    type: "line",
+    source: "terrain22-41-source",
+    "source-layer": "terrain22",
+    paint: {
+        "line-color": "rgba(0,0,0,0)",
+        'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0.1,
+            20, 4
+        ]
+    },
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
@@ -12837,6 +12897,12 @@ let layers01 = [
             //     attribution: '<a href="https://front.geospatial.jp/moj-chizu-xml-readme/" target="_blank">法務省登記所備付地図データ</a>',
             //     ext: {name:'extTokijyo'}
             // },
+            {
+                id: 'oh-terrain22',
+                label: "地形分類図",
+                sources:[terrain22_41Source],
+                layers: [terrain22_41Layer, terrain22_41LayerLine],
+            },
             {
                 id: 'oh-t23kuLayer',
                 label: "23区テスト",
