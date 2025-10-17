@@ -220,7 +220,8 @@
                   <template #subtitle>
                     <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
                       {{ pt.address }}<br>
-                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}
+                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}<br>
+                      {{ pt.note }}
                     </span>
                   </template>
 
@@ -307,10 +308,25 @@
               variant="outlined"
               hide-details="auto"
               auto-grow
+              rows="2"
+              max-rows="6"
+              class="mt-3"
+              placeholder="このポイントの所在"
+              @keydown.stop
+              @keydown.left.stop
+              @keydown.right.stop
+              @keydown.up.stop
+              @keydown.down.stop
+          />
+          <v-textarea
+              v-model="pointEditDialog.note"
+              variant="outlined"
+              hide-details="auto"
+              auto-grow
               rows="3"
               max-rows="8"
               class="mt-3"
-              placeholder="このポイントの所在"
+              placeholder=""
               @keydown.stop
               @keydown.left.stop
               @keydown.right.stop
@@ -822,7 +838,9 @@ export default {
         pointId: '',
         origName: '',
         origAddress: '',
+        origNote: '',
         name: '',
+        note: '',
         address: '',
         saving: false,
       },
@@ -1047,8 +1065,10 @@ export default {
       d.pointId = pt.point_id
       d.origName = String(pt.point_name || '')
       d.origAddress = String(pt.address || '')
+      d.origNote = String(pt.note || '')
       d.name = d.origName
       d.address = d.origAddress
+      d.note = d.origNote
       d.open = true
     },
     closePointEditDialog () {
@@ -1057,8 +1077,10 @@ export default {
       d.pointId = ''
       d.origName = ''
       d.origAddress = ''
+      d.origNote = ''
       d.name = ''
       d.address = ''
+      d.note = ''
     },
     closeConfigDialog () {
       const d = this.configDialog
@@ -1071,11 +1093,13 @@ export default {
       const id   = d.pointId
       const name = (d.name || '').trim()
       const addr = d.address || ''
+      const note = d.note || ''
 
       const needRename = name && name !== d.origName
       const needAddr   = addr !== d.origAddress
+      const needNote = note && note !== d.origNote
 
-      if (!needRename && !needAddr) {
+      if (!needRename && !needAddr && !needNote) {
         this.closePointEditDialog()
         return
       }
@@ -1092,7 +1116,6 @@ export default {
           const j1 = await r1.json().catch(() => ({}))
           if (!j1.ok) throw new Error(j1.error || 'points.update failed')
         }
-
         // 2) 住所更新（必要なときだけ）
         if (needAddr) {
           const fd2 = new FormData()
@@ -1103,12 +1126,23 @@ export default {
           const j2 = await r2.json().catch(() => ({}))
           if (!j2.ok) throw new Error(j2.error || 'points.update_address failed')
         }
+        // 3) ノート更新（必要なときだけ）
+        if (needNote) {
+          const fd3 = new FormData()
+          fd3.append('action', 'job_points.update_note')
+          fd3.append('point_id', id)
+          fd3.append('note', note)
+          const r3 = await fetch(this.apiForJobPicker, { method: 'POST', body: fd3 })
+          const j3 = await r3.json().catch(() => ({}))
+          if (!j3.ok) throw new Error(j3.error || 'points.update_address failed')
+        }
 
         // ローカル反映
         const rec = this.pointsForCurrentJob.find(p => String(p.point_id) === id)
         if (rec) {
           if (needRename) rec.point_name = name
           if (needAddr)   rec.address    = addr
+          if (needNote)   rec.note       = note
         }
 
         const f = this._torokuFC.features.find(f => f.properties.id === id)
@@ -1124,6 +1158,7 @@ export default {
         // ダイアログ閉じる＆orig更新
         d.origName = name
         d.origAddress = addr
+        d.origNote = note
         this.closePointEditDialog()
       } catch (e) {
         console.error('[point edit] save failed:', e)

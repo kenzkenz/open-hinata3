@@ -208,6 +208,20 @@ try {
             $stmt2->execute([$point_id]);
             echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
         }
+        // -------------------- job_points.update_note --------------------
+        case 'job_points.update_note': {
+            $point_id   = (int)($_POST['point_id'] ?? 0);
+            $address = trim((string)($_POST['note'] ?? ''));
+            if ($point_id <= 0 ) {
+                echo json_encode(['ok'=>false,'error'=>'point_id と note は必須'], JSON_UNESCAPED_UNICODE); exit;
+            }
+            $stmt = $pdo->prepare('UPDATE job_points SET note = ? WHERE point_id = ?');
+            $stmt->execute([$address, $point_id]);
+
+            $stmt2 = $pdo->prepare('SELECT * FROM job_points WHERE point_id = ?');
+            $stmt2->execute([$point_id]);
+            echo json_encode(['ok'=>true,'data'=>$stmt2->fetch()], JSON_UNESCAPED_UNICODE); exit;
+        }
         // -------------------- job_points.update_media（超軽量版：常に6項目受領） --------------------
         case 'job_points.update_media': {
             $point_id = (int)($_POST['point_id'] ?? 0);
