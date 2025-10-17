@@ -220,8 +220,8 @@
                   <template #subtitle>
                     <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
                       {{ pt.address }}<br>
+                      {{ pt.note }}<br>
                       X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}<br>
-                      {{ pt.note }}
                     </span>
                   </template>
 
@@ -326,7 +326,7 @@
               rows="3"
               max-rows="8"
               class="mt-3"
-              placeholder=""
+              placeholder="ノート／コメント"
               @keydown.stop
               @keydown.left.stop
               @keydown.right.stop
