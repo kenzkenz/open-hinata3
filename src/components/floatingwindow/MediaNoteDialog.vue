@@ -1,8 +1,10 @@
 <template>
+  <!--
+  :fullscreen="isMobile"
+   -->
   <v-dialog
       v-model="internal"
       :persistent="persistent"
-      :fullscreen="isMobile"
       :max-width="isMobile ? undefined : maxWidth"
       transition="dialog-transition"
       @keydown.esc="onCancel"
