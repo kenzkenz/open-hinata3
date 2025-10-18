@@ -7612,6 +7612,9 @@ export default {
             antialias: false,
             preserveDrawingBuffer: false
           },
+          antialias: false,
+          // @ts-ignore: MapLibreはworkerCount指定可のビルドが多い
+          workerCount: 1,
           // style: 'https://raw.githubusercontent.com/gsi-cyberjapan/optimal_bvmap/52ba56f645334c979998b730477b2072c7418b94/style/std.json',
           // style:require('@/assets/json/std.json')
           // style:"https://kenzkenz.xsrv.jp/open-hinata3/json/std.json",

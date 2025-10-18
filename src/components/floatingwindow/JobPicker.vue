@@ -216,7 +216,6 @@
                       {{ pt.point_name }}
                     </div>
                   </template>
-
                   <template #subtitle>
                     <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
                       {{ pt.address }}<br>
@@ -296,7 +295,6 @@
               label="点名"
               variant="outlined"
               hide-details="auto"
-              autofocus
               @keydown.stop
               @keydown.left.stop
               @keydown.right.stop
@@ -323,6 +321,7 @@
               variant="outlined"
               hide-details="auto"
               auto-grow
+              autofocus
               rows="3"
               max-rows="8"
               class="mt-3"
