@@ -2718,35 +2718,8 @@ export default {
       this._torokuFC.features.push(feature);
 
       // ★ 地図へ反映（なければ作成／あれば更新）
-      if (map.getSource(SRC)) {
-        map.getSource(SRC).setData(this._torokuFC);
-      } else if (map) {
-        map.addSource(SRC, { type: 'geojson', data: this._torokuFC });
-        if (!map.getLayer(LAYER)) {
-          map.addLayer({
-            id: LAYER, type: 'circle', source: SRC,
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#ff3b30',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-        }
-        if (!map.getLayer(LAB)) {
-          map.addLayer({
-            id: LAB, type: 'symbol', source: SRC,
-            layout: {
-              'text-field': ['get', 'label'],
-              'text-size': 16,
-              'text-offset': [0, 0.5],
-              'text-anchor': 'top',
-              'text-allow-overlap': true
-            },
-            paint: { 'text-halo-color': '#ffffff', 'text-halo-width': 1.0 }
-          });
-        }
-      }
+      this.setSourceAndLayer(this._torokuFC)
+
       // ★ 最後に内部状態を最新座標で保持（今後の処理でも使うため）
       this.torokuPointLngLat = { lng, lat };
     },
