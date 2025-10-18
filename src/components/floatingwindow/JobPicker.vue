@@ -217,12 +217,28 @@
                     </div>
                   </template>
                   <template #subtitle>
-                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">
-                      {{ pt.address }}<br>
-                      {{ pt.note }}<br>
-                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}<br>
-                    </span>
+                    <div class="meta-lines">
+                      <div class="meta-line">
+                        <v-icon size="16" color="primary" class="mr-1">mdi-home-map-marker</v-icon>
+                        <span class="meta-text">{{ pt.address }}</span>
+                      </div>
+                      <div class="meta-line">
+                        <v-icon size="16" color="orange" class="mr-1">mdi-note-text</v-icon>
+                        <span class="meta-text">{{ pt.note || '—' }}</span>
+                      </div>
+<!--                      <div class="meta-line">-->
+<!--                        <v-icon size="16" color="blue-grey" class="mr-1">mdi-ruler-square</v-icon>-->
+<!--                        <span class="meta-code">X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}</span>-->
+<!--                      </div>-->
+                    </div>
                   </template>
+<!--                  <template #subtitle>-->
+<!--                    <span v-if="Number.isFinite(+pt.x_north) && Number.isFinite(+pt.y_east)">-->
+<!--                      {{ pt.address }}<br>-->
+<!--                      {{ pt.note }}<br>-->
+<!--                      X={{ fmtXY(pt.x_north) }}, Y={{ fmtXY(pt.y_east) }}<br>-->
+<!--                    </span>-->
+<!--                  </template>-->
 
                   <template #append>
                     <v-btn icon size="small" variant="text" class="ml-2" @click.stop="openPointEditDialog(pt)">
@@ -3651,4 +3667,11 @@ export default {
 @media (min-width: 1280px){
   .media-wrap{ width: 96px; height: 96px; }
 }
+.meta-lines { display: grid; gap: 2px; }
+.meta-line { display:flex; align-items:center; line-height:1.2; }
+.meta-label { font-weight:600; font-size:.85rem; margin-right:.35rem; }
+.meta-text { opacity:.92; }
+.meta-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity:.80; }
+.text-amber { color: #ffb300; }           /* Vuetifyの色に寄せる */
+.text-blue-grey { color: #607d8b; }
 </style>
