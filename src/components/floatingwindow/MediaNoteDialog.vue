@@ -41,7 +41,7 @@
 
         <!-- 操作ボタン群 -->
         <div class="controls">
-          <!-- 分岐付きメインボタン -->
+          <!-- 分岐付きメインボタン（撮影 / ギャラリー） -->
           <v-menu location="bottom">
             <template #activator="{ props }">
               <v-btn size="small" variant="elevated" v-bind="props">
@@ -49,8 +49,16 @@
               </v-btn>
             </template>
             <v-list density="compact">
-              <v-list-item @click="openPicker('image')"><v-list-item-title>写真を撮影/選択</v-list-item-title></v-list-item>
-              <v-list-item @click="openPicker('video')"><v-list-item-title>動画を撮影/選択</v-list-item-title></v-list-item>
+              <v-list-item @click="openImage('camera')">
+                <v-list-item-title>写真を撮影（カメラ起動）</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openImage('gallery')">
+                <v-list-item-title>ギャラリーから選ぶ</v-list-item-title>
+              </v-list-item>
+              <v-divider />
+              <v-list-item @click="openPicker('video')">
+                <v-list-item-title>動画を撮影/選択</v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
 
@@ -100,15 +108,25 @@
         </v-btn>
       </div>
 
-      <!-- 隠しファイル入力：用途別に2つ（スマホでの挙動最適化） -->
+      <!-- 隠しファイル入力：用途別に用意 -->
+      <!-- 画像: カメラ用（capture付き） -->
       <input
-          ref="fileInputImage"
+          ref="fileInputImageCamera"
           type="file"
           accept="image/*"
           capture="environment"
           class="d-none"
           @change="onFileChange('image', $event)"
       />
+      <!-- 画像: ギャラリー/ファイル用（captureなし） -->
+      <input
+          ref="fileInputImageGallery"
+          type="file"
+          accept="image/*"
+          class="d-none"
+          @change="onFileChange('image', $event)"
+      />
+      <!-- 動画: 端末UIに委ねる（機種依存） -->
       <input
           ref="fileInputVideo"
           type="file"
@@ -280,7 +298,8 @@ export default {
       this.previewKind = ''
       this.file = null
       this.stopStream()
-      if (this.$refs.fileInputImage) this.$refs.fileInputImage.value = ''
+      if (this.$refs.fileInputImageCamera) this.$refs.fileInputImageCamera.value = ''
+      if (this.$refs.fileInputImageGallery) this.$refs.fileInputImageGallery.value = ''
       if (this.$refs.fileInputVideo) this.$refs.fileInputVideo.value = ''
     },
 
@@ -293,12 +312,19 @@ export default {
 
     // ====== ファイル選択（従来フロー） ======
     openPicker(kind){
-      // 先に撮影ストリームを止めておく（競合回避）
-      this.stopStream()
-      const el = (kind==='video') ? this.$refs.fileInputVideo : this.$refs.fileInputImage
-      if (!el) return
-      // 非同期クリックで安全に
-      setTimeout(()=> el.click(), 0)
+      this.stopStream() // 競合回避
+      if (kind === 'video') {
+        this.$refs.fileInputVideo?.click()
+      } else {
+        // 従来互換：デフォはカメラ
+        this.openImage('camera')
+      }
+    },
+    openImage(mode){ // 'camera' | 'gallery'
+      this.stopStream() // 競合回避
+      const el = mode === 'camera' ? this.$refs.fileInputImageCamera
+          : this.$refs.fileInputImageGallery
+      if (el) setTimeout(()=> el.click(), 0)
     },
     async onFileChange(kind, e){
       const f = e.target.files && e.target.files[0];
@@ -380,7 +406,7 @@ export default {
         this.file = file
       }
 
-      // ライブは継続 or 停止、好みに応じて
+      // ライブは停止（好みに応じて継続も可）
       this.stopStream()
     },
     stopStream(){
@@ -396,14 +422,15 @@ export default {
       // プレビュークリアし、埋め込み可能ならライブ再開、なければファイルピッカー
       this.clearMedia();
       if (this.canUseEmbeddedCamera) this.startCameraEmbedded();
-      else this.openPicker(this.previewKind || 'image');
+      else this.openImage('camera');
     },
     clearMedia(){
       if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
       this.previewUrl = '';
       this.previewKind = '';
       this.file = null;
-      if (this.$refs.fileInputImage) this.$refs.fileInputImage.value = '';
+      if (this.$refs.fileInputImageCamera) this.$refs.fileInputImageCamera.value = '';
+      if (this.$refs.fileInputImageGallery) this.$refs.fileInputImageGallery.value = '';
       if (this.$refs.fileInputVideo) this.$refs.fileInputVideo.value = '';
     },
   }
