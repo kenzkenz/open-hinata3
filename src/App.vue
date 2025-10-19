@@ -26,9 +26,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
             <v-btn @click="setLineMode('chain')" value="chain" size="x-small">結線</v-btn>
           </v-btn-toggle>
 
-<!--          <div class="text-subtitle-2">-->
-<!--            ジョブ：{{ currentJobName || '未選択' }}-->
-<!--          </div>-->
+          <!--  <div class="text-subtitle-2">-->
+          <!--    ジョブ：{{ currentJobName || '未選択' }}-->
+          <!--  </div>-->
+
         </div>
         <!-- 2行目：ボタンを横並び -->
         <div class="d-flex align-center" style="gap:6px;">
@@ -351,7 +352,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         />
       </FloatingWindow>
 
-
       <!-- registry にある id を全部ホスト -->
       <message-dialog
           v-for="id in dialogIds"
@@ -360,8 +360,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :store-module="'messageDialog'"
           :dialog-id="id"
       />
-
-
+      t
       <VDialogIframe></VDialogIframe>
 
       <div v-show="showDrawConfrim" id="floating-buttons">

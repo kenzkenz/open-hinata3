@@ -1,113 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open-hinata3</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Open-Hinata3</title>
+    <meta name="description" content="Open-Hinata3（OH3）は、現場から意思決定までをつなぐシンプルで高速なWeb GISです。">
     <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            line-height: 1.6;
+        :root{ --primary:#1867C0; --ink:#1f2937; --muted:#6b7280; --bg:#ffffff }
+        *{ box-sizing:border-box }
+        html,body{ height:100%; margin:0; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic UI",Arial }
+        body{ background:var(--bg); color:var(--ink); }
+        .wrap{ min-height:100%; display:grid; place-items:center; }
+        .stack{ width:min(680px,92vw); display:flex; flex-direction:column; align-items:center; gap:18px; }
+        .logo{ display:flex; align-items:center; gap:10px; user-select:none; }
+        .dot{ width:28px; height:28px; border-radius:50%; background:var(--primary); box-shadow:0 8px 20px rgba(24,103,192,.18); }
+        h1{ font-size:28px; font-weight:800; letter-spacing:.2px; margin:0 }
+        p.lead{ margin:0; color:var(--muted); font-size:14px }
+        .actions{ display:flex; gap:10px; width:100%; justify-content:center; }
+        .btn{
+            appearance:none; border:1px solid rgba(31,41,55,.12); background:#fff; color:var(--ink);
+            padding:12px 18px; border-radius:999px; font-weight:700; cursor:pointer;
         }
-        header {
-            background-color: #2b6cb0;
-            color: white;
-            padding: 1rem;
-            text-align: center;
+        .btn-primary{
+            background:var(--primary); color:#fff; border-color:transparent;
+            box-shadow:0 10px 24px rgba(24,103,192,.22);
         }
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 1.5rem;
+        .field{
+            width:min(560px,96%); display:flex; align-items:center; gap:8px;
+            padding:10px 12px; border:1px solid rgba(31,41,55,.14); border-radius:999px; background:#fff;
         }
-        h1, h2 {
-            margin-top: 0;
+        .field input{
+            flex:1; border:0; outline:0; font-size:14px; background:transparent; color:inherit;
         }
-        .features {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .feature {
-            flex: 1 1 300px;
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-        }
-        footer {
-            text-align: center;
-            font-size: 0.9rem;
-            padding: 1rem;
-            color: #666;
-        }
-        @media (max-width: 600px) {
-            header, .container {
-                padding: 1rem;
-            }
+        .hint{ color:var(--muted); font-size:12px; margin-top:4px; text-align:center; }
+        footer{ position:fixed; inset:auto 0 12px; text-align:center; color:#9ca3af; font-size:12px }
+        @media (prefers-color-scheme: dark){
+            :root{ --bg:#0b1220; --ink:#e5e7eb; --muted:#9aa4b2 }
+            body{ background:var(--bg) }
+            .btn{ background:#0f172a; border-color:rgba(255,255,255,.08); color:#e5e7eb }
+            .field{ background:#0f172a; border-color:rgba(255,255,255,.08) }
         }
     </style>
 </head>
 <body>
-<header>
-    <h1>open-hinata3</h1>
-<!--    <p>次世代の地図閲覧・編集WebGISプラットフォーム</p>-->
-</header>
+<main class="wrap">
+    <div class="stack">
+        <div class="logo" aria-label="Open-Hinata3">
+            <span class="dot" aria-hidden="true"></span>
+            <h1>Open-Hinata3</h1>
+        </div>
+        <p class="lead">現場が早い。シンプルに速いWeb GIS。</p>
 
-<div class="container">
-    <p>
-        下記のzipをダウンロード、解凍後にopen-hinata3の地図上にドラッグ&ドロップしてください。
-    </p>
-    <p>
-        <a href="open-hinata3.html" download="open-hinata3紹介ページ.html">バーチャル静岡オルソ</a>
-    </p>
+        <!-- 1行入力（任意）：sコード / 座標を貼って Enter。何も入れなくても「地図を開く」で起動 -->
+        <form class="field" id="openForm">
+            <input id="q" placeholder="シェアコード（s=…）または 35.68,139.76,16 のような座標（任意）" autocomplete="off" />
+            <button class="btn" type="submit" title="適用して開く">適用</button>
+        </form>
 
+        <div class="actions">
+            <a id="openBtn" class="btn btn-primary" href="#">地図を開く</a>
+            <button class="btn" id="contactBtn" type="button">お問い合わせ</button>
+        </div>
 
+        <div class="hint">Enterで開く / 座標は「緯度,経度,ズーム」。例: 35.68,139.76,16</div>
+    </div>
+</main>
 
-<!--    <h2>Open-hinata3とは？</h2>-->
-<!--    <p>-->
-<!--        Open-hinata3は、土地家屋調査士や自治体向けに設計された、軽量で拡張性の高いWebGISアプリケーションです。<br>-->
-<!--        独自のPMTiles技術を活用し、大容量の地図データでも高速に閲覧・編集が可能です。-->
-<!--    </p>-->
+<footer>© 2025 Open-Hinata3</footer>
 
-<!--    <h2>主な特徴</h2>-->
-<!--    <div class="features">-->
-<!--        <div class="feature">-->
-<!--            <h3>⚡ 高速表示</h3>-->
-<!--            <p>PMTilesによる軽量タイル配信で、大規模な地図データもサクサク表示。</p>-->
-<!--        </div>-->
-<!--        <div class="feature">-->
-<!--            <h3>🚀 リアルタイム編集</h3>-->
-<!--            <p>Firebase連携により、複数人での同時編集やコメントが可能。</p>-->
-<!--        </div>-->
-<!--        <div class="feature">-->
-<!--            <h3>🌐 スマホ対応</h3>-->
-<!--            <p>スマートフォンやタブレットでもスムーズに操作可能なレスポンシブ設計。</p>-->
-<!--        </div>-->
-<!--        <div class="feature">-->
-<!--            <h3>📊 柔軟なデータ連携</h3>-->
-<!--            <p>GeoJSON, MBTiles, FlatGeobufなど様々な形式に対応。</p>-->
-<!--        </div>-->
-<!--    </div>-->
+<script>
+    // ▼ あなたの地図URL（ベース）に差し替え
+    // 例) 直起動: 'https://example.com/'  /  ハッシュ: 'https://example.com/#/app'
+    const MAP_BASE = 'http://localhost:8080/';
 
-<!--    <h2>用途例</h2>-->
-<!--    <ul>-->
-<!--        <li>地番・筆ポリゴンの閲覧・編集</li>-->
-<!--        <li>災害シミュレーションの共有</li>-->
-<!--        <li>調査・測量結果のフィールド入力</li>-->
-<!--        <li>自治体内でのGISベースの情報共有</li>-->
-<!--    </ul>-->
+    const openBtn = document.getElementById('openBtn');
+    const openForm = document.getElementById('openForm');
+    const q = document.getElementById('q');
+    const contactBtn = document.getElementById('contactBtn');
 
-<!--    <h2>デモ・詳細</h2>-->
-<!--    <p><a href="https://kenzkenz.xsrv.jp/open-hinata3" target="_blank">https://kenzkenz.xsrv.jp/open-hinata3</a> で実際に操作してみることができます。</p>-->
+    function buildUrlFromInput(v){
+        v = (v||'').trim();
+        if(!v){ return MAP_BASE; }
 
-</div>
+        // s=コードっぽい場合は ?s=...
+        if(/^[-_A-Za-z0-9]+=*$/i.test(v) || v.length >= 6){
+            return addQuery(MAP_BASE, { s: v });
+        }
 
-<footer>
-    &copy; 2025 open-hinata3
-</footer>
+        // "lat,lng[,z]" 形式
+        const m = v.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*(?:,\s*(\d+))?\s*$/);
+        if(m){
+            const [, lat, lng, z] = m;
+            return addQuery(MAP_BASE, Object.assign({ lat, lng }, z ? { z } : {}));
+        }
+        // その他はそのまま s に載せる
+        return addQuery(MAP_BASE, { s: v });
+    }
+
+    function addQuery(base, obj){
+        // ハッシュ型(#/app)にも対応
+        if(base.includes('#')){
+            const [pre, hash] = base.split('#');
+            const [path, qstr=''] = (hash||'').split('?');
+            const sp = new URLSearchParams(qstr);
+            for(const k in obj){ sp.set(k, obj[k]); }
+            return pre + '#' + path + '?' + sp.toString();
+        }else{
+            const url = new URL(base, location.origin);
+            for(const k in obj){ url.searchParams.set(k, obj[k]); }
+            return url.toString();
+        }
+    }
+
+    function updateOpenHref(){
+        openBtn.href = buildUrlFromInput(q.value);
+    }
+    updateOpenHref();
+
+    openForm.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        window.open(buildUrlFromInput(q.value), '_blank', 'noopener');
+    });
+    q.addEventListener('input', updateOpenHref);
+
+    contactBtn.addEventListener('click', ()=>{
+        // 必要に応じて変更
+        location.href = 'mailto:info@example.com';
+    });
+</script>
 </body>
 </html>
