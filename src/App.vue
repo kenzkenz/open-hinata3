@@ -360,7 +360,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :store-module="'messageDialog'"
           :dialog-id="id"
       />
-      
+
       <VDialogIframe></VDialogIframe>
 
       <div v-show="showDrawConfrim" id="floating-buttons">
@@ -659,13 +659,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                   />
                 </template>
               </div>
-<!--              <v-file-input-->
-<!--                  v-model="s_selectedFile"-->
-<!--                  label="画像、動画を選択"-->
-<!--                  accept="image/*,video/*"-->
-<!--                  show-size-->
-<!--                  @change="onFileSelected"-->
-<!--              ></v-file-input>-->
+
               <div style="max-height: 300px; margin-top: -20px; margin-bottom: 20px; overflow: auto">
                 <div v-if="s_previewUrl" class="mt-4 text-center" style="margin-bottom: 10px;">
                   <img
@@ -838,28 +832,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-
-<!--      <v-dialog v-model="dialogForDraw" max-width="500px">-->
-<!--        <v-card>-->
-<!--          <v-card-title>-->
-<!--            ラベル選択-->
-<!--          </v-card-title>-->
-<!--          <v-card-text>-->
-<!--            <v-select class="scrollable-content"-->
-<!--                      v-model="geojsonForDrawLabelColumn"-->
-<!--                      :items="geojsonForDrawColumns"-->
-<!--                      label="ラベルに表示する列を選択"-->
-<!--                      outlined-->
-<!--            ></v-select>-->
-<!--            <v-btn @click="uploadDrawKml">ドロー追加</v-btn>-->
-<!--          </v-card-text>-->
-<!--          <v-card-actions>-->
-<!--            <v-spacer></v-spacer>-->
-<!--            <v-btn color="blue-darken-1" text @click="dialogForDraw = false">Close</v-btn>-->
-<!--          </v-card-actions>-->
-<!--        </v-card>-->
-<!--      </v-dialog>-->
 
       <v-dialog v-model="dialogForChibanzyOrDraw" max-width="510px">
         <v-card>
@@ -1362,13 +1334,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         label="選択してください"
                         outlined
               ></v-select>
-<!--              <v-select class="scrollable-content"-->
-<!--                        v-model="s_resolution"-->
-<!--                        :items="resolutions"-->
-<!--                        label="画像取込最大解像度"-->
-<!--                        outlined-->
-<!--                        v-if="user1"-->
-<!--              ></v-select>-->
+
               <v-select class="scrollable-content"
                         v-model="s_transparent"
                         :items="transparentType"
@@ -1505,26 +1471,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         >
           <vue-qrcode :value="s_url" :options="{ width: qrCodeWidth }"></vue-qrcode>
         </FloatingWindow>
-
-<!--        <div class="my-speed-dial">-->
-<!--        <v-speed-dial-->
-<!--            location="top center"-->
-<!--            transition="scale-transition"-->
-<!--        >-->
-<!--          <template v-slot:activator="{ props: activatorProps }">-->
-<!--            <v-fab-->
-<!--                v-bind="activatorProps"-->
-<!--                size="large"-->
-<!--                icon="$vuetify"-->
-<!--            ></v-fab>-->
-<!--          </template>-->
-
-<!--          <v-btn key="1" icon="$success"></v-btn>-->
-<!--          <v-btn key="2" icon="$info"></v-btn>-->
-<!--          <v-btn key="3" icon="$warning"></v-btn>-->
-<!--          <v-btn key="4" icon="$error"></v-btn>-->
-<!--        </v-speed-dial>-->
-<!--        </div>-->
 
         <v-icon
             v-if="isUsingServerGeojson && !s_isPrint"
@@ -1937,7 +1883,6 @@ import {
   pmtilesGenerateForUser2,
   pngDownload,
   printDirectionChange,
-  queryMapillaryByUserDatesViewport,
   removeThumbnailMarkerByKey,
   sanitizeLongText,
   scaleAndRotateLassoSelected,
@@ -7166,6 +7111,7 @@ export default {
             starturl = response.data?.[0]?.starturl ?? '';
             // starturl = response.data[0].starturl
           }
+          alert(starturl)
           if (starturl) {
             response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
               params: { urlid: starturl }
@@ -9935,36 +9881,6 @@ export default {
             }
           });
 
-
-
-          // map.on('click', 'oh-homusyo-2025-polygon', (e) => {
-          //   if (!this.$store.state.isRenzoku) return
-          //   if (map.getLayer('oh-point-layer')) return
-          //   if (e.features && e.features.length > 0) {
-          //     // 最小面積のポリゴンを選ぶ
-          //     let smallestFeature = e.features[0];
-          //     let minArea = turf.area(e.features[0]);
-          //     for (let feature of e.features) {
-          //       const area = turf.area(feature);
-          //       if (area < minArea) {
-          //         smallestFeature = feature;
-          //         minArea = area;
-          //       }
-          //     }
-          //     const targetId = `${smallestFeature.properties['筆ID']}_${smallestFeature.properties['地番']}`;
-          //     console.log(targetId);
-          //     console.log(this.$store.state.highlightedChibans)
-          //     if (this.$store.state.highlightedChibans.has(targetId)) {
-          //       // すでに選択されている場合は解除
-          //       this.$store.state.highlightedChibans.delete(targetId);
-          //     } else {
-          //       // 新しいIDを追加
-          //       this.$store.state.highlightedChibans.add(targetId);
-          //       // alert(targetId)
-          //     }
-          //     highlightSpecificFeatures2025(map,'oh-homusyo-2025-polygon');
-          //   }
-          // });
           map.on('click', 'oh-amx-a-fude', (e) => {
             if (!this.$store.state.isRenzoku) return
             if (map.getLayer('oh-point-layer')) return
@@ -10087,45 +10003,7 @@ export default {
 
           if (this.$store.state.uploadedImage) {
 
-            // async function fetchFile(url) {
-            //   try {
-            //     // Fetchリクエストでファイルを取得
-            //     const response = await fetch(url);
-            //     // レスポンスが成功したか確認
-            //     if (!response.ok) {
-            //       throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-            //     }
-            //     // Blobとしてレスポンスを取得
-            //     const blob = await response.blob();
-            //     // BlobをFileオブジェクトに変換
-            //     const file = new File([blob], "downloaded_file" + mapName, { type: blob.type });
-            //     console.log("Fileオブジェクトが作成されました:", file);
-            //     return file;
-            //   } catch (error) {
-            //     console.error("ファイルの取得中にエラーが発生しました:", error);
-            //   }
-            // }
-            //
-            // const imageUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).image
-            // const worldFileUrl = 'https://kenzkenz.xsrv.jp/open-hinata3/php/image/' + JSON.parse(this.$store.state.uploadedImage).worldFile
-            // console.log(imageUrl)
-            // console.log(worldFileUrl)
-            // // console.log(fetchFile(imageUrl))
-            // Promise.all([fetchFile(imageUrl), fetchFile(worldFileUrl)]).then(files => {
-            //   if (files.every(file => file)) {
-            //     console.log("両方のファイルが取得されました:", files);
-            //     const image = files[0]
-            //     console.log(image)
-            //     const worldFile = files[1]
-            //     const code = JSON.parse(this.$store.state.uploadedImage).code
-            //     // alert(8888)
-            //     addImageLayer(map, mapName, image, worldFile, code, false)
-            //   } else {
-            //     console.warn("一部のファイルが取得できませんでした。");
-            //   }
-            // }).catch(error => {
-            //   console.error("Promise.allでエラーが発生しました:", error);
-            // });
+
           }
         })
         // on loadここまで-------------------------------------------------------------
@@ -10519,9 +10397,7 @@ export default {
     }, { passive: false });
     //------------------------------------------------------------------------------------------------------------------
     const params = new URLSearchParams(window.location.search)
-    let urlid = params.get('s')
-    if (urlid === 'jIdukg') urlid = '2O65Hr' //以前のリンクを活かす
-    if (urlid === 'da0J4l') urlid = 'W8lFo4' //以前のリンクを活かす
+    const urlid = params.get('s')
     if (!this.$store.state.isOffline) {
       axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
         params: {
@@ -10529,6 +10405,7 @@ export default {
         }
       }).then(function (response) {
         vm.dbparams = response.data
+        alert()
         vm.init()
         const url = new URL(window.location.href) // URLを取得
         window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
@@ -10540,7 +10417,6 @@ export default {
       this.s_resolution = localStorage.getItem('resolution')
       if (this.s_resolution > 24) this.s_resolution = 24
     }
-
     document.querySelector('#drawList').style.display = 'none'
   },
   watch: {
