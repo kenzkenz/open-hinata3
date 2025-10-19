@@ -360,7 +360,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
           :store-module="'messageDialog'"
           :dialog-id="id"
       />
-      t
+      
       <VDialogIframe></VDialogIframe>
 
       <div v-show="showDrawConfrim" id="floating-buttons">
