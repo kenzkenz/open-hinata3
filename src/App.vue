@@ -6676,7 +6676,6 @@ export default {
         this.centerMarker = new maplibregl.Marker({ color: 'green' })
             .setLngLat([longitude, latitude])
             .addTo(map);
-        // alert(888)
         this.currentLngLat = [longitude, latitude];
       } else {
         this.centerMarker.setLngLat([longitude, latitude]);
@@ -7024,7 +7023,6 @@ export default {
       })
       const simas = []
       this.$store.state.highlightedSimas.forEach(h => {
-        // alert(9)
         simas.push(h)
       })
       const simaText = this.$store.state.simaText
@@ -7111,7 +7109,6 @@ export default {
             starturl = response.data?.[0]?.starturl ?? '';
             // starturl = response.data[0].starturl
           }
-          alert(starturl)
           if (starturl) {
             response = await axios.get('https://kenzkenz.xsrv.jp/open-hinata3/php/shortUrlSelect.php', {
               params: { urlid: starturl }
@@ -10405,7 +10402,6 @@ export default {
         }
       }).then(function (response) {
         vm.dbparams = response.data
-        alert()
         vm.init()
         const url = new URL(window.location.href) // URLを取得
         window.history.replaceState(null, '', url.pathname + window.location.hash) //パラメータを削除 FB対策
@@ -10580,10 +10576,6 @@ export default {
         this.updateMapMarkers();
       }
     },
-    // s_saveHistoryFire: debounce(function () {
-    //   alert(999)
-    //   this.saveHistory()
-    // }, 300),
     s_saveHistoryFire () {
       this.saveHistory()
     },
