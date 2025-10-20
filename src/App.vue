@@ -6,6 +6,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <template>
   <v-app>
+
+    <VDialogCommon></VDialogCommon>
+
     <v-main>
 
       <!-- 測位  -->
@@ -1797,15 +1800,12 @@ import * as turf from '@turf/turf'
 import DxfParser from 'dxf-parser'
 import proj4 from 'proj4'
 import { gpx } from '@tmcw/togeojson'
-import { user } from "@/authState"; // グローバルの認証情報を取得
 import PointInfoDrawer from '@/components/PointInfoDrawer.vue'
 import RightDrawer from '@/components/rightDrawer.vue'
 import DrawDrawer from '@/components/drawer/DrawDrawer.vue'
 import DrawListDrawer from '@/components/drawer/DrawLisiDrawer'
 import ChibanzuDrawer from '@/components/chibanzuDrawer.vue'
 import { mapState, mapMutations, mapActions} from 'vuex'
-import { mdiMapMarker } from '@mdi/js'
-import { registerMdiIcon } from '@/js/utils/icon-registry'
 import { attachViewOrientationPair } from '@/js/utils/view-orientation-tracker'
 import { startHoldRotate, startHoldPitch, resetOrientation } from '@/js/utils/view-orientation-anim'
 import MessageDialog from '@/components/Message-Dialog'
@@ -1813,12 +1813,13 @@ import MapillaryFilter from '@/components/floatingwindow/MapillaryFilter.vue'
 import VDialogConfirm from "@/components/V-dialog/V-dialog-confirm"
 import {buildTri50Submenu} from '@/js/utils/triangle50'
 import WarpWizard from '@/components/WarpWizard.vue'
-import { tuneMapForIOS, attachManagedHandlers, disposeMap } from '@/js/utils/ios-map-tuning';
+import { tuneMapForIOS } from '@/js/utils/ios-map-tuning';
 import Traverse from "@/components/floatingwindow/Traverse"
 import JobPicker from "@/components/floatingwindow/JobPicker"
 import { snapIfNeeded } from '@/js/utils/triangle50'
 import rtkPngUrl from '@/assets/icons/oh-rtk.png'
-import { ensureGeoid, calcOrthometric } from '@/geoid';
+import { ensureGeoid } from '@/geoid';
+import VDialogCommon from "@/components/V-dialog/V-dialog-common";
 
 import {
   addDraw, addressFromMapCenter,
@@ -1826,7 +1827,6 @@ import {
   animateRelocate,
   bakeRotationToBlob,
   capture, changePrintMap03,
-  changes_printMap03,
   compressImageToUnder10MB,
   convertFromEPSG4326,
   csvGenerateForUserPng,
@@ -1834,9 +1834,7 @@ import {
   dedupeCoords,
   delay0,
   detectLatLonColumns,
-  diffGeoJSON,
   downloadGeoJSONAsCSV,
-  downloadKML,
   downloadSimaText,
   downloadTextFile,
   DXFDownload,
@@ -2408,7 +2406,6 @@ function xyFromProps(props) {
   return null;
 }
 
-
 // WGS84 -> 平面直角（アンカー側のみで使用）
 // WGS84 -> 平面直角（proj4 は [E, N] を返すので {x:N, y:E} にスワップ）
 function xyFromLngLat(lng, lat, epsg) {
@@ -2452,7 +2449,6 @@ import MiniTooltip from '@/components/MiniTooltip'
 import FanMenu from '@/components/FanMenu'
 import html2canvas from 'html2canvas'
 import debounce from 'lodash/debounce'
-import * as math from 'mathjs'
 import FloatingWindow from '@/components/floatingwindow/FloatingWindow';
 import PaintEditor from '@/components/floatingwindow/PaintEditor'
 import VDialogIframe from "@/components/V-dialog/V-dialog-Iframe";
@@ -2464,7 +2460,6 @@ import drawMethods, {
   pushSnapshotDebounced,
   removeLastVertex
 } from "@/js/draw";
-import {haptic} from "@/js/utils/haptics";
 import attachMapRightClickMenu, {
   buildBookmarksMenu,
   buildGoogleMapsSearchUrl,
@@ -2510,6 +2505,7 @@ export default {
     WarpWizard,
     Traverse,
     JobPicker,
+    VDialogCommon,
   },
   data: () => ({
     pendingFile: null,   // ← D&D/読み込み直後のファイルを保持
