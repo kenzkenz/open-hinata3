@@ -36,14 +36,13 @@
       <div :id="'center-div-' + mapName" class="center-div"></div>
 
       <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div scrollable-content">
-        <v-text-field label="地図抽出" v-model="searchText" style="margin-top: 10px"></v-text-field>
-<!--        <Tree-->
-<!--            :nodes="layers"-->
-<!--            :search-text="searchText"-->
-<!--            :use-checkbox="false"-->
-<!--            :use-icon="true"-->
-<!--            @nodeClick="onNodeClick"-->
-<!--        />-->
+        <v-text-field
+            label="地図抽出"
+            v-model="searchText"
+            style="margin-top: 10px; margin-bottom: -10px;"
+            variant="outlined"
+            density="compact"
+        ></v-text-field>
         <Tree
             :nodes="layers"
             :search-text="searchText"

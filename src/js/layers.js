@@ -4568,7 +4568,9 @@ if (!store.state.isOffline) {
             // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025light.pmtiles'
             // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025.pmtiles'
             // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final.pmtiles'
-            url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
+            // url: 'pmtiles://https://kenzkenz3.xsrv.jp/pmtiles/homusyo/2025/2025final3.pmtiles'
+            url: 'pmtiles://https://kenzkenz.net/pmtiles/2025final3.pmtiles'
+
         },
     }
 } else {

@@ -6,9 +6,10 @@ import Dialog from '@/components/Dialog'
 import Dialog2 from '@/components/Dialog2'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 import { auth, db } from './firebase'
-import '@/registerServiceWorker';
+import '@/registerServiceWorker'
 import Haptics from '@/js/utils/haptics'
 import VDialogConfirm from '@/components/V-dialog/V-dialog-confirm.vue'
+import VDialogCommon from "@/components/V-dialog/V-dialog-common"
 
 // ディレクティブ
 const stickBottomV3 = {
@@ -57,6 +58,7 @@ app.use(store)
 app.use(vuetify)
 app.component('Dialog', Dialog)
 app.component('Dialog2', Dialog2)
+app.component('VDialogCommon', VDialogCommon)
 app.component(VueQrcode.name, VueQrcode)
 app.component('VDialogConfirm', VDialogConfirm)
 app.directive('stick-bottom', stickBottomV3); // ディレクティブをセット
