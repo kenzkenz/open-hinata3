@@ -1378,6 +1378,9 @@ export default {
         this.kansokuPhase = 'idle';
         this.torokuDisabled = false;
         this.mediaDlg = true
+        this.showJobListOnly = false
+        // 保存をすると閉じるように修正
+        this.closeTorokuDialog()
       }
     },
 

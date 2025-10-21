@@ -9,6 +9,163 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
     <VDialogCommon></VDialogCommon>
 
+    <VDialogConfirm
+        v-model="s_showConfirm"
+        v-bind="confirmProps"
+        :message="confirmMessage"
+        @ok="onConfirmOk"
+        @cancel="onConfirmCancel"
+    />
+
+    <!-- =========================
+    JOBピッカー
+    ========================= -->
+    <FloatingWindow
+        windowId="job-picker"
+        title="ジョブリスト"
+        type="normal"
+        :is-modal="isSmall500"
+        :resizable="true"
+        :default-top="10"
+        :default-left="10"
+        :default-width="400"
+        :default-height="700"
+        :keepAspectRatio="false"
+        :showMaxRestore="false"
+        @close="jobPickerOpen = false"
+    >
+      <JobPicker
+          ref="jobPicker"
+          @mousedown.stop
+          @pointerdown.stop
+          @touchstart.stop
+      >
+      </JobPicker>
+    </FloatingWindow>
+
+    <!-- トラバース -->
+    <FloatingWindow
+        windowId = "traverse"
+        title = "方位距離エディタ"
+        type="normal"
+        :resizable="false"
+        :default-top = "10"
+        :default-left = "10"
+        :default-width = "530"
+        :keepAspectRatio = "false"
+        :showMaxRestore="false"
+    >
+      <Traverse
+          @mousedown.stop
+          @pointerdown.stop
+          @touchstart.stop
+      >
+      </Traverse>
+    </FloatingWindow>
+
+
+    <!-- ジオリファレンス -->
+    <FloatingWindow
+        windowId = "warp-wizard"
+        title = "ジオリファレンス"
+        type="normal"
+        :resizable="true"
+        :default-top = "10"
+        :default-left = "10"
+        :default-width = "400"
+        :default-height = "430"
+        :keepAspectRatio = "false"
+        :showMaxRestore="false"
+        @close="onWarpWindowClose"
+    >
+      <WarpWizard
+          v-model="showWarpWizard"
+          :mapName="mapName"
+          :item="{ id:'warp-wizard', label:'Warp Wizard' }"
+          v-model:gcpList="gcpList"
+          :file="pendingFile"
+          :stacked="true"
+          @confirm="onWarpConfirm"
+          @clear-map-markers="clearBlueDotsOnMap"
+          @mousedown.stop
+          @pointerdown.stop
+          @touchstart.stop
+      />
+    </FloatingWindow>
+
+    <!-- マピラリフィルター -->
+    <FloatingWindow
+        windowId = "mapillary-filter"
+        title = "mapillaryフィルタ"
+        type="normal"
+        :default-top = "10"
+        :default-left = "mlyDefaultLeft"
+        :default-width = "isSmall500 ? 350 : 500"
+        :default-height = "isSmall500 ? 400 : 400"
+        :keepAspectRatio = "false"
+        :showMaxRestore="false"
+        @close = "mapillaryClose"
+    >
+      <MapillaryFilter
+          :observe-width="true"
+          :show-close="true"
+          :close-on-esc="true"
+          @mousedown.stop
+          @pointerdown.stop
+          @touchstart.stop
+      />
+    </FloatingWindow>
+    <!-- マピラリビューワー -->
+    <FloatingWindow
+        windowId = "mapillary"
+        :title-is-html="true"
+        :title = "mapillaryTytle"
+        type="normal"
+        :default-top = "70"
+        :default-left = "10"
+        :default-width = "isSmall500 ? 200 : 400"
+        :default-height = "isSmall500 ? 300 : 300"
+        :keepAspectRatio = "false"
+        :showMaxRestore="true"
+        @width-changed ="onWidthChangedForMapillary"
+        @close = "mapillaryClose"
+    >
+      <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
+      </div>
+      <div class="toolbar-row">
+        <v-btn @click="mapillaryFilterOpen">フィルタ</v-btn>
+      </div>
+    </FloatingWindow>
+
+    <!-- ペイントエディター -->
+    <FloatingWindow
+        windowId="painteditor"
+        :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
+        type="normal"
+        :default-width=400
+        :default-height=600
+        :keepAspectRatio="false"
+    >
+      <PaintEditor
+          :id="Number(s_pmtiles0Id)"
+          :initialPaint="paintSettings"
+          @update:paint="onPaintUpdate"
+      />
+    </FloatingWindow>
+
+    <!-- registry にある id を全部ホスト -->
+    <message-dialog
+        v-for="id in dialogIds"
+        :key="id"
+        :use-store="true"
+        :store-module="'messageDialog'"
+        :dialog-id="id"
+    />
+
+    <VDialogIframe></VDialogIframe>
+
+
+    <!-- ここからメイン  -->
     <v-main>
 
       <!-- 測位  -->
@@ -209,162 +366,11 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--      </div>-->
 
 
-      <VDialogConfirm
-          v-model="s_showConfirm"
-          v-bind="confirmProps"
-          :message="confirmMessage"
-          @ok="onConfirmOk"
-          @cancel="onConfirmCancel"
-      />
+
 
       <!-- <v-btn @click="test">test</v-btn>-->
 
-      <!-- =========================
-        JOBピッカー
-      ========================= -->
-      <FloatingWindow
-          windowId="job-picker"
-          title="ジョブリスト"
-          type="normal"
-          :is-modal="isSmall500"
-          :resizable="true"
-          :default-top="10"
-          :default-left="10"
-          :default-width="400"
-          :default-height="700"
-          :keepAspectRatio="false"
-          :showMaxRestore="false"
-          @close="jobPickerOpen = false"
-      >
-        <JobPicker
-            ref="jobPicker"
-            @mousedown.stop
-            @pointerdown.stop
-            @touchstart.stop
-        >
-        </JobPicker>
-      </FloatingWindow>
 
-      <!-- トラバース -->
-      <FloatingWindow
-          windowId = "traverse"
-          title = "方位距離エディタ"
-          type="normal"
-          :resizable="false"
-          :default-top = "10"
-          :default-left = "10"
-          :default-width = "530"
-          :keepAspectRatio = "false"
-          :showMaxRestore="false"
-      >
-        <Traverse
-            @mousedown.stop
-            @pointerdown.stop
-            @touchstart.stop
-        >
-        </Traverse>
-      </FloatingWindow>
-
-
-      <!-- ジオリファレンス -->
-      <FloatingWindow
-          windowId = "warp-wizard"
-          title = "ジオリファレンス"
-          type="normal"
-          :resizable="true"
-          :default-top = "10"
-          :default-left = "10"
-          :default-width = "400"
-          :default-height = "430"
-          :keepAspectRatio = "false"
-          :showMaxRestore="false"
-          @close="onWarpWindowClose"
-      >
-        <WarpWizard
-            v-model="showWarpWizard"
-            :mapName="mapName"
-            :item="{ id:'warp-wizard', label:'Warp Wizard' }"
-            v-model:gcpList="gcpList"
-            :file="pendingFile"
-            :stacked="true"
-            @confirm="onWarpConfirm"
-            @clear-map-markers="clearBlueDotsOnMap"
-            @mousedown.stop
-            @pointerdown.stop
-            @touchstart.stop
-        />
-      </FloatingWindow>
-
-      <!-- マピラリフィルター -->
-      <FloatingWindow
-          windowId = "mapillary-filter"
-          title = "mapillaryフィルタ"
-          type="normal"
-          :default-top = "10"
-          :default-left = "mlyDefaultLeft"
-          :default-width = "isSmall500 ? 350 : 500"
-          :default-height = "isSmall500 ? 400 : 400"
-          :keepAspectRatio = "false"
-          :showMaxRestore="false"
-          @close = "mapillaryClose"
-      >
-        <MapillaryFilter
-            :observe-width="true"
-            :show-close="true"
-            :close-on-esc="true"
-            @mousedown.stop
-            @pointerdown.stop
-            @touchstart.stop
-        />
-      </FloatingWindow>
-      <!-- マピラリビューワー -->
-      <FloatingWindow
-          windowId = "mapillary"
-          :title-is-html="true"
-          :title = "mapillaryTytle"
-          type="normal"
-          :default-top = "70"
-          :default-left = "10"
-          :default-width = "isSmall500 ? 200 : 400"
-          :default-height = "isSmall500 ? 300 : 300"
-          :keepAspectRatio = "false"
-          :showMaxRestore="true"
-          @width-changed ="onWidthChangedForMapillary"
-          @close = "mapillaryClose"
-      >
-        <div class="mapillary-div" :style="{height:'calc(100% - 102px)',width:'100%',background:'color-mix(in srgb, var(--main-color) 60%, black)',color:'white'}">
-        </div>
-        <div class="toolbar-row">
-          <v-btn @click="mapillaryFilterOpen">フィルタ</v-btn>
-        </div>
-      </FloatingWindow>
-
-      <!-- ペイントエディター -->
-      <FloatingWindow
-          windowId="painteditor"
-          :title="`スタイル変更（id=${s_pmtiles0Id}-${s_pmtiles0Name}）`"
-          type="normal"
-          :default-width=400
-          :default-height=600
-          :keepAspectRatio="false"
-      >
-        <PaintEditor
-            :id="Number(s_pmtiles0Id)"
-            :initialPaint="paintSettings"
-            @update:paint="onPaintUpdate"
-        />
-      </FloatingWindow>
-
-      <!-- registry にある id を全部ホスト -->
-      <message-dialog
-          v-for="id in dialogIds"
-          :key="id"
-          :use-store="true"
-          :store-module="'messageDialog'"
-          :dialog-id="id"
-      />
-
-      <VDialogIframe></VDialogIframe>
 
       <div v-show="showDrawConfrim" id="floating-buttons">
         <MiniTooltip text="この状態で確定" :offset-x="0" :offset-y="2">
@@ -568,22 +574,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
-
-      <v-dialog v-model="s_dialogForVersion" max-width="500px">
-        <v-card>
-          <v-card-title>
-            バージョンが古くなっています。
-          </v-card-title>
-          <v-card-text>
-            <p style="margin-bottom: 20px;">アップデートしてください。現在のレイヤーを記憶したままアップデートします。</p>
-            <v-btn @click="appUpdate">アップデート実行</v-btn>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForVersion = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
 
       <v-dialog persistent v-model="dialogForWatchPosition" max-width="500px">
         <v-card>
@@ -1577,12 +1567,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 </g>
               </svg>
             </div>
-
-            <!--            <svg class="compass-icon" viewBox="0 0 100 100" width="60" height="60">-->
-<!--              <circle cx="50" cy="50" r="45" stroke="black" stroke-width="4" fill="white"/>-->
-<!--              <polygon points="50,10 60,50 50,40 40,50" fill="red"/>-->
-<!--              <text x="50" y="95" font-size="16" text-anchor="middle" fill="black">N</text>-->
-<!--            </svg>-->
           </div>
 
           <div class="scale-ratio" v-if="s_isPrint">{{scaleText}}</div>
@@ -4062,10 +4046,6 @@ export default {
       lavelUpdate(null, id)
       this.s_popupDialog = false;
     },
-    appUpdate() {
-      location.reload(true)
-      this.s_dialogForVersion = false
-    },
     isDisabledChange() {
       this.isDisabled2 = false
     },
@@ -5908,42 +5888,6 @@ export default {
      * 杭打関連（測位点登録・赤丸表示・ジョブ管理・結線表示）
      * ========================= */
 
-    /** 現在保持している赤丸（FeatureCollection）から、時系列順の [lng,lat] の配列を構築 */
-    buildChainCoordinates() {
-      try {
-        if (!this._torokuFC || !Array.isArray(this._torokuFC.features)) return [];
-
-        // ① CSV相当の最後列 “観測日時” でソート、②無ければ push 順
-        const toKey = (f) => {
-          const row = f?.properties?.oh3_csv2_row;
-          if (!row) return Number.MAX_SAFE_INTEGER;
-          try {
-            const arr = Array.isArray(row) ? row : JSON.parse(row);
-            const ts  = arr?.[11]; // 12列目(= index 11)
-            const t   = new Date(ts).getTime();
-            return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
-          } catch {
-            return Number.MAX_SAFE_INTEGER;
-          }
-        };
-
-        const feats = [...this._torokuFC.features].filter(f =>
-            f?.geometry?.type === 'Point' &&
-            Number.isFinite(+f.geometry.coordinates?.[0]) &&
-            Number.isFinite(+f.geometry.coordinates?.[1])
-        );
-
-        feats.sort((a,b) => toKey(a) - toKey(b));
-
-        return feats.map(f => {
-          const c = f.geometry.coordinates;
-          return [Number(c[0]), Number(c[1])]; // [lng, lat]
-        });
-      } catch {
-        return [];
-      }
-    },
-
     /** 単点/結線モードの切替（観測中は不可）＋即時更新 */
     setLineMode(mode) {
       this.$refs.jobPicker.setLineMode(mode)
@@ -6586,7 +6530,7 @@ export default {
     },
 
 
-// 汎用ユーティリティ（日時/保存/クランプ/終了処理）
+    // 汎用ユーティリティ（日時/保存/クランプ/終了処理）
     $_jstLocal() {
       const p = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Tokyo',
@@ -6758,10 +6702,7 @@ export default {
       // alert('app.vueから' + groupId)
       // this.$store.state.currentGroupId = groupId
       if (this.$store.state.dialogs.myroomDialog[mapName].style.display === 'none') {
-        // this.$store.commit('incrDialogMaxZindex')
-        // this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = this.$store.state.dialogMaxZindex
         this.$store.state.dialogs.myroomDialog[mapName].style['z-index'] = getNextZIndex()
-
         this.$store.state.dialogs.myroomDialog[mapName].style.display = 'block'
       } else {
         this.$store.state.dialogs.myroomDialog[mapName].style.display = 'none'
@@ -6955,30 +6896,6 @@ export default {
         if (typeof closeAllPopups === 'function') closeAllPopups()
       })
     },
-    // btnClickSplit () {
-    //   if (this.s_map2Flg) {
-    //     this.mapSize.map01.width = '100%'
-    //     this.mapSize.map01.height = '100%'
-    //     this.s_map2Flg = false
-    //   } else {
-    //     if (window.innerWidth > 1000) {
-    //       document.querySelector('.terrain-btn-div').style.left = ''
-    //       document.querySelector('.terrain-btn-div').style.right = '10px'
-    //       this.mapSize.map01.width = '50%'
-    //       this.mapSize.map01.height = '100%'
-    //     } else {
-    //       this.mapSize.map01.width = '100%'
-    //       this.mapSize.map01.height = '50%'
-    //       this.mapSize.map02.width = '100%'
-    //       this.mapSize.map02.height = '50%'
-    //       this.mapSize.map02.top = '50%'
-    //     }
-    //     this.s_map2Flg = true
-    //     if (popups.length > 0) {
-    //       closeAllPopups()
-    //     }
-    //   }
-    // },
     // パーマリンク作成
     updatePermalink() {
       if (this.$store.state.isOffline) {
@@ -9445,55 +9362,6 @@ export default {
             mouseMoveForPopup(e,map)
           })
 
-          //------------------------------------------------------------------------------------------------------------
-          // // PLATEAU建物東京都23区
-          // map.on('click', 'oh-plateau-tokyo23ku-layer', function (e) {
-          //   // map.getCanvas().style.cursor = 'pointer'
-          //   map.setPaintProperty(
-          //       'oh-plateau-tokyo23ku-layer',
-          //       'fill-extrusion-color',
-          //       [
-          //         'case',
-          //         ['==', ['get', '建物ID'], e.features[0].properties['建物ID']],
-          //         'rgba(255, 0, 0, 1)', // カーソルが当たったフィーチャーの色
-          //         [
-          //           "interpolate",
-          //           ["linear"],
-          //           ["get", "measuredHeight"],
-          //           0, "#d9d9d9",       // 0m: グレー
-          //           10, "#a6bddb",      // 10m: 明るいブルー
-          //           30, "#74a9cf",      // 30m: 中間ブルー
-          //           60, "#2b8cbe",      // 60m: 濃いブルー
-          //           100, "#045a8d"      // 100m以上: 非常に濃いブルー
-          //         ]
-          //       ]
-          //   )
-          // })
-          // map.on('click', function(e) {
-          //   // クリック位置のoh-plateau-tokyo23ku-layerのフィーチャーを取得
-          //   const features = map.queryRenderedFeatures(e.point, { layers: ['oh-plateau-tokyo23ku-layer'] });
-          //   if (features.length === 0) {
-          //     // フィーチャーが1つもない時だけ発動
-          //     try {
-          //       map.setPaintProperty(
-          //           'oh-plateau-tokyo23ku-layer',
-          //           'fill-extrusion-color',
-          //           [
-          //             "interpolate",
-          //             ["linear"],
-          //             ["get", "measuredHeight"],
-          //             0, "#d9d9d9",       // 0m: グレー
-          //             10, "#a6bddb",      // 10m: 明るいブルー
-          //             30, "#74a9cf",      // 30m: 中間ブルー
-          //             60, "#2b8cbe",      // 60m: 濃いブルー
-          //             100, "#045a8d"      // 100m以上: 非常に濃いブルー
-          //           ]
-          //       )
-          //     } catch (e) {
-          //       console.log(e)
-          //     }
-          //   }
-          // });
           // -----------------------------------------------------------------------------------------------------------
           let pitch = mapName === 'map01' ? params.pitch01 : params.pitch02 || 0
           pitch = isNaN(pitch) ? 0 : pitch

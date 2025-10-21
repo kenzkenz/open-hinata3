@@ -103,7 +103,8 @@ async function checkVersion() {
                 const diff = appVersion - store.state.clientVersion;
                 console.log(`バージョンが${diff}古いです。`);
                 store.state.updatePermalinkFire = !store.state.updatePermalinkFire
-                store.state.dialogForVersion = true;
+                // store.state.dialogForVersion = true;
+                store.state.commonDialog.versionMessage = true
             }
         }
     } catch (e) {

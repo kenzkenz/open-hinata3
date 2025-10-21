@@ -6,7 +6,7 @@
         <p style="margin-bottom:20px;">
           アップデートしてください。現在のレイヤーを記憶したままアップデートします。
         </p>
-        <v-btn @click="$store.dispatch('appUpdate')">アップデート実行</v-btn>
+        <v-btn @click=appUpdate>アップデート実行</v-btn>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -29,5 +29,11 @@ export default {
       }
     },
   },
+  methods: {
+    appUpdate() {
+      location.reload(true)
+      this.s_versionMessage = false
+    },
+  }
 }
 </script>
