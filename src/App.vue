@@ -1738,7 +1738,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 </template>
 
 <script>
-import firebase, { db } from '@/firebase'
+import { db } from '@/firebase'
 import { user } from "@/authState"; // グローバルの認証情報を取得
 import store from '@/store'
 import LoginManager from "@/components/LoginManager"

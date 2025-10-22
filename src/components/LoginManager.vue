@@ -15,19 +15,23 @@
         <div style="margin-top: 10px;">
           <v-btn v-if="!user" @click="loginDiv = !loginDiv; signUpDiv = false">ログイン</v-btn>
           <v-btn v-if="user" @click="logOut">ログアウト</v-btn>
+          <v-btn v-if="user" style="margin-left: 10px;" @click="nicknameDivOpen = true">ニックネーム変更</v-btn>
           <v-btn style="margin-left: 10px;" v-if="!user" @click="signUpDiv = !signUpDiv; loginDiv = false">新規登録</v-btn>
           <span v-if="!user" style="margin-left: 20px;">新規登録は無料です。</span>
 
-          <div v-if="user && isLoggedIn">
-            <hr style="margin-top: 20px;margin-bottom: 20px;">
-            <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
+          <div v-if="user && isLoggedIn && nicknameDivOpen">
+<!--            <hr style="margin-top: 20px;margin-bottom: 20px;">-->
+<!--            <p style="margin-bottom: 10px;">ニックネームを変更します。</p>-->
+            <br><br><br>
             <v-text-field
                 v-model="newName"
-                label="新しいニックネームを記入してください。"
+                label="変更したい場合は新しいニックネームを記入してください。（任意）"
                 outlined
                 dense
+                variant="outlined"
+                density="compact"
             />
-            <v-btn color="primary" @click="updateDisplayName">ニックネーム変更</v-btn>
+            <v-btn color="primary" @click="updateDisplayName">ニックネーム変更実行</v-btn>
             <v-alert
                 v-if="message"
                 :type="alertType"
@@ -36,11 +40,12 @@
                 class="mt-2"
                 v-html="message"
             />
+
           </div>
 
           <div v-if="loginDiv" style="margin-top: 10px;">
-            <v-text-field v-model="email" type="email" placeholder="メールアドレス" />
-            <v-text-field v-model="password" type="password" placeholder="パスワード" />
+            <v-text-field variant="outlined" density="compact" v-model="email" type="email" placeholder="メールアドレス" />
+            <v-text-field variant="outlined" density="compact" v-model="password" type="password" placeholder="パスワード" />
             <v-btn @click="login">ログインします</v-btn>
             <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
           </div>
@@ -48,9 +53,9 @@
 
         <div style="margin-top: 10px;">
           <div v-if="signUpDiv" style="margin-top: 10px;">
-            <v-text-field v-model="nickname" type="text" placeholder="ニックネーム" />
-            <v-text-field v-model="email" type="email" placeholder="メールアドレス" />
-            <v-text-field v-model="password" type="password" placeholder="パスワード" />
+            <v-text-field variant="outlined" density="compact" v-model="nickname" type="text" placeholder="ニックネーム" />
+            <v-text-field variant="outlined" density="compact" v-model="email" type="email" placeholder="メールアドレス" />
+            <v-text-field variant="outlined" density="compact" v-model="password" type="password" placeholder="パスワード" />
             <v-btn @click="signUp">新規登録します</v-btn>
             <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
           </div>
@@ -75,6 +80,8 @@ export default {
   name: 'LoginManager',
   data () {
     return {
+
+      nicknameDivOpen: false,
       // ローカル状態
       isLoggedIn: false,
       loginDiv: false,
