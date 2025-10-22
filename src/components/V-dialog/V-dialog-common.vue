@@ -23,7 +23,8 @@
           <v-icon :color="iconColor" size="32">{{ iconName }}</v-icon>
           <div>
             <div class="text-subtitle-1">{{ detectedMessage }}</div>
-            <div class="text-caption text-medium-emphasis">拡張子に応じて処理を切り替えます（{{ files.length }}件）</div>
+            <!-- ↓ 要望により説明行は削除 -->
+            <!-- <div class="text-caption text-medium-emphasis">拡張子に応じて処理を切り替えます（{{ files.length }}件）</div> -->
           </div>
         </div>
         <v-btn icon variant="text" @click="sFileDialogOpen=false">
@@ -48,11 +49,8 @@
 
         <!-- ====== PDF ====== -->
         <div v-if="ext==='pdf'">
-          <!-- 進行表示 -->
-          <div
-              v-if="stage==='upload' || stage==='open' || stage==='warm'"
-              class="statusBar mb-3"
-          >
+          <!-- 進行表示（青系） -->
+          <div v-if="stage==='upload' || stage==='open' || stage==='warm'" class="statusBar mb-3">
             <div class="statusText">
               <template v-if="stage==='upload'">アップロード中…</template>
               <template v-else-if="stage==='open'">サーバーで準備中…</template>
@@ -95,7 +93,7 @@
 
           <!-- 2カラム -->
           <div class="d-flex" style="gap:16px">
-            <!-- 左：サムネ（装飾済み） -->
+            <!-- 左：サムネ -->
             <div class="thumbColumn">
               <div v-if="!pdfToken" class="pa-4 text-medium-emphasis">PDFを選択すると自動でサムネを生成します</div>
               <div v-else class="thumbGrid">
@@ -131,7 +129,7 @@
               </div>
             </div>
 
-            <!-- 右：プレビュー（ヘッダー無し・スクロール非表示） -->
+            <!-- 右：プレビュー（縦長でも切れない） -->
             <div class="previewFrame">
               <div class="previewPane noScroll">
                 <img
@@ -148,7 +146,6 @@
                 <div v-show="pdfOpening || previewLoading" class="overlay">
                   <v-progress-circular indeterminate size="32" />
                 </div>
-                <!-- エラーテキストは出さない -->
               </div>
             </div>
           </div>
@@ -400,7 +397,6 @@ export default {
         this.previewKey++
         this.previewLoading = false
       }catch(e){
-        // メッセージは出さないがスピナーは止める
         this.previewLoading = false
       }
     },
@@ -408,9 +404,7 @@ export default {
     onPreviewLoad(){ this.previewLoading = false },
     onPreviewError(){ this.previewLoading = false },
 
-    exportCurrentPage(){
-      this.exportPage(this.pdfPage)
-    },
+    exportCurrentPage(){ this.exportPage(this.pdfPage) },
     exportPage(p){
       if(!this.pdfToken) return
       const qp = new URLSearchParams({ action:'export', token:this.pdfToken, page:String(p) })
@@ -438,12 +432,9 @@ export default {
   border-radius: 10px;
   padding: 10px 12px
 }
-.statusText{
-  font-size:.9rem;
-  margin-bottom:6px
-}
+.statusText{ font-size:.9rem; margin-bottom:6px }
 
-/* プレビュー枠（ヘッダー無し版） */
+/* プレビュー枠（ヘッダー無し） */
 .previewFrame{
   flex:1 1 auto;
   display:flex;
@@ -458,7 +449,7 @@ export default {
   position: relative;
   height: 60vh;
   max-height: 60vh;
-  overflow: hidden;                 /* スクロールさせない */
+  overflow: hidden;   /* スクロールさせない */
   display:flex;
   align-items:center;
   justify-content:center;
@@ -467,9 +458,12 @@ export default {
 .previewPane::-webkit-scrollbar{ display:none }
 .previewPane{ -ms-overflow-style:none; scrollbar-width:none }
 
+/* ←ここを変更：縦長でも切れないようにmaxでフィット */
 .previewImg{
   display:block;
-  width:100%;
+  max-width:100%;
+  max-height:100%;
+  width:auto;
   height:auto;
   object-fit:contain;
 }
@@ -510,22 +504,9 @@ export default {
 }
 .thumbCard.isOdd{ border-color: rgba(0,128,255,.35) }
 .thumbCard.isEven{ border-color: rgba(0,200,120,.35) }
-.thumbCard:hover{
-  box-shadow: 0 4px 12px rgba(0,0,0,.08);
-  transform: translateY(-1px)
-}
-.thumbCard.active{
-  border-color: var(--v-theme-primary);
-  box-shadow: 0 6px 16px rgba(0,0,0,.12)
-}
-.thumbAccent{
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--v-theme-primary)
-}
+.thumbCard:hover{ box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px) }
+.thumbCard.active{ border-color: var(--v-theme-primary); box-shadow: 0 6px 16px rgba(0,0,0,.12) }
+.thumbAccent{ position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--v-theme-primary) }
 .thumbBadge{
   position: absolute;
   top: 6px;
@@ -542,23 +523,10 @@ export default {
   box-shadow: 0 1px 3px rgba(0,0,0,.08);
   z-index: 2
 }
-.thumbImg{
-  display:block;
-  width:100%;
-  height:auto;
-  object-fit:contain;
-  background: #f7f7f8
-}
+.thumbImg{ display:block; width:100%; height:auto; object-fit:contain; background:#f7f7f8 }
 .thumbHover{
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: all .15s ease;
-  z-index: 3
+  position:absolute; right:6px; top:6px; display:flex; gap:4px;
+  opacity:0; transform:translateY(-2px); transition:all .15s ease; z-index:3
 }
-.thumbCard:hover .thumbHover{ opacity: 1; transform: translateY(0) }
+.thumbCard:hover .thumbHover{ opacity:1; transform:translateY(0) }
 </style>
