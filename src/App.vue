@@ -79,7 +79,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
         @close="onWarpWindowClose"
     >
       <WarpWizard
-          v-model="showWarpWizard"
           :mapName="mapName"
           :item="{ id:'warp-wizard', label:'Warp Wizard' }"
           v-model:gcpList="gcpList"
@@ -2492,12 +2491,9 @@ export default {
     VDialogCommon,
   },
   data: () => ({
-    pendingFile: null,   // ← D&D/読み込み直後のファイルを保持
-
     wizardOpen: false,
     // gcpList: [],
     affineM: null,   // ★ 追加（リアクティブ）
-
     isRightDiv: true,
     fanMenuOffsetX: -60,
     segments: 100,
@@ -2611,7 +2607,6 @@ export default {
     showLayerDialog: false,
     dialogForSaveDXF2: false,
     // -----------------------------------------
-    uploadedImageUrl: null,
     showFloatingImage: false,
     gcpList: [],  // ← GCP座標リスト
     mapCoordMarkers: [], // 地図上に置いたマーカー一覧
@@ -2680,7 +2675,6 @@ export default {
     map02Tracker: null,
     stopSpin: null,
     stopPitch: null,
-    showWarpWizard: false,
     distance: '',
 
 
@@ -2723,6 +2717,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'pendingFile',
       'disabledForSokui',
       'isContextMenu',
       'userId',
@@ -3835,8 +3830,6 @@ export default {
       return `${A}\n${D}\n${B}\n${E}\n${C}\n${F}\n`;
     },
     onWarpWindowClose() {
-      // 1) v-model を閉じる（子の watch が発火して onExternalClose が呼ばれる）
-      this.showWarpWizard = false;
       // 2) 念のため親側でも青丸を掃除（どちらか一方でOKだが堅牢）
       this.clearBlueDotsOnMap();
     },
@@ -9489,12 +9482,8 @@ export default {
                     if (this.$store.state.userId) {
                       const reader = new FileReader();
                       reader.onload = evt => {
-                        this.uploadedImageUrl = evt.target.result;
-                        this.showWarpWizard = true;
                         this.s_gazoName = fileName.split('.')[0]
-                        this.pendingFile = file;   // or this.pendingUrl = droppedUrl;
-                        this.aaa = file
-                        this.wizardOpen  = true;
+                        this.$store.state.pendingFile = file;
                         this.$store.dispatch('showFloatingWindow', 'warp-wizard');
                       };
                       reader.readAsDataURL(file);

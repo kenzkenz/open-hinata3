@@ -1,4 +1,39 @@
 <template>
+
+  <v-dialog v-model="s_geoReferenceOpen" max-width="500px">
+    <v-card>
+      <v-card-title>
+        画像アップロード
+      </v-card-title>
+      <v-card-text>
+        <div>
+          <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
+          <v-select class="scrollable-content"
+                    v-model="s_zahyokei"
+                    :items="zahyokeiItems"
+                    label="選択してください"
+                    outlined
+          ></v-select>
+
+          <v-select class="scrollable-content"
+                    v-model="s_transparent"
+                    :items="transparentItems"
+                    item-title="label"
+                    item-value="value"
+                    label="透過方法を選択してください"
+                    outlined
+          ></v-select>
+        </div>
+        <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="s_geoReferenceOpen = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+
   <!-- バージョン通知 -->
   <v-dialog v-model="sVersionMessage" max-width="500px">
     <v-card>
@@ -15,7 +50,7 @@
   </v-dialog>
 
   <!-- 本体 -->
-  <v-dialog v-model="sFileDialogOpen" :max-width="isMobile ? 680 : 1080">
+  <v-dialog v-model="s_fileDialogOpen" :max-width="isMobile ? 680 : 1080">
     <v-card class="pa-2">
       <!-- ヘッダー（アイコン＋ファイル名のみ） -->
       <div class="d-flex align-center justify-space-between px-3 py-2">
@@ -23,7 +58,7 @@
           <v-icon :color="iconColor" size="32">{{ iconName }}</v-icon>
           <div class="text-subtitle-1 ellipsis">{{ headerTitle }}</div>
         </div>
-        <v-btn icon variant="text" @click="sFileDialogOpen=false">
+        <v-btn icon variant="text" @click="s_fileDialogOpen=false">
           <v-icon size="28">mdi-close</v-icon>
         </v-btn>
       </div>
@@ -72,9 +107,12 @@
               <span class="text-caption text-medium-emphasis" v-if="pdfPages">/ 全{{ pdfPages }}ページ</span>
             </div>
             <div>
-              <v-btn color="primary" size="small" :disabled="!pdfToken" :loading="pdfExporting" @click="exportCurrentPage">
-                <v-icon start>mdi-file-image</v-icon> このページをJPEG化
+              <v-btn color="primary" size="small" :disabled="!pdfToken" :loading="pdfExporting" @click="toWarpWizard">
+                <v-icon start>mdi-file-image</v-icon> このページをジオリファレンス
               </v-btn>
+<!--              <v-btn color="primary" size="small" :disabled="!pdfToken" :loading="pdfExporting" @click="exportCurrentPage">-->
+<!--                <v-icon start>mdi-file-image</v-icon> このページをJPEG化-->
+<!--              </v-btn>-->
             </div>
           </div>
 
@@ -181,17 +219,34 @@
 </template>
 
 <script>
+
 const APIBASE = 'https://kenzkenz.net/myphp/pdf-service.php'
 
 export default {
   name: 'VDialogCommon',
 
   computed: {
+    s_transparent: {
+      get(){ return this.$store.state.transparent },
+      set(v){ this.$store.state.transparent = v }
+    },
+    s_zahyokei: {
+      get(){ return this.$store.state.zahyokei },
+      set(v){ this.$store.state.zahyokei = v }
+    },
+    s_gazoName: {
+      get(){ return this.$store.state.gazoName },
+      set(v){ this.$store.state.gazoName = v }
+    },
+    s_geoReferenceOpen: {
+      get(){ return this.$store.state.commonDialog.geoReferenceOpen },
+      set(v){ this.$store.state.commonDialog.geoReferenceOpen = v }
+    },
     sVersionMessage: {
       get(){ return this.$store.state.commonDialog.versionMessage },
       set(v){ this.$store.state.commonDialog.versionMessage = v }
     },
-    sFileDialogOpen: {
+    s_fileDialogOpen: {
       get(){ return this.$store.state.commonDialog.fileDropOpen },
       set(v){ this.$store.state.commonDialog.fileDropOpen = v }
     },
@@ -255,18 +310,40 @@ export default {
 
       // エラー
       pdfError: '',
-      openAbort: null
+      openAbort: null,
+
+      zahyokeiItems: [
+        'WGS84',
+        '公共座標1系', '公共座標2系', '公共座標3系',
+        '公共座標4系', '公共座標5系', '公共座標6系',
+        '公共座標7系', '公共座標8系', '公共座標9系',
+        '公共座標10系', '公共座標11系', '公共座標12系',
+        '公共座標13系', '公共座標14系', '公共座標15系',
+        '公共座標16系', '公共座標17系', '公共座標18系',
+        '公共座標19系',
+        '日本測地系1系', '日本測地系2系', '日本測地系3系',
+        '日本測地系4系', '日本測地系5系', '日本測地系6系',
+        '日本測地系7系', '日本測地系8系', '日本測地系9系',
+        '日本測地系10系', '日本測地系11系', '日本測地系12系',
+        '日本測地系13系', '日本測地系14系', '日本測地系15系',
+        '日本測地系16系', '日本測地系17系', '日本測地系18系',
+        '日本測地系19系'
+      ],
+      transparentItems: [
+        { label: '透過する。（処理遅い）', value: '1' },
+        { label: '透過なし。（処理早い）', value: '0' }
+      ],
     }
   },
 
   watch:{
-    sFileDialogOpen(v){
+    s_fileDialogOpen(v){
       if(v && this.ext==='pdf' && this.files.length) this.openOnServer(true)
       if(!v) this.resetServerState()
     },
     files(){
       this.resetServerState()
-      if(this.ext==='pdf' && this.sFileDialogOpen && this.files.length) this.openOnServer(true)
+      if(this.ext==='pdf' && this.s_fileDialogOpen && this.files.length) this.openOnServer(true)
     },
     pdfPage(v){
       if(!this.pdfToken) return
@@ -277,11 +354,34 @@ export default {
   },
 
   methods:{
+    async toWarpWizard(useExport = true) {
+      if (!this.pdfToken) return
+      this.previewLoading = true
+      const page = this.pdfPage || 1
+      const action = useExport ? 'export' : 'preview' // export=高解像度, preview=中解像度
+      const qp = new URLSearchParams({ action, token: this.pdfToken, page: String(page) })
+      const url = `${APIBASE}?${qp.toString()}`
+      try {
+        const res = await fetch(url, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`fetch failed: ${res.status}`)
+        const blob = await res.blob()
+        // Blob -> File（ファイル名を生成）
+        const fileName = `${(this.pdfName || 'document')}-p${page}.jpg`
+        const fileObj = new File([blob], fileName, { type: 'image/jpeg' })
+        this.$store.state.gazoName = fileName.replace(/\.jpg$/i, '')
+        this.$store.state.pendingFile = fileObj
+        this.s_fileDialogOpen = false
+        this.$store.dispatch('showFloatingWindow', 'warp-wizard');
+      } catch (e) {
+        console.error('importJpegFromServer error:', e)
+      } finally {
+        this.previewLoading = false
+      }
+    },
     appUpdate(){
       location.reload(true)
       this.sVersionMessage = false
     },
-
     resetServerState(){
       this.pdfToken = ''
       this.pdfPages = 0
@@ -402,8 +502,8 @@ export default {
       window.open(`${APIBASE}?${qp.toString()}`, '_blank')
     },
 
-    async processImage(){ this.toast('画像処理を開始しました'); this.sFileDialogOpen=false },
-    async processUnknown(){ this.toast('汎用処理を開始しました'); this.sFileDialogOpen=false },
+    async processImage(){ this.toast('画像処理を開始しました'); this.s_fileDialogOpen=false },
+    async processUnknown(){ this.toast('汎用処理を開始しました'); this.s_fileDialogOpen=false },
 
     toast(msg){ try{ console.log('[INFO]', msg) }catch(e){} }
   },

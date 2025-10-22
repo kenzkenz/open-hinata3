@@ -111,9 +111,11 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.725,
+    pendingFile: null,
     commonDialog: {
         versionMessage: false,
-        fileDropOpen: false, fileDropExt: 'pdf', fileDropFiles: []
+        fileDropOpen: false, fileDropExt: 'pdf', fileDropFiles: [],
+        geoReferenceOpen: false,
     },
     sokuiHeader: [
         '点名', 'X', 'Y', '標高', 'アンテナ高', '標高（アンテナ位置）', '楕円体高', 'XY較差', '座標系', '緯度', '経度',
