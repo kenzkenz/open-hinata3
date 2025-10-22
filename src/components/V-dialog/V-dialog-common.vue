@@ -17,7 +17,7 @@
   <!-- 本体 -->
   <v-dialog v-model="sFileDialogOpen" :max-width="isMobile ? 680 : 1080">
     <v-card class="pa-2">
-      <!-- ヘッダー（アイコン＋ファイル名） -->
+      <!-- ヘッダー（アイコン＋ファイル名のみ） -->
       <div class="d-flex align-center justify-space-between px-3 py-2">
         <div class="d-flex align-center" style="gap:10px">
           <v-icon :color="iconColor" size="32">{{ iconName }}</v-icon>
@@ -52,15 +52,20 @@
               <v-btn size="small" variant="tonal" :disabled="!pdfToken || pdfPage<=1" @click="stepPage(-1)">
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
+
+              <!-- ▼ 枠のみ & 低背 (約28px) & 小さめ文字 -->
               <v-text-field
                   v-model.number="pdfPage"
                   type="number"
                   min="1"
                   :max="pdfPages || 1"
+                  variant="outlined"
                   density="compact"
                   hide-details
-                  style="width:96px"
+                  class="pageField"
+                  style="width:60px; margin-top: -5px;"
               />
+
               <v-btn size="small" variant="tonal" :disabled="!pdfToken || (pdfPages && pdfPage>=pdfPages)" @click="stepPage(1)">
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>
@@ -75,10 +80,9 @@
 
           <!-- 2カラム -->
           <div class="d-flex" style="gap:16px">
-            <!-- 左：サムネ（装飾済み） -->
+            <!-- 左：サムネ -->
             <div class="thumbColumn">
-              <div v-if="!pdfToken" class="pa-4 text-medium-emphasis">PDFを選択すると自動でサムネを生成します</div>
-              <div v-else class="thumbGrid">
+              <div class="thumbGrid">
                 <div
                     v-for="i in pdfPages"
                     :key="'thumb-'+i"
@@ -98,10 +102,8 @@
                       @load="onThumbLoad(i)"
                       @error="onThumbError(i)"
                   >
+                  <!-- 目玉は削除。DLのみ -->
                   <div class="thumbHover">
-                    <v-btn icon size="small" variant="text" title="このページを表示" @click.stop="selectPage(i)">
-                      <v-icon size="18">mdi-eye</v-icon>
-                    </v-btn>
                     <v-btn icon size="small" variant="text" title="このページをJPEG化" @click.stop="exportPage(i)">
                       <v-icon size="18">mdi-download</v-icon>
                     </v-btn>
@@ -111,7 +113,7 @@
               </div>
             </div>
 
-            <!-- 右：プレビュー（縦長でも切れない） -->
+            <!-- 右：プレビュー（fallbackテキスト無し） -->
             <div class="previewFrame">
               <div class="previewPane noScroll">
                 <img
@@ -123,7 +125,7 @@
                     @load="onPreviewLoad"
                     @error="onPreviewError"
                 >
-                <div v-else class="pa-6 text-medium-emphasis">プレビューを表示できません</div>
+                <!-- fallbackテキスト削除 -->
 
                 <div v-show="pdfOpening || previewLoading" class="overlay">
                   <v-progress-circular indeterminate size="32" />
@@ -197,7 +199,6 @@ export default {
     files(){ return this.$store.state.commonDialog.fileDropFiles || [] },
     extUpper(){ return (this.ext || '').toUpperCase() },
 
-    // ヘッダー表示名：PDFはサーバー返却名>ローカル名、画像は最初のファイル名、無ければ種別
     headerTitle(){
       if(this.ext==='pdf'){
         return this.pdfName || (this.files[0] && this.files[0].name) || 'PDF'
@@ -234,8 +235,8 @@ export default {
       pdfName: '',
       pdfPage: 1,
 
-      // サムネ進捗（warm表示用）
-      thumbLoadedMap: {},   // {page:true}
+      // サムネ進捗
+      thumbLoadedMap: {},
       thumbLoaded: 0,
 
       // サムネ失敗
@@ -244,7 +245,7 @@ export default {
       // プレビュー
       currentPreviewSrc: '',
       previewLoading: false,
-      previewError: '',   // 画面には出さない
+      previewError: '',
       previewKey: 0,
 
       // 状態
@@ -424,7 +425,7 @@ export default {
 }
 .statusText{ font-size:.9rem; margin-bottom:6px }
 
-/* 1行で省略（ヘッダーのファイル名） */
+/* ヘッダーファイル名：1行省略 */
 .ellipsis{
   max-width: 78vw;
   white-space: nowrap;
@@ -432,7 +433,23 @@ export default {
   text-overflow: ellipsis
 }
 
-/* プレビュー枠（ヘッダー無し） */
+/* ▼ ページ番号フィールド：低背＆小文字（約28px） */
+.pageField :deep(.v-field){
+  height: 28px
+}
+.pageField :deep(.v-field__input){
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: .82rem;
+  line-height: 1.2;
+  margin-top: -5px;
+}
+.pageField :deep(.v-field__outline__start),
+.pageField :deep(.v-field__outline__end){
+  opacity: .9
+}
+
+/* プレビュー枠 */
 .previewFrame{
   flex:1 1 auto;
   display:flex;
@@ -447,7 +464,7 @@ export default {
   position: relative;
   height: 60vh;
   max-height: 60vh;
-  overflow: hidden;   /* スクロールさせない */
+  overflow: hidden;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -455,24 +472,21 @@ export default {
 }
 .previewPane::-webkit-scrollbar{ display:none }
 .previewPane{ -ms-overflow-style:none; scrollbar-width:none }
-
-/* 縦長でも切れないようにmaxでフィット */
 .previewImg{
   display:block;
   max-width:100%;
   max-height:100%;
   width:auto;
   height:auto;
-  object-fit:contain;
+  object-fit:contain
 }
-
 .overlay{
   position:absolute;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  background: rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.06)
 }
 
 /* サムネ装飾 */
