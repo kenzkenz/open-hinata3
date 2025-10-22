@@ -114,7 +114,6 @@
 <script>
 
 import {jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
-import { db, auth } from '@/firebase'
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
@@ -149,7 +148,7 @@ export default {
     snackbar: false,
     snackbarText: '',
     isGroupOwner: false,
-    selectMenuOpen1: false, // ← false にしておくことで勝手に開かないように
+    selectMenuOpen1: false,
     selectMenuOpen2: false,
     selectMenuOpen3: false,
     groupOptions: [],
@@ -188,6 +187,7 @@ export default {
   }),
   computed: {
     ...mapState([
+      'myNickname',
       'clientVersion',
       'myNickname',
     ]),
@@ -201,53 +201,6 @@ export default {
     },
     s_myNickname() {
       return this.$store.state.myNickname;
-    },
-    displayNameToShow() {
-      // いったんすべて読み取っておく
-      // alert(this.s_myNickname)
-      const n1 = this.newName
-      const n2 = this.s_myNickname
-      const n3 = this.user1 && this.user1.displayName
-      // そのあとで優先順位をつけて返す
-      return n1 || n2 || n3 || ''
-    },
-    selectedLayerId: {
-      get() {
-        return this.$store.state.selectedLayerId;
-      },
-      set(value) {
-        this.$store.commit('setSelectedLayerId', value);
-      }
-    },
-    s_currentGroupLayers: {
-      get() {
-        return this.$store.state.currentGroupLayers
-      },
-      set(value) {
-        this.$store.state.currentGroupLayers = value
-      }
-    },
-    s_dialogForGroup: {
-      get() {
-        return this.$store.state.dialogForGroup
-      },
-      set(value) {
-        this.$store.state.dialogForGroup = value
-      }
-    },
-    currentUserId() {
-      return this.$store.state.userId
-    },
-    s_currentGroupId() {
-      return this.$store.state.currentGroupId
-    },
-    s_currentGroupName: {
-      get() {
-        return this.$store.state.currentGroupName
-      },
-      set(value) {
-        this.$store.state.currentGroupName = value
-      }
     },
     s_isAndroid () {
       return this.$store.state.isAndroid
@@ -384,60 +337,6 @@ export default {
     async setStartUrl() {
       await startUrl()
     },
-    updateDisplayName() {
-      const user = auth.currentUser
-      if (!user) {
-        this.message = 'ログインユーザーが見つかりません'
-        this.alertType = 'error'
-        return
-      }
-      if (!this.newName) {
-        this.message = '新ニックネームを入力してください'
-        this.alertType = 'error'
-        return;
-      }
-      user.updateProfile({ displayName: this.newName })
-          .then(() => {
-            this.message = 'ニックネームを変更しました。<br>念の為OH3を一度閉じて<br>再読み込みしてください。'
-            this.alertType = 'success'
-            store.state.myNickname = this.newName
-            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー　ようこそ' + this.displayNameToShow + 'さん</span>'
-          })
-          .catch(err => {
-            console.error(err)
-            this.message = '更新に失敗しました'
-            this.alertType = 'error'
-          })
-    },
-
-    async onGroupChange(groupId) {
-      this.layerName = ''
-      const group = this.groupOptions.find(g => g.id === groupId)
-      // alert('グループID' + groupId)
-      if (group) {
-        this.$store.commit('setCurrentGroupId', groupId)
-      }
-      if (!groupId || !group) {
-        this.s_currentGroupName = ''
-        this.selectedGroupId = null
-        localStorage.setItem('lastUsedGroupId', '')         // ← 空ID保存
-        localStorage.setItem('lastUsedGroupName', '')       // ✅ 名前も空に！
-        this.initialGroupName = ''                          // ✅ 表示クリア！
-        console.log('🧼 グループなしモードに切り替え')
-        return
-      }
-
-      if (group) {
-        this.$store.commit("setCurrentGroupName", group.name)
-        localStorage.setItem("lastUsedGroupId", group.id)
-        localStorage.setItem("lastUsedGroupName", group.name)  // 👈 保存
-        this.initialGroupName = group.name                     // 👈 同期表示用
-        // this.selectMenuOpen = false
-        console.log("🔄 グループ変更で initialGroupName 更新:", group.name)
-        document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム_' + this.s_currentGroupName + '</span>'
-      }
-
-    },
     simaUploadInput (event) {
       simaFileUpload(event)
       this.dialogForUpload = false
@@ -456,7 +355,6 @@ export default {
     upLoad () {
       this.$store.state.isMenu = true
       this.dialogForUpload = true
-      // scrollForAndroid('.v-menu__content')
     },
     changePitch () {
       localStorage.setItem('isPitch',this.s_isPitch)
@@ -558,6 +456,9 @@ export default {
     },
   },
   watch: {
+    myNickname() {
+      document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー ようこそ' + this.myNickname + 'さん</span>'
+    },
     s_mapillary(value) {
       mapillaryFilterRiset()
       if (value) {
@@ -565,54 +466,6 @@ export default {
       } else {
         store.dispatch('hideFloatingWindow', 'mapillary');
       }
-    },
-    s_currentGroupId (newVal,oldVal) {
-      // alert('newVal' + newVal + 'oldVal' + oldVal)
-    },
-    currentUserId: {
-      immediate: true,
-      async handler(uid) {
-
-        if (!uid || uid === 'dummy') return;
-
-        try {
-          const userDoc = await db.collection("users").doc(uid).get();
-          const groupIds = userDoc.exists ? userDoc.data().groups || [] : [];
-          const groups = [];
-
-          for (const groupId of groupIds) {
-            const groupDoc = await db.collection("groups").doc(groupId).get();
-            if (groupDoc.exists) {
-              const name = groupDoc.data().name || "(名前なし)";
-              groups.push({
-                id: groupId,
-                name,
-                ownerUid: groupDoc.data().ownerUid,
-                isSoloGroup: groupDoc.data().isSoloGroup === true
-              });
-            }
-          }
-
-          // 先頭に「グループに入らない」を追加
-          this.groupOptions = [
-            { id: null, name: "（グループに入らない）" },
-            ...groups,
-          ];
-
-          console.log("取得したグループ:", this.groupOptions); // デバッグ用ログ
-
-          const savedGroupId = localStorage.getItem("lastUsedGroupId");
-          const validGroupId = savedGroupId === "" ? null : savedGroupId;
-          const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
-              ? validGroupId
-              : null;
-
-          this.selectedGroupId = defaultGroupId;
-          this.onGroupChange(defaultGroupId);
-        } catch (e) {
-          console.error("🔥 グループ取得中エラー", e);
-        }
-      },
     },
   },
   mounted() {
@@ -626,19 +479,12 @@ export default {
           store.state.myNickname = user.displayName || ''
           this.newName = user.displayName
           this.isLoggedIn = true
-          // alert(store.state.myNickname)
-          // Vue のリアクティブシステムが更新されるのを待機
-          this.$nextTick(() => {
-            console.log("✅ emailInput に設定:", this.emailInput);
-            document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー ようこそ' + user.displayName + 'さん</span>'
-          });
         } else {
           console.warn("⚠️ ログイン中のユーザーが見つかりません");
           this.emailInput = ""; // ログインしていない場合は空に
         }
       });
     }
-
     // URLパラメータからグループIDとグループ名を取得
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get("group");

@@ -6,7 +6,6 @@
             <v-tabs mobile-breakpoint="0" v-model="tab" class="custom-tabs">
               <v-tab value="0">SIMA</v-tab>
               <v-tab value="1">URL記憶</v-tab>
-              <v-tab value="11" v-if="s_currentGroupName">{{s_currentGroupName}}</v-tab>
               <v-tab value="2">タイル記憶</v-tab>
               <v-tab @click="myChibanzu" value="3">地番図</v-tab>
               <v-tab value="31">公開地番図</v-tab>
@@ -131,16 +130,6 @@
                                 }"
                       @click="pmtileClick(item.name, item.url, item.id, item.chiban, item.bbox, item.length, item.prefcode, item.citycode, item.public)"
                   >
-<!--                    <v-checkbox-->
-<!--                        v-if="!isAll"-->
-<!--                        class="transparent-chk"-->
-<!--                        v-model="item.public"-->
-<!--                        true-value=1-->
-<!--                        false-value=0-->
-<!--                        @change="publicChk(item.id, item.public)"-->
-<!--                        @mousedown.stop-->
-<!--                        @click.stop-->
-<!--                    />-->
                     <button v-if="!isAll" class="close-btn" @click="removeItemPmtiles(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>
@@ -154,16 +143,6 @@
                     ユーザーが公開した地番図です。既にオープンデータ化されているものは含まれません。
                   </div>
                   <div v-for="item in jsonDataPmtilePubilc" :key="item.id" class="data-container" @click="pmtileClick(item.name,item.url,item.id,item.chiban,item.bbox,item.length,item.prefcode,item.citycode)">
-<!--                    <v-checkbox-->
-<!--                        v-if="!isAll"-->
-<!--                        class="transparent-chk"-->
-<!--                        v-model="item.public"-->
-<!--                        true-value=1-->
-<!--                        false-value=0-->
-<!--                        @change="publicChk(item.id, item.public)"-->
-<!--                        @mousedown.stop-->
-<!--                        @click.stop-->
-<!--                    />-->
                     <strong>{{ item.name }}</strong><br>
                   </div>
                 </v-card>
@@ -186,16 +165,6 @@
 <!--                    <p v-if="!isAll && isOh3Team" style="position: absolute;right:30px;">透過</p>-->
                   </div>
                   <div v-for="item in jsonDataxyztile" :key="item.id" class="data-container" @click="xyztileClick(item.name,item.url,item.id,item.bbox,item.transparent)">
-<!--                    <v-checkbox-->
-<!--                        v-if="!isAll"-->
-<!--                        class="transparent-chk"-->
-<!--                        v-model="item.transparent"-->
-<!--                        true-value=1-->
-<!--                        false-value=0-->
-<!--                        @change="transparentChk(item.id, item.transparent)"-->
-<!--                        @mousedown.stop-->
-<!--                        @click.stop-->
-<!--                    />-->
                     <button v-if="!isAll" class="close-btn" @click="removeItemxyztile(item.id,item.url2,$event)">×</button>
                     <strong>{{ item.name }}</strong><br>
                   </div>

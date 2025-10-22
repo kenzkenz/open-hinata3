@@ -2,27 +2,51 @@
   <v-dialog v-model="s_dialogForLogin" max-width="500px">
     <v-card>
       <v-card-title>
-        ログイン管理
-        <span
-            v-if="((user && user.displayName) || (s_myNickname && isLoggedIn))"
-            style="margin-left:20px;font-size: 16px;"
-        >
-          ようこそ、{{ displayNameToShow }}さん！
-        </span>
+      <span
+          v-if="((user && user.displayName) || (s_myNickname && isLoggedIn))"
+          style="font-size: 18px;"
+      >
+        ようこそ、{{ displayNameToShow }}さん！
+      </span>
       </v-card-title>
 
       <v-card-text>
         <div style="margin-top: 10px;">
-          <v-btn v-if="!user" @click="loginDiv = !loginDiv; signUpDiv = false">ログイン</v-btn>
-          <v-btn v-if="user" @click="logOut">ログアウト</v-btn>
-          <v-btn v-if="user" style="margin-left: 10px;" @click="nicknameDivOpen = true">ニックネーム変更</v-btn>
-          <v-btn style="margin-left: 10px;" v-if="!user" @click="signUpDiv = !signUpDiv; loginDiv = false">新規登録</v-btn>
-          <span v-if="!user" style="margin-left: 20px;">新規登録は無料です。</span>
+          <v-btn
+              v-if="!user"
+              prepend-icon="mdi-login"
+              @click="loginDiv = !loginDiv; signUpDiv = false"
+          >
+            ログイン
+          </v-btn>
+
+          <v-btn
+              v-if="user"
+              prepend-icon="mdi-logout"
+              @click="logOut"
+          >
+            ログアウト
+          </v-btn>
+
+          <v-btn
+              v-if="user"
+              style="margin-left: 10px;"
+              @click="nicknameDivOpen = true"
+          >
+            ニックネーム変更
+          </v-btn>
+
+          <v-btn
+              style="margin-left: 10px;"
+              v-if="!user"
+              prepend-icon="mdi-account-plus"
+              @click="signUpDiv = !signUpDiv; loginDiv = false"
+          >
+            新規登録
+          </v-btn>
 
           <div v-if="user && isLoggedIn && nicknameDivOpen">
-<!--            <hr style="margin-top: 20px;margin-bottom: 20px;">-->
-<!--            <p style="margin-bottom: 10px;">ニックネームを変更します。</p>-->
-            <br><br><br>
+            <br><br>
             <v-text-field
                 v-model="newName"
                 label="変更したい場合は新しいニックネームを記入してください。（任意）"
@@ -30,8 +54,15 @@
                 dense
                 variant="outlined"
                 density="compact"
+                prepend-inner-icon="mdi-account"
             />
-            <v-btn color="primary" @click="updateDisplayName">ニックネーム変更実行</v-btn>
+            <v-btn
+                color="primary"
+                prepend-icon="mdi-content-save"
+                @click="updateDisplayName"
+            >
+              ニックネーム変更実行
+            </v-btn>
             <v-alert
                 v-if="message"
                 :type="alertType"
@@ -40,34 +71,83 @@
                 class="mt-2"
                 v-html="message"
             />
-
           </div>
 
           <div v-if="loginDiv" style="margin-top: 10px;">
-            <v-text-field variant="outlined" density="compact" v-model="email" type="email" placeholder="メールアドレス" />
-            <v-text-field variant="outlined" density="compact" v-model="password" type="password" placeholder="パスワード" />
-            <v-btn @click="login">ログインします</v-btn>
+            <v-text-field
+                variant="outlined"
+                density="compact"
+                v-model="email"
+                type="email"
+                placeholder="メールアドレス"
+                prepend-inner-icon="mdi-email-outline"
+            />
+            <v-text-field
+                variant="outlined"
+                density="compact"
+                v-model="password"
+                type="password"
+                placeholder="パスワード"
+                prepend-inner-icon="mdi-lock-outline"
+            />
+            <v-btn prepend-icon="mdi-login" @click="login">
+              ログインします
+            </v-btn>
             <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
           </div>
         </div>
 
         <div style="margin-top: 10px;">
           <div v-if="signUpDiv" style="margin-top: 10px;">
-            <v-text-field variant="outlined" density="compact" v-model="nickname" type="text" placeholder="ニックネーム" />
-            <v-text-field variant="outlined" density="compact" v-model="email" type="email" placeholder="メールアドレス" />
-            <v-text-field variant="outlined" density="compact" v-model="password" type="password" placeholder="パスワード" />
-            <v-btn @click="signUp">新規登録します</v-btn>
-            <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
+            <v-text-field
+                variant="outlined"
+                density="compact"
+                v-model="nickname"
+                type="text"
+                placeholder="ニックネーム"
+                prepend-inner-icon="mdi-account"
+            />
+            <v-text-field
+                variant="outlined"
+                density="compact"
+                v-model="email"
+                type="email"
+                placeholder="メールアドレス"
+                prepend-inner-icon="mdi-email-outline"
+            />
+            <v-text-field
+                variant="outlined"
+                density="compact"
+                v-model="password"
+                type="password"
+                placeholder="パスワード"
+                prepend-inner-icon="mdi-lock-outline"
+            />
+            <v-btn prepend-icon="mdi-account-plus" @click="signUp">
+              新規登録します
+            </v-btn>
+            <v-alert
+                type="warning"
+                variant="tonal"
+                density="compact"
+                class="mt-2 py-1 px-2"
+                v-if="errorMsg"
+            >
+              {{ errorMsg }}
+            </v-alert>
           </div>
         </div>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer />
-        <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
+        <v-btn color="blue-darken-1" text prepend-icon="mdi-close" @click="s_dialogForLogin = false">
+          Close
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
+
 </template>
 
 <script>
@@ -196,7 +276,7 @@ export default {
       }
       const run = async () => {
         try {
-          const cred = await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+          await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
           await firebase.auth().currentUser.updateProfile({ displayName: this.nickname })
           await this.createUserDirectory()
           alert(`登録成功！ようこそ、${this.nickname} さん！`)
@@ -204,7 +284,7 @@ export default {
           this.errorMsg = ''
           this.signUpDiv = false
         } catch (e) {
-          console.error('サインアップ失敗:', e.message)
+          console.error('サインアップ失敗:', e.message, e.code)
           switch (e.code) {
             case 'auth/user-not-found':
               this.errorMsg = 'ユーザーが見つかりません'
@@ -215,8 +295,14 @@ export default {
             case 'auth/invalid-email':
               this.errorMsg = '無効なメールアドレスです'
               break
+            case 'auth/email-already-in-use':
+              this.errorMsg = 'すでにメールアドレスが使われています'
+              break
+            case 'auth/weak-password':
+              this.errorMsg = 'パスワードは6文字以上必要です'
+              break
             default:
-              this.errorMsg = '登録に失敗しました'
+              this.errorMsg = `登録に失敗しました${e.message}`
           }
         }
       }
