@@ -1,11 +1,22 @@
 <script setup>
 // import { user as user } from "@/authState"; // グローバルの認証情報を取得
-import SakuraEffect from './components/SakuraEffect.vue';
+// import SakuraEffect from './components/SakuraEffect.vue';
 
 </script>
 
 <template>
   <v-app>
+
+    <HillshadeControll
+        v-if="mapReady"
+        ref="hs"
+        :map="map01"
+        dem-source-id="terrain"
+        :start-enabled="true"
+        :auto-anchor="true"
+        style="display:none"
+    />
+
 
     <LoginManager></LoginManager>
 
@@ -1771,6 +1782,7 @@ import { snapIfNeeded } from '@/js/utils/triangle50'
 import rtkPngUrl from '@/assets/icons/oh-rtk.png'
 import { ensureGeoid } from '@/geoid';
 import VDialogCommon from "@/components/V-dialog/V-dialog-common";
+import HillshadeControll from '@/components/HillshadeControll'
 
 import {
   addDraw, addressFromMapCenter,
@@ -2458,6 +2470,7 @@ export default {
     JobPicker,
     VDialogCommon,
     LoginManager,
+    HillshadeControll,
   },
   data: () => ({
     wizardOpen: false,
@@ -2681,7 +2694,8 @@ export default {
 
     lineMode: false,
 
-    aaa: null,
+    mapReady: false,
+
   }),
   computed: {
     ...mapState([
@@ -8186,6 +8200,7 @@ export default {
       // on load オンロード
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
+        map.once('load', () => { this.mapReady = true })
         map.on('load',async () => {
 
           const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
