@@ -1,7 +1,3 @@
-<script setup>
-import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
-</script>
-
 <template>
   <v-app>
     <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
@@ -72,240 +68,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         </v-card>
       </v-dialog>
 
-      <v-dialog v-model="s_dialogForLogin" max-width="500px">
-        <v-card>
-          <v-card-title>
-            ログイン管理
-            <span v-if="(user1 && user1.displayName) || s_myNickname && isLoggedIn" style="margin-left:20px;font-size: 16px;">
-              ようこそ、{{displayNameToShow}}さん！
-            </span>
-          </v-card-title>
-
-          <v-card-text>
-            <div style="margin-top: 10px;">
-              <v-btn v-if="!user1" @click="loginDiv=!loginDiv,signUpDiv=false">ログイン</v-btn><v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
-              <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv=!signUpDiv,loginDiv=false">新規登録</v-btn>
-              <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
-
-              <div v-if="user1 && isLoggedIn" >
-                <hr style="margin-top: 20px;margin-bottom: 20px;">
-                <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
-                <v-text-field
-                    v-model="newName"
-                    label="新しいニックネームを記入してください。"
-                    outlined
-                    dense
-                ></v-text-field>
-                <v-btn color="primary" @click="updateDisplayName">ニックネーム変更</v-btn>
-                <v-alert
-                    v-if="message"
-                    :type="alertType"
-                    dense
-                    outlined
-                    class="mt-2"
-                    v-html="message"
-                >
-                </v-alert>
-              </div>
-
-              <div v-if="loginDiv" style="margin-top: 10px;">
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="login">ログインします</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-              </div>
-            </div>
-            <div style="margin-top: 10px;">
-              <div v-if="signUpDiv" style="margin-top: 10px;">
-                <v-text-field  v-model="nickname" type="text" placeholder="ニックネーム"></v-text-field>
-                <v-text-field v-model="email" type="email" placeholder="メールアドレス" ></v-text-field>
-                <v-text-field v-model="password" type="password" placeholder="パスワード"></v-text-field>
-                <v-btn @click="signUp">新規登録します</v-btn>
-                <p style="margin-top: 10px;" v-if="errorMsg">{{ errorMsg }}</p>
-              </div>
-            </div>
-
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForLogin = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <!-- グループ管理ダイアログ -->
-      <v-dialog v-model="s_dialogForGroup" max-width="700px" height="700px">
-        <v-card>
-          <v-card-title>
-            グループ機能
-          </v-card-title>
-
-          <v-card-text>
-            <v-tabs mobile-breakpoint="0" v-model="tab">
-              <v-tab value="8">グループレイヤー</v-tab>
-              <v-tab value="9">参加</v-tab>
-              <v-tab value="0">作成</v-tab>
-              <v-tab value="1">招待</v-tab>
-<!--              <v-tab value="2">変更</v-tab>-->
-              <v-tab value="3">削除</v-tab>
-            </v-tabs>
-
-            <v-window v-model="tab">
-              <v-window-item value="8" class="my-v-window">
-                <v-select
-                    ref="groupSelect1"
-                    v-model="selectedGroupId"
-                    :items="groupOptions"
-                    item-value="id"
-                    item-title="name"
-                    label="グループを選択"
-                    outlined
-                    dense
-                    class="mt-2"
-                    @update:modelValue="onGroupChange"
-                    v-model:menu="selectMenuOpen2"
-                />
-                <LayerManager
-                    v-model:layerName="layerName"
-                    v-model:currentGroupLayers="s_currentGroupLayers"
-                    v-model:selectedLayerId="selectedLayerId"
-                    :groupId="s_currentGroupId"
-                    :mapInstance="mapInstance"
-                    @select-layer="onSelectLayer"
-                />
-              </v-window-item>
-              <v-window-item value="9" class="my-v-window">
-                <v-text-field
-                    v-model="invitedGroupName"
-                    label="招待されたグループ(編集不可)"
-                    outlined
-                    readonly
-                />
-                <v-text-field
-                    v-model="joinGroupId"
-                    label="グループID(編集不可)"
-                    outlined
-                    readonly
-                />
-                <v-text-field
-                    v-model="emailInput"
-                    label="あなたのメールアドレス(編集不可)"
-                    type="email"
-                    :rules="emailRules"
-                    outlined
-                    readonly
-                />
-
-                <v-btn
-                    color="primary"
-                    @click="joinGroupFromDialog"
-                    :disabled="!emailInput || !joinGroupId || !/.+@.+\..+/.test(emailInput)"
-                    :loading="joinLoading"
-                >
-                  参加する
-                </v-btn>
-
-              </v-window-item>
-
-              <v-window-item value="0" class="my-v-window">
-                <div class="create-group" v-if="user1 && !loginDiv && !signUpDiv">
-                  <v-text-field v-model="groupName" label="グループ名" />
-                  <v-btn @click="createGroup">グループ作成</v-btn>
-                </div>
-              </v-window-item>
-
-              <v-window-item value="1" class="my-v-window">
-                <div style="margin-bottom: 20px;">
-                  <div v-if="s_currentGroupName">
-<!--                    現在のグループは「{{ s_currentGroupName }}」です。-->
-                  </div>
-                  <div v-else>
-                    グループに所属していません。
-                  </div>
-                </div>
-                <v-select
-                    v-model="inviteGroupId"
-                    :items="invitableGroupOptions"
-                    item-value="id"
-                    item-title="name"
-                    label="グループを選択"
-                    outlined
-                    dense
-                    class="mt-2"
-                    @update:modelValue="onGroupChange"
-                    v-model:menu="selectMenuOpen1"
-                    :disabled="isSendingInvite"
-                />
-                <v-text-field
-                    v-model="inviteEmail"
-                    :rules="emailRules"
-                    label="メールアドレスで招待"
-                    :disabled="isSendingInvite"
-                />
-                <v-btn style="margin-top: 10px;"
-                    @click="sendInvite"
-                    :disabled="isSendingInvite"
-                    :loading="isSendingInvite"
-                >
-                  招待を送信
-                </v-btn>
-
-                <v-btn v-if="inviteGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;margin-left: 30px;"
-                    @click="copyInviteLink"
-                >
-                  下記招待リンクをコピー
-                </v-btn>
-                <div v-if="inviteGroupId && inviteEmail && !isSendingInvite" style="margin-top: 10px;">
-                  <p>招待リンク（手動で共有する場合）:</p>
-                  <span style="font-size: small">
-                      <a
-                          :href="`https://kenzkenz.xsrv.jp/open-hinata3/?group=${inviteGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === inviteGroupId)?.name || '')}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="invite-link"
-                      >
-                        {{ `https://kenzkenz.xsrv.jp/open-hinata3/?group=${inviteGroupId}&groupName=${encodeURIComponent(groupOptions.find(g => g.id === inviteGroupId)?.name || '')}` }}
-                      </a>
-                  </span>
-                </div>
-              </v-window-item>
-
-              <v-window-item value="3" class="my-v-window">
-                <v-select
-                    ref="groupSelect3"
-                    v-model="selectedGroupId2"
-                    :items="ownerGroupOptions"
-                    item-value="id"
-                    item-title="name"
-                    label="削除するグループを選択"
-                    outlined
-                    dense
-                    class="mt-2"
-                    @update:modelValue="deleteBtn"
-                    v-model:menu="selectMenuOpen3"
-                />
-                <div v-if="ownerGroupOptions.length === 0" style="margin-top: 20px; color: gray;">
-                  オーナー権限を持つグループがありません。
-                </div>
-                <v-btn
-                    v-if="canDeleteSelectedGroup"
-                    color="red"
-                    @click="deleteGroup"
-                >
-                  <v-icon start>mdi-delete</v-icon>
-                  グループを削除
-                </v-btn>
-              </v-window-item>
-            </v-window>
-          </v-card-text>
-
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="s_dialogForGroup = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
       <p style="margin-top: 3px;margin-bottom: 10px;">
         v{{ clientVersion }}
       </p>
@@ -330,14 +92,9 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">画面保存</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
 
-      <!--      <v-switch style="height: 40px;" v-model="s_isClickPointsLayer" @change="changeVisible" label="座標取得レイヤー表示" color="primary" />-->
-
       <v-switch style="height: 40px;" v-model="s_isPitch" @change="changePitch" label="２画面時に傾きを同期" color="primary" />
-
       <v-switch style="height: 40px;" v-model="s_isWindow" label="ウインドウ復帰" color="primary" />
-
       <v-switch style="height: 40px;" v-model="s_mapillary" label="mapillary" color="primary" />
-
       <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isContextMenu" label="右クリックメニュー" color="primary" />
 
       起動時レイヤーを現在のレイヤーに設定します。
@@ -356,50 +113,19 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 <script>
 
-import LayerManager from '@/components/LayerManager.vue';
 import {jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
-import {extLayer, extSource, konUrls} from "@/js/layers";
 import firebase from '@/firebase'
 import store from "@/store";
 import {mapState} from "vuex";
-
-const createUserDirectory = async () => {
-  if (!user1.value) return;
-  try {
-    // Firebase 認証トークンを取得
-    const token = await user1.value.getIdToken();
-    // create_directory.php にリクエストを送信
-    const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/create_directory.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idToken: token }),
-    });
-
-    // レスポンスを取得
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("エラー:", data);
-      return;
-    }
-    // alert("ディレクトリ作成成功")
-    console.log("ディレクトリ作成成功:", data);
-  } catch (error) {
-    console.error("ディレクトリ作成エラー:", error);
-  }
-};
 
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   components: {
-    LayerManager
   },
   data: () => ({
     isLoggedIn: false,
@@ -485,13 +211,6 @@ export default {
       // そのあとで優先順位をつけて返す
       return n1 || n2 || n3 || ''
     },
-    s_soloFlg() {
-      return this.$store.state.soloFlg;
-    },
-    invitableGroupOptions() {
-      // 「グループに入らない」と isSoloGroup: true を除外
-      return this.groupOptions.filter(g => g.id !== null && !g.isSoloGroup);
-    },
     selectedLayerId: {
       get() {
         return this.$store.state.selectedLayerId;
@@ -507,20 +226,6 @@ export default {
       set(value) {
         this.$store.state.currentGroupLayers = value
       }
-    },
-    mapInstance() {
-      return this.$store.state.map01;
-    },
-    // 追加: 自分がオーナーであるグループのみを抽出
-    ownerGroupOptions() {
-      // groupOptions から「グループなし」を除外し、ownerUid が currentUserId と一致するもののみをフィルタリング
-      return this.groupOptions
-          .filter((g, i) => i !== 0) // 「グループなし」を除外
-          .filter(g => g.ownerUid === this.currentUserId);
-    },
-    canDeleteSelectedGroup() {
-      const selectedGroup = this.groupOptions.find(g => g.id === this.selectedGroupId2)
-      return selectedGroup && selectedGroup.ownerUid === this.currentUserId
     },
     s_dialogForGroup: {
       get() {
@@ -554,9 +259,6 @@ export default {
       set(value) {
         this.$store.state.zahyokei = value
       }
-    },
-    s_userId () {
-      return this.$store.state.userId
     },
     s_isContextMenu: {
       get() {
@@ -707,396 +409,6 @@ export default {
             this.alertType = 'error'
           })
     },
-    onSelectLayer({ name, id }) {
-      console.log('onSelectLayer:', { name, id });
-      // 追加のカスタム処理（例: 他の状態更新）があればここに
-      this.layerId = id;
-      this.layerName = name;
-    },
-    copyInviteLink() {
-      const groupName = this.groupOptions.find(g => g.id === this.selectedGroupId)?.name || '';
-      const inviteLink = `https://kenzkenz.xsrv.jp/open-hinata3/?group=${this.selectedGroupId}&groupName=${encodeURIComponent(groupName)}`;
-      navigator.clipboard.writeText(inviteLink).then(() => {
-        this.snackbarText = "招待リンクをコピーしました";
-        this.snackbar = true;
-      }).catch(err => {
-        console.error("リンクのコピーに失敗しました:", err);
-        this.snackbarText = "リンクのコピーに失敗しました";
-        this.snackbar = true;
-      });
-    },
-    async joinGroupFromDialog() {
-      this.joinLoading = true
-      try {
-        this.groupId = this.joinGroupId;
-        await this.joinGroup();
-        this.tab = 0; // 成功したら「作成」タブに戻す（任意）
-      } catch (error) {
-        console.error("❌ グループ参加処理でエラーが発生しました:", error);
-        this.joinLoading = false
-        alert(`エラーが発生しました: ${error.message}`);
-      }
-      this.joinLoading = false
-    },
-    async joinGroup() {
-      try {
-        if (!this.emailInput) {
-          alert("メールアドレスを入力してください");
-          return;
-        }
-        if (!this.groupId || typeof this.groupId !== "string") {
-          alert("グループIDを入力してください");
-          return;
-        }
-        const user = firebase.auth().currentUser;
-        if (!user) {
-          alert("ログインしてください！");
-          return;
-        }
-        const userRef = firebase.firestore().collection("users").doc(user.uid);
-        const userDoc = await userRef.get();
-        if (userDoc.exists) {
-          const groups = userDoc.data().groups || [];
-          if (groups.includes(this.groupId)) {
-
-            // ✅ ここで groupOptions を再構築してUI更新
-            const groupIds = groups;
-
-            const fetchedGroups = [];
-            let joinedGroupName = ""; // ← ここで参加済みのグループ名を保存する
-            for (const groupId of groupIds) {
-              const groupDoc = await firebase.firestore().collection("groups").doc(groupId).get();
-              if (groupDoc.exists) {
-                const groupData = groupDoc.data();
-                const name = groupData.name || "(名前なし)";
-                fetchedGroups.push({
-                  id: groupId,
-                  name,
-                  ownerUid: groupData.ownerUid,
-                });
-
-                if (groupId === this.groupId) {
-                  joinedGroupName = name; // ← ここで該当グループ名を確保！
-                }
-              }
-            }
-
-            this.groupOptions = [
-              { id: null, name: "（グループに入らない）" },
-              ...fetchedGroups,
-            ];
-
-            this.selectedGroupId = this.groupId;
-            this.onGroupChange(this.groupId);
-
-            alert(`既に「${joinedGroupName}」に参加済みです！\nまた、「${joinedGroupName}」にログインしました！`);
-
-            return;
-          }
-        } else {
-          console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
-        }
-
-        console.log("✅ 入力されたメール:", this.emailInput);
-        console.log("✅ 取得した groupId:", this.groupId);
-
-        // this.emailInput = "kenzkenz@kenzkenz.xsrv.jp";
-
-        await firebase.firestore().runTransaction(async (transaction) => {
-          const query = firebase.firestore()
-              .collection("invitations")
-              // .where("email", "==", this.emailInput)
-              // .where("email", "==", this.email.trim())  // ←ここ！
-              .where("mail", "==", this.emailInput.trim())
-              .where("groupId", "==", this.groupId);
-
-          const snapshot = await query.get();
-          if (snapshot.empty) {
-            throw new Error("招待が見つかりませんでした。メールアドレスが正しいかご確認ください。");
-          }
-
-          const invitationDoc = snapshot.docs[0];
-          const invitationRef = invitationDoc.ref;
-          const currentStatus = invitationDoc.data().status;
-
-          console.log("📦 取得したステータス:", currentStatus);
-
-          if (currentStatus !== "joined") {
-            transaction.update(invitationRef, { status: "joined" });
-            console.log("✅ Firestoreのstatusをjoinedに更新しました");
-          } else {
-            console.log("ℹ️ すでにjoined状態でしたが、usersにも追加します");
-          }
-
-          transaction.set(
-              userRef,
-              {
-                groups: firebase.firestore.FieldValue.arrayUnion(this.groupId),
-              },
-              { merge: true }
-          );
-
-          const groupRef = firebase.firestore().collection("groups").doc(this.groupId);
-          transaction.set(
-              groupRef,
-              {
-                members: firebase.firestore.FieldValue.arrayUnion(user.uid),
-              },
-              { merge: true }
-          );
-        });
-
-        const updatedUserDoc = await userRef.get();
-        if (updatedUserDoc.exists) {
-          const groups = updatedUserDoc.data().groups || [];
-          if (groups.includes(this.groupId)) {
-            console.log(`🟢 成功: groupId ${this.groupId} が users/${user.uid} に追加されました`);
-          } else {
-            console.warn(`🔴 失敗: groupId ${this.groupId} が users/${user.uid} に見つかりません`);
-            throw new Error("グループへの参加に失敗しました。");
-          }
-        } else {
-          console.warn(`⚠️ users/${user.uid} ドキュメントが存在しません`);
-          throw new Error("ユーザー情報の取得に失敗しました。");
-        }
-
-        // 🎯 成功後：グループ状態を再取得＆更新
-        // const updatedUserDoc = await userRef.get();
-        const groupIds = updatedUserDoc.exists ? updatedUserDoc.data().groups || [] : [];
-
-        let matchedGroupName = "";
-
-        const groups = [];
-        for (const groupId of groupIds) {
-          const groupDoc = await db.collection("groups").doc(groupId).get();
-          if (groupDoc.exists) {
-            const name = groupDoc.data().name || "(名前なし)";
-            groups.push({
-              id: groupId,
-              name,
-              ownerUid: groupDoc.data().ownerUid,
-              isSoloGroup: groupDoc.data().isSoloGroup === true
-            });
-
-            // 👇 該当グループの名前を保存
-            if (groupId === this.groupId) {
-              matchedGroupName = name;
-            }
-          }
-        }
-
-        // 先頭に「グループに入らない」を追加
-        this.groupOptions = [
-          { id: null, name: "（グループに入らない）" },
-          ...groups,
-        ];
-
-        // セレクト状態を更新して保存
-        this.selectedGroupId = this.groupId;
-        this.onGroupChange(this.groupId);
-
-        alert(`「${matchedGroupName}」に参加しました！\nまた、「${matchedGroupName}」にログインしました！`);
-      } catch (error) {
-        console.error("❌ グループ参加処理でエラーが発生しました:", error);
-        alert(`エラーが発生しました: ${error.message}`);
-      }
-    },
-    async sendInvite() {
-      try {
-        // ローディング開始
-        this.isSendingInvite = true;
-
-        // バリデーション
-        if (!this.inviteEmail || !/.+@.+\..+/.test(this.inviteEmail)) {
-          this.snackbarText = "正しいメールアドレスを入力してください";
-          this.snackbar = true;
-          return;
-        }
-        if (!this.selectedGroupId) {
-          this.snackbarText = "グループを選択してください";
-          this.snackbar = true;
-          return;
-        }
-
-        // グループ情報を取得
-        const group = this.groupOptions.find(g => g.id === this.inviteGroupId);
-        if (!group || !group.name) {
-          console.error("❌ グループが見つかりませんまたはグループ名がありません:", {
-            selectedGroupId: this.inviteGroupId,
-            groupOptions: this.groupOptions,
-          });
-          this.snackbarText = "選択したグループが見つかりません、またはグループ名がありません";
-          this.snackbar = true;
-          return;
-        }
-
-        // 招待元のユーザー情報を取得
-        let inviterName = "ゲストユーザー"; // デフォルト値を適切に設定
-        let inviterEmail = "不明なメールアドレス";
-        const user = firebase.auth().currentUser;
-        if (user) {
-          inviterEmail = user.email || "不明なメールアドレス";
-          try {
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            if (userDoc.exists) {
-              inviterName = userDoc.data().nickname || userDoc.data().displayName || "ゲストユーザー";
-              console.log("✅ 招待者情報を取得:", { name: inviterName, email: inviterEmail });
-            } else {
-              console.warn("⚠️ 招待元のユーザードキュメントが存在しません:", user.uid);
-              // ユーザードキュメントが存在しない場合、作成する
-              await db.collection("users").doc(user.uid).set({
-                email: user.email,
-                nickname: user.displayName || "ゲストユーザー",
-                createdAt: new Date(),
-              }, { merge: true });
-              inviterName = user.displayName || "ゲストユーザー";
-              console.log("✅ ユーザードキュメントを作成しました:", inviterName);
-            }
-          } catch (error) {
-            console.error("招待元ユーザー情報の取得エラー:", error);
-          }
-        } else {
-          console.warn("⚠️ ログイン中のユーザーが見つかりません");
-        }
-
-        // デバッグ用ログ
-        const requestData = {
-          email: this.inviteEmail,
-          group: group.name,
-          groupId: this.inviteGroupId,
-          inviter: inviterName,
-          inviterEmail: inviterEmail,
-        };
-        console.log("送信データ:", requestData);
-
-        // Firestore に保存
-        await db.collection("invitations").add({
-          // email: this.inviteEmail,
-          mail: this.inviteEmail.trim(), // ← ここにtrim()
-          groupId: this.inviteGroupId,
-          groupName: group.name,
-          invitedBy: user ? user.uid : null,
-          inviterName: inviterName,
-          inviterEmail: inviterEmail,
-          status: "pending",
-          createdAt: new Date(),
-        });
-
-        // PHP (SMTPメール送信) に送信
-        const response = await fetch("https://kenzkenz.xsrv.jp/open-hinata3/php/invite_mail.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          this.snackbarText = `「${group.name}」への招待メールを送信しました`;
-          this.snackbar = true;
-          this.inviteEmail = ""; // 招待済みのメールをリセット
-        } else {
-          this.snackbarText = `メール送信に失敗しました: ${result.message}`;
-          this.snackbar = true;
-        }
-      } catch (err) {
-        console.error("招待送信エラー:", err);
-        this.snackbarText = "サーバーへの接続に失敗しました: " + err.message;
-        this.snackbar = true;
-      } finally {
-        // ローディング終了
-        this.isSendingInvite = false;
-      }
-    },
-
-    async deleteGroup() {
-      const groupId = this.selectedGroupId2
-      if (!groupId) return alert("削除するグループを選択してください")
-
-      const groupDoc = await db.collection("groups").doc(groupId).get()
-      if (!groupDoc.exists) return alert("グループが見つかりません")
-
-      const groupData = groupDoc.data()
-      if (groupData.ownerUid !== this.currentUserId) {
-        return alert("このグループを削除する権限がありません")
-      }
-
-      if (!confirm(`本当にグループ「${groupData.name}」を削除しますか？`)) return
-
-      try {
-        // Firestore: グループ削除
-        await db.collection("groups").doc(groupId).delete()
-
-        // Firestore: 各メンバーからグループを除外
-        const members = groupData.members || []
-        for (const memberUid of members) {
-          await db.collection("users").doc(memberUid).update({
-            groups: firebase.firestore.FieldValue.arrayRemove(groupId)
-          })
-        }
-
-        // 🔄 Vue側の groupOptions 更新（リアクティブに反映）
-        const updatedGroups = this.groupOptions.filter(g => g.id !== groupId)
-        this.groupOptions = [] // 一度空にして nextTick で反映確実に
-        await this.$nextTick()
-        this.groupOptions = updatedGroups
-
-        // 🔄 選択状態リセット
-        const fallbackGroup = updatedGroups[0] || null
-
-        if (this.selectedGroupId === groupId) {
-          this.selectedGroupId = fallbackGroup ? fallbackGroup.id : null
-          this.s_currentGroupName = fallbackGroup ? fallbackGroup.name : ""
-          if (fallbackGroup) {
-            localStorage.setItem("lastUsedGroupId", fallbackGroup.id)
-          } else {
-            localStorage.removeItem("lastUsedGroupId")
-          }
-        }
-
-        // セレクトボックスを強制同期（特に Vuetify）
-        await this.$nextTick()
-        if (this.$refs.groupSelect1) {
-          // this.$refs.groupSelect1.items = this.groupOptions
-          this.$refs.groupSelect1.internalValue = this.selectedGroupId
-        }
-        console.log("🧪 groupSelect2:", this.$refs.groupSelect2)
-        if (this.$refs.groupSelect2) {
-          alert(100)
-          this.$refs.groupSelect2.internalValue = this.selectedGroupId
-        }
-
-        this.selectedGroupId2 = null
-        this.snackbarText = "グループを削除しました"
-        this.snackbar = true
-
-        // 🎉 アニメーション用にトーストやスナックバー
-        this.$emit('showSnackbar', `${groupData.name} を削除しました`)
-
-      } catch (e) {
-        console.error("🔥 グループ削除失敗", e)
-        alert("削除に失敗しました")
-      }
-    },
-    showSnackbar(msg) {
-      this.snackbarText = msg
-      this.snackbar = true
-    },
-    async deleteBtn(groupId) {
-      const group = this.groupOptions.find(g => g.id === groupId)
-      if (group) {
-        // グループ作成者か確認（削除ボタン表示制御用）
-        const groupDoc = await db.collection("groups").doc(groupId).get()
-        if (groupDoc.exists) {
-          this.isGroupOwner = groupDoc.data().ownerUid === this.s_userId
-        } else {
-          this.isGroupOwner = false
-        }
-        console.log("🔄 グループ切り替え:", group.name)
-      }
-    },
 
     async onGroupChange(groupId) {
       this.layerName = ''
@@ -1126,50 +438,6 @@ export default {
       }
 
     },
-    async createGroup() {
-      try {
-        const user = auth.currentUser
-        if (!user) {
-          alert("ログインが必要です")
-          return
-        }
-        if (!this.groupName) {
-          alert("グループ名を入力してください")
-          return
-        }
-        const groupId = db.collection('groups').doc().id
-        // Firestore にグループ作成
-        await db.collection('groups').doc(groupId).set({
-          name: this.groupName,
-          ownerUid: user.uid,
-          members: [user.uid],
-          createdAt: new Date(),
-        })
-        // ユーザーにグループ追加
-        await db.collection('users').doc(user.uid).set(
-            {
-              groups: firebase.firestore.FieldValue.arrayUnion(groupId),
-            },
-            { merge: true }
-        )
-        // ✅ UI に即時反映（ownerUid を含める！）
-        const newGroup = {
-          id: groupId,
-          name: this.groupName,
-          ownerUid: user.uid // ← これが重要！
-        }
-        this.groupOptions.push(newGroup)
-        // 選択状態と保存
-        this.selectedGroupId = groupId
-        this.s_currentGroupName = this.groupName
-        localStorage.setItem("lastUsedGroupId", groupId)
-        alert('グループを作成しました')
-        this.groupName = ''
-      } catch (error) {
-        console.error("グループ作成中にエラーが発生:", error)
-        alert(`グループ作成に失敗しました：${error.message || '不明なエラー'}`)
-      }
-    },
     simaUploadInput (event) {
       simaFileUpload(event)
       this.dialogForUpload = false
@@ -1182,167 +450,8 @@ export default {
       document.querySelector('#simaFileInput').click()
       document.querySelector('#simaFileInput').value = ''
     },
-    createDirectory () {
-      // getFirebaseUid()
-      createUserDirectory()
-    },
-    logOut () {
-      const logout = async () => {
-        try {
-          await firebase.auth().signOut()
-          this.$store.state.userId = 'dummy'
-          this.s_fetchImagesFire = !this.s_fetchImagesFire
-          document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'
-          this.isLoggedIn = false
-          localStorage.setItem('lastUserId','')
-          localStorage.setItem('lastNickname','')
-          alert("ログアウトしました")
-        } catch (error) {
-          console.error("ログアウトエラー:", error.message)
-        }
-      }
-      logout()
-    },
-
-    signUp () {
-      if (!(this.email && this.password && this.nickname)) {
-        alert('入力されていません。')
-        return
-      }
-
-      const signup = async () => {
-        try {
-          const userCredential = await firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-          const user = userCredential.user
-
-          await firebase.auth().currentUser.updateProfile({
-            displayName: this.nickname
-          })
-
-          this.createDirectory()
-          alert(`登録成功！ようこそ、${this.nickname} さん！`)
-          store.state.myNickname = this.nickname
-          this.errorMsg = ''
-          this.signUpDiv = false
-
-        } catch (error) {
-          console.error("サインアップ失敗:", error.message)
-          switch (error.code) {
-            case "auth/user-not-found":
-              this.errorMsg = "ユーザーが見つかりません"
-              break
-            case "auth/wrong-password":
-              this.errorMsg = "パスワードが違います"
-              break
-            case "auth/invalid-email":
-              this.errorMsg = "無効なメールアドレスです"
-              break
-            default:
-              this.errorMsg = "登録に失敗しました"
-          }
-        }
-      }
-      signup()
-    },
-    login () {
-      const login = async () => {
-        try {
-          const userCredential = await firebase.auth().signInWithEmailAndPassword(this.email, this.password)
-          const user = userCredential.user
-
-          if (!user) {
-            this.errorMsg = "ログインは成功しましたが、ユーザー情報が取得できません"
-            return
-          }
-
-          console.log("ログイン成功！", user)
-
-          this.createDirectory()
-          this.errorMsg = 'ログイン成功'
-          this.loginDiv = false
-          this.$store.state.userId = user.uid
-          this.s_fetchImagesFire = !this.s_fetchImagesFire
-          this.s_currentGroupName = '' // ← 先に初期化しておく
-
-          // 🔽 ユーザーIDを元に所属グループを取得
-          const userDoc = await db.collection('users').doc(user.uid).get()
-          const groups = userDoc.exists ? userDoc.data().groups : []
-          if (groups.length > 0) {
-            // とりあえず最初のグループを取得して表示
-            const groupId = groups[0]
-            const groupDoc = await db.collection('groups').doc(groupId).get()
-            if (groupDoc.exists) {
-              this.s_currentGroupName = groupDoc.data().name
-              console.log(groupDoc)
-              console.log("groupDoc データ:", groupDoc.data())
-              // alert(groupDoc.data().name)
-            }
-          }
-        } catch (error) {
-          console.error("ログイン失敗:", error.message)
-
-          switch (error.code) {
-            case "auth/user-not-found":
-              this.errorMsg = "ユーザーが見つかりません"
-              break
-            case "auth/wrong-password":
-              this.errorMsg = "パスワードが違います"
-              break
-            case "auth/invalid-email":
-              this.errorMsg = "無効なメールアドレスです"
-              break
-            default:
-              this.errorMsg = "ログインに失敗しました"
-          }
-        }
-      }
-      login()
-    },
-    addLayer () {
-      const map = this.$store.state.map01
-      extSource.obj.tiles = [this.s_extLayer]
-      const result = this.$store.state.selectedLayers['map01'].find(v => v.id === 'oh-extLayer')
-      if (!result) {
-        this.$store.state.selectedLayers['map01'].unshift(
-            {
-              id: 'oh-extLayer',
-              label: this.s_extLayerName,
-              source: extSource,
-              layers: [extLayer],
-              opacity: 1,
-              visibility: true,
-            }
-        )
-      } else {
-        if (map.getLayer('oh-extLayer')) {
-          map.removeLayer('oh-extLayer');
-        }
-        if (map.getSource('ext-source')) {
-          map.removeSource('ext-source');
-        }
-        map.addSource('ext-source', {
-          type: "raster",
-          tiles: [this.s_extLayer],
-        });
-        map.addLayer({
-          id: 'oh-extLayer',
-          type: "raster",
-          source: 'ext-source',
-        });
-        result.label = this.s_extLayerName
-      }
-      const zoom = map.getZoom()
-      setTimeout(() => {
-        map.setZoom(12)
-        map.setZoom(zoom)
-      },1000)
-    },
     pngDownload () {
       this.$store.state.dialogForPngApp = true
-    },
-    onMenuToggle () {
-      // alert()
-      // scrollForAndroid('.v-menu__content')
     },
     upLoad () {
       this.$store.state.isMenu = true
@@ -1447,50 +556,6 @@ export default {
       localStorage.setItem('terrainLevel',this.s_terrainLevel)
       history('terrainLevelInput',window.location.href)
     },
-    aaa () {
-      auth.onAuthStateChanged(async user => {
-        if (user) {
-          const uid = user.uid
-          this.$store.commit('setUserId', uid)
-
-          const userDoc = await db.collection('users').doc(uid).get()
-          const groupIds = userDoc.exists ? userDoc.data().groups || [] : []
-
-          const groups = []
-          for (const groupId of groupIds) {
-            const groupDoc = await db.collection("groups").doc(groupId).get()
-            if (groupDoc.exists) {
-              groups.push({
-                id: groupId,
-                name: groupDoc.data().name,
-                ownerUid: groupDoc.data().ownerUid,
-                isSoloGroup: groupDoc.data().isSoloGroup === true, // 明示的に true をチェック
-              })
-            }
-          }
-
-          this.groupOptions = [
-            { id: null, name: "（グループに入らない）" },
-            ...groups
-          ]
-
-          const savedGroupId = localStorage.getItem("lastUsedGroupId")
-          const validGroupId = savedGroupId === "" ? null : savedGroupId
-
-          const defaultGroupId = this.groupOptions.find(g => g.id === validGroupId)
-              ? validGroupId
-              : null
-
-          this.selectedGroupId = defaultGroupId
-
-          // 🕒 強制的に一番最後に反映（これで上書きされない）
-          setTimeout(() => {
-            console.log("🛡 強制的に onGroupChange 実行")
-            this.onGroupChange(defaultGroupId)
-          }, 1000) // ← 必要なら 2000 でもOK
-        }
-      })
-    }
   },
   watch: {
     s_mapillary(value) {
@@ -1500,9 +565,6 @@ export default {
       } else {
         store.dispatch('hideFloatingWindow', 'mapillary');
       }
-    },
-    s_soloFlg() {
-      this.aaa()
     },
     s_currentGroupId (newVal,oldVal) {
       // alert('newVal' + newVal + 'oldVal' + oldVal)
@@ -1552,9 +614,6 @@ export default {
         }
       },
     },
-  },
-  created() {
-    this.aaa()
   },
   mounted() {
     document.querySelector('#drag-handle-menuDialog-map01').innerHTML = '<span style="font-size: large;">メニュー</span>'

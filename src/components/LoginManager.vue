@@ -4,7 +4,7 @@
       <v-card-title>
         ログイン管理
         <span
-            v-if="((user1 && user1.displayName) || (s_myNickname && isLoggedIn))"
+            v-if="((user && user.displayName) || (s_myNickname && isLoggedIn))"
             style="margin-left:20px;font-size: 16px;"
         >
           ようこそ、{{ displayNameToShow }}さん！
@@ -13,12 +13,12 @@
 
       <v-card-text>
         <div style="margin-top: 10px;">
-          <v-btn v-if="!user1" @click="loginDiv = !loginDiv; signUpDiv = false">ログイン</v-btn>
-          <v-btn v-if="user1" @click="logOut">ログアウト</v-btn>
-          <v-btn style="margin-left: 10px;" v-if="!user1" @click="signUpDiv = !signUpDiv; loginDiv = false">新規登録</v-btn>
-          <span v-if="!user1" style="margin-left: 20px;">新規登録は無料です。</span>
+          <v-btn v-if="!user" @click="loginDiv = !loginDiv; signUpDiv = false">ログイン</v-btn>
+          <v-btn v-if="user" @click="logOut">ログアウト</v-btn>
+          <v-btn style="margin-left: 10px;" v-if="!user" @click="signUpDiv = !signUpDiv; loginDiv = false">新規登録</v-btn>
+          <span v-if="!user" style="margin-left: 20px;">新規登録は無料です。</span>
 
-          <div v-if="user1 && isLoggedIn">
+          <div v-if="user && isLoggedIn">
             <hr style="margin-top: 20px;margin-bottom: 20px;">
             <p style="margin-bottom: 10px;">ニックネームを変更します。</p>
             <v-text-field
@@ -69,7 +69,7 @@
 import store from '@/store'
 import { db, auth } from '@/firebase'
 import firebase from '@/firebase'
-import { user as user1 } from '@/authState' // 既存のグローバル認証状態
+import { user } from '@/authState'
 
 export default {
   name: 'LoginManager',
@@ -90,7 +90,7 @@ export default {
       errorMsg: '',
 
       // authState の参照（テンプレートから使えるように data に載せる）
-      user1,
+      user,
     }
   },
   computed: {
@@ -109,15 +109,15 @@ export default {
     displayNameToShow () {
       const n1 = this.newName
       const n2 = this.s_myNickname
-      const n3 = this.user1 && this.user1.displayName
+      const n3 = this.user && this.user.displayName
       return n1 || n2 || n3 || ''
     },
   },
   methods: {
     async createUserDirectory () {
       try {
-        if (!this.user1 || !this.user1.getIdToken) return
-        const token = await this.user1.getIdToken()
+        if (!this.user || !this.user.getIdToken) return
+        const token = await this.user.getIdToken()
         const response = await fetch('https://kenzkenz.xsrv.jp/open-hinata3/php/create_directory.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -153,7 +153,7 @@ export default {
             store.state.myNickname = this.newName
             const el = document.querySelector('#drag-handle-menuDialog-map01')
             if (el) {
-              el.innerHTML = `<span style="font-size: large;">メニュー　ようこそ${this.displayNameToShow}さん</span>`
+              el.innerHTML = `<span style="font-size: large;">メニュー ようこそ${this.displayNameToShow}さん</span>`
             }
           })
           .catch(err => {

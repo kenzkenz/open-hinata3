@@ -1,11 +1,13 @@
 <script setup>
-import { user as user1 } from "@/authState"; // グローバルの認証情報を取得
+// import { user as user } from "@/authState"; // グローバルの認証情報を取得
 import SakuraEffect from './components/SakuraEffect.vue';
 
 </script>
 
 <template>
   <v-app>
+
+    <LoginManager></LoginManager>
 
     <VDialogCommon
         @watch-positon="watchPosition"
@@ -341,7 +343,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
 
       </div>
-      
+
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
         <v-card>
@@ -554,10 +556,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
           top
           right
       >
-        <input v-if="!user1" type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
+        <input v-if="!user" type="range" min="0" max="1" step="0.01" class="range" v-model.number="s_simaOpacity" @input="simaOpacityInput"/>
         <v-btn color="pink" class="tiny-btn" style="margin-bottom: 0px!important;" text @click="simaDl">SIMAダウンロード</v-btn>
-        <v-btn v-if="user1" color="pink" class="tiny-btn" style="margin-left: 10px;margin-bottom: 0px!important;" text @click="simaPartDl">部分ダウンロード</v-btn>
-        <v-btn v-if="!user1" style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
+        <v-btn v-if="user" color="pink" class="tiny-btn" style="margin-left: 10px;margin-bottom: 0px!important;" text @click="simaPartDl">部分ダウンロード</v-btn>
+        <v-btn v-if="!user" style="margin-left: 10px;" color="pink" text @click="simaDelete">削除</v-btn>
         <template v-slot:actions>
           <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
@@ -803,8 +805,8 @@ import SakuraEffect from './components/SakuraEffect.vue';
           </v-card-title>
           <v-card-text>
             <p style="margin-bottom: 20px;">選択してください。</p>
-            <v-btn :disabled="!user1" @click="uploadChibanzu">地番図アップロード</v-btn>
-            <v-btn :disabled="!user1" style="margin-left: 10px;" @click="dialogForLayerName = true,dialogForChibanzyOrDraw = false">マイレイヤー追加</v-btn>
+            <v-btn :disabled="!user" @click="uploadChibanzu">地番図アップロード</v-btn>
+            <v-btn :disabled="!user" style="margin-left: 10px;" @click="dialogForLayerName = true,dialogForChibanzyOrDraw = false">マイレイヤー追加</v-btn>
 
             <v-btn style="margin-left: 10px;" @click="uploadDraw">ドロー追加</v-btn>
           </v-card-text>
@@ -1122,7 +1124,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         :items="resolutions"
                         label="画像取込最大解像度"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
 
               <v-switch style="height: 40px;margin-bottom: 20px;" v-model="s_isTransparent" label="透過処理" color="primary" />
@@ -1158,7 +1160,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         :items="resolutions"
                         label="画像取込最大解像度"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
 <!--              <v-select class="scrollable-content"-->
 <!--                        v-model="s_transparent"-->
@@ -1167,7 +1169,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        item-value="value"-->
 <!--                        label="透過方法を選択してください"-->
 <!--                        outlined-->
-<!--                        v-if="user1"-->
+<!--                        v-if="user"-->
 <!--              ></v-select>-->
             </div>
             <v-btn @click="geoTifLoad1file">geotif読込開始</v-btn>
@@ -1208,7 +1210,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         item-value="value"
                         label="透過方法を選択してください"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
             </div>
             <v-btn @click="geoTiffLoad0">geotiff読込開始！</v-btn>
@@ -1247,7 +1249,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <!--                        :items="resolutions"-->
 <!--                        label="画像取込最大解像度"-->
 <!--                        outlined-->
-<!--                        v-if="user1"-->
+<!--                        v-if="user"-->
 <!--              ></v-select>-->
               <v-select class="scrollable-content"
                         v-model="s_transparent"
@@ -1256,7 +1258,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         item-value="value"
                         label="透過方法を選択してください"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
             </div>
             <v-btn @click="geoTifLoad1file">geotiff読込開始</v-btn>
@@ -1298,7 +1300,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         item-value="value"
                         label="透過方法を選択してください"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
             </div>
             <v-btn @click="jpgLoad0">jpg読込開始</v-btn>
@@ -1339,7 +1341,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                         item-value="value"
                         label="透過方法を選択してください"
                         outlined
-                        v-if="user1"
+                        v-if="user"
               ></v-select>
             </div>
             <v-btn @click="pngLoad0">png読込開始</v-btn>
@@ -1564,10 +1566,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
                 <v-btn :size="isSmall ? 'small' : 'default'" icon style="margin-left:8px;" @click="btnClickSplit" v-if="mapName === 'map01'"><v-icon>mdi-monitor-multiple</v-icon></v-btn>
               </MiniTooltip>
                 <MiniTooltip text="マイルーム" :offset-x="4" :offset-y="-2">
-              <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user1">mdi-home</v-icon></v-btn>
+              <v-btn :size="isSmall ? 'small' : 'default'" v-if="user && mapName === 'map01'" icon style="margin-left:8px;" @click="btnClickMyroom (mapName)"><v-icon v-if="user">mdi-home</v-icon></v-btn>
               </MiniTooltip>
               <!-- <MiniTooltip text="グループ機能">-->
-              <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user1 && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user1">mdi-account-supervisor</v-icon></v-btn>-->
+              <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user">mdi-account-supervisor</v-icon></v-btn>-->
               <!--  </MiniTooltip>-->
 
               <MiniTooltip text="測位" :offset-x="4" :offset-y="-2">
@@ -1578,7 +1580,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
                     <v-fab
                         v-bind="activatorProps"
                         :size="isSmall ? 'small' : 'default'"
-                        v-if="user1 && mapName === 'map01'"
+                        v-if="user && mapName === 'map01'"
                         icon
                         style="margin-left:8px;"
                         @click="zahyoGet"
@@ -1737,7 +1739,9 @@ import SakuraEffect from './components/SakuraEffect.vue';
 
 <script>
 import firebase, { db } from '@/firebase'
+import { user } from "@/authState"; // グローバルの認証情報を取得
 import store from '@/store'
+import LoginManager from "@/components/LoginManager"
 import { nextTick } from 'vue'
 import {closeAllPopups, mouseMoveForPopup, popup} from "@/js/popup"
 import { CompassControl } from 'maplibre-gl-compass'
@@ -2453,6 +2457,7 @@ export default {
     Traverse,
     JobPicker,
     VDialogCommon,
+    LoginManager,
   },
   data: () => ({
     wizardOpen: false,
@@ -5632,7 +5637,7 @@ export default {
       const map01 = this.$store.state.map01
       const map02 = this.$store.state.map02
       if (this.$store.state.userId) {
-        // tileGenerateForUser1file()
+        // tileGenerateForuserfile()
         tileGenerateForUser('tif',null)
       } else {
         geoTiffLoad2 (map01,'map01', true)
