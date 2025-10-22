@@ -10705,13 +10705,6 @@ let layers01 = [
         attribution: '<a href="https://gisstar.gsi.go.jp/terrain2021/" target="_blank">地形分類データ</a>'
     },
     {
-        id: 'oh-tochikukaku',
-        label: "<span style='color: red'>NEW</span>⭐️R07土地区画整理事業",
-        sources: [tochikukakuseiriSource],
-        layers: [tochikukakuseiriLayer, tochikukakuseiriLineLayer],
-        attribution: '<a href="https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000087.html" target="_blank">都市計画決定GISデータ</a>',
-    },
-    {
         id: 'oh-homusyo-2025-layer',
         label: "2025登記所地図",
         sources: [homusyo2025Source,homusyo2025DDissolvedSource,homusyo2025NinizahyoSource],
@@ -11594,6 +11587,34 @@ let layers01 = [
                 layers: [tochikukakuseiriLayer, tochikukakuseiriLineLayer],
                 attribution: '<a href="https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000087.html" target="_blank">都市計画決定GISデータ</a>',
             },
+            {
+                id: 'oh-yotochiikiP',
+                label: "用途地域",
+                source: yotochiikiPSource,
+                layers: [yotochiikiPLayer,yotochiikiPLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-tokei',
+                label: "都市計画区域",
+                source: tokeiSource,
+                layers: [tokeiLayer,tokeiLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-kuikikubun',
+                label: "市街化調整区域",
+                source: kuikikubunSource,
+                layers: [kuikikubunLayer,kuikikubunLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
+            {
+                id: 'oh-tkbt',
+                label: "特別用途地区",
+                source: tkbtSource,
+                layers: [tkbtLayer,tkbtLayerLine],
+                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
+            },
         ]
     },
     {
@@ -11990,40 +12011,6 @@ let layers01 = [
                 source: cityR05Source,
                 layers: [cityR05Layer,cityR05LayerLine,cityR05LayerLabel],
                 ext: {name:'ext-city-r05'},
-            },
-        ]
-    },
-    {
-        id: 'toshikeikaku',
-        label: "都市計画決定情報パッケージ",
-        nodes: [
-            {
-                id: 'oh-yotochiikiP',
-                label: "用途地域",
-                source: yotochiikiPSource,
-                layers: [yotochiikiPLayer,yotochiikiPLayerLine],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
-            },
-            {
-                id: 'oh-tokei',
-                label: "都市計画区域",
-                source: tokeiSource,
-                layers: [tokeiLayer,tokeiLayerLine],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
-            },
-            {
-                id: 'oh-kuikikubun',
-                label: "市街化調整区域",
-                source: kuikikubunSource,
-                layers: [kuikikubunLayer,kuikikubunLayerLine],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
-            },
-            {
-                id: 'oh-tkbt',
-                label: "特別用途地区",
-                source: tkbtSource,
-                layers: [tkbtLayer,tkbtLayerLine],
-                attribution:'<a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A55-2022.html" target="_blank">国土数値情報</a>'
             },
         ]
     },

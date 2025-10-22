@@ -2,131 +2,187 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Open-Hinata3</title>
-    <meta name="description" content="Open-Hinata3（OH3）は、現場から意思決定までをつなぐシンプルで高速なWeb GISです。">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>open-hinata3</title>
+    <meta name="description" content="open-hinata3 - 位置情報と地図表示のための軽快なWebアプリ." />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- canonical / robots -->
+    <link rel="canonical" href="https://kenzkenz.xsrv.jp/open-hinata3/lp.html" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+
+    <!-- OGP -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="open-hinata3" />
+    <meta property="og:title" content="open-hinata3" />
+    <meta property="og:description" content="open-hinata3 - 位置情報と地図表示のための軽快なWebアプリ." />
+    <meta property="og:url" content="https://kenzkenz.xsrv.jp/open-hinata3/lp.html" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content="https://kenzkenz.xsrv.jp/open-hinata3/ogp.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="open-hinata3" />
+    <meta name="twitter:description" content="open-hinata3 - 位置情報と地図表示のための軽快なWebアプリ." />
+    <meta name="twitter:image" content="https://kenzkenz.xsrv.jp/open-hinata3/ogp.png" />
+    <meta name="twitter:site" content="@kenzkenz" />
+
     <style>
-        :root{ --primary:#1867C0; --ink:#1f2937; --muted:#6b7280; --bg:#ffffff }
-        *{ box-sizing:border-box }
-        html,body{ height:100%; margin:0; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic UI",Arial }
-        body{ background:var(--bg); color:var(--ink); }
-        .wrap{ min-height:100%; display:grid; place-items:center; }
-        .stack{ width:min(680px,92vw); display:flex; flex-direction:column; align-items:center; gap:18px; }
-        .logo{ display:flex; align-items:center; gap:10px; user-select:none; }
-        .dot{ width:28px; height:28px; border-radius:50%; background:var(--primary); box-shadow:0 8px 20px rgba(24,103,192,.18); }
-        h1{ font-size:28px; font-weight:800; letter-spacing:.2px; margin:0 }
-        p.lead{ margin:0; color:var(--muted); font-size:14px }
-        .actions{ display:flex; gap:10px; width:100%; justify-content:center; }
-        .btn{
-            appearance:none; border:1px solid rgba(31,41,55,.12); background:#fff; color:var(--ink);
-            padding:12px 18px; border-radius:999px; font-weight:700; cursor:pointer;
+        :root {
+            --bg: #ffffff;
+            --fg: #111827; /* gray-900 */
+            --muted: #6b7280; /* gray-500 */
+            --accent: #2563eb; /* indigo-600-ish */
+            --ring: rgba(37, 99, 235, .35);
+            --border: #e5e7eb; /* gray-200 */
         }
-        .btn-primary{
-            background:var(--primary); color:#fff; border-color:transparent;
-            box-shadow:0 10px 24px rgba(24,103,192,.22);
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0b0f14;
+                --fg: #e5e7eb;
+                --muted: #9ca3af;
+                --accent: #60a5fa;
+                --ring: rgba(96, 165, 250, .35);
+                --border: #1f2937;
+            }
         }
-        .field{
-            width:min(560px,96%); display:flex; align-items:center; gap:8px;
-            padding:10px 12px; border:1px solid rgba(31,41,55,.14); border-radius:999px; background:#fff;
+
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .field input{
-            flex:1; border:0; outline:0; font-size:14px; background:transparent; color:inherit;
+
+        /* レイアウト */
+        .wrap {
+            min-height: 100dvh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
         }
-        .hint{ color:var(--muted); font-size:12px; margin-top:4px; text-align:center; }
-        footer{ position:fixed; inset:auto 0 12px; text-align:center; color:#9ca3af; font-size:12px }
-        @media (prefers-color-scheme: dark){
-            :root{ --bg:#0b1220; --ink:#e5e7eb; --muted:#9aa4b2 }
-            body{ background:var(--bg) }
-            .btn{ background:#0f172a; border-color:rgba(255,255,255,.08); color:#e5e7eb }
-            .field{ background:#0f172a; border-color:rgba(255,255,255,.08) }
+        header, footer {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; gap: 8px; border-bottom: 1px solid var(--border);
         }
+        footer { border-top: 1px solid var(--border); border-bottom: none; color: var(--muted); font-size: 12px; }
+
+        /* ロゴ */
+        .brand { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; }
+        .logo {
+            width: 28px; height: 28px; border-radius: 6px;
+            background: linear-gradient(135deg, var(--accent), transparent 70%),
+            conic-gradient(from 180deg at 70% 40%, var(--accent), transparent 210deg);
+            box-shadow: 0 6px 20px rgba(0,0,0,.08) inset;
+        }
+        .brand span { font-weight: 700; letter-spacing: .2px; }
+
+        /* ヒーロー */
+        .hero { display:grid; place-items:center; padding: 10vh 16px; }
+        .center { max-width: 860px; width: 100%; text-align:center; margin: 0 auto; }
+        .title { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+        .lead { margin: 12px auto 24px; color: var(--muted); font-size: clamp(14px, 2.4vw, 16px); }
+
+        /* アクション */
+        .actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top: 8px; }
+        .btn {
+            appearance:none; -webkit-appearance:none; border: 1px solid var(--border);
+            background: transparent; color: var(--fg);
+            padding: 10px 14px; border-radius: 999px; font-weight: 600; cursor: pointer;
+            transition: transform .06s ease, box-shadow .15s ease, border-color .15s ease;
+            text-decoration: none; /* ← 下線消し */
+        }
+        .btn:visited { text-decoration: none; }
+        .btn:focus { outline: none; box-shadow: 0 0 0 6px var(--ring); }
+        .btn:hover { transform: translateY(-1px); }
+        .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        /* ミニ機能紹介（ビジネス色ナシの簡素テキスト） */
+        .grid3 { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 36px auto 0; max-width: 860px; }
+        .card { border: 1px solid var(--border); border-radius: 16px; padding: 14px; text-align:left; }
+        .card h3 { margin: 0 0 6px; font-size: 14px; letter-spacing: .2px; }
+        .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+        @media (min-width: 700px) { .grid3 { grid-template-columns: repeat(3, 1fr); } }
+
+        /* 細部 */
+        .spacer { flex:1; }
+        .links { display:flex; gap:10px; }
+        .links a { color: inherit; text-decoration: none; opacity:.9; }
+        .links a:hover { text-decoration: none; } /* ← ホバーでも下線出さない */
     </style>
 </head>
 <body>
-<main class="wrap">
-    <div class="stack">
-        <div class="logo" aria-label="Open-Hinata3">
-            <span class="dot" aria-hidden="true"></span>
-            <h1>Open-Hinata3</h1>
+<div class="wrap">
+    <header>
+        <a class="brand" href="#" aria-label="open-hinata3 home">
+            <div class="logo" aria-hidden="true"></div>
+            <span>open-hinata3</span>
+        </a>
+        <div class="spacer"></div>
+        <nav class="links" aria-label="site">
+            <a href="https://kenzkenz.xsrv.jp/open-hinata3" target="_blank" aria-label="Open Map">地図を開く</a>
+            <a href="https://sakura.3ku.jp/gis/oh3-reversedictionary/" target="_blank">ヘルプ</a>
+        </nav>
+    </header>
+
+    <main class="hero">
+        <div class="center">
+            <h1 class="title">open-hinata3</h1>
+
+            <div class="actions">
+                <a class="btn primary" href="https://kenzkenz.xsrv.jp/open-hinata3" target="_blank" role="button">地図を開く</a>
+            </div>
+
+            <section id="features" class="grid3" aria-label="features">
+                <article class="card">
+                    <h3>地図を見る</h3>
+                    <p>軽快な動作で拡大・回転・傾斜に対応。視点を変えて、見たい場所へ。</p>
+                </article>
+                <article class="card">
+                    <h3>重ねる</h3>
+                    <p>航空写真や地形、独自データをレイヤーとして追加。見比べがスムーズ。</p>
+                </article>
+                <article class="card">
+                    <h3>残す</h3>
+                    <p>地点やメモを整理して再訪。必要なときにすぐ取り出せます。</p>
+                </article>
+            </section>
+
+            <section id="help" class="grid3" style="margin-top:24px" aria-label="help">
+                <article class="card">
+                    <h3>はじめかた</h3>
+                    <p>「地図を開く」を押すとスタートします。</p>
+                </article>
+                <article class="card">
+                    <h3>データの扱い</h3>
+                    <p>アップロードしたデータは、マイルームから確認・管理できます。（ログイン専用です。）</p>
+                </article>
+                <article class="card">
+                    <h3>サポート</h3>
+                    <p>操作で困ったらヘルプを参照。お問い合わせはXのDMで</p>
+                </article>
+            </section>
         </div>
-        <p class="lead">現場が早い。シンプルに速いWeb GIS。</p>
+    </main>
 
-        <!-- 1行入力（任意）：sコード / 座標を貼って Enter。何も入れなくても「地図を開く」で起動 -->
-        <form class="field" id="openForm">
-            <input id="q" placeholder="シェアコード（s=…）または 35.68,139.76,16 のような座標（任意）" autocomplete="off" />
-            <button class="btn" type="submit" title="適用して開く">適用</button>
-        </form>
-
-        <div class="actions">
-            <a id="openBtn" class="btn btn-primary" href="#">地図を開く</a>
-            <button class="btn" id="contactBtn" type="button">お問い合わせ</button>
+    <footer>
+        <small>© <span id="y"></span> open-hinata3</small>
+        <div class="links" aria-label="footer">
+            <a href="https://x.com/kenzkenz" target="_blank">https://x.com/kenzkenz</a>
         </div>
-
-        <div class="hint">Enterで開く / 座標は「緯度,経度,ズーム」。例: 35.68,139.76,16</div>
-    </div>
-</main>
-
-<footer>© 2025 Open-Hinata3</footer>
+    </footer>
+</div>
 
 <script>
-    // ▼ あなたの地図URL（ベース）に差し替え
-    // 例) 直起動: 'https://example.com/'  /  ハッシュ: 'https://example.com/#/app'
-    const MAP_BASE = 'http://localhost:8080/';
-
-    const openBtn = document.getElementById('openBtn');
-    const openForm = document.getElementById('openForm');
-    const q = document.getElementById('q');
-    const contactBtn = document.getElementById('contactBtn');
-
-    function buildUrlFromInput(v){
-        v = (v||'').trim();
-        if(!v){ return MAP_BASE; }
-
-        // s=コードっぽい場合は ?s=...
-        if(/^[-_A-Za-z0-9]+=*$/i.test(v) || v.length >= 6){
-            return addQuery(MAP_BASE, { s: v });
-        }
-
-        // "lat,lng[,z]" 形式
-        const m = v.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*(?:,\s*(\d+))?\s*$/);
-        if(m){
-            const [, lat, lng, z] = m;
-            return addQuery(MAP_BASE, Object.assign({ lat, lng }, z ? { z } : {}));
-        }
-        // その他はそのまま s に載せる
-        return addQuery(MAP_BASE, { s: v });
-    }
-
-    function addQuery(base, obj){
-        // ハッシュ型(#/app)にも対応
-        if(base.includes('#')){
-            const [pre, hash] = base.split('#');
-            const [path, qstr=''] = (hash||'').split('?');
-            const sp = new URLSearchParams(qstr);
-            for(const k in obj){ sp.set(k, obj[k]); }
-            return pre + '#' + path + '?' + sp.toString();
-        }else{
-            const url = new URL(base, location.origin);
-            for(const k in obj){ url.searchParams.set(k, obj[k]); }
-            return url.toString();
-        }
-    }
-
-    function updateOpenHref(){
-        openBtn.href = buildUrlFromInput(q.value);
-    }
-    updateOpenHref();
-
-    openForm.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        window.open(buildUrlFromInput(q.value), '_blank', 'noopener');
-    });
-    q.addEventListener('input', updateOpenHref);
-
-    contactBtn.addEventListener('click', ()=>{
-        // 必要に応じて変更
-        location.href = 'mailto:info@example.com';
-    });
+    // 年号自動
+    document.getElementById('y').textContent = new Date().getFullYear();
 </script>
 </body>
 </html>

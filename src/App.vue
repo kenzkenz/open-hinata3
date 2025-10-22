@@ -9523,8 +9523,15 @@ export default {
                 case 'pdf':
                 {
                   if (this.$store.state.userId) {
-                    this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                    this.dialogForPdfApp = true
+                    // this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                    // this.dialogForPdfApp = true
+
+                    const cd = this.$store.state.commonDialog
+                    cd.fileDropOpen = true
+                    cd.fileDropExt = 'pdf'
+                    cd.fileDropFiles = Array.from(e.dataTransfer.files)
+
+
                   } else {
                     alert('ログイン専用です。')
                   }

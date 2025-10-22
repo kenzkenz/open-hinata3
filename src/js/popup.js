@@ -3718,7 +3718,6 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 }
                 if (features.length === 0) return
                 props = features[0].properties
-                // const header = ['点名','X','Y','標高','アンテナ高','標高（アンテナ位置）','楕円体高','XY較差','座標系','緯度','経度','所在','測位日時'];
                 const header = store.state.sokuiHeader
                 const row = JSON.parse(props.oh3_csv2_row);
                 console.log(row)
@@ -3726,14 +3725,22 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
                 console.log(rec)
                 let html0 = ''
                 Object.keys(rec).forEach(function (key) {
-                    html0 += key + '=' + rec[key] + '<br>'
+                    if (key !== 'タイプ' && key !== 'パス') {
+                        html0 += key + '=' + rec[key] + '<br>'
+                    }
                 })
+                const imgHtml = rec.パス !== 'null'
+                    ? `<a href="${rec.パス}" target="_blank"><img height="200" src="${rec.パス}"></a>`
+                    : ''
                 if (html.value.indexOf('zahyo') === -1) {
-                    html.value += '<div class="layer-label-div">座標等</div>'
-                    html0 += '<div style="width: 200px; class="zahyo" font-weight: normal; color: #333;line-height: 25px;">'
-                    // html0 += '<button style="margin-bottom: 5px; height: 30px; font-size: medium; width: 100%;" class="ninnzahyo-zip-remove pyramid-btn">削除</button>'
-                    html0 += '<div>'
-                    html.value += html0
+                    html.value += `<div class="layer-label-div zahyo">座標等</div>`
+                    html.value += `
+                        <div class="zahyo-wrap" style="display:flex; gap:12px; align-items:flex-start;">
+                          <div class="zahyo-text" style="flex:1 1 auto; min-width:0;">
+                            ${html0}
+                          </div>
+                          ${imgHtml ? `<div class="zahyo-image" style="flex:0 0 auto;">${imgHtml}</div>` : ''}
+                        </div>`
                 }
                 break
             }
