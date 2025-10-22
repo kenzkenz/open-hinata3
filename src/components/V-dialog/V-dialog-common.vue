@@ -34,7 +34,7 @@
           <!-- 進行表示（青系） -->
           <div v-if="stage==='upload' || stage==='open' || stage==='warm'" class="statusBar mb-3">
             <div class="statusText">
-              <template v-if="stage==='upload'">アップロード中…</template>
+              <template v-if="stage==='upload'">JPGに変換中…</template>
               <template v-else-if="stage==='open'">サーバーで準備中…</template>
               <template v-else>サムネ生成中… {{ thumbLoaded }} / {{ pdfPages }}</template>
             </div>
