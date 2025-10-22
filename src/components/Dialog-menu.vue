@@ -348,13 +348,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         <input style="width: 100%;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 
-<!--      <hr style="margin-top: 20px">-->
-<!--      今昔マップ<br>{{konjyakuYear}}年の直近（過去）の地図を表示します。-->
-<!--      <div class="range-div">-->
-<!--        <input type="range" min="1890" max="2024" step="1" class="range" v-model.number="konjyakuYear" @change="konjyakuYearInput"/>-->
-<!--      </div>-->
-
-<!--      <hr style="margin-top: 10px;">-->
       <p style="margin-top: 10px;">お問合せなど、サイト管理者への御連絡は、<a href="https://x.com/kenzkenz" target="_blank">https://x.com/kenzkenz</a>にDMを送ってください。</p>
     </div>
   </Dialog>
