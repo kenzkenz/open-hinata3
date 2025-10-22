@@ -17,15 +17,11 @@
   <!-- 本体 -->
   <v-dialog v-model="sFileDialogOpen" :max-width="isMobile ? 680 : 1080">
     <v-card class="pa-2">
-      <!-- ヘッダー -->
+      <!-- ヘッダー（アイコン＋ファイル名） -->
       <div class="d-flex align-center justify-space-between px-3 py-2">
         <div class="d-flex align-center" style="gap:10px">
           <v-icon :color="iconColor" size="32">{{ iconName }}</v-icon>
-          <div>
-            <div class="text-subtitle-1">{{ detectedMessage }}</div>
-            <!-- ↓ 要望により説明行は削除 -->
-            <!-- <div class="text-caption text-medium-emphasis">拡張子に応じて処理を切り替えます（{{ files.length }}件）</div> -->
-          </div>
+          <div class="text-subtitle-1 ellipsis">{{ headerTitle }}</div>
         </div>
         <v-btn icon variant="text" @click="sFileDialogOpen=false">
           <v-icon size="28">mdi-close</v-icon>
@@ -33,20 +29,6 @@
       </div>
 
       <v-card-text>
-        <!-- ファイル名 -->
-        <div class="mb-4" v-if="files.length">
-          <v-chip
-              v-for="(f,i) in files"
-              :key="i"
-              class="ma-1"
-              label
-              variant="flat"
-              size="small"
-          >
-            <v-icon start size="18">mdi-file</v-icon>{{ f.name || ('file-'+(i+1)) }}
-          </v-chip>
-        </div>
-
         <!-- ====== PDF ====== -->
         <div v-if="ext==='pdf'">
           <!-- 進行表示（青系） -->
@@ -93,7 +75,7 @@
 
           <!-- 2カラム -->
           <div class="d-flex" style="gap:16px">
-            <!-- 左：サムネ -->
+            <!-- 左：サムネ（装飾済み） -->
             <div class="thumbColumn">
               <div v-if="!pdfToken" class="pa-4 text-medium-emphasis">PDFを選択すると自動でサムネを生成します</div>
               <div v-else class="thumbGrid">
@@ -153,7 +135,7 @@
           <div v-if="pdfError" class="mt-2 text-error text-caption">{{ pdfError }}</div>
         </div>
 
-        <!-- 画像 -->
+        <!-- 画像（jpg/png） -->
         <div v-else-if="ext==='jpg' || ext==='jpeg' || ext==='png'">
           <div class="text-body-2 mb-2">画像プレビュー</div>
           <div class="d-flex flex-wrap" style="gap:12px">
@@ -214,10 +196,18 @@ export default {
     ext(){ return (this.$store.state.commonDialog.fileDropExt || '').toLowerCase() },
     files(){ return this.$store.state.commonDialog.fileDropFiles || [] },
     extUpper(){ return (this.ext || '').toUpperCase() },
-    detectedMessage(){
-      const label = this.ext==='pdf' ? 'PDF' : (this.ext==='png' ? 'PNG' : ((this.ext==='jpg'||this.ext==='jpeg')?'JPG':this.extUpper||'未知の'))
-      return `${label}ファイルを検出しました。`
+
+    // ヘッダー表示名：PDFはサーバー返却名>ローカル名、画像は最初のファイル名、無ければ種別
+    headerTitle(){
+      if(this.ext==='pdf'){
+        return this.pdfName || (this.files[0] && this.files[0].name) || 'PDF'
+      }
+      if(this.ext==='png' || this.ext==='jpg' || this.ext==='jpeg'){
+        return (this.files[0] && this.files[0].name) || '画像'
+      }
+      return (this.files[0] && this.files[0].name) || 'ファイル'
     },
+
     iconName(){
       if(this.ext==='pdf') return 'mdi-file-pdf-box'
       if(this.ext==='png' || this.ext==='jpg' || this.ext==='jpeg') return 'mdi-file-image'
@@ -434,6 +424,14 @@ export default {
 }
 .statusText{ font-size:.9rem; margin-bottom:6px }
 
+/* 1行で省略（ヘッダーのファイル名） */
+.ellipsis{
+  max-width: 78vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
 /* プレビュー枠（ヘッダー無し） */
 .previewFrame{
   flex:1 1 auto;
@@ -458,7 +456,7 @@ export default {
 .previewPane::-webkit-scrollbar{ display:none }
 .previewPane{ -ms-overflow-style:none; scrollbar-width:none }
 
-/* ←ここを変更：縦長でも切れないようにmaxでフィット */
+/* 縦長でも切れないようにmaxでフィット */
 .previewImg{
   display:block;
   max-width:100%;
