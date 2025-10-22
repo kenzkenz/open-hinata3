@@ -33,9 +33,8 @@
     </v-card>
   </v-dialog>
 
-
   <!-- バージョン通知 -->
-  <v-dialog v-model="sVersionMessage" max-width="500px">
+  <v-dialog v-model="s_versionMessage" max-width="500px">
     <v-card>
       <v-card-title>バージョンが古くなっています。</v-card-title>
       <v-card-text>
@@ -44,7 +43,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue-darken-1" text @click="sVersionMessage=false">Close</v-btn>
+        <v-btn color="blue-darken-1" text @click="s_versionMessage=false">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -195,25 +194,6 @@
           <div class="text-medium-emphasis">この拡張子（{{ extUpper }}）のUIはまだ用意していません。</div>
         </div>
       </v-card-text>
-
-      <v-card-actions class="px-4 pb-4">
-        <v-spacer></v-spacer>
-        <v-btn
-            v-if="ext==='pdf'"
-            color="primary"
-            :loading="pdfOpening"
-            :disabled="!files.length"
-            @click="openOnServer(true)"
-        >
-          <v-icon start>mdi-file-pdf-box</v-icon> サーバーで全ページ準備
-        </v-btn>
-        <v-btn v-else-if="ext==='jpg' || ext==='jpeg' || ext==='png'" color="primary" @click="processImage">
-          <v-icon start>mdi-file-image</v-icon> 画像を処理
-        </v-btn>
-        <v-btn v-else color="primary" @click="processUnknown">
-          <v-icon start>mdi-cog</v-icon> 汎用処理
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
@@ -242,7 +222,7 @@ export default {
       get(){ return this.$store.state.commonDialog.geoReferenceOpen },
       set(v){ this.$store.state.commonDialog.geoReferenceOpen = v }
     },
-    sVersionMessage: {
+    s_versionMessage: {
       get(){ return this.$store.state.commonDialog.versionMessage },
       set(v){ this.$store.state.commonDialog.versionMessage = v }
     },
@@ -380,7 +360,7 @@ export default {
     },
     appUpdate(){
       location.reload(true)
-      this.sVersionMessage = false
+      this.s_versionMessage = false
     },
     resetServerState(){
       this.pdfToken = ''
@@ -494,18 +474,11 @@ export default {
 
     onPreviewLoad(){ this.previewLoading = false },
     onPreviewError(){ this.previewLoading = false },
-
-    exportCurrentPage(){ this.exportPage(this.pdfPage) },
     exportPage(p){
       if(!this.pdfToken) return
       const qp = new URLSearchParams({ action:'export', token:this.pdfToken, page:String(p) })
       window.open(`${APIBASE}?${qp.toString()}`, '_blank')
     },
-
-    async processImage(){ this.toast('画像処理を開始しました'); this.s_fileDialogOpen=false },
-    async processUnknown(){ this.toast('汎用処理を開始しました'); this.s_fileDialogOpen=false },
-
-    toast(msg){ try{ console.log('[INFO]', msg) }catch(e){} }
   },
 
   beforeUnmount(){

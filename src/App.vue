@@ -896,13 +896,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-card-title class="headline">アップロード</v-card-title>
           <v-card-text>
             <v-text-field v-model="s_gazoName" placeholder="名称" ></v-text-field>
-            <v-select class="scrollable-content"
-                      v-model="s_resolution"
-                      :items="resolutions"
-                      label="画像取込最大解像度"
-                      outlined
-                      v-if="user1"
-            ></v-select>
             <v-btn @click="startTiling">アップロード</v-btn>
           </v-card-text>
           <v-card-actions>
@@ -4652,11 +4645,7 @@ export default {
     },
     startTiling () {
       this.$store.state.transparent = '0'
-
-      console.log(this.$store.state.tiffAndWorldFile)
-
       const isJpg = this.$store.state.tiffAndWorldFile.find(f => f.name.includes('jgw'))
-
       if (isJpg) {
         tileGenerateForUser('jpg','jgw',true, true)
       } else {
