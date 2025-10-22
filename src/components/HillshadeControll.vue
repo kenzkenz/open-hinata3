@@ -320,18 +320,7 @@ export default {
         // encoding: 'terrarium' // 供給元に合わせる（必要なら指定）
       })
     },
-    ensureLayer () {
-      const map = this.map
-      if (!map.getLayer(this.LAYER_ID)) {
-        map.addLayer({
-          id: this.LAYER_ID,
-          type: 'hillshade',
-          source: this.demSourceId,
-          paint: { 'hillshade-exaggeration': this.state.exaggeration }
-        }, this.anchorId)
-      }
-      this.moveLayerIfExists()
-    },
+
     moveLayerIfExists () {
       const map = this.map
       if (!map.getLayer(this.LAYER_ID)) return
@@ -341,19 +330,6 @@ export default {
       const map = this.map
       if (map.getLayer(this.LAYER_ID)) map.removeLayer(this.LAYER_ID)
     },
-    setPaint (name, value) {
-      const map = this.map
-      if (!map.getLayer(this.LAYER_ID)) return
-      try {
-        map.setPaintProperty(this.LAYER_ID, name, value)
-      } catch (e) {
-        // 型が変わった場合は貼り直して再設定
-        this.removeLayerIfExists()
-        this.ensureLayer()
-        try { map.setPaintProperty(this.LAYER_ID, name, value) } catch (e2) {}
-      }
-    },
-
 
     // --- アンカー検出（最上位のラベル=最上位symbol） ---
     detectTopLabelLayerId () {
@@ -374,7 +350,6 @@ export default {
     enable () { this.state.enabled = true; this.syncToMap() },
     disable () { this.state.enabled = false; this.syncToMap() },
     toggle () { this.state.enabled = !this.state.enabled; this.syncToMap() },
-    setOrder (beforeId) { this.$emit('update:insertBeforeLayerId', beforeId) },
 
     // --- ホットキー ---
     onKeydown (e) {

@@ -111,6 +111,7 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.727,
+    mapReady: false,
     pendingFile: null,
     commonDialog: {
         versionMessage: false,

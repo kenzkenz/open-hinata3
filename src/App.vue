@@ -2694,11 +2694,10 @@ export default {
 
     lineMode: false,
 
-    mapReady: false,
-
   }),
   computed: {
     ...mapState([
+      'mapReady',
       'pendingFile',
       'disabledForSokui',
       'isContextMenu',
@@ -8200,7 +8199,7 @@ export default {
       // on load オンロード
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
-        map.once('load', () => { this.mapReady = true })
+        map.once('load', () => { this.$store.state.mapReady = true })
         map.on('load',async () => {
 
           const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
