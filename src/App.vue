@@ -7,7 +7,10 @@ import SakuraEffect from './components/SakuraEffect.vue';
 <template>
   <v-app>
 
-    <VDialogCommon></VDialogCommon>
+    <VDialogCommon
+        @watch-positon="watchPosition"
+    >
+    </VDialogCommon>
 
     <VDialogConfirm
         v-model="s_showConfirm"
@@ -338,8 +341,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </MiniTooltip>
 
       </div>
-
-
+      
       <!-- 確認ダイアログ -->
       <v-dialog v-model="confirmClearLog" width="360">
         <v-card>
@@ -356,20 +358,7 @@ import SakuraEffect from './components/SakuraEffect.vue';
         </v-card>
       </v-dialog>
 
-
-      <!--      <div class="oh-left-bottom-tools" style="position:absolute;left:10px;top:70px;z-index:3;display:flex;gap:8px;">-->
-<!--        <v-btn icon @click="startTrackLog" :disabled="logEnabled">記録開始</v-btn>-->
-<!--        <v-btn icon @click="stopTrackLog"  :disabled="!logEnabled">記録停止</v-btn>-->
-<!--        <v-btn icon @click="exportTrackCsv"  :disabled="!csvRows || csvRows.length<=1">CSV</v-btn>-->
-<!--        <v-btn icon @click="exportTrackSima" :disabled="!csvRows || csvRows.length<=1">SIMA</v-btn>-->
-<!--      </div>-->
-
-
-
-
       <!-- <v-btn @click="test">test</v-btn>-->
-
-
 
       <div v-show="showDrawConfrim" id="floating-buttons">
         <MiniTooltip text="この状態で確定" :offset-x="0" :offset-y="2">
@@ -573,24 +562,6 @@ import SakuraEffect from './components/SakuraEffect.vue';
           <v-btn color="white" text @click="simaClose">閉じる</v-btn>
         </template>
       </v-snackbar>
-
-      <v-dialog persistent v-model="dialogForWatchPosition" max-width="500px">
-        <v-card>
-          <v-card-title>
-            固定or回転
-          </v-card-title>
-          <v-card-text>
-            <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
-            <p style="margin-bottom: 20px; color: darkred" v-if="s_isKuiuchi">「街区基準点」などのポイントをクリックしてください。その地点までの距離を計測します。（ポイント又はポリゴンの頂点をクリックできます。）</p>
-            <v-btn style="margin-left: 0px;" @click="watchPosition('n')">固定</v-btn>
-            <v-btn style="margin-left: 10px;" @click="watchPosition('h')">回転</v-btn>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue-darken-1" text @click="dialogForWatchPosition = false; s_isKuiuchi = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
 
       <v-dialog class="exclude-overlay" v-model="s_dialogForPicture" max-width="400px" :style="{zIndex: dialogForPictureZindex}">
         <v-card>
@@ -2683,7 +2654,6 @@ export default {
 
     // UI 設定
     isHeadingUp: false,
-    dialogForWatchPosition: false,
 
     // 既存UI依存（存在すれば使う）
     currentMarker: null,
@@ -6319,7 +6289,7 @@ export default {
       this.enableGpsLineClick = false;
     },
     clearGpsLine () {
-      const map = this.$store?.state?.map01;
+      const map = this.$store.state.map01;
       if (!map) return;
       const LINE_SRC   = 'oh-gps-line-src';
       const LINE_LAYER = 'oh-gps-line';
@@ -6331,7 +6301,7 @@ export default {
       try { if (map.getSource(LINE_SRC)) map.removeSource(LINE_SRC); } catch(_) {}
     },
     async watchPosition (up) {
-      this.dialogForWatchPosition = false;
+      this.$store.state.commonDialog.watchPositionOpen = false;
       if (up === 'h') {
         this.isHeadingUp = true;  try { this.compass?.turnOn?.(); } catch(_) {}
       } else {
@@ -6357,7 +6327,7 @@ export default {
       this.clearGpsLine();
       this.gpsLineAnchorLngLat = null;
       if (!isClose) {
-        this.dialogForWatchPosition = true;
+        this.$store.state.commonDialog.watchPositionOpen = true;
         if (mode === 'k') {
           this.isTracking = false
           this.s_isKuiuchi = true
@@ -10347,14 +10317,6 @@ export default {
         await setFllter360(map01)
       }
     },
-    // s_zahyokei(value) {
-    //   alert(value)
-    // },
-    // popupDialog(value) {
-    //   if (value) {
-    //     this.zIndex = getNextZIndex() + 2
-    //   }
-    // },
     isDraw(value) {
       this.toggleLDraw()
       if (value) {
@@ -10664,16 +10626,6 @@ html.oh3-embed #map01 {
   top: 300px;
   left: 0;
 }
-/*.draw-fan {*/
-/*  position: absolute;*/
-/*  top: 255px;*/
-/*  left: 0px;*/
-/*}*/
-/*@media (max-width: 720px) {*/
-/*  .draw-fan {*/
-/*    top: 0px;*/
-/*  }*/
-/*}*/
 .printer {
   position: absolute;
   top: 240px;

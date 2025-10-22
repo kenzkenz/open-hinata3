@@ -4,16 +4,12 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
 <template>
   <v-app>
-
     <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
       {{ snackbarText }}
     </v-snackbar>
-
     <Dialog :dialog="s_dialogs[mapName]" :mapName="mapName">
     <div class="menu-div">
-
       <input @change="simaUploadInput" type="file" id="simaFileInput" accept=".sim" style="display: none;">
-
       <v-dialog v-model="dialogForUpload" max-width="500px">
         <v-card>
           <v-card-title>
@@ -314,18 +310,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
         v{{ clientVersion }}
       </p>
 
-<!--      <div v-if="user1">-->
-<!--        <p style="margin-bottom: 20px;">-->
-<!--          <template v-if="initialGroupName && initialGroupName !== ''">-->
-<!--            現在のグループ＝「{{ initialGroupName }}」-->
-<!--            &lt;!&ndash;            {{ s_currentGroupId }}&ndash;&gt;-->
-<!--          </template>-->
-<!--          <template v-else>-->
-<!--            グループに所属していません。-->
-<!--          </template>-->
-<!--        </p>-->
-<!--      </div>-->
-
       <v-btn style="width:100%;margin-bottom: 20px;" @click="reset">リセット（初期時に戻す）</v-btn>
       座標検索で使用する系を選択
       <select style="margin-left: 8px;" class="oh-cool-select" v-model="zahyokeiForSercheAdress">
@@ -333,9 +317,15 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
           {{ item }}
         </option>
       </select>
-      <v-text-field label="住所、座標で検索" v-model="address" @change="sercheAdress" style="margin-top: 10px"></v-text-field>
+      <v-text-field
+          variant="outlined"
+          density="compact"
+          label="住所、座標で検索"
+          v-model="address"
+          @change="sercheAdress"
+          style="margin-top: 10px"
+      ></v-text-field>
 
-      <!--      <v-btn class="tiny-btn" @click="simaLoad">SIMA読み込</v-btn>-->
       <v-btn class="tiny-btn" @click="upLoad">各種アップロード</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="pngDownload">画面保存</v-btn>
       <v-btn style="margin-left: 5px;" class="tiny-btn" @click="s_dialogForOffline = true">オフライン設定</v-btn>
@@ -355,7 +345,7 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 
       <div class="range-div">
         標高を強調します。{{s_terrainLevel}}倍<br>
-        <input style="width: 200px;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
+        <input style="width: 100%;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 
 <!--      <hr style="margin-top: 20px">-->
@@ -376,7 +366,6 @@ import { user as user1 } from "@/authState"; // グローバルの認証情報�
 import LayerManager from '@/components/LayerManager.vue';
 import {jgd2000ZoneToWgs84, mapillaryFilterRiset, simaFileUpload, startUrl} from "@/js/downLoad";
 import { db, auth } from '@/firebase'
-// import {user} from "@/authState";
 import axios from "axios"
 import maplibregl from 'maplibre-gl'
 import {history} from "@/App";
@@ -438,8 +427,6 @@ export default {
     ],
     inviteEmail: '',
     initialGroupName: localStorage.getItem("lastUsedGroupName") || "",
-    // showGroupName: false,
-    // lastSetTime: 0,
     snackbar: false,
     snackbarText: '',
     isGroupOwner: false,
@@ -460,7 +447,6 @@ export default {
     nickname: '',
     email: '',
     password: '',
-    // nickname: '',
     errorMsg: '',
     konjyakuYear: '1890',
     address: '',
@@ -505,18 +491,7 @@ export default {
       const n3 = this.user1 && this.user1.displayName
       // そのあとで優先順位をつけて返す
       return n1 || n2 || n3 || ''
-
     },
-    // displayNameToShow() {
-    //   return this.newName
-    //       || this.nickname
-    //       || (this.user1 && this.user1.displayName)
-    // },
-    // displayNameToShow() {
-    //   return this.newName
-    //       ? this.newName
-    //       : (this.user1 && this.user1.displayName) || ''
-    // },
     s_soloFlg() {
       return this.$store.state.soloFlg;
     },
@@ -552,8 +527,6 @@ export default {
     },
     canDeleteSelectedGroup() {
       const selectedGroup = this.groupOptions.find(g => g.id === this.selectedGroupId2)
-      console.log('selectedGroup:', selectedGroup)
-      console.log('currentUserId:', this.currentUserId)
       return selectedGroup && selectedGroup.ownerUid === this.currentUserId
     },
     s_dialogForGroup: {
@@ -588,9 +561,6 @@ export default {
       set(value) {
         this.$store.state.zahyokei = value
       }
-    },
-    isAdministrator () {
-      return this.s_userId === 'dqyHV8DykbdSVvDXrHc7xweuKT02'
     },
     s_userId () {
       return this.$store.state.userId
@@ -762,17 +732,6 @@ export default {
         this.snackbar = true;
       });
     },
-    // copyInviteLink() {
-    //   const inviteLink = `https://kenzkenz.xsrv.jp/open-hinata3/?group=${this.selectedGroupId}`;
-    //   navigator.clipboard.writeText(inviteLink).then(() => {
-    //     this.snackbarText = "招待リンクをコピーしました";
-    //     this.snackbar = true;
-    //   }).catch(err => {
-    //     console.error("リンクのコピーに失敗しました:", err);
-    //     this.snackbarText = "リンクのコピーに失敗しました";
-    //     this.snackbar = true;
-    //   });
-    // },
     async joinGroupFromDialog() {
       this.joinLoading = true
       try {
@@ -949,15 +908,6 @@ export default {
         alert(`エラーが発生しました: ${error.message}`);
       }
     },
-    kakunin () {
-      const user = firebase.auth().currentUser;
-      if (user) {
-        console.log("✅ ログイン中のユーザー:", user.email);
-      } else {
-        console.log("❌ ログインしていません");
-      }
-    },
-
     async sendInvite() {
       try {
         // ローディング開始
@@ -1182,23 +1132,6 @@ export default {
         document.querySelector('#drag-handle-myroomDialog-map01').innerHTML = '<span style="font-size: large;">マイルーム_' + this.s_currentGroupName + '</span>'
       }
 
-    },
-    async switchGroup(groupId) {
-      const groupDoc = await db.collection('groups').doc(groupId).get()
-      if (groupDoc.exists) {
-        this.$store.commit('setCurrentGroupName', groupDoc.data().name)
-        localStorage.setItem('lastUsedGroupId', groupId)
-      }
-    },
-    toggleLogin() {
-      this.showAuthArea = true
-      this.loginDiv = !this.loginDiv
-      this.signUpDiv = false
-    },
-    toggleSignUp() {
-      this.showAuthArea = true
-      this.signUpDiv = !this.signUpDiv
-      this.loginDiv = false
     },
     async createGroup() {
       try {
@@ -1703,7 +1636,8 @@ export default {
 /* スマホ用のスタイル */
 @media screen and (max-width: 500px) {
   .menu-div {
-    padding: 20px;
+    margin: 0px;
+    padding: 10px 30px 30px 30px;
     width: 100%;
   }
 }

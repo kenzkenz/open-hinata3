@@ -33,6 +33,27 @@
     </v-card>
   </v-dialog>
 
+
+  <v-dialog persistent v-model="s_watchPositionOpen" max-width="500px">
+    <v-card>
+      <v-card-title>
+        固定or回転
+      </v-card-title>
+      <v-card-text>
+        <p style="margin-bottom: 20px;">固定にすると北が上に固定されます。回転にするとスマホ時にスマホの向きに連動して地図が回転します。</p>
+        <p style="margin-bottom: 20px; color: darkred" v-if="s_isKuiuchi">「街区基準点」などのポイントをクリックしてください。その地点までの距離を計測します。（ポイント又はポリゴンの頂点をクリックできます。）</p>
+        <v-btn style="margin-left: 0px;" @click="$emit('watch-positon','n')">固定</v-btn>
+        <v-btn style="margin-left: 10px;" @click="$emit('watch-positon','h')">回転</v-btn>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue-darken-1" text @click="s_watchPositionOpen = false; s_isKuiuchi = false">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+
+
   <!-- バージョン通知 -->
   <v-dialog v-model="s_versionMessage" max-width="500px">
     <v-card>
@@ -206,6 +227,10 @@ export default {
   name: 'VDialogCommon',
 
   computed: {
+    s_isKuiuchi: {
+      get(){ return this.$store.state.isKuiuchi },
+      set(v){ this.$store.state.isKuiuchi = v }
+    },
     s_transparent: {
       get(){ return this.$store.state.transparent },
       set(v){ this.$store.state.transparent = v }
@@ -217,6 +242,10 @@ export default {
     s_gazoName: {
       get(){ return this.$store.state.gazoName },
       set(v){ this.$store.state.gazoName = v }
+    },
+    s_watchPositionOpen: {
+      get(){ return this.$store.state.commonDialog.watchPositionOpen },
+      set(v){ this.$store.state.commonDialog.watchPositionOpen = v }
     },
     s_geoReferenceOpen: {
       get(){ return this.$store.state.commonDialog.geoReferenceOpen },
