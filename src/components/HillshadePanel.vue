@@ -120,6 +120,8 @@
 </template>
 
 <script>
+import {mapState} from "vuex";
+
 export default {
   name: 'HillshadePanel',
   props: {
@@ -128,6 +130,7 @@ export default {
   },
   data () {
     return {
+      syncingFromStore: false, // 無限ループ防止フラグ
       dialog: false,
       methodItems: [
         { title: 'Multidirectional', value: 'multidirectional' },
@@ -139,6 +142,9 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'hillshadEnabled',
+    ]),
     // 実体
     hs () { return this.controller || null },
     hsReady () { return !!(this.hs && this.hs.state) },
@@ -160,9 +166,35 @@ export default {
 
     // 双方向バインド：hs.state を直接読む/書く
     enabled: {
-      get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
-      set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }
+      get () {
+        if (this.hsReady) return !!this.hs.state.enabled
+        // hs 未準備時は store → defaults
+        if (typeof this.$store?.state?.hillshadEnabled === 'boolean') {
+          return !!this.$store.state.hillshadEnabled
+        }
+        return this.defaults.enabled
+      },
+      set (v) {
+        const val = !!v
+        // 本体に反映
+        if (this.hsReady) {
+          if (this.hs.state.enabled !== val) {
+            this.hs.state.enabled = val
+            this.sync(true)
+          }
+        }
+        // store に反映（store由来の変更中はコミットしない）
+        if (this.$store && !this.syncingFromStore) {
+          this.$store.state.hillshadEnabled = val
+        }
+      }
     },
+
+
+    // enabled: {
+    //   get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
+    //   set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }
+    // },
     exaggeration: {
       get () { return this.hsReady ? Number(this.hs.state.exaggeration || this.defaults.exaggeration) : this.defaults.exaggeration },
       set (v) { if (!this.hsReady) return; this.hs.state.exaggeration = Number(v); this.sync() }
@@ -195,10 +227,25 @@ export default {
     // 実体が準備できたら保存済み設定をロード
     hsReady: {
       immediate: true,
-      handler (ready) { if (ready) this.loadSettings() }
+      handler (ready) {
+        if (ready) this.loadSettings()
+      }
     },
-    dialog (v) { if (v) this.saveSettingsDebounced() }
-  },
+    dialog (v) { if (v) this.saveSettingsDebounced() },
+
+    // 1) store → enabled（→ hs.state.enabled）へ反映
+    hillshadEnabled: {
+      immediate: true,
+      handler (nv) {
+        if (typeof nv !== 'boolean') return
+        if (this.enabled !== nv) {
+          this.syncingFromStore = true
+          this.enabled = nv // setter 経由で hs / defaults も更新
+          this.$nextTick(() => { this.syncingFromStore = false })
+        }
+      }
+    },
+},
   methods: {
     /* ===== Map反映 & 保存 ===== */
     sync (immediate = false) {
@@ -241,6 +288,7 @@ export default {
         mdShadows:    Array.isArray(o.mdShadows)    ? o.mdShadows.slice()    : this.defaults.mdShadows.slice()
       })
       this.sync(immediate)
+      this.$store.state.hillshadEnabled = o.enabled
     },
 
     /* ===== ローカルストレージ ===== */

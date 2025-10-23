@@ -29,20 +29,32 @@
           </template>
         </draggable>
         <div style="color: white;font-size: larger;text-align: center">
-          下のリストから選んでください。
+          下のリストから選んでください。<br>
         </div>
       </div>
 
       <div :id="'center-div-' + mapName" class="center-div"></div>
 
       <div :id="'second-div-' + mapName" :style="s_secondDivStyle" class="second-div scrollable-content">
-        <v-text-field
-            label="地図抽出"
-            v-model="searchText"
-            style="margin-top: 10px; margin-bottom: -10px;"
-            variant="outlined"
-            density="compact"
-        ></v-text-field>
+        <div class="d-flex align-center ga-2">
+          <v-text-field
+              label="地図抽出"
+              v-model="searchText"
+              style="width: 120px; margin-top: 10px; margin-bottom: -10px;"
+              variant="outlined"
+              density="compact"
+          />
+          <v-btn
+              size="small"
+              :color="s_hillshadEnabled ? 'primary' : undefined"
+              :variant="s_hillshadEnabled ? 'flat' : 'outlined'"
+              :aria-pressed="s_hillshadEnabled ? 'true' : 'false'"
+              @click="s_hillshadEnabled = !s_hillshadEnabled"
+          >
+            陰影
+          </v-btn>
+        </div>
+
         <Tree
             :nodes="layers"
             :search-text="searchText"
@@ -150,15 +162,15 @@ export default {
   }),
   computed: {
     ...mapState([
-
+      'hillshadEnabled',
     ]),
-    filteredSelectedLayers() {
-      return this.s_selectedLayers.map01.map(layer => ({
-        id: layer.id, // 監視対象のプロパティ
-        label: layer.label, // 監視対象のプロパティ
-        opacity: layer.opacity,
-        visibility: layer.visibility
-      }));
+    s_hillshadEnabled: {
+      get() {
+        return this.$store.state.hillshadEnabled
+      },
+      set(value) {
+        this.$store.state.hillshadEnabled = value
+      }
     },
     s_watchFlg () {
       return this.$store.state.watchFlg

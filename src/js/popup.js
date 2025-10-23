@@ -370,6 +370,8 @@ export function popup(e, map, mapName, mapFlg, isNoDrawer) {
             '\n②feature', feature,
             '\n③プロパティ', props
         );
+        const styleLayers = map.getStyle()?.layers ?? [];
+        console.log(styleLayers)
         if (store.state.isKuiuchi) return;
         console.log('⭐layerId️//' + layerId)
         /**
