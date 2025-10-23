@@ -106,27 +106,25 @@ const messageDialogModule = {
         }
     }
 }
-
+const defaults = () => ({
+    enabled: true,
+    maps: { map01: true, map02: true },
+    params: {
+        method: 'multidirectional',
+        exaggeration: 0.6,
+        direction: 315,
+        altitude: 35,
+        mdDirections: [270,315,0,45],
+        mdAltitudes:  [30,30,30,30],
+        mdHighlights: ['#fff4cc','#ffeaa1','#eaffd0','#dff8ff'],
+        mdShadows:    ['#3b3251','#2e386f','#2a2a6e','#3a2d58']
+    }
+})
 export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.729,
-    // hsEnabled: true,
-    // hsEnabledMaps: { map01: true, map02: true },
-      hillshade: {
-          enabled: true,                     // 全体ON/OFF
-          maps: { map01: true, map02: true },// 個別ON/OFF
-          params: {                          // 詳細設定（従来のstate全部）
-              method: 'multidirectional',
-              exaggeration: 0.6,
-              direction: 315,
-              altitude: 35,
-              mdDirections: [270,315,0,45],
-              mdAltitudes:  [30,30,30,30],
-              mdHighlights: ['#fff4cc','#ffeaa1','#eaffd0','#dff8ff'],
-              mdShadows:    ['#3b3251','#2e386f','#2a2a6e','#3a2d58']
-          }
-      },
+    hillshade: defaults(),
     mapReady: false,
     pendingFile: null,
     commonDialog: {
@@ -741,11 +739,24 @@ export default createStore({
       SET_HS_FOR (state, { mapKey, enabled }) {
           state.hillshade.maps[mapKey] = !!enabled
       },
-      // SET_HS_ENABLED (state, v) { state.hsEnabled = !!v },
-      // SET_HS_FOR (state, { mapKey, enabled }) {
-      //     if (!state.hsEnabledMaps) state.hsEnabledMaps = { map01: true, map02: true }
-      //     state.hsEnabledMaps[mapKey] = !!enabled
-      // },
+      HS_SET_PARAM  (state, {key, value}) { state.hillshade.params[key] = value },
+      HS_MD_SET_AT  (state, {kind, index, value}) {
+          const arr = state.hillshade.params[kind]; if (!Array.isArray(arr)) return
+          arr.splice(index, 1, value)
+      },
+      HS_MD_ADD (state) {
+          const p = state.hillshade.params
+          p.mdDirections.push(45); p.mdAltitudes.push(25)
+          p.mdHighlights.push('#eef8ff'); p.mdShadows.push('#2a2a6e')
+      },
+      HS_MD_REMOVE (state, index) {
+          const p = state.hillshade.params
+          const n = Math.min(p.mdDirections.length, p.mdAltitudes.length, p.mdHighlights.length, p.mdShadows.length)
+          if (n <= 1) return
+          p.mdDirections.splice(index,1); p.mdAltitudes.splice(index,1)
+          p.mdHighlights.splice(index,1); p.mdShadows.splice(index,1)
+      },
+      HS_RESET (state) { state.hillshade = defaults() },
     setLevel(s,v){ s.level = Number(v)||0; },
     setMode(s,m){ s.mode = m==='linear' ? 'linear' : 'step'; },
     setPalette(s,p){ s.palette = p; },
