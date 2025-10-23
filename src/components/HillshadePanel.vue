@@ -18,9 +18,7 @@
       <v-slider
           :model-value="exaggeration"
           :min="0" :max="1" :step="0.01"
-          hide-details
-          density="compact"
-          class="hs-slider"
+          hide-details density="compact" class="hs-slider"
           :disabled="!hsReady || !enabled"
           @update:modelValue="v => (exaggeration = v)"
       />
@@ -33,21 +31,18 @@
     </div>
   </div>
 
-  <!-- 詳細ダイアログ（適用なし・即時反映） -->
+  <!-- 詳細ダイアログ（即時反映） -->
   <v-dialog v-model="dialog" max-width="720">
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
         <span>陰影の詳細設定</span>
         <div class="d-flex align-center" style="gap:8px">
           <v-btn
-              variant="text"
-              color="secondary"
+              variant="text" color="secondary"
               :disabled="!hsReady"
               @click="resetToDefaults"
               title="保存済み設定をクリアして初期値に戻します"
-          >
-            デフォルトに戻す
-          </v-btn>
+          >デフォルトに戻す</v-btn>
           <v-btn icon variant="text" @click="dialog=false"><v-icon>mdi-close</v-icon></v-btn>
         </div>
       </v-card-title>
@@ -63,10 +58,7 @@
         <v-select
             :model-value="method"
             :items="methodItems"
-            label="方式"
-            density="comfortable"
-            variant="outlined"
-            class="mb-3"
+            label="方式" density="comfortable" variant="outlined" class="mb-3"
             :disabled="!hsReady"
             @update:modelValue="v => (method = v)"
         />
@@ -74,8 +66,7 @@
         <v-slider
             :model-value="exaggeration"
             :min="0" :max="1" :step="0.01"
-            label="強調" show-ticks="always" thumb-label
-            class="mb-4"
+            label="強調" show-ticks="always" thumb-label class="mb-4"
             :disabled="!hsReady"
             @update:modelValue="v => (exaggeration = v)"
         />
@@ -87,15 +78,15 @@
                           label="方位" density="compact" variant="outlined" style="max-width:90px"
                           :disabled="!hsReady"
                           @update:modelValue="v => setMd('dir', i-1, v)"/>
-            <v-text-field :model-value="mdAltitudes[i-1]"  type="number" :min="0" :max="90"
+            <v-text-field :model-value="mdAltitudes[i-1]" type="number" :min="0" :max="90"
                           label="高度" density="compact" variant="outlined" style="max-width:90px"
                           :disabled="!hsReady"
                           @update:modelValue="v => setMd('alt', i-1, v)"/>
-            <v-text-field :model-value="mdHighlights[i-1]" label="HL" density="compact" variant="outlined"
-                          style="max-width:110px" :disabled="!hsReady"
+            <v-text-field :model-value="mdHighlights[i-1]" label="HL"
+                          density="compact" variant="outlined" style="max-width:110px" :disabled="!hsReady"
                           @update:modelValue="v => setMd('hl', i-1, v)"/>
-            <v-text-field :model-value="mdShadows[i-1]"   label="SH" density="compact" variant="outlined"
-                          style="max-width:110px" :disabled="!hsReady"
+            <v-text-field :model-value="mdShadows[i-1]" label="SH"
+                          density="compact" variant="outlined" style="max-width:110px" :disabled="!hsReady"
                           @update:modelValue="v => setMd('sh', i-1, v)"/>
             <v-btn icon size="28" variant="text" :disabled="!hsReady" @click="removeLight(i-1)">
               <v-icon>mdi-delete-outline</v-icon>
@@ -109,7 +100,7 @@
             <v-text-field :model-value="direction" type="number" :min="0" :max="359"
                           label="方位(°)" density="comfortable" variant="outlined" :disabled="!hsReady"
                           @update:modelValue="v => (direction = v)"/>
-            <v-text-field :model-value="altitude"  type="number" :min="0" :max="90"
+            <v-text-field :model-value="altitude" type="number" :min="0" :max="90"
                           label="高度(°)" density="comfortable" variant="outlined" :disabled="!hsReady"
                           @update:modelValue="v => (altitude = v)"/>
           </div>
@@ -120,241 +111,102 @@
 </template>
 
 <script>
-import {mapState} from "vuex";
-
 export default {
   name: 'HillshadePanel',
   props: {
-    map: { type: Object, required: true },          // 参照用
+    map: { type: Object, required: true },          // 参照のみ
     controller: { type: Object, required: true }    // 親の <HillshadeControl ref="hs">
   },
   data () {
     return {
-      syncingFromStore: false, // 無限ループ防止フラグ
       dialog: false,
-      dialog2: false,
       methodItems: [
         { title: 'Multidirectional', value: 'multidirectional' },
         { title: 'Combined', value: 'combined' }
-      ],
-      syncTimer: null,
-      saveTimer: null,
-      storageKey: 'oh3_hillshade_settings_v1'
+      ]
     }
   },
   computed: {
-    ...mapState([
-      'hillshadEnabled',
-    ]),
-    // 実体
-    hs () { return this.controller || null },
-    hsReady () { return !!(this.hs && this.hs.state) },
+    // store.hillshade に一本化（enabled, maps, params…）
+    hs () { return this.$store.state.hillshade },
+    hsReady () { return !!this.controller },
 
-    // デフォルト値（有効 = true）
-    defaults () {
-      return {
-        enabled: true,
-        method: 'multidirectional',
-        exaggeration: 0.6,
-        direction: 315,
-        altitude: 35,
-        mdDirections: [270,315,0,45],
-        mdAltitudes:  [30,30,30,30],
-        mdHighlights: ['#fff4cc','#ffeaa1','#eaffd0','#dff8ff'],
-        mdShadows:    ['#3b3251','#2e386f','#2a2a6e','#3a2d58']
+    // 全体ON/OFF
+    enabled: {
+      get() {
+        return this.$store.state.hillshade.enabled
+      },
+      set(value) {
+        this.$store.commit('SET_HS_ENABLED', value)
       }
     },
-
-    // 双方向バインド：hs.state を直接読む/書く
-    // enabled: {
-    //   get () {
-    //     if (this.hsReady) return !!this.hs.state.enabled
-    //     // hs 未準備時は store → defaults
-    //     if (typeof this.$store?.state?.hillshadEnabled === 'boolean') {
-    //       return !!this.$store.state.hillshadEnabled
-    //     }
-    //     return this.defaults.enabled
-    //   },
-    //   set (v) {
-    //     const val = !!v
-    //     // 本体に反映
-    //     if (this.hsReady) {
-    //       if (this.hs.state.enabled !== val) {
-    //         this.hs.state.enabled = val
-    //         this.sync(true)
-    //       }
-    //     }
-    //     // store に反映（store由来の変更中はコミットしない）
-    //     if (this.$store && !this.syncingFromStore) {
-    //       this.$store.state.hillshadEnabled = val
-    //     }
-    //     this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
-    //   }
-    // },
-    enabled: {
-      get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
-      set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }
+    
+    // 詳細パラメータ（双方向）
+    method: {
+      get () { return this.hs.params.method },
+      set (v) {
+        this.$store.commit('HS_SET_PARAM', { key: 'method', value: v })
+        this.controller?.syncAllMaps?.()
+      }
     },
     exaggeration: {
-      get () { return this.hsReady ? Number(this.hs.state.exaggeration || this.defaults.exaggeration) : this.defaults.exaggeration },
-      set (v) { if (!this.hsReady) return; this.hs.state.exaggeration = Number(v); this.sync() }
-    },
-    method: {
-      get () { return this.hsReady ? this.hs.state.method : this.defaults.method },
-      set (v) { if (!this.hsReady) return; this.hs.state.method = v; this.sync(true) }
+      get () { return this.hs.params.exaggeration },
+      set (v) {
+        this.$store.commit('HS_SET_PARAM', { key: 'exaggeration', value: Number(v) })
+        this.controller?.syncAllMaps?.()
+      }
     },
     direction: {
-      get () { return this.hsReady ? Number(this.hs.state.direction ?? this.defaults.direction) : this.defaults.direction },
-      set (v) { if (!this.hsReady) return; this.hs.state.direction = Number(v); this.sync() }
+      get () { return this.hs.params.direction },
+      set (v) {
+        this.$store.commit('HS_SET_PARAM', { key: 'direction', value: Number(v) })
+        this.controller?.syncAllMaps?.()
+      }
     },
     altitude: {
-      get () { return this.hsReady ? Number(this.hs.state.altitude ?? this.defaults.altitude) : this.defaults.altitude },
-      set (v) { if (!this.hsReady) return; this.hs.state.altitude = Number(v); this.sync() }
+      get () { return this.hs.params.altitude },
+      set (v) {
+        this.$store.commit('HS_SET_PARAM', { key: 'altitude', value: Number(v) })
+        this.controller?.syncAllMaps?.()
+      }
     },
 
-    mdDirections () { return this.hsReady ? this.hs.state.mdDirections : this.defaults.mdDirections },
-    mdAltitudes  () { return this.hsReady ? this.hs.state.mdAltitudes  : this.defaults.mdAltitudes },
-    mdHighlights () { return this.hsReady ? this.hs.state.mdHighlights : this.defaults.mdHighlights },
-    mdShadows    () { return this.hsReady ? this.hs.state.mdShadows    : this.defaults.mdShadows },
+    // 配列系
+    mdDirections () { return this.hs.params.mdDirections },
+    mdAltitudes  () { return this.hs.params.mdAltitudes  },
+    mdHighlights () { return this.hs.params.mdHighlights },
+    mdShadows    () { return this.hs.params.mdShadows    },
 
     mdCount () {
-      if (!this.hsReady) return 0
-      const s = this.hs.state
-      return Math.min(s.mdDirections.length, s.mdAltitudes.length, s.mdHighlights.length, s.mdShadows.length)
+      const p = this.hs.params
+      return Math.min(p.mdDirections.length, p.mdAltitudes.length, p.mdHighlights.length, p.mdShadows.length)
     }
   },
-  watch: {
-    // 実体が準備できたら保存済み設定をロード
-    hsReady: {
-      immediate: true,
-      handler (ready) {
-        if (ready) this.loadSettings()
-      }
-    },
-    dialog (v) { if (v) this.saveSettingsDebounced() },
-
-    // 1) store → enabled（→ hs.state.enabled）へ反映
-    hillshadEnabled: {
-      immediate: true,
-      handler (nv) {
-        if (typeof nv !== 'boolean') return
-        if (this.enabled !== nv) {
-          this.syncingFromStore = true
-          this.enabled = nv // setter 経由で hs / defaults も更新
-          this.$nextTick(() => { this.syncingFromStore = false })
-        }
-      }
-    },
-},
   methods: {
-    /* ===== Map反映 & 保存 ===== */
-    sync (immediate = false) {
-      if (!this.hsReady) return
-      if (this.syncTimer) { clearTimeout(this.syncTimer); this.syncTimer = null }
-      if (immediate) { this.hs.syncToMap() } else {
-        this.syncTimer = setTimeout(() => { this.hs && this.hs.syncToMap() }, 60)
-      }
-      if (immediate) this.saveSettingsImmediate(); else this.saveSettingsDebounced()
-    },
-
-    getCurrentSettings () {
-      if (!this.hsReady) return this.defaults
-      const s = this.hs.state
-      return {
-        enabled: !!s.enabled,
-        method: s.method,
-        exaggeration: Number(s.exaggeration),
-        direction: Number(s.direction),
-        altitude: Number(s.altitude),
-        mdDirections: s.mdDirections.slice(),
-        mdAltitudes:  s.mdAltitudes.slice(),
-        mdHighlights: s.mdHighlights.slice(),
-        mdShadows:    s.mdShadows.slice()
-      }
-    },
-
-    applySettings (obj, immediate = true) {
-      if (!this.hsReady) return
-      const o = Object.assign({}, this.defaults, obj || {})
-      Object.assign(this.hs.state, {
-        enabled: !!o.enabled,
-        method: o.method,
-        exaggeration: Number(o.exaggeration),
-        direction: Number(o.direction),
-        altitude: Number(o.altitude),
-        mdDirections: Array.isArray(o.mdDirections) ? o.mdDirections.slice() : this.defaults.mdDirections.slice(),
-        mdAltitudes:  Array.isArray(o.mdAltitudes)  ? o.mdAltitudes.slice()  : this.defaults.mdAltitudes.slice(),
-        mdHighlights: Array.isArray(o.mdHighlights) ? o.mdHighlights.slice() : this.defaults.mdHighlights.slice(),
-        mdShadows:    Array.isArray(o.mdShadows)    ? o.mdShadows.slice()    : this.defaults.mdShadows.slice()
-      })
-      this.sync(immediate)
-      this.$store.state.hillshadEnabled = o.enabled
-    },
-
-    /* ===== ローカルストレージ ===== */
-    loadSettings () {
-      try {
-        if (typeof window === 'undefined') return
-        const raw = window.localStorage.getItem(this.storageKey)
-        if (!raw) { this.applySettings(this.defaults, true); return } // 初回はデフォルトON
-        const obj = JSON.parse(raw)
-        this.applySettings(obj, true)
-      } catch (e) {
-        this.applySettings(this.defaults, true)
-      }
-    },
-    saveSettingsImmediate () {
-      try {
-        if (typeof window === 'undefined') return
-        const obj = this.getCurrentSettings()
-        window.localStorage.setItem(this.storageKey, JSON.stringify(obj))
-      } catch (e) {}
-    },
-    saveSettingsDebounced () {
-      if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null }
-      this.saveTimer = setTimeout(() => this.saveSettingsImmediate(), 120)
-    },
-    clearSettings () {
-      try {
-        if (typeof window === 'undefined') return
-        window.localStorage.removeItem(this.storageKey)
-      } catch (e) {}
-    },
-
-    /* ===== UI操作 ===== */
-    resetToDefaults () {
-      this.clearSettings()
-      this.applySettings(this.defaults, true)
-    },
-
+    // kind は 'dir'|'alt'|'hl'|'sh' を想定
     setMd (kind, i, v) {
-      if (!this.hsReady) return
-      const s = this.hs.state
-      const val = (kind === 'dir' || kind === 'alt') ? Number(v) : String(v)
-      if (kind === 'dir') s.mdDirections.splice(i, 1, val)
-      else if (kind === 'alt') s.mdAltitudes.splice(i, 1, val)
-      else if (kind === 'hl') s.mdHighlights.splice(i, 1, val)
-      else if (kind === 'sh') s.mdShadows.splice(i, 1, val)
-      this.sync(true)
+      const keyMap = {
+        dir: 'mdDirections',
+        alt: 'mdAltitudes',
+        hl:  'mdHighlights',
+        sh:  'mdShadows'
+      }
+      const field = keyMap[kind]
+      const val = (field === 'mdDirections' || field === 'mdAltitudes') ? Number(v) : String(v)
+      this.$store.commit('HS_MD_SET_AT', { kind: field, index: i, value: val })
+      this.controller?.syncAllMaps?.()
     },
     addLight () {
-      if (!this.hsReady) return
-      const s = this.hs.state
-      s.mdDirections.push(45)
-      s.mdAltitudes.push(25)
-      s.mdHighlights.push('#eef8ff')
-      s.mdShadows.push('#2a2a6e')
-      this.sync(true)
+      this.$store.commit('HS_MD_ADD')
+      this.controller?.syncAllMaps?.()
     },
     removeLight (i) {
-      if (!this.hsReady) return
-      const s = this.hs.state
-      if (Math.min(s.mdDirections.length, s.mdAltitudes.length, s.mdHighlights.length, s.mdShadows.length) <= 1) return
-      s.mdDirections.splice(i,1)
-      s.mdAltitudes.splice(i,1)
-      s.mdHighlights.splice(i,1)
-      s.mdShadows.splice(i,1)
-      this.sync(true)
+      this.$store.commit('HS_MD_REMOVE', i)
+      this.controller?.syncAllMaps?.()
+    },
+    resetToDefaults () {
+      this.$store.commit('HS_RESET')
+      this.controller?.syncAllMaps?.()
     }
   }
 }
@@ -388,3 +240,4 @@ export default {
 .hs-slider :deep(.v-slider-track__background){ height: 6px; }
 .hs-slider :deep(.v-slider-thumb){ width: 18px; height: 18px; }
 </style>
+

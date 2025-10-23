@@ -208,6 +208,7 @@ export default {
     hsEnabledMapsToggle(){
       const bool = !this.$store.state.hillshade.maps[this.mapName]
       this.$store.commit('SET_HS_FOR', { mapKey: this.mapName, enabled: bool })
+
     },
     onStart () {
       this.isDragging = true

@@ -735,19 +735,28 @@ export default createStore({
   getters: {
   },
   mutations: {
-      SET_HS_ENABLED (state, v) { state.hillshade.enabled = !!v },
+      SET_HS_ENABLED (state, v) {
+          state.hillshade.enabled = !!v
+          state.updatePermalinkFire = !state.updatePermalinkFire
+      },
       SET_HS_FOR (state, { mapKey, enabled }) {
           state.hillshade.maps[mapKey] = !!enabled
+          state.updatePermalinkFire = !state.updatePermalinkFire
       },
-      HS_SET_PARAM  (state, {key, value}) { state.hillshade.params[key] = value },
+      HS_SET_PARAM  (state, {key, value}) {
+          state.hillshade.params[key] = value
+          state.updatePermalinkFire = !state.updatePermalinkFire
+      },
       HS_MD_SET_AT  (state, {kind, index, value}) {
           const arr = state.hillshade.params[kind]; if (!Array.isArray(arr)) return
           arr.splice(index, 1, value)
+          state.updatePermalinkFire = !state.updatePermalinkFire
       },
       HS_MD_ADD (state) {
           const p = state.hillshade.params
           p.mdDirections.push(45); p.mdAltitudes.push(25)
           p.mdHighlights.push('#eef8ff'); p.mdShadows.push('#2a2a6e')
+          state.updatePermalinkFire = !state.updatePermalinkFire
       },
       HS_MD_REMOVE (state, index) {
           const p = state.hillshade.params
@@ -755,8 +764,12 @@ export default createStore({
           if (n <= 1) return
           p.mdDirections.splice(index,1); p.mdAltitudes.splice(index,1)
           p.mdHighlights.splice(index,1); p.mdShadows.splice(index,1)
+          state.updatePermalinkFire = !state.updatePermalinkFire
       },
-      HS_RESET (state) { state.hillshade = defaults() },
+      HS_RESET (state) {
+          state.hillshade = defaults()
+          state.updatePermalinkFire = !state.updatePermalinkFire
+      },
     setLevel(s,v){ s.level = Number(v)||0; },
     setMode(s,m){ s.mode = m==='linear' ? 'linear' : 'step'; },
     setPalette(s,p){ s.palette = p; },

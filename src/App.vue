@@ -6930,7 +6930,7 @@ export default {
       const geojsinId = this.$store.state.geojsonId
       const isFromIframe = this.$store.state.isFromIframe
       const isDrawFit = this.$store.state.isDrawFit
-      const hillshadEnabled = this.$store.state.hillshadEnabled
+      const hillshade = this.$store.state.hillshade
       // alert(isDrawFit)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
@@ -6941,7 +6941,7 @@ export default {
       &clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}
       &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}
       &geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}&isdrawfit=${JSON.stringify(isDrawFit)}
-      &hillshadenabled=${JSON.stringify(hillshadEnabled)}`
+      &hillshade=${JSON.stringify(hillshade)}`
       this.createShortUrl()
       this.zoom = zoom
 
@@ -7036,7 +7036,7 @@ export default {
       const geojsonId = params.get('geojsinid')
       const isFromIframe = params.get('isfromiframe')
       const isDrawFit = params.get('isdrawfit')
-      const hillshadEnabled = params.get('hillshadenabled')
+      const hillshade = params.get('hillshade')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
@@ -7045,7 +7045,7 @@ export default {
         lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,
         chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,
         drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,
-        simaTextForUser,geojsonId,isFromIframe,isDrawFit,hillshadEnabled
+        simaTextForUser,geojsonId,isFromIframe,isDrawFit,hillshade
       }// 以前のリンクをいかすためpitchを入れている。
     },
     async init() {
@@ -8351,9 +8351,9 @@ export default {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
 
-          if (params.hillshadEnabled) {
-            this.$store.state.hillshadEnabled = JSON.parse(params.hillshadEnabled)
-            // alert(this.$store.state.hillshadEnabled)
+          if (params.hillshade) {
+            this.$store.state.hillshade = JSON.parse(params.hillshade)
+            console.log(this.$store.state.hillshade)
           }
 
           if (params.isDrawFit) {
