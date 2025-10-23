@@ -187,10 +187,9 @@ export default {
         if (this.$store && !this.syncingFromStore) {
           this.$store.state.hillshadEnabled = val
         }
+        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
       }
     },
-
-
     // enabled: {
     //   get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
     //   set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }

@@ -6930,6 +6930,7 @@ export default {
       const geojsinId = this.$store.state.geojsonId
       const isFromIframe = this.$store.state.isFromIframe
       const isDrawFit = this.$store.state.isDrawFit
+      const hillshadEnabled = this.$store.state.hillshadEnabled
       // alert(isDrawFit)
       // パーマリンクの生成
       this.param = `?lng=${lng}&lat=${lat}&zoom=${zoom}&split=${split}&pitch01=
@@ -6939,7 +6940,8 @@ export default {
       &geojsontext=${geojsonText}&dxftext=${dxfText}&gpxtext=${gpxText}&drawgeojsontext=${drawGeojsonText}
       &clickgeojsontext=${clickGeojsonText}&clickCirclegeojsontext=${clickCircleGeojsonText}
       &vector=${JSON.stringify(vector)}&iswindow=${JSON.stringify(isWindow)}&simatextforuser=${simaTextForUser}
-      &geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}&isdrawfit=${JSON.stringify(isDrawFit)}`
+      &geojsinid=${geojsinId}&isfromiframe=${JSON.stringify(isFromIframe)}&isdrawfit=${JSON.stringify(isDrawFit)}
+      &hillshadenabled=${JSON.stringify(hillshadEnabled)}`
       this.createShortUrl()
       this.zoom = zoom
 
@@ -7034,6 +7036,7 @@ export default {
       const geojsonId = params.get('geojsinid')
       const isFromIframe = params.get('isfromiframe')
       const isDrawFit = params.get('isdrawfit')
+      const hillshadEnabled = params.get('hillshadenabled')
       this.pitch.map01 = pitch01
       this.pitch.map02 = pitch02
       this.bearing = bearing
@@ -7042,7 +7045,7 @@ export default {
         lng,lat,zoom,split,pitch,pitch01,pitch02,bearing,terrainLevel,slj,
         chibans,simas,simaText,image,extLayer,kmlText,geojsonText,dxfText,gpxText,
         drawGeojsonText,clickGeojsonText,clickCircleGeojsonText,vector,isWindow,
-        simaTextForUser,geojsonId,isFromIframe,isDrawFit
+        simaTextForUser,geojsonId,isFromIframe,isDrawFit,hillshadEnabled
       }// 以前のリンクをいかすためpitchを入れている。
     },
     async init() {
@@ -8335,18 +8338,6 @@ export default {
           }
           const dragIcon = await map.loadImage('./img/drag.png')
           map.addImage('drag-icon', dragIcon.data);
-          // const black = await map.loadImage('./img/arrow_black.png');
-          // const red = await map.loadImage('./img/arrow_red.png');
-          // const blue = await map.loadImage('./img/arrow_blue.png');
-          // const green = await map.loadImage('./img/arrow_green.png');
-          // const orange = await map.loadImage('./img/arrow_orange.png');
-          // map.addImage('arrow_black', black.data);
-          // map.addImage('arrow_red', red.data);
-          // map.addImage('arrow_blue', blue.data);
-          // map.addImage('arrow_green', green.data);
-          // map.addImage('arrow_orange', orange.data);
-
-          // console.log(params)
 
 
           if (params.map01Pitch) {
@@ -8363,9 +8354,13 @@ export default {
             this.$store.state.simaTextForUser = params.simaTextForUser
           }
 
+          if (params.hillshadEnabled) {
+            this.$store.state.hillshadEnabled = JSON.parse(params.hillshadEnabled)
+            // alert(this.$store.state.hillshadEnabled)
+          }
+
           if (params.isDrawFit) {
             this.$store.state.isDrawFit = JSON.parse(params.isDrawFit)
-            // alert(this.$store.state.isDrawFit)
           }
           if (params.isFromIframe) {
             this.$store.state.isFromIframe = JSON.parse(params.isFromIframe)
