@@ -9,6 +9,15 @@
         :auto-anchor="true"
         style="display:none"
     />
+    <HillshadeControl
+        v-if="mapReady"
+        ref="hs"
+        :map="map02"
+        dem-source-id="terrain"
+        :start-enabled="true"
+        :auto-anchor="true"
+        style="display:none"
+    />
 
     <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
       {{ snackbarText }}

@@ -6777,7 +6777,7 @@ export default {
       const c = document.getElementById('map02')
       if (!c) return
 
-      // 1) まず実サイズに戻す（あなたの既存バインドを優先）
+      // 1) まず実サイズに戻す
       c.style.width = ''
       c.style.height = ''
       c.style.visibility = ''         // ← layoutに乗る
@@ -8218,9 +8218,6 @@ export default {
             // （2本指 上下でのピッチも止めたいなら）
             // if (map.touchPitch && map.touchPitch.disable) map.touchPitch.disable();
           }
-
-
-
 
           // クリック位置に円 → 内部にある layerA, layerB の地物を拾い、idProperty でハイライト
           const refreshRadiusHighlightObj = {
@@ -10075,36 +10072,21 @@ export default {
     };
     this.onMapClickForGpsLine = this.onMapClickForGpsLine ?? null;
 
-// Turf / snap の安全な参照
+    // Turf / snap の安全な参照
     this._turf = this._turf ?? (typeof turf !== 'undefined' ? turf : (window && window.turf));
     this._snapIfNeeded = this._snapIfNeeded ?? (typeof snapIfNeeded === 'function' ? snapIfNeeded : (window && window.snapIfNeeded));
 
-// 距離の表示フォーマット
+    // 距離の表示フォーマット
     this.formatDist = this.formatDist ?? function (meters) {
       if (meters < 1000) return `${meters.toFixed(1)} m`;
       return `${(meters/1000).toFixed(3)} km`;
     };
 
-// クリック許可フラグ（現在地トラッキング中のみtrue）
+    // クリック許可フラグ（現在地トラッキング中のみtrue）
     this.enableGpsLineClick = this.enableGpsLineClick ?? false;
-
-
-
-
-
-
-    // this.$store.dispatch('showFloatingWindow', 'mapillary-filter')
-
 
     const vm = this
 
-
-
-    // if (this.$store.state.isIframe) {
-    //   document.querySelectorAll('#left-top-div, #right-top-div').forEach(el => {
-    //     el.style.display = 'none'
-    //   })
-    // }
     if (this.$store.state.isDrawFit) {
       this.waitForMap('map01', { loaded: true })
           .then(map => {
@@ -10128,27 +10110,6 @@ export default {
     this.mapillarHeight = (window.innerHeight * 1) + 'px'
 
     window.addEventListener('keydown', this.onKeydown);
-    // const checkUser = setInterval(() => {
-    //   if (user.value && user.value.uid) {
-    //     const uid = user.value.uid
-    //     this.uid = uid
-    //     this.$store.state.userId = uid
-    //     // capture(uid, true)
-    //     const map01 = store.state.map01
-    //     if (map01) {
-    //       // キーボード監視
-    //       // document.addEventListener('keydown', this.onKeydown);
-    //       // map が読込後にマウスムーブ監視
-    //       // map01.on('mousemove', this.onPolygonMouseMove);
-    //       // map01.on('mousemove', this.onLineMouseMove);
-    //
-    //       capture(uid.value)
-    //     } else {
-    //       console.warn("地図がまだ初期化されていません")
-    //     }
-    //     clearInterval(checkUser) // UID を取得できたら監視を停止
-    //   }
-    // }, 100)
 
     // 5分おきに実行
     this.intervalId = setInterval(() => {

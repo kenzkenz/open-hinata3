@@ -230,6 +230,9 @@ export default {
       try { map.setPaintProperty(this.LAYER_ID, 'hillshade-exaggeration',           paint['hillshade-exaggeration']) } catch (e) {}
 
       this.moveLayerIfExists()
+
+      map.resize()
+
     },
 
 
