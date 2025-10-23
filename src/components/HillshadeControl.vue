@@ -50,11 +50,11 @@ export default {
   computed: {
     // ストアの全体ON/OFF
     enabled: {
-      get () { return this.$store.state.hsEnabled },
+      get () { return this.$store.state.hillshade.enabled },
       set (v) { this.$store.commit('SET_HS_ENABLED', !!v) }
     },
     // ストアの個別ON/OFF（必要に応じて外から直接 commit してもOK）
-    enabledMaps () { return this.$store.state.hsEnabledMaps },
+    enabledMaps () { return this.$store.state.hillshade.maps },
 
     mdCount () {
       const s = this.state
@@ -92,10 +92,10 @@ export default {
   },
   created () {
     // 初期値をストアへ（未設定時だけ）
-    if (typeof this.$store.state.hsEnabled !== 'boolean') {
+    if (typeof this.$store.state.hillshade.enabled !== 'boolean') {
       this.$store.commit('SET_HS_ENABLED', !!this.startEnabled)
     }
-    if (!this.$store.state.hsEnabledMaps) {
+    if (!this.$store.state.hillshade.maps) {
       this.$store.commit('SET_HS_FOR', { mapKey: 'map01', enabled: true })
       this.$store.commit('SET_HS_FOR', { mapKey: 'map02', enabled: true })
     }
@@ -161,8 +161,8 @@ export default {
       if (!map) return
 
       // ストアのON/OFFを見る
-      const isAllEnabled = !!this.$store.state.hsEnabled
-      const isMapEnabled = !!(this.$store.state.hsEnabledMaps && this.$store.state.hsEnabledMaps[mapKey])
+      const isAllEnabled = !!this.$store.state.hillshade.enabled
+      const isMapEnabled = !!(this.$store.state.hillshade.maps && this.$store.state.hillshade.maps[mapKey])
 
       // 全体OFF or 当該マップOFF → レイヤ削除
       if (!isAllEnabled || !isMapEnabled) {
@@ -284,11 +284,11 @@ export default {
     // 外部が this.$refs.hs.enableFor('map02') などを使いたい場合も残しておく
     enable ()  { this.$store.commit('SET_HS_ENABLED', true)  },
     disable () { this.$store.commit('SET_HS_ENABLED', false) },
-    toggle ()  { this.$store.commit('SET_HS_ENABLED', !this.$store.state.hsEnabled) },
+    toggle ()  { this.$store.commit('SET_HS_ENABLED', !this.$store.state.hillshade.enabled) },
     enableFor  (k) { this.$store.commit('SET_HS_FOR', { mapKey: k, enabled: true  }) },
     disableFor (k) { this.$store.commit('SET_HS_FOR', { mapKey: k, enabled: false }) },
     toggleFor  (k) {
-      const cur = !!(this.$store.state.hsEnabledMaps && this.$store.state.hsEnabledMaps[k])
+      const cur = !!(this.$store.state.hillshade.maps && this.$store.state.hillshade.maps[k])
       this.$store.commit('SET_HS_FOR', { mapKey: k, enabled: !cur })
     },
 

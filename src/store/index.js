@@ -111,9 +111,22 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.729,
-    hsEnabled: true,
-    hsEnabledMaps: { map01: true, map02: true },
-    hillshadEnabled: true,
+    // hsEnabled: true,
+    // hsEnabledMaps: { map01: true, map02: true },
+      hillshade: {
+          enabled: true,                     // 全体ON/OFF
+          maps: { map01: true, map02: true },// 個別ON/OFF
+          params: {                          // 詳細設定（従来のstate全部）
+              method: 'multidirectional',
+              exaggeration: 0.6,
+              direction: 315,
+              altitude: 35,
+              mdDirections: [270,315,0,45],
+              mdAltitudes:  [30,30,30,30],
+              mdHighlights: ['#fff4cc','#ffeaa1','#eaffd0','#dff8ff'],
+              mdShadows:    ['#3b3251','#2e386f','#2a2a6e','#3a2d58']
+          }
+      },
     mapReady: false,
     pendingFile: null,
     commonDialog: {
@@ -724,11 +737,15 @@ export default createStore({
   getters: {
   },
   mutations: {
-      SET_HS_ENABLED (state, v) { state.hsEnabled = !!v },
+      SET_HS_ENABLED (state, v) { state.hillshade.enabled = !!v },
       SET_HS_FOR (state, { mapKey, enabled }) {
-          if (!state.hsEnabledMaps) state.hsEnabledMaps = { map01: true, map02: true }
-          state.hsEnabledMaps[mapKey] = !!enabled
+          state.hillshade.maps[mapKey] = !!enabled
       },
+      // SET_HS_ENABLED (state, v) { state.hsEnabled = !!v },
+      // SET_HS_FOR (state, { mapKey, enabled }) {
+      //     if (!state.hsEnabledMaps) state.hsEnabledMaps = { map01: true, map02: true }
+      //     state.hsEnabledMaps[mapKey] = !!enabled
+      // },
     setLevel(s,v){ s.level = Number(v)||0; },
     setMode(s,m){ s.mode = m==='linear' ? 'linear' : 'step'; },
     setPalette(s,p){ s.palette = p; },
