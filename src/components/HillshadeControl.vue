@@ -23,7 +23,15 @@ export default {
           mdDirections:[260,300,340], mdAltitudes:[18,22,25],
           mdHighlights:['#ffd6a5','#ffe8b6','#ffd1dc'],
           mdShadows:['#3c2d4f','#2f2f63','#2a2a6e'] },
-        { name: 'Night', method: 'combined', exaggeration: 0.55, direction: 315, altitude: 20 }
+        { name: 'Night', method: 'combined', exaggeration: 0.55, direction: 315, altitude: 20 },
+
+        // ★ 追加：MPI風 RRIM プリセット（必要なければ削除OK）
+        // { name: 'RRIM (MPI-like)', method: 'multidirectional', exaggeration: 0.55,
+        //   mdDirections: [260, 290, 315, 340, 20, 45],
+        //   mdAltitudes:  [15,  20,  25,  25,  20, 15],
+        //   mdHighlights: ['#ad2e24','#c3382a','#d9472e','#e85b3a','#f0714a','#f68c5e'],
+        //   mdShadows:    ['#1b3a5b','#15445f','#0f4c5d','#0b5a63','#0f6a6a','#147a74']
+        // }
       ],
       methodItems: [
         { title: 'Multidirectional', value: 'multidirectional' },
@@ -305,4 +313,3 @@ export default {
   .v-card { min-width: 280px; }
 }
 </style>
-

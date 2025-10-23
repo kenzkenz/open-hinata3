@@ -1,4 +1,3 @@
-<!-- HillshadePanel.vue -->
 <template>
   <!-- 固定オーバーレイ行 -->
   <div class="hs-row">
@@ -48,12 +47,28 @@
       </v-card-title>
 
       <v-card-text>
+
         <v-switch
             :model-value="enabled"
             color="primary" inset label="有効にする" class="mb-2"
             :disabled="!hsReady"
             @update:modelValue="v => (enabled = v)"
         />
+
+        <!-- ★ 追加：プリセット ドロップダウン -->
+        <div class="mb-4">
+          <v-select
+              :items="presetItems"
+              :model-value="selectedPresetName"
+              label="プリセット"
+              density="comfortable"
+              variant="outlined"
+              :disabled="!hsReady"
+              :hint="presetHint"
+              persistent-hint
+              @update:modelValue="onSelectPreset"
+          />
+        </div>
 
         <v-select
             :model-value="method"
@@ -123,13 +138,24 @@ export default {
       methodItems: [
         { title: 'Multidirectional', value: 'multidirectional' },
         { title: 'Combined', value: 'combined' }
-      ]
+      ],
+      // ★ 追加：プリセット選択の一時状態（名前を保持）
+      selectedPresetName: null
     }
   },
   computed: {
     // store.hillshade に一本化（enabled, maps, params…）
     hs () { return this.$store.state.hillshade },
     hsReady () { return !!this.controller },
+
+    // ドロップダウン項目：先頭に「未選択」を置く
+    presetItems () {
+      const arr = (this.controller?.presets || []).map(p => ({ title: p.name, value: p.name }))
+      return [ { title: '（未選択）', value: null }, ...arr ]
+    },
+    presetHint () {
+      return this.selectedPresetName ? `選択中: ${this.selectedPresetName}` : 'プリセットを選ぶと即時適用します'
+    },
 
     // 全体ON/OFF
     enabled: {
@@ -183,6 +209,16 @@ export default {
     }
   },
   methods: {
+    // ★ 追加：プリセット選択時の処理
+    onSelectPreset (val) {
+      this.selectedPresetName = val
+      if (!val) return
+      const p = (this.controller?.presets || []).find(x => x.name === val)
+      if (!p) return
+      this.controller?.applyPreset?.(p)
+      this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+    },
+
     // kind は 'dir'|'alt'|'hl'|'sh' を想定
     setMd (kind, i, v) {
       const keyMap = {
@@ -207,6 +243,8 @@ export default {
     resetToDefaults () {
       this.$store.commit('HS_RESET')
       this.controller?.syncAllMaps?.()
+      // プリセットの一時選択はクリアしておく
+      this.selectedPresetName = null
     }
   }
 }
@@ -240,4 +278,3 @@ export default {
 .hs-slider :deep(.v-slider-track__background){ height: 6px; }
 .hs-slider :deep(.v-slider-thumb){ width: 18px; height: 18px; }
 </style>
-
