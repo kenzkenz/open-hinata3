@@ -110,7 +110,7 @@ const messageDialogModule = {
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.727,
+    clientVersion: 1.728,
     mapReady: false,
     pendingFile: null,
     commonDialog: {
