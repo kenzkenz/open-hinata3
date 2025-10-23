@@ -10695,8 +10695,60 @@ const terrain22_41LayerLine = {
     },
 }
 
+const layerName = 'gifu_detail';
+
+const ps = new URLSearchParams({
+    SERVICE: 'WMS',
+    REQUEST: 'GetMap',
+    VERSION: '1.3.0',
+    FORMAT: 'image/png',
+    TRANSPARENT: 'TRUE',
+    STYLES: '',
+    LAYERS: layerName,
+    TILED: 'TRUE',
+    CRS: 'EPSG:3857',
+    WIDTH: '256',
+    HEIGHT: '256',
+    // ここは一旦入れる…が
+    BBOX: '{bbox-epsg-3857}',
+    EXCEPTIONS: 'INIMAGE'
+});
+
+// URLSearchParams は {} を %7B %7D にするので、BBOX だけ元に戻す
+let qs = ps.toString().replace(
+    'BBOX=%7Bbbox-epsg-3857%7D',
+    'BBOX={bbox-epsg-3857}'
+);
+
+// ★ ここが違い：自サイトのプロキシに投げる
+// ★ 自サイトのプロキシへ
+const tilesUrl = 'https://kenzkenz.net/myphp/wms-proxy.php?' + qs;
+
+const wmsGifuSource = {
+    id: "wms-gifu-src", obj:{
+        type: "raster",
+        tiles: [tilesUrl],
+        tileSize: 256,
+    }
+}
+const wmsGifuLayer = {
+    id: 'oh-wms-gifu',
+    type: 'raster',
+    source: 'wms-gifu-src',
+    paint: {
+        'raster-opacity': 0.9, // 不要なら削除
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 let layers01 = [
+    // {
+    //     id: 'oh-wms-gifu-01',
+    //     label: "<span style='color: red'>NEW</span>⭐ジオランド岐阜",
+    //     sources:[wmsGifuSource],
+    //     layers: [wmsGifuLayer],
+    //     attribution: '<a href="https://gisstar.gsi.go.jp/terrain2021/" target="_blank">地形分類データ</a>'
+    // },
     {
         id: 'oh-terrain22',
         label: "<span style='color: red'>NEW</span>⭐️地形分類図",

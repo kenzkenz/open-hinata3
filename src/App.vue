@@ -7831,26 +7831,6 @@ export default {
         }
       })
 
-      // map1のクリックイベント
-      // map1.on('click', (e) => {
-      //   if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
-      //   syncing = true
-      //   const coordinates = e.lngLat
-      //   // map2のクリックイベントをプログラムで発生させる
-      //   map2.fire('click', { lngLat: coordinates })
-      //   syncing = false
-      // })
-      //
-      // // map2のクリックイベント
-      // map2.on('click', (e) => {
-      //   if (syncing) return  // 同期中の場合は再帰呼び出しを防ぐ
-      //   syncing = true
-      //   const coordinates = e.lngLat
-      //   // map1のクリックイベントをプログラムで発生させる
-      //   map1.fire('click', { lngLat: coordinates })
-      //   syncing = false
-      // })
-
       map.on("zoom", () => {
         if (map.getZoom() <= 4.5) {
           document.querySelector('#map00').style.backgroundColor = 'black'
@@ -8203,6 +8183,9 @@ export default {
       this.mapNames.forEach(mapName => {
         const map = this.$store.state[mapName]
         map.once('load', () => { this.$store.state.mapReady = true })
+        map.on('style.load', () => {
+          map.setProjection({ type: 'globe' });
+        });
         map.on('load',async () => {
 
           const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -8324,7 +8307,6 @@ export default {
             });
           }
 
-          map.setProjection({"type": "globe"})
           map.resize()
           map.doubleClickZoom.disable()
 
