@@ -166,35 +166,35 @@ export default {
     },
 
     // 双方向バインド：hs.state を直接読む/書く
-    enabled: {
-      get () {
-        if (this.hsReady) return !!this.hs.state.enabled
-        // hs 未準備時は store → defaults
-        if (typeof this.$store?.state?.hillshadEnabled === 'boolean') {
-          return !!this.$store.state.hillshadEnabled
-        }
-        return this.defaults.enabled
-      },
-      set (v) {
-        const val = !!v
-        // 本体に反映
-        if (this.hsReady) {
-          if (this.hs.state.enabled !== val) {
-            this.hs.state.enabled = val
-            this.sync(true)
-          }
-        }
-        // store に反映（store由来の変更中はコミットしない）
-        if (this.$store && !this.syncingFromStore) {
-          this.$store.state.hillshadEnabled = val
-        }
-        this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
-      }
-    },
     // enabled: {
-    //   get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
-    //   set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }
+    //   get () {
+    //     if (this.hsReady) return !!this.hs.state.enabled
+    //     // hs 未準備時は store → defaults
+    //     if (typeof this.$store?.state?.hillshadEnabled === 'boolean') {
+    //       return !!this.$store.state.hillshadEnabled
+    //     }
+    //     return this.defaults.enabled
+    //   },
+    //   set (v) {
+    //     const val = !!v
+    //     // 本体に反映
+    //     if (this.hsReady) {
+    //       if (this.hs.state.enabled !== val) {
+    //         this.hs.state.enabled = val
+    //         this.sync(true)
+    //       }
+    //     }
+    //     // store に反映（store由来の変更中はコミットしない）
+    //     if (this.$store && !this.syncingFromStore) {
+    //       this.$store.state.hillshadEnabled = val
+    //     }
+    //     this.$store.state.updatePermalinkFire = !this.$store.state.updatePermalinkFire
+    //   }
     // },
+    enabled: {
+      get () { return this.hsReady ? !!this.hs.state.enabled : this.defaults.enabled },
+      set (v) { if (!this.hsReady) return; this.hs.state.enabled = !!v; this.sync(true) }
+    },
     exaggeration: {
       get () { return this.hsReady ? Number(this.hs.state.exaggeration || this.defaults.exaggeration) : this.defaults.exaggeration },
       set (v) { if (!this.hsReady) return; this.hs.state.exaggeration = Number(v); this.sync() }
