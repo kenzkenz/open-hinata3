@@ -140,7 +140,7 @@ export default {
         this.$store.commit('SET_HS_ENABLED', value)
       }
     },
-    
+
     // 詳細パラメータ（双方向）
     method: {
       get () { return this.hs.params.method },

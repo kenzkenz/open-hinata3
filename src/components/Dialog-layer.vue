@@ -46,9 +46,9 @@
           />
           <v-btn
               size="small"
-              :color="s_hillshadEnabled ? 'primary' : undefined"
-              :variant="s_hillshadEnabled ? 'flat' : 'outlined'"
-              :aria-pressed="s_hillshadEnabled ? 'true' : 'false'"
+              :color="hillshade.maps[mapName] ? 'primary' : undefined"
+              :variant="hillshade.maps[mapName]  ? 'flat' : 'outlined'"
+              :aria-pressed="hillshade.maps[mapName]  ? 'true' : 'false'"
               @click="hsEnabledMapsToggle"
           >
             陰影
@@ -162,7 +162,7 @@ export default {
   }),
   computed: {
     ...mapState([
-      'hillshadEnabled',
+      'hillshade',
     ]),
     s_hillshadEnabled: {
       get() {
@@ -208,7 +208,6 @@ export default {
     hsEnabledMapsToggle(){
       const bool = !this.$store.state.hillshade.maps[this.mapName]
       this.$store.commit('SET_HS_FOR', { mapKey: this.mapName, enabled: bool })
-
     },
     onStart () {
       this.isDragging = true
