@@ -2659,7 +2659,6 @@ export default {
     stopPitch: null,
     distance: '',
 
-
     // 状態
     watchId: null,
     isTracking: false,
@@ -2693,6 +2692,8 @@ export default {
     isJobMenu: false,
 
     lineMode: false,
+
+    currentHillshadeMaps: { map01: true, map02: true },
 
   }),
   computed: {
@@ -3890,24 +3891,36 @@ export default {
       const active = store.state[mapName]
       return syncBoth ? [m1, m2] : [active]
     },
+    hillshadeStop() {
+      // まず現在の陰影の状況を覚える
+      this.currentHillshadeMaps.map01 = this.$store.state.hillshade.maps.map01
+      this.currentHillshadeMaps.map02 = this.$store.state.hillshade.maps.map02
+      // 次に陰影を中止
+      this.$store.commit('SET_HS_FOR', { mapKey: 'map01', enabled: false })
+      this.$store.commit('SET_HS_FOR', { mapKey: 'map02', enabled: false })
+    },
     // --- 回転（押している間）---
     pressRotateRight(mapName, { speed = 150, syncBoth = false } = {}) {
+      this.hillshadeStop()
       const targets = this.targets(mapName, syncBoth)
       this.stopSpin?.()
       this.stopSpin = startHoldRotate(targets[0], { direction: +1, speed, targets })
     },
     pressRotateLeft(mapName, { speed = 150, syncBoth = false } = {}) {
+      this.hillshadeStop()
       const targets = this.targets(mapName, syncBoth)
       this.stopSpin?.()
       this.stopSpin = startHoldRotate(targets[0], { direction: -1, speed, targets })
     },
     // --- ピッチ（押している間）---
     pressPitchUp(mapName, { speed = 100, syncBoth = false } = {}) {
+      this.hillshadeStop()
       const targets = this.targets(mapName, syncBoth)
       this.stopPitch?.()
       this.stopPitch = startHoldPitch(targets[0], { direction: +1, speed, targets })
     },
     pressPitchDown(mapName, { speed = 100, syncBoth = false } = {}) {
+      this.hillshadeStop()
       const targets = this.targets(mapName, syncBoth)
       this.stopPitch?.()
       this.stopPitch = startHoldPitch(targets[0], { direction: -1, speed, targets })

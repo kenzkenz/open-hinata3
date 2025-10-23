@@ -75,7 +75,7 @@
 
 <script>
 
-import {escapeHTML, generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
+import { generateSegmentLabelGeoJSON, generateStartEndPointsFromGeoJSON} from "@/js/pyramid";
 
 const registeredLayers = new Set()
 
@@ -90,18 +90,14 @@ import {
   highlightSpecificFeaturesCity,
   LngLatToAddress,
   simaToGeoJSON,
-  updateMeasureUnit,
   dxfToGeoJSON,
-  userPmtileSet,
   highlightSpecificFeaturesSima,
   getNextZIndex,
-  forseMoveLayer, fitClickCircleAll, readdAllByPrefix, readdById, readdByIdPreservingLast, getLayerContext
+  forseMoveLayer, fitClickCircleAll, readdByIdPreservingLast,
 } from "@/js/downLoad";
 import originalStyle from '@/assets/json/osm_bright_label_only.json'
 import * as Layers from '@/js/layers'
-// import Tree from "vue3-tree"
 import Tree from '@/components/custom-tree/Tree.vue'
-// import "vue3-tree/dist/style.css"
 import '@/components/custom-tree/tree-style.css'
 import draggable from "vuedraggable"
 import mw5 from '@/js/mw5'
