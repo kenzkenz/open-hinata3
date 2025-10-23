@@ -3,21 +3,28 @@
     <HillshadeControl
         v-if="mapReady"
         ref="hs"
-        :map="map01"
-        dem-source-id="terrain"
-        :start-enabled="true"
-        :auto-anchor="true"
-        style="display:none"
+        :map01="map01"
+        :map02="map02"
+        :dem-tiles-url="demUrl"
     />
-    <HillshadeControl
-        v-if="mapReady"
-        ref="hs"
-        :map="map02"
-        dem-source-id="terrain"
-        :start-enabled="true"
-        :auto-anchor="true"
-        style="display:none"
-    />
+<!--    <HillshadeControl-->
+<!--        v-if="mapReady"-->
+<!--        ref="hs"-->
+<!--        :map="map01"-->
+<!--        dem-source-id="terrain"-->
+<!--        :start-enabled="true"-->
+<!--        :auto-anchor="true"-->
+<!--        style="display:none"-->
+<!--    />-->
+<!--    <HillshadeControl-->
+<!--        v-if="mapReady"-->
+<!--        ref="hs"-->
+<!--        :map="map02"-->
+<!--        dem-source-id="terrain"-->
+<!--        :start-enabled="true"-->
+<!--        :auto-anchor="true"-->
+<!--        style="display:none"-->
+<!--    />-->
 
     <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
       {{ snackbarText }}

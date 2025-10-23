@@ -111,6 +111,8 @@ export default createStore({
   state: {
     drawFeatureId: '',
     clientVersion: 1.729,
+    hsEnabled: true,
+    hsEnabledMaps: { map01: true, map02: true },
     hillshadEnabled: true,
     mapReady: false,
     pendingFile: null,
@@ -722,6 +724,11 @@ export default createStore({
   getters: {
   },
   mutations: {
+      SET_HS_ENABLED (state, v) { state.hsEnabled = !!v },
+      SET_HS_FOR (state, { mapKey, enabled }) {
+          if (!state.hsEnabledMaps) state.hsEnabledMaps = { map01: true, map02: true }
+          state.hsEnabledMaps[mapKey] = !!enabled
+      },
     setLevel(s,v){ s.level = Number(v)||0; },
     setMode(s,m){ s.mode = m==='linear' ? 'linear' : 'step'; },
     setPalette(s,p){ s.palette = p; },

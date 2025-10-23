@@ -49,7 +49,7 @@
               :color="s_hillshadEnabled ? 'primary' : undefined"
               :variant="s_hillshadEnabled ? 'flat' : 'outlined'"
               :aria-pressed="s_hillshadEnabled ? 'true' : 'false'"
-              @click="s_hillshadEnabled = !s_hillshadEnabled"
+              @click="hsEnabledMapsToggle"
           >
             陰影
           </v-btn>
@@ -205,6 +205,10 @@ export default {
     },
   },
   methods: {
+    hsEnabledMapsToggle(){
+      const bool = !this.$store.state.hsEnabledMaps[this.mapName]
+      this.$store.commit('SET_HS_FOR', { mapKey: this.mapName, enabled: bool })
+    },
     onStart () {
       this.isDragging = true
     },

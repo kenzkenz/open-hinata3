@@ -132,6 +132,7 @@ export default {
     return {
       syncingFromStore: false, // 無限ループ防止フラグ
       dialog: false,
+      dialog2: false,
       methodItems: [
         { title: 'Multidirectional', value: 'multidirectional' },
         { title: 'Combined', value: 'combined' }
