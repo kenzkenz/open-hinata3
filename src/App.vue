@@ -7,15 +7,15 @@
 <template>
   <v-app>
 
-    <HillshadeControll
-        v-if="mapReady"
-        ref="hs"
-        :map="map01"
-        dem-source-id="terrain"
-        :start-enabled="true"
-        :auto-anchor="true"
-        style="display:none"
-    />
+<!--    <HillshadeControll-->
+<!--        v-if="mapReady"-->
+<!--        ref="hs"-->
+<!--        :map="map01"-->
+<!--        dem-source-id="terrain"-->
+<!--        :start-enabled="true"-->
+<!--        :auto-anchor="true"-->
+<!--        style="display:none"-->
+<!--    />-->
 
 
     <LoginManager></LoginManager>
@@ -1782,7 +1782,7 @@ import { snapIfNeeded } from '@/js/utils/triangle50'
 import rtkPngUrl from '@/assets/icons/oh-rtk.png'
 import { ensureGeoid } from '@/geoid';
 import VDialogCommon from "@/components/V-dialog/V-dialog-common";
-import HillshadeControll from '@/components/HillshadeControll'
+// import HillshadeControll from '@/components/HillshadeControll'
 
 import {
   addDraw, addressFromMapCenter,
@@ -2470,7 +2470,7 @@ export default {
     JobPicker,
     VDialogCommon,
     LoginManager,
-    HillshadeControll,
+    // HillshadeControll,
   },
   data: () => ({
     wizardOpen: false,

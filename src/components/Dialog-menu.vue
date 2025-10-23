@@ -1,5 +1,15 @@
 <template>
   <v-app>
+    <HillshadeControl
+        v-if="mapReady"
+        ref="hs"
+        :map="map01"
+        dem-source-id="terrain"
+        :start-enabled="true"
+        :auto-anchor="true"
+        style="display:none"
+    />
+
     <v-snackbar v-model="snackbar" :timeout="3000" color="primary">
       {{ snackbarText }}
     </v-snackbar>
@@ -105,6 +115,13 @@
         <input style="width: 100%;margin-top: 10px;" type="range" min="1" max="10" step="0.1" class="range" v-model.number="s_terrainLevel" @input="terrainLevelInput"/>
       </div>
 
+<!--      <HillshadePanel :map="map01" :map-ready="mapReady" v-if="mapReady"/>-->
+      <HillshadePanel
+          v-if="mapReady"
+          :map="map01"
+          :controller="hsRef"
+      />
+
       <p style="margin-top: 10px;">お問合せなど、サイト管理者への御連絡は、<a href="https://x.com/kenzkenz" target="_blank">https://x.com/kenzkenz</a>にDMを送ってください。</p>
     </div>
   </Dialog>
@@ -120,13 +137,18 @@ import {history} from "@/App";
 import firebase from '@/firebase'
 import store from "@/store";
 import {mapState} from "vuex";
+import HillshadeControl from "@/components/HillshadeControl";
+import HillshadePanel from '@/components/HillshadePanel'
 
 export default {
   name: 'Dialog-menu',
   props: ['mapName'],
   components: {
+    HillshadeControl,
+    HillshadePanel,
   },
   data: () => ({
+    hsRef: null,
     isLoggedIn: false,
     newName: '',
     message: '',
@@ -187,6 +209,9 @@ export default {
   }),
   computed: {
     ...mapState([
+      'map01',
+      'map02',
+      'mapReady',
       'myNickname',
       'clientVersion',
       'myNickname',
@@ -465,6 +490,11 @@ export default {
         store.dispatch('showFloatingWindow', 'mapillary');
       } else {
         store.dispatch('hideFloatingWindow', 'mapillary');
+      }
+    },
+    mapReady(value) {
+      if (value) {
+        this.$nextTick(() => { this.hsRef = this.$refs.hs })
       }
     },
   },
