@@ -32,7 +32,7 @@
   </div>
 
   <!-- 詳細ダイアログ（即時反映） -->
-  <v-dialog v-model="dialog" max-width="720">
+  <v-dialog v-model="dialog" max-width="500">
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
         <span>陰影の詳細設定</span>
@@ -79,13 +79,13 @@
                           :disabled="!hsReady"
                           @update:modelValue="v => setMd('dir', i-1, v)"/>
             <v-text-field :model-value="mdAltitudes[i-1]" type="number" :min="0" :max="90"
-                          label="高度" density="compact" variant="outlined" style="max-width:90px"
+                          label="高度°" density="compact" variant="outlined" style="max-width:90px"
                           :disabled="!hsReady"
                           @update:modelValue="v => setMd('alt', i-1, v)"/>
-            <v-text-field :model-value="mdHighlights[i-1]" label="HL"
+            <v-text-field :model-value="mdHighlights[i-1]" label="ハイライト"
                           density="compact" variant="outlined" style="max-width:110px" :disabled="!hsReady"
                           @update:modelValue="v => setMd('hl', i-1, v)"/>
-            <v-text-field :model-value="mdShadows[i-1]" label="SH"
+            <v-text-field :model-value="mdShadows[i-1]" label="シャドー"
                           density="compact" variant="outlined" style="max-width:110px" :disabled="!hsReady"
                           @update:modelValue="v => setMd('sh', i-1, v)"/>
             <v-btn icon size="28" variant="text" :disabled="!hsReady" @click="removeLight(i-1)">
