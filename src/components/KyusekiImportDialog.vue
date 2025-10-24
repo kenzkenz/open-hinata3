@@ -58,7 +58,6 @@
                   </v-btn>
                   <span class="text-medium-emphasis">Google Document AI Form Parser を使用します</span>
                 </div>
-
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
 
                 <div v-if="rawTable.headers.length" class="ocr-table">
@@ -84,10 +83,14 @@
             <v-stepper-window-item :value="3">
               <div class="pa-4">
                 <div v-if="rawTable.headers.length">
-                  <div class="text-subtitle-2 mb-2">列の役割を確認/修正</div>
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <div class="text-subtitle-2">列の役割を確認/修正</div>
+                    <v-btn size="small" variant="text" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
+                  </div>
+
                   <div class="d-flex flex-wrap gap-3 mb-4">
                     <div v-for="(h, i) in rawTable.headers" :key="'m'+i" class="map-chip">
-                      <div class="text-caption text-medium-emphasis mb-1">{{ h }}</div>
+                      <div class="text-caption text-medium-emphasis mb-1">{{ h || '(空)' }}</div>
                       <v-select
                           class="no-stretch"
                           density="comfortable"
@@ -122,6 +125,7 @@
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div class="preview-grid" v-if="points.length">
+                  <!-- Map -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -130,6 +134,7 @@
                     </v-card-text>
                   </v-card>
 
+                  <!-- 座標プレビュー -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">座標プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -149,6 +154,7 @@
                     </v-card-text>
                   </v-card>
 
+                  <!-- 検算 -->
                   <v-card class="oh3-accent-border pane calc-pane" variant="outlined">
                     <v-card-title class="py-2">検算</v-card-title>
                     <v-card-text class="compact-text pane-body">
@@ -162,7 +168,7 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標系選択 & 地図反映 -->
+                  <!-- 座標系選択 -->
                   <v-card class="" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー作成</v-card-title>
                     <v-card-text class="pane-body">
@@ -232,14 +238,18 @@ import { downloadTextFile, zahyokei } from '@/js/downLoad'
 import { mapState } from 'vuex'
 import proj4 from 'proj4'
 
-/* 軽クリーナー */
-function cleanCell (s) {
-  if (s == null) return ''
-  return String(s).normalize('NFKC')
-      .replace(/[，,]/g,'')
-      .replace(/[−－—–]/g,'-')
-      .replace(/\s+/g,' ')
-      .trim()
+/* 文字セルのゆがみ補正（数値の割れ、マイナス、空白等） */
+function fixCell (val) {
+  if (val == null) return ''
+  let s = String(val).normalize('NFKC')
+  s = s.replace(/[，,]/g, '')
+  s = s.replace(/[−－—–]/g, '-')            // 統一マイナス
+  s = s.replace(/(^|\s)\.\s*(\d)/g, '$10.$2') // ". 123"→"0.123"
+  s = s.replace(/(\d)\s*\.\s*(\d)/g, '$1.$2') // "135669 . 231"→"135669.231"
+  s = s.replace(/-\s+(\d)/g, '-$1')           // "- 6905"→"-6905"
+  s = s.replace(/(\d)\s+(\d{3})(?!\d)/g, '$1$2') // "69054. 320"→"69054.320"
+  s = s.replace(/\s+/g, ' ').trim()
+  return s
 }
 
 export default {
@@ -298,74 +308,113 @@ export default {
   },
   mounted () { if (this.step===4) this.initMapLibre() },
   methods: {
-    /* ==== Cloud OCR ==== */
-    async runCloudOCR (file) {
-      const apiBase = import.meta?.env?.VITE_DOCAI_API_URL
-          || 'https://oh3-docai-api-531336516229.asia-northeast1.run.app'
-      const f = Array.isArray(file) ? file[0] : file
-      const form = new FormData()
-      form.append('file', f, f?.name || 'upload')
-      const res = await fetch(`${apiBase}/api/docai_form_parser.php`, { method:'POST', body: form })
-      if (!res.ok) throw new Error(`Cloud OCR HTTP ${res.status}`)
-      const json = await res.json()
+    /* DocAI→受領後の表クリーニング＋列最終化 */
+    postCleanTable () {
+      if (!this.rawTable?.rows) return
+      const headers = (this.rawTable.headers || []).map(fixCell)
+      const rowsRaw = (this.rawTable.rows || []).map(r => (r || []).map(fixCell))
 
-      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
+      // 空行・全空列を排除
+      const nonEmptyRows = rowsRaw.filter(r => r.some(c => c && c.length))
+      const colCount = Math.max(headers.length, ...nonEmptyRows.map(r => r.length))
+      const rows = nonEmptyRows.map(r => {
+        const a = r.slice(0, colCount)
+        while (a.length < colCount) a.push('')
+        return a
+      })
+      while (headers.length < colCount) headers.push('')
 
-      // サーバが headers/rows を返す場合を優先
-      if (Array.isArray(json.headers) && Array.isArray(json.rows)) {
-        return {
-          headers: json.headers.map(cleanCell),
-          rows: json.rows.map(r => (Array.isArray(r) ? r : []).map(cleanCell))
-        }
+      // ほぼ空の列を落とす（本文の9割が空）
+      const keepCols = []
+      for (let i=0;i<colCount;i++){
+        const filled = rows.filter(r => (r[i]||'').length>0).length
+        keepCols.push(filled >= Math.ceil(rows.length*0.1))
       }
+      const headers2 = headers.filter((_,i)=>keepCols[i])
+      const rows2 = rows.map(r => r.filter((_,i)=>keepCols[i]))
 
-      // 念のため raw→最低限の推定（entities の valueText を列化）
-      const rows = []
-      const headers = ['NO','Xn','Yn','Yn+1−Yn−1','Xn·(Yn+1−Yn−1)']
-      if (json?.raw?.document?.entities) {
-        const ents = json.raw.document.entities
-        for (const e of ents) {
-          const a = []
-          if (e.type === 'row' && Array.isArray(e.properties)) {
-            e.properties.forEach(p => a.push(cleanCell(p.mentionText || p.valueText || '')))
-            if (a.length) rows.push(a)
-          }
-        }
-      }
-      return rows.length ? { headers, rows } : { headers: [], rows: [] }
+      // 見出しの最終化
+      const finalized = this.finalizeHeaders(headers2)
+      this.rawTable = { headers: finalized, rows: rows2 }
     },
 
-    preCleanTable () {
-      if (!this.rawTable?.rows?.length) return
-      this.rawTable = {
-        headers: this.rawTable.headers.map(h => cleanCell(h)),
-        rows: this.rawTable.rows.map(r => r.map(c => cleanCell(c)))
+    finalizeHeaders (hdrs) {
+      // 正規化＆代表名へ寄せる
+      const norm = (s) => (s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase()
+      const out = hdrs.map(h => {
+        const t = norm(h)
+        if (/(^no\b|点番|番号|^番$|^n0$|^№$)/i.test(t)) return 'NO'
+        if (/^x(n)?\b|x座標|東距|東\b|e\b/.test(t)) return 'Xn'
+        if (/^y(n)?\b|y座標|北距|北\b|n\b/.test(t)) return 'Yn'
+        if (/yn\+?1.*yn-?1/i.test(t)) return 'Yn+1-Yn-1'
+        if (/x.*(yn\+?1.*yn-?1)|地積|合計面積|面積項/i.test(t)) return 'Xn*(Yn+1-Yn-1)'
+        return fixCell(h)
+      })
+
+      // 先頭から空ヘッダが続く場合は NO, Xn, Yn を埋める
+      const candidates = ['NO','Xn','Yn']
+      for (let i=0, j=0; i<out.length && j<candidates.length; i++){
+        if (!out[i]) { out[i] = candidates[j++]; }
       }
+      return out
     },
 
-    /* ==== OCR 実行（クラウド） ==== */
+    autoMapRoles () {
+      // 見出しから役割を推定。式や集計っぽい列は未使用に。
+      this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h))
+      this.rawTable.headers.forEach((h, i) => {
+        const s = String(h || '').toLowerCase()
+        if (/[+/*()]/.test(s) || /yn\+?1.*yn-?1/.test(s) || /合計|地積/.test(s)) {
+          this.columnRoles[i] = null
+        }
+      })
+    },
+
+    /* ==== OCR ==== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
       try {
         const table = await this.runCloudOCR(this.file)
-        if (!table?.headers?.length) throw new Error('表が検出できませんでした')
+        if (!table?.rows?.length) throw new Error('表が検出できませんでした')
         this.rawTable = table
-        this.preCleanTable()
 
-        // 初期マッピング推定 + 数式列は未使用へ
-        this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
-        this.rawTable.headers.forEach((h,i)=>{
-          const s=String(h).toLowerCase()
-          if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
-        })
+        // 表ゆがみ補正 → ヘッダ最終化
+        this.postCleanTable()
+        // 自動マッピング初期値
+        this.autoMapRoles()
 
         if (this.step<3) this.step=3
       } catch (e) {
-        console.error(e)
-        this.ocrError = String(e?.message || e)
+        console.error(e); this.ocrError=String(e.message||e)
       } finally { this.busy=false }
     },
+
+
+// 置き換え版：Node / PHP どちらでも動くが、まず Node を優先
+    async runCloudOCR (file) {
+      const f = Array.isArray(file) ? file[0] : file;
+      if (!f) throw new Error('ファイルが選択されていません');
+
+      // Node の URL を環境変数で。無ければ Node の本番URLを既定に
+      const base =
+          import.meta?.env?.VITE_DOCAI_NODE_URL
+          || 'https://oh3-docai-api-node-531336516229.asia-northeast1.run.app';
+
+      const form = new FormData();
+      form.append('file', f, f?.name || 'upload');
+
+      const url = `${base}/api/docai_form_parser`; // ← .php ではない
+      const r = await fetch(url, { method: 'POST', body: form /* mode:'cors' は既定 */ });
+
+      // CORS 欠落時は 200 でもブラウザが弾く → ここに到達しない（コンソールに ERR_FAILED 200）
+      const text = await r.text();
+      let json; try { json = JSON.parse(text); } catch { json = null; }
+      if (!r.ok) throw new Error(json?.error || json?.detail || `HTTP ${r.status}`);
+      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed');
+      return { headers: json.headers || [], rows: json.rows || [], meta: json.meta || null };
+    },
+
 
     /* ==== 列マッピング/正規化 ==== */
     normHeader (s) {
@@ -376,10 +425,10 @@ export default {
           .toLowerCase()
     },
     guessRoleFromHeader (h) {
-      const H = this.normHeader(h), compact = String(h).replace(/\s+/g,'')
+      const H = this.normHeader(h), compact = String(h||'').replace(/\s+/g,'')
       if (/^(no|n0|№|番)$/i.test(compact)) return 'idx'
-      if (/^(xn|x)$/i.test(h.trim())) return 'x'
-      if (/^(yn|y)$/i.test(h.trim())) return 'y'
+      if (/^(xn|x)$/i.test((h||'').trim())) return 'x'
+      if (/^(yn|y)$/i.test((h||'').trim())) return 'y'
       const dict = {
         idx:['点番','番号','no','ｎｏ','番','n0','№'],
         label:['点名','標識','名称'],
@@ -389,14 +438,14 @@ export default {
       for (const [role,arr] of Object.entries(dict)) {
         if (arr.some(k=>H.includes(k))) return role
       }
-      if (/\b(xn|x)\b/i.test(h)) return 'x'
-      if (/\b(yn|y)\b/i.test(h)) return 'y'
+      if (/\b(xn|x)\b/i.test(h||'')) return 'x'
+      if (/\b(yn|y)\b/i.test(h||'')) return 'y'
       return null
     },
 
     normNumberStr (s) {
       if (s==null) return ''
-      return s.normalize('NFKC')
+      return String(s).normalize('NFKC')
           .replace(/,/g,'')
           .replace(/[\]|]/g,'')
           .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g,'-')
@@ -404,14 +453,6 @@ export default {
     },
     parseNumber (s) {
       const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN
-    },
-    parseAzimuth (str) {
-      const s=this.normNumberStr(String(str)).toUpperCase()
-      const q=s.match(/([NS])\s*(\d+(?:\.\d+)?)\s*([EW])/)
-      if(q){const d=+q[2],k=q[1]+q[3],m={NE:d,SE:180-d,SW:180+d,NW:360-d};return m[k]??NaN}
-      const dms=s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
-      if(dms){const d=+dms[1],m=dms[2]?+dms[2]:0,sec=dms[3]?+dms[3]:0;return Math.sign(d)*(Math.abs(d)+m/60+sec/3600)}
-      const n=parseFloat(s.replace(/[°度]/g,'')); return Number.isFinite(n)?n:NaN
     },
 
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
@@ -423,59 +464,42 @@ export default {
         if (roles.label!=null) rec.label=String(r[roles.label]??'').trim()||undefined
         if (roles.x!=null) rec.x=this.parseNumber(r[roles.x])
         if (roles.y!=null) rec.y=this.parseNumber(r[roles.y])
-        if (roles.azimuth!=null) rec.az=this.parseAzimuth(r[roles.azimuth])
-        if (roles.distance!=null) rec.dist=this.parseNumber(r[roles.distance])
-        if (roles.radius!=null) rec.R=this.parseNumber(r[roles.radius])
-        if (roles.theta!=null) rec.thetaDeg=this.parseNumber(r[roles.theta])
-        if (roles.chord!=null) rec.chord=this.parseNumber(r[roles.chord])
-        if (roles.arcLength!=null) rec.arcLen=this.parseNumber(r[roles.arcLength])
-        rec.kind=(rec.R&&(rec.thetaDeg||rec.chord||rec.arcLen))?'arc':'line'
         out.push(rec)
       }
       return out
     },
 
-    /* === 誤読補正（簡易） === */
+    /* === 構成/検算 === */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     adjustByMagnitude (v,t){ if(!Number.isFinite(v)||!Number.isFinite(t))return v; const cand=[v,v-9000,v+9000]; cand.sort((a,b)=>Math.abs(a-t)-Math.abs(b-t)); return Math.abs(v-t)>4000?cand[0]:v },
-    postCorrectRecords (recs){
-      if(!recs.length) return recs
-      const xs=recs.map(r=>r.x).filter(Number.isFinite), ys=recs.map(r=>r.y).filter(Number.isFinite)
-      const mx=this.median(xs), my=this.median(ys)
-      return recs.map(r=>({ ...r, x:this.adjustByMagnitude(r.x,mx), y:this.adjustByMagnitude(r.y,my) }))
-    },
-
-    /* === 構成/検算 === */
-    forwardFromAzDist (x,y,az,dist,zero='north'){ const rad=d=>d*Math.PI/180, th=zero==='north'?rad(90-az):rad(az); return { x:x+dist*Math.cos(th), y:y+dist*Math.sin(th) } },
-    shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
-    closureError (pts){ const a=pts[0], b=pts[pts.length-1]; const dx=b.x-a.x, dy=b.y-a.y; return { dx, dy, len: Math.hypot(dx,dy) } },
 
     rebuild () {
       this.buildError=''; this.points=[]
       try {
-        const recs=this.parseRowsToRecords(), fixed=this.postCorrectRecords(recs)
-        let pts=[]
-        const hasXY=fixed.every(r=>Number.isFinite(r.x)&&Number.isFinite(r.y))
-        const hasAD=fixed.every(r=>Number.isFinite(r.az)&&Number.isFinite(r.dist))
-        if (hasXY) {
-          pts=fixed.map(r=>({ x:r.x, y:r.y, idx:Number.isFinite(r.idx)?r.idx:undefined, label:r.label?String(r.label):undefined }))
-        } else if (hasAD && this.startXY) {
-          let cur={x:this.startXY.x, y:this.startXY.y}
-          pts.push({ ...cur, idx: fixed[0]?.idx ?? 1, label: fixed[0]?.label })
-          for (const r of fixed){ const nx=this.forwardFromAzDist(cur.x,cur.y,r.az,r.dist,'north'); pts.push({ ...nx, idx:r.idx, label:r.label }); cur=nx }
-        } else { throw new Error('XYまたは方位+距離の列が揃っていません。') }
-        if (pts.length<3) throw new Error('点が不足しています。')
-        this.points=pts; this.area=this.shoelace(pts); this.closure=this.closureError(pts); this.crs=this.guessCRS(pts)||this.crs
+        const recs=this.parseRowsToRecords()
+        // X/Y が数値の行だけを採用（空行が混ざっても通す）
+        const usable = recs
+            .map((r,i)=>({i, r, x:r.x, y:r.y}))
+            .filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
+
+        if (usable.length < 3) throw new Error('数値の X/Y を持つ行が3つ未満です。列マッピングや表の行を確認してください。')
+
+        const pts = usable.map(o => ({
+          x:o.x, y:o.y,
+          idx: Number.isFinite(o.r.idx) ? o.r.idx : undefined,
+          label: (o.r.label && String(o.r.label).length) ? String(o.r.label) : undefined
+        }))
+
+        // 面積と閉合
+        this.points = pts
+        this.area = this.shoelace(pts)
+        const a=pts[0], b=pts[pts.length-1]
+        const dx=b.x-a.x, dy=b.y-a.y
+        this.closure = { dx, dy, len: Math.hypot(dx,dy) }
       } catch(e){ console.error(e); this.buildError=String(e.message||e) }
     },
 
-    guessCRS (pts){
-      const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y)
-      const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys)
-      const rangeX=maxX-minX, rangeY=maxY-minY
-      if(minX>0 && maxX<400000 && minY>3000000 && maxY<5000000 && rangeX<200000 && rangeY<200000) return this.crs
-      return null
-    },
+    shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
 
     extractLotFromFileName (){
       try{
@@ -551,7 +575,6 @@ export default {
       })
     },
 
-    /* 地図描画 */
     async renderPreviewOnMap () {
       try {
         if (!this.map) await this.initMapLibre()
@@ -643,12 +666,10 @@ export default {
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
 .ocr-table{border:1px solid var(--v-theme-outline-variant);border-radius:8px;padding:8px}
 
-.big-steps :deep(.v-stepper-item__avatar){
-  width:36px;height:36px;font-size:16px;
-}
+/* ステッパーの番号を少し大きく */
+.big-steps :deep(.v-stepper-item__avatar){ width:36px;height:36px;font-size:16px; }
 
 :root{ --tall-h: 300px; }
-
 .pane{display:flex;flex-direction:column;box-sizing:border-box;min-height:0}
 .pane-body{flex:1;display:flex;flex-direction:column;min-height:0}
 
