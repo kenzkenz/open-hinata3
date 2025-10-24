@@ -174,7 +174,9 @@
                           variant="outlined"
                           density="compact"
                       />
-                      <v-btn>
+                      <v-btn
+                          @click="renderPreviewOnMap"
+                      >
                         地図プレビュー作成
                       </v-btn>
                     </v-card-text>
@@ -226,8 +228,9 @@
 </template>
 
 <script>
-import { downloadTextFile } from '@/js/downLoad'
+import { downloadTextFile, zahyokei} from '@/js/downLoad'
 import {mapState} from "vuex";
+import proj4 from 'proj4'
 
 /* === 画像前処理：適応二値化 === */
 async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
@@ -343,6 +346,116 @@ export default {
   },
   mounted () { if (this.step===4) this.initMapLibre() },
   methods: {
+    async renderPreviewOnMap () {
+      try {
+        if (!this.map) await this.initMapLibre()
+        if (!this.points?.length) { this.buildError = '点データがありません。'; return }
+
+        // 1) src座標系コードを downLoad.js から取得
+        const kei = this.s_zahyokei || 'WGS84'
+        const srcCode = (zahyokei.find(it => it.kei === kei)?.code) || 'EPSG:4326'
+        const dstCode = 'EPSG:4326' // MapLibreへは緯度経度
+
+        // 2) XY -> lon/lat 変換（WGS84はそのまま）
+        const coordsLngLat = this.points.map(p => {
+          const east = Number(p.x), north = Number(p.y)
+          if (!Number.isFinite(east) || !Number.isFinite(north)) return null
+          if (srcCode === 'EPSG:4326') return [east, north] // 既にlon/lat
+          try {
+            const [lon, lat] = proj4(srcCode, dstCode, [east, north])
+            return [lon, lat]
+          } catch (e) {
+            console.warn('proj4変換失敗: fallback xy', e)
+            return [east, north]
+          }
+        }).filter(Boolean)
+
+        if (coordsLngLat.length < 3) {
+          this.buildError = 'ポリゴンを作るには3点以上が必要です。'
+          return
+        }
+
+        // 3) GeoJSON（Polygon + 頂点Point）
+        const ring = [...coordsLngLat, coordsLngLat[0]]
+        const featurePolygon = {
+          type: 'Feature',
+          properties: { type: 'polygon', chiban: this.extractLotFromFileName(), srcCrs: kei, srcCode },
+          geometry: { type: 'Polygon', coordinates: [ring] }
+        }
+        const featureVertices = coordsLngLat.map((c,i) => ({
+          type: 'Feature',
+          properties: {
+            type: 'vertex',
+            idx: (this.points[i]?.idx ?? (i+1)),
+            label: (this.points[i]?.label ?? '')
+          },
+          geometry: { type: 'Point', coordinates: c }
+        }))
+        const fc = { type: 'FeatureCollection', features: [featurePolygon, ...featureVertices] }
+
+        // 4) MapLibreへ描画（source/layerを新規 or 更新）
+        const srcId = 'kyuseki-preview'
+        if (this.map.getSource(srcId)) {
+          this.map.getSource(srcId).setData(fc)
+        } else {
+          this.map.addSource(srcId, { type: 'geojson', data: fc })
+          this.map.addLayer({
+            id: 'kyuseki-fill',
+            type: 'fill',
+            source: srcId,
+            filter: ['==', '$type', 'Polygon'],
+            paint: { 'fill-color': '#088', 'fill-opacity': 0.35 }
+          })
+          this.map.addLayer({
+            id: 'kyuseki-line',
+            type: 'line',
+            source: srcId,
+            filter: ['==', '$type', 'Polygon'],
+            paint: { 'line-color': '#004', 'line-width': 2 }
+          })
+          this.map.addLayer({
+            id: 'kyuseki-vertex',
+            type: 'circle',
+            source: srcId,
+            filter: ['==', ['get','type'], 'vertex'],
+            paint: {
+              'circle-radius': ['interpolate',['linear'],['zoom'], 12, 2, 18, 5],
+              'circle-color': '#f00',
+              'circle-stroke-width': 1,
+              'circle-stroke-color': '#fff'
+            }
+          })
+          this.map.addLayer({
+            id: 'kyuseki-vertex-label',
+            type: 'symbol',
+            source: srcId,
+            filter: ['==', ['get','type'], 'vertex'],
+            layout: {
+              'text-field': ['coalesce', ['get','label'], ['to-string', ['get','idx']]],
+              'text-size': 12,
+              'text-offset': [0, 1.2],
+              'text-variable-anchor': ['top']
+            },
+            paint: {
+              'text-color': '#111',
+              'text-halo-color': 'rgba(255,255,255,0.85)',
+              'text-halo-width': 1
+            },
+            minzoom: 14
+          })
+        }
+
+        // 5) 自動ズーム
+        const { LngLatBounds } = await import('maplibre-gl')
+        const bounds = new LngLatBounds()
+        ring.forEach(c => bounds.extend(c))
+        this.map.fitBounds(bounds, { padding: 24, maxZoom: 19 })
+      } catch (e) {
+        console.error(e)
+        this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '')
+      }
+    },
+
     fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
     close () { this.internal = false },
     goNext () {
