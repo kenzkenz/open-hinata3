@@ -208,14 +208,65 @@
 </template>
 
 <script>
-// OH3の“いつもの”Options API 前提
-// ※ 実OCR部分はアダプタ関数（runLocalOCR / runCloudOCR）を用意し、後で実装差し替え可能に
+// ===== 画像前処理ユーティリティ（端末内OCR向け, 互換強化） =====
+async function fileToCanvas (file, maxSide = 2200) {
+  const blob = (file instanceof File) ? file : new File([file], 'img')
+
+  // createImageBitmap 非対応環境にも対応
+  const img = await (async () => {
+    if (typeof createImageBitmap === 'function') return createImageBitmap(blob)
+    return await new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob)
+      const image = new Image()
+      image.onload = () => { resolve(image); URL.revokeObjectURL(url) }
+      image.onerror = reject
+      image.src = url
+    })
+  })()
+
+  const scale = Math.min(1, maxSide / Math.max(img.width, img.height))
+  const w = Math.max(1, Math.round(img.width * scale))
+  const h = Math.max(1, Math.round(img.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = w; canvas.height = h
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 0, 0, w, h)
+
+  // グレースケール + 簡易二値化（平均値しきい）
+  const imgData = ctx.getImageData(0, 0, w, h)
+  const d = imgData.data
+  let sum = 0
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0
+    sum += gray
+  }
+  const mean = sum / (d.length/4)
+  const th = Math.max(120, Math.min(180, mean))
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0
+    const v = gray > th ? 255 : 0
+    d[i]=d[i+1]=d[i+2]=v
+  }
+  ctx.putImageData(imgData, 0, 0)
+  return canvas
+}
+
+// 行テキスト → セル分割（空白/タブ/カンマ/縦棒/連続空白）
+function splitRow (line) {
+  return line
+      .replace(/\s+\|/g, ' |')
+      .replace(/\|\s+/g, '| ')
+      .split(/[,\t|]| {2,}/)
+      .map(s => s.trim())
+      .filter(s => s.length)
+}
+
 export default {
   name: 'KyusekiImportDialog',
   props: {
     modelValue: { type: Boolean, default: false },
     jobId: { type: [String, Number], default: null },
-    startXY: { type: Object, default: null }, // {x,y} 方位距離→座標展開の起点が必要な場合
+    startXY: { type: Object, default: null }, // {x,y}
   },
   emits: ['update:modelValue','imported'],
   data () {
@@ -236,7 +287,7 @@ export default {
       rawTable: { headers: [], rows: [] },
 
       // Step3 列ロール
-      columnRoles: [], // index: columnIndex, value: role key
+      columnRoles: [],
       roleOptions: [
         { title:'未使用', value:null },
         { title:'点番', value:'idx' },
@@ -255,7 +306,7 @@ export default {
       points: [],
       area: { area: 0, signed: 0 },
       closure: { dx:0, dy:0, len:0 },
-      closureThreshold: 0.02, // m（任意）
+      closureThreshold: 0.02,
       featureName: 'kyuseki-import',
       crs: 'EPSG:6677',
       crsChoices: ['EPSG:6677','EPSG:6668','EPSG:6669','EPSG:6670','EPSG:6671','EPSG:6672','EPSG:6673','EPSG:6674','EPSG:6675','EPSG:6676','EPSG:6677','EPSG:6678','EPSG:6679','EPSG:6680','EPSG:6681','EPSG:6682','EPSG:6683','EPSG:6684','EPSG:6685','EPSG:6686'],
@@ -299,22 +350,23 @@ export default {
       this.ocrError = ''
       this.busy = true
       try {
-        // 1) 端末内OCR（表抽出付き）
+        // 端末内OCR
         let table = await this.runLocalOCR(this.file)
+        const localEmpty = !table || !table.headers?.length || !table.rows?.length
 
-        // フォールバック条件：空 or 低品質
-        const low = !table || !table.headers?.length || !table.rows?.length
-        if (low && this.useCloudFallback) {
-          table = await this.runCloudOCR(this.file, this.cloudService)
+        // フォールバック
+        if (localEmpty && this.useCloudFallback) {
+          const t2 = await this.runCloudOCR(this.file, this.cloudService)
+          const cloudEmpty = !t2 || !t2.headers?.length || !t2.rows?.length
+          if (!cloudEmpty) table = t2
         }
-        if (!table || !table.headers?.length) throw new Error('OCRに失敗しました。')
 
-        // 保存
+        if (!table || !table.headers?.length) {
+          throw new Error('OCRに失敗しました（端末内/クラウドともに表を検出できず）')
+        }
+
         this.rawTable = table
-        // 初期ロール推定
-        this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h))
-        // 取りこぼしが多い場合の保険
-        this.columnRoles = this.columnRoles.map(v => v ?? null)
+        this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h)).map(v => v ?? null)
         if (this.step < 3) this.step = 3
       } catch (e) {
         console.error(e)
@@ -324,18 +376,114 @@ export default {
       }
     },
 
-    // 端末内OCR（差し替えポイント）
+    // 端末内OCR（PNG/JPG, tesseract.js v2/v5 両対応 / CDN パス明示）
     async runLocalOCR (file) {
-      // TODO: PaddleOCR/Tesseract.js + 罫線抽出で表を生成
-      // ここではデモ用に "ヘッダ推測不能" な最小テーブルを返す（実装差替え前提）
-      return { headers: [], rows: [] }
+      const name = (file && file.name) ? file.name : ''
+      const isImage = !/\.pdf$/i.test(name)
+      if (!isImage) return { headers: [], rows: [] }
+
+      const T = await import('tesseract.js')
+      const createWorker = T.createWorker || (T.default && T.default.createWorker)
+      if (!createWorker) return { headers: [], rows: [] }
+
+      const canvas = await fileToCanvas(file)
+
+
+
+
+
+                    const workerOptions = {
+                  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                  corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
+                  langPath:   'https://tessdata.projectnaptha.com/5'
+            }
+            let worker
+            try {
+                // v5 署名: createWorker(langs[, options])
+                    worker = await createWorker(['jpn', 'eng'], workerOptions)
+                  } catch {
+                // v2 署名: createWorker([options])
+                    worker = await createWorker(workerOptions)
+                  }
+
+
+      try {
+        if (worker.load) await worker.load()
+        if (worker.loadLanguage) await worker.loadLanguage('jpn+eng')
+        if (worker.initialize) await worker.initialize('jpn+eng')
+
+        if (worker.setParameters) {
+          await worker.setParameters({
+            tessedit_pageseg_mode: 6,
+            preserve_interword_spaces: '1',
+            tessedit_char_whitelist:
+                '0123456789.-+()[]{}:：XxYyNnEeWwSs度°′\'"弧長弦半径中心角点番Noｎｏ東西南北備考/|,',
+          })
+        }
+
+        const res = await worker.recognize(canvas)
+        const data = res?.data || res
+
+        // 信頼度の安全取得
+        let conf = typeof data?.confidence === 'number' ? data.confidence : 0
+        if (!conf && Array.isArray(data?.words) && data.words.length) {
+          conf = data.words.reduce((s,w)=>s+(w.confidence||0),0) / data.words.length
+        }
+
+        // 行テキスト抽出（lines が空なら text を使う）
+        let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text||'').trim()) : []
+        if (!lines.length && typeof data?.text === 'string') {
+          lines = data.text.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+        }
+
+        // セル化
+        let rows = lines.map(splitRow).filter(r => r.length > 1)
+        if (!rows.length) {
+          rows = lines
+              .map(line => line.split(/ {3,}|\t|,/).map(s => s.trim()).filter(Boolean))
+              .filter(r => r.length > 1)
+        }
+        if (!rows.length) return { headers: [], rows: [] }
+
+        // ヘッダ候補：非数字の多さでスコア（ハイフンは末尾）
+        const idxMax = rows
+            .map((r, i) => ({ i, score: r.filter(c => /[^\d\s.-]/.test(c)).length }))
+            .sort((a,b)=>b.score-a.score)[0]?.i ?? 0
+
+        let headers = rows[idxMax].map(h => h.replace(/\s+/g,''))
+        headers = headers.map(h =>
+            h.replace(/点名|点番|番号|No/i,'点番')
+                .replace(/X座標|東距|東/i,'X')
+                .replace(/Y座標|北距|北/i,'Y')
+                .replace(/方位角|方位/i,'方位角')
+                .replace(/距離|長さ|延長/i,'距離')
+                .replace(/半径|R/i,'半径R')
+                .replace(/中心角|角度/i,'中心角θ')
+                .replace(/弦長|弦/i,'弦長c')
+                .replace(/弧長/i,'弧長L')
+        )
+
+        const body = rows.filter((_,i)=> i !== idxMax)
+        const colN = Math.max(headers.length, ...body.map(r=>r.length))
+        headers = headers.slice(0, colN)
+        const normBody = body.map(r => {
+          const a = r.slice(0, colN)
+          while (a.length < colN) a.push('')
+          return a
+        })
+
+        // conf が低くても形になっていれば返す
+        return { headers, rows: normBody }
+      } catch (e) {
+        console.error('local OCR error:', e)
+        return { headers: [], rows: [] }
+      } finally {
+        try { await worker.terminate() } catch {}
+      }
     },
 
-    // クラウドOCR（差し替えポイント）
-    async runCloudOCR (file, service='Textract') {
-      // TODO: サーバの署名付きプロキシ経由で各社APIに投げる
-      // 返却は { headers: string[], rows: string[][] } 形式
-      // ここではダミーを返す
+    // クラウドOCR（差し替えポイント：現状ダミー）
+    async runCloudOCR () {
       return { headers: [], rows: [] }
     },
 
@@ -345,9 +493,9 @@ export default {
       const z2h = s.normalize('NFKC')
       return z2h
           .replace(/\s+/g,'')
-          /* 記号除去：() 全角() 【】 : ： - ー _ をまとめて除去 */
-          .replace(/[()【】（）:：\-ー_]/g,'')
-          /* 角括弧は個別に除去（no-useless-escape / no-empty-character-class 回避） */
+          /* 記号除去（ハイフンは末尾配置でLint回避） */
+          .replace(/[()【】（）:：ー_-]/g,'')
+          /* 角括弧は個別に除去（Lint回避） */
           .replace(/\[/g,'')
           .replace(/\]/g,'')
           .toLowerCase()
@@ -393,8 +541,8 @@ export default {
         const map = { NE:deg, SE:180-deg, SW:180+deg, NW:360-deg }
         return map[NSEW] ?? NaN
       }
-      // d°m′s″ / d-m-s / d 度
-      const dms = s.match(/(-?\d+)[°º度\- ]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
+      // d°m′s″ / d-m-s / d 度（ハイフンは文字クラス末尾）
+      const dms = s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
       if (dms) {
         const d = parseFloat(dms[1])
         const m = dms[2] ? parseFloat(dms[2]) : 0
@@ -406,14 +554,12 @@ export default {
     },
 
     mapColumnsObject () {
-      // { role: columnIndex }
       const obj = {}
       this.columnRoles.forEach((role, i) => { if (role) obj[role] = i })
       return obj
     },
 
     parseRowsToRecords () {
-      const headers = this.rawTable.headers
       const rows = this.rawTable.rows
       const roles = this.mapColumnsObject()
       const out = []
@@ -483,7 +629,6 @@ export default {
         this.points = pts
         this.area = this.shoelace(pts)
         this.closure = this.closureError(pts)
-        // CRS あたり
         this.crs = this.guessCRS(pts) || this.crs
       } catch (e) {
         console.error(e)
@@ -491,15 +636,14 @@ export default {
       }
     },
 
-    // 超簡易CRS推定（値域ベース）。必要なら後で精密化
+    // 超簡易CRS推定（値域ベース）
     guessCRS (pts) {
       const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y)
       const minX = Math.min(...xs), maxX = Math.max(...xs)
       const minY = Math.min(...ys), maxY = Math.max(...ys)
       const rangeX = maxX-minX, rangeY = maxY-minY
-      // 平面直角っぽい値域（超ざっくり）
       if (minX>0 && maxX< 400000 && minY> 3000000 && maxY< 5000000 && (rangeX<200000) && (rangeY<200000)) {
-        return 'EPSG:6677' // デフォ仮
+        return 'EPSG:6677'
       }
       return null
     },
@@ -516,14 +660,11 @@ export default {
       if (!this.points.length) return
       this.busy = true
       try {
-        // 1) Job/Point へ（OH3の既存Action名に合わせて適宜変更）
         if (this.jobId) {
           await this.$store.dispatch('jobs/addPoints', { jobId: this.jobId, points: this.points, crs: this.crs })
         }
-        // 2) GeoJSON レイヤ投入
         const feature = this.toGeoJSONLineString(this.points, this.crs)
         await this.$store.dispatch('layers/addGeoJSON', { id: 'kyuseki-import', feature })
-        // 3) 通知 & close
         this.$emit('imported', { count: this.points.length, crs: this.crs, area: this.area.area })
         this.step = 5
       } catch (e) {

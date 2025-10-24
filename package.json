@@ -59,6 +59,7 @@
     "sanitize-html": "^2.16.0",
     "shpjs": "^6.1.0",
     "terra-draw": "^1.4.0",
+    "tesseract.js": "^6.0.1",
     "tokml": "^0.4.0",
     "v-drag": "^3.0.9",
     "vue": "^3.5.13",
