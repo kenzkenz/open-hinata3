@@ -282,8 +282,8 @@ function splitRow (line) {
 function extractIdXY (line) {
   if (!line) return null
   const s = line.replace(/[［\]【】]/g,' ').replace(/\s+/g,' ').trim()
-  // ↓ ‘\/’ を撤去（文字クラス内なので不要）
-  const idMatch = s.match(/[A-Za-z0-9.\-／/]+/)
+  // 文字クラス内の '/' はエスケープ不要。ハイフンは末尾へ。
+  const idMatch = s.match(/[A-Za-z0-9./／-]+/)
   if (!idMatch) return null
   const id = idMatch[0]
   const nums = [...s.matchAll(/-?\d+(?:\.\d+)?/g)].map(m => m[0])
@@ -416,7 +416,7 @@ export default {
       }
     },
 
-    // 端末内OCR（PNG/JPG, tesseract.js v2/v5 両対応 / CDN パス明示）
+    // 端末内OCR（PNG/JPG, tesseract.js v2/v5 両対応 / CDN パス明示、ヘッダ強制分割対応）
     async runLocalOCR (file) {
       const name = (file && file.name) ? file.name : ''
       const isImage = !/\.pdf$/i.test(name)
@@ -452,60 +452,88 @@ export default {
             tessedit_pageseg_mode: 6,
             preserve_interword_spaces: '1',
             tessedit_char_whitelist:
-                '0123456789.-+()[]{}:：XxYyNnEeWwSs度°′\'"弧長弦半径中心角点番Noｎｏ東西南北備考/|,',
+                '0123456789.-+()[]{}:：XxYyNnEeWwSs度°′\'"弧長弦半径中心角点番Noｎｏ東西南北備考/|,'
           })
         }
 
         const res = await worker.recognize(canvas)
         const data = res?.data || res
 
-        // 信頼度
-        let conf = typeof data?.confidence === 'number' ? data.confidence : 0
-        if (!conf && Array.isArray(data?.words) && data.words.length) {
-          conf = data.words.reduce((s,w)=>s+(w.confidence||0),0) / data.words.length
-        }
-
         // 行テキスト抽出（lines が空なら text から）
-        let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text||'').trim()) : []
+        let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text || '').trim()) : []
         if (!lines.length && typeof data?.text === 'string') {
           lines = data.text.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
         }
 
+        // ===== ヘッダ候補を強制分割（NO|Xn|Yn... を復元） =====
+        const headerLine = lines.find(L => {
+          const s = (L || '').normalize('NFKC')
+          const hasXY = /Xn/i.test(s) && /Yn/i.test(s)
+          const nums = (s.match(/-?\d+(?:\.\d+)?/g) || []).length
+          return hasXY && nums <= 2
+        })
+
+        let fixedHeader = null
+        if (headerLine) {
+          fixedHeader = headerLine
+              .normalize('NFKC')
+              .replace(/(N[O0]+)\s*(Xn)/ig, '$1 | $2')  // NO と Xn の間
+              .replace(/(Xn)\s*(Yn)/ig, '$1 | $2')      // Xn と Yn の間
+              .replace(/(Yn)\s*(Y[^\s|]+)/ig, '$1 | $2')// Yn と派生列の間
+              .replace(/\s{2,}/g, ' ')
+        }
+
         // まず通常のセル分割
-        let rows = lines.map(splitRow).filter(r => r.length > 1)
+        let rows = lines
+            .map(L => (L === headerLine && fixedHeader) ? fixedHeader : L)
+            .map(splitRow)
+            .filter(r => r.length > 1)
 
         // 3列未満なら抽出パーサで [NO, Xn, Yn] を構築（崩壊救済）
         if (!rows.length || Math.max(...rows.map(r => r.length)) < 3) {
           const ext = lines.map(extractIdXY).filter(Boolean)
           if (ext.length) {
-            const headers = ['NO','Xn','Yn']
+            const headers = ['NO', 'Xn', 'Yn']
             const body = ext.map(([id, x, y]) => [id, x, y])
             return { headers, rows: body }
           }
         }
-
         if (!rows.length) return { headers: [], rows: [] }
 
         // ヘッダ候補：非数字の多さでスコア（- は末尾）
         const idxMax = rows
             .map((r, i) => ({ i, score: r.filter(c => /[^\d\s.-]/.test(c)).length }))
-            .sort((a,b)=>b.score-a.score)[0]?.i ?? 0
+            .sort((a, b) => b.score - a.score)[0]?.i ?? 0
 
-        let headers = rows[idxMax].map(h => h.replace(/\s+/g,''))
+        // ヘッダ整形
+        let headers = rows[idxMax].map(h => h.replace(/\s+/g, ''))
+
+        // もし結合して少ない場合は連結した1行から再分割を試みる
+        if (headers.length < 3) {
+          const joined = rows[idxMax].join(' ')
+          const forced = joined
+              .normalize('NFKC')
+              .replace(/(N[O0]+)\s*(Xn)/ig, '$1|$2')
+              .replace(/(Xn)\s*(Yn)/ig, '$1|$2')
+              .replace(/(Yn)\s*(Y[^\s|]+)/ig, '$1|$2')
+              .split('|').map(s => s.trim()).filter(Boolean)
+          if (forced.length >= 3) headers = forced
+        }
+
         headers = headers.map(h =>
-            h.replace(/点名|点番|番号|No/i,'点番')
-                .replace(/X座標|東距|東/i,'X')
-                .replace(/Y座標|北距|北/i,'Y')
-                .replace(/方位角|方位/i,'方位角')
-                .replace(/距離|長さ|延長/i,'距離')
-                .replace(/半径|R/i,'半径R')
-                .replace(/中心角|角度/i,'中心角θ')
-                .replace(/弦長|弦/i,'弦長c')
-                .replace(/弧長/i,'弧長L')
+            h.replace(/点名|点番|番号|No/i, '点番')
+                .replace(/X座標|東距|東/i, 'X')
+                .replace(/Y座標|北距|北/i, 'Y')
+                .replace(/方位角|方位/i, '方位角')
+                .replace(/距離|長さ|延長/i, '距離')
+                .replace(/半径|R/i, '半径R')
+                .replace(/中心角|角度/i, '中心角θ')
+                .replace(/弦長|弦/i, '弦長c')
+                .replace(/弧長/i, '弧長L')
         )
 
-        const body = rows.filter((_,i)=> i !== idxMax)
-        const colN = Math.max(headers.length, ...body.map(r=>r.length))
+        const body = rows.filter((_, i) => i !== idxMax)
+        const colN = Math.max(headers.length, ...body.map(r => r.length))
         headers = headers.slice(0, colN)
         const normBody = body.map(r => {
           const a = r.slice(0, colN)
@@ -513,7 +541,6 @@ export default {
           return a
         })
 
-        // conf が低くても形になっていれば返す
         return { headers, rows: normBody }
       } catch (e) {
         console.error('local OCR error:', e)
@@ -533,36 +560,34 @@ export default {
       if (!s) return ''
       const z2h = s.normalize('NFKC')
       return z2h
-          .replace(/\s+/g,'')
-          .replace(/[()【】（）:：ー_-]/g,'')   // 記号除去（-は末尾で安全）
-          .replace(/\[/g,'')
-          .replace(/\]/g,'')
+          .replace(/\s+/g, '')
+          .replace(/[()【】（）:：ー_-]/g, '')   // 記号除去（-は末尾）
+          .replace(/\[/g, '')
+          .replace(/\]/g, '')
           .toLowerCase()
     },
     guessRoleFromHeader (h) {
       const H = this.normHeader(h)
-      // 強一致（今回の票に最適化）
-      const compact = String(h).replace(/\s+/g,'')
+      const compact = String(h).replace(/\s+/g, '')
       if (/^(no|n0|№|番)$/i.test(compact)) return 'idx'
-      if (/^(xn|x)$/i.test(h)) return 'x'
-      if (/^(yn|y)$/i.test(h)) return 'y'
+      if (/^(xn|x)$/i.test(h.trim())) return 'x'
+      if (/^(yn|y)$/i.test(h.trim())) return 'y'
 
       const dict = {
-        idx: ['点','点番','点名','番号','no','ｎｏ','番','n0','№'],
-        x: ['x','xn','x座標','東','e','東距','横座標'],
-        y: ['y','yn','y座標','北','n','北距','縦座標'],
-        azimuth: ['方位','方位角','方角','bearing','方位角度'],
-        distance: ['距離','長さ','延長','d','l','辺長'],
-        radius: ['r','半径','曲率半径'],
-        theta: ['中心角','角度','θ','デルタ','delta','セクタ角'],
-        chord: ['弦','弦長'],
-        arcLength: ['弧長','アーク長','弧線長'],
-        remark: ['備考','注記','メモ']
+        idx: ['点', '点番', '点名', '番号', 'no', 'ｎｏ', '番', 'n0', '№'],
+        x: ['x', 'xn', 'x座標', '東', 'e', '東距', '横座標'],
+        y: ['y', 'yn', 'y座標', '北', 'n', '北距', '縦座標'],
+        azimuth: ['方位', '方位角', '方角', 'bearing', '方位角度'],
+        distance: ['距離', '長さ', '延長', 'd', 'l', '辺長'],
+        radius: ['r', '半径', '曲率半径'],
+        theta: ['中心角', '角度', 'θ', 'デルタ', 'delta', 'セクタ角'],
+        chord: ['弦', '弦長'],
+        arcLength: ['弧長', 'アーク長', '弧線長'],
+        remark: ['備考', '注記', 'メモ']
       }
       for (const [role, arr] of Object.entries(dict)) {
         if (arr.some(k => H.includes(k))) return role
       }
-      // フォールバックは単独語のみ
       if (/\b(xn|x)\b/i.test(h)) return 'x'
       if (/\b(yn|y)\b/i.test(h)) return 'y'
       return null
@@ -570,10 +595,10 @@ export default {
 
     normNumberStr (s) {
       if (s == null) return ''
-      const z2h = s.normalize('NFKC').replace(/,/g,'')
+      const z2h = s.normalize('NFKC').replace(/,/g, '')
       return z2h
-          .replace(/[\]|]/g,'')           // 罫線の残骸（ ']' と '|' ）
-          // マイナス各種 & 紛れ込む空白類（NBSP, EM/EN SPACE, 全角空白）を Unicode エスケープで指定
+          .replace(/[\]|]/g, '')               // 罫線の残骸 '|' と ']'
+          // マイナス各種 & 紛れ込む空白類（NBSP, EM/EN SPACE, 全角空白）を Unicode エスケープで
           .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g, '-')
           .trim()
     },
@@ -583,24 +608,22 @@ export default {
     },
     parseAzimuth (str) {
       const s = this.normNumberStr(String(str)).toUpperCase()
-      // N30E / S12W
       const q = s.match(/([NS])\s*(\d+(?:\.\d+)?)\s*([EW])/)
       if (q) {
         const deg = parseFloat(q[2])
         const NSEW = q[1] + q[3]
-        const map = { NE:deg, SE:180-deg, SW:180+deg, NW:360-deg }
+        const map = { NE: deg, SE: 180 - deg, SW: 180 + deg, NW: 360 - deg }
         return map[NSEW] ?? NaN
       }
-      // d°m′s″ / d-m-s / d 度（-はクラス末尾）
       const dms = s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
       if (dms) {
         const d = parseFloat(dms[1])
         const m = dms[2] ? parseFloat(dms[2]) : 0
         const sec = dms[3] ? parseFloat(dms[3]) : 0
-        return Math.sign(d) * (Math.abs(d) + m/60 + sec/3600)
+        return Math.sign(d) * (Math.abs(d) + m / 60 + sec / 3600)
       }
-      const n = parseFloat(s.replace(/[°度]/g,''))
-      return isFinite(n) ? n : NaN
+      const n = parseFloat(s.replace(/[°度]/g, ''))
+      return Number.isFinite(n) ? n : NaN
     },
 
     mapColumnsObject () {
@@ -615,15 +638,15 @@ export default {
       const out = []
       for (const r of rows) {
         const rec = {}
-        if (roles.idx!=null) rec.idx = r[roles.idx]
-        if (roles.x!=null) rec.x = this.parseNumber(r[roles.x])
-        if (roles.y!=null) rec.y = this.parseNumber(r[roles.y])
-        if (roles.azimuth!=null) rec.az = this.parseAzimuth(r[roles.azimuth])
-        if (roles.distance!=null) rec.dist = this.parseNumber(r[roles.distance])
-        if (roles.radius!=null) rec.R = this.parseNumber(r[roles.radius])
-        if (roles.theta!=null) rec.thetaDeg = this.parseNumber(r[roles.theta])
-        if (roles.chord!=null) rec.chord = this.parseNumber(r[roles.chord])
-        if (roles.arcLength!=null) rec.arcLen = this.parseNumber(r[roles.arcLength])
+        if (roles.idx != null) rec.idx = r[roles.idx]
+        if (roles.x != null) rec.x = this.parseNumber(r[roles.x])
+        if (roles.y != null) rec.y = this.parseNumber(r[roles.y])
+        if (roles.azimuth != null) rec.az = this.parseAzimuth(r[roles.azimuth])
+        if (roles.distance != null) rec.dist = this.parseNumber(r[roles.distance])
+        if (roles.radius != null) rec.R = this.parseNumber(r[roles.radius])
+        if (roles.theta != null) rec.thetaDeg = this.parseNumber(r[roles.theta])
+        if (roles.chord != null) rec.chord = this.parseNumber(r[roles.chord])
+        if (roles.arcLength != null) rec.arcLen = this.parseNumber(r[roles.arcLength])
         rec.kind = (rec.R && (rec.thetaDeg || rec.chord || rec.arcLen)) ? 'arc' : 'line'
         out.push(rec)
       }
@@ -631,8 +654,8 @@ export default {
     },
 
     // ===== Step4: 再構成 & 検算 =====
-    forwardFromAzDist (x, y, azDeg, dist, azZero='north') {
-      const rad = (d)=> d*Math.PI/180
+    forwardFromAzDist (x, y, azDeg, dist, azZero = 'north') {
+      const rad = (d) => d * Math.PI / 180
       const theta = azZero === 'north' ? rad(90 - azDeg) : rad(azDeg)
       const dx = dist * Math.cos(theta)
       const dy = dist * Math.sin(theta)
@@ -640,18 +663,18 @@ export default {
     },
     shoelace (pts) {
       const n = pts.length
-      let s1=0,s2=0
-      for (let i=0;i<n;i++){
-        const a=pts[i], b=pts[(i+1)%n]
-        s1+=a.x*b.y; s2+=a.y*b.x
+      let s1 = 0, s2 = 0
+      for (let i = 0; i < n; i++) {
+        const a = pts[i], b = pts[(i + 1) % n]
+        s1 += a.x * b.y; s2 += a.y * b.x
       }
-      const signed = 0.5*(s1-s2)
+      const signed = 0.5 * (s1 - s2)
       return { area: Math.abs(signed), signed }
     },
     closureError (pts) {
-      const first=pts[0], last=pts[pts.length-1]
-      const dx = last.x-first.x, dy = last.y-first.y
-      return { dx, dy, len: Math.hypot(dx,dy) }
+      const first = pts[0], last = pts[pts.length - 1]
+      const dx = last.x - first.x, dy = last.y - first.y
+      return { dx, dy, len: Math.hypot(dx, dy) }
     },
 
     rebuild () {
@@ -663,9 +686,9 @@ export default {
         const hasXY = recs.every(r => Number.isFinite(r.x) && Number.isFinite(r.y))
         const hasAD = recs.every(r => Number.isFinite(r.az) && Number.isFinite(r.dist))
         if (hasXY) {
-          pts = recs.map((r,i)=>({ x:r.x, y:r.y, idx:r.idx ?? (i+1) }))
+          pts = recs.map((r, i) => ({ x: r.x, y: r.y, idx: r.idx ?? (i + 1) }))
         } else if (hasAD && this.startXY) {
-          let cur = { x:this.startXY.x, y:this.startXY.y }
+          let cur = { x: this.startXY.x, y: this.startXY.y }
           pts.push({ ...cur, idx: recs[0]?.idx ?? 1 })
           for (const r of recs) {
             const nxt = this.forwardFromAzDist(cur.x, cur.y, r.az, r.dist, 'north')
@@ -688,11 +711,11 @@ export default {
 
     // 超簡易CRS推定（値域ベース）
     guessCRS (pts) {
-      const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y)
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y)
       const minX = Math.min(...xs), maxX = Math.max(...xs)
       const minY = Math.min(...ys), maxY = Math.max(...ys)
-      const rangeX = maxX-minX, rangeY = maxY-minY
-      if (minX>0 && maxX< 400000 && minY> 3000000 && maxY< 5000000 && (rangeX<200000) && (rangeY<200000)) {
+      const rangeX = maxX - minX, rangeY = maxY - minY
+      if (minX > 0 && maxX < 400000 && minY > 3000000 && maxY < 5000000 && (rangeX < 200000) && (rangeY < 200000)) {
         return 'EPSG:6677'
       }
       return null
@@ -701,9 +724,9 @@ export default {
     // ===== Step5: OH3へ投入 =====
     toGeoJSONLineString (points, crs) {
       return {
-        type:'Feature',
-        properties:{ crs, name: this.featureName },
-        geometry:{ type:'LineString', coordinates: points.map(p=>[p.x,p.y]) }
+        type: 'Feature',
+        properties: { crs, name: this.featureName },
+        geometry: { type: 'LineString', coordinates: points.map(p => [p.x, p.y]) }
       }
     },
     async commit () {
@@ -723,7 +746,7 @@ export default {
       } finally {
         this.busy = false
       }
-    },
+    }
   }
 }
 </script>
