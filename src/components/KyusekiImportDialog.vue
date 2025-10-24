@@ -3,28 +3,28 @@
     <v-card>
       <!-- ヘッダー -->
       <v-card-title class="d-flex align-center justify-space-between">
-        <div class="d-flex align-center gap-2">
-          <v-icon class="mr-2">mdi-table-search</v-icon>
+        <div class="d-flex align-center gap-2 oh3-title">
+          <v-icon class="mr-2" color="primary">mdi-table-search</v-icon>
           求積表インポート（OCR）
         </div>
         <v-btn icon="mdi-close" variant="text" @click="close" />
       </v-card-title>
 
-      <v-divider></v-divider>
+      <v-divider color="primary"></v-divider>
 
       <!-- ステッパー -->
       <div class="px-4 pt-2">
-        <v-stepper v-model="step" alt-labels flat>
+        <v-stepper v-model="step" alt-labels flat color="primary">
           <v-stepper-header>
-            <v-stepper-item :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
+            <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
             <v-divider></v-divider>
-            <v-stepper-item :complete="step>2" :value="2" title="OCR" subtitle="自動抽出" />
+            <v-stepper-item color="primary" :complete="step>2" :value="2" title="OCR" subtitle="自動抽出" />
             <v-divider></v-divider>
-            <v-stepper-item :complete="step>3" :value="3" title="列マッピング" subtitle="X/Y/距離/角 等" />
+            <v-stepper-item color="primary" :complete="step>3" :value="3" title="列マッピング" subtitle="X/Y/距離/角 等" />
             <v-divider></v-divider>
-            <v-stepper-item :complete="step>4" :value="4" title="プレビュー・検算" subtitle="閉合/面積" />
+            <v-stepper-item color="primary" :complete="step>4" :value="4" title="プレビュー・検算" subtitle="閉合/面積" />
             <v-divider></v-divider>
-            <v-stepper-item :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
+            <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
           </v-stepper-header>
 
           <v-stepper-window>
@@ -61,7 +61,7 @@
             <v-stepper-window-item :value="2">
               <div class="pa-4">
                 <div class="d-flex align-center gap-3 mb-3">
-                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition">OCR 実行</v-btn>
+                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行</v-btn>
                   <span class="text-medium-emphasis">端末内OCR → 失敗/低信頼なら {{ cloudService }} にフォールバック</span>
                 </div>
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
@@ -134,7 +134,7 @@
 
                 <div v-if="points.length">
                   <div class="d-flex flex-wrap gap-4">
-                    <v-card class="flex-1" variant="outlined">
+                    <v-card class="flex-1 oh3-accent-border" variant="outlined">
                       <v-card-title class="py-2">座標プレビュー</v-card-title>
                       <v-card-text>
                         <div class="table-scroll">
@@ -158,7 +158,7 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card class="flex-1" variant="outlined">
+                    <v-card class="flex-1 oh3-accent-border" variant="outlined">
                       <v-card-title class="py-2">検算</v-card-title>
                       <v-card-text>
                         <div class="mb-2">閉合差：<b>{{ fmt(closure.len) }} m</b>（dx={{ fmt(closure.dx) }}, dy={{ fmt(closure.dy) }}）</div>
@@ -184,7 +184,7 @@
             <v-stepper-window-item :value="5">
               <div class="pa-4">
                 <div v-if="points.length">
-                  <v-alert type="info" variant="tonal" class="mb-4">{{ points.length }} 点を OH3 に取り込みます。</v-alert>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-4">{{ points.length }} 点を OH3 に取り込みます。</v-alert>
                   <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                 </div>
                 <div v-else class="text-medium-emphasis">先に再構成してください。</div>
@@ -345,8 +345,9 @@ export default {
       const z2h = s.normalize('NFKC')
       return z2h
           .replace(/\s+/g,'')
-          // 記号除去：[] は個別に処理して no-empty-character-class / no-useless-escape を回避
+          /* 記号除去：() 全角() 【】 : ： - ー _ をまとめて除去 */
           .replace(/[()【】（）:：\-ー_]/g,'')
+          /* 角括弧は個別に除去（no-useless-escape / no-empty-character-class 回避） */
           .replace(/\[/g,'')
           .replace(/\]/g,'')
           .toLowerCase()
@@ -545,4 +546,6 @@ export default {
 .oh3-simple th, .oh3-simple td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; white-space: nowrap; }
 .oh3-simple thead th { background: #f6f6f7; position: sticky; top: 0; z-index: 1; }
 .map-chip { border: 1px dashed var(--v-theme-outline); border-radius: 10px; padding: 8px; min-width: 180px; }
+.oh3-title { color: rgb(var(--v-theme-primary)); }
+.oh3-accent-border { border-top: 3px solid rgb(var(--v-theme-primary)); }
 </style>
