@@ -7,7 +7,12 @@
 <template>
   <v-app>
 
-    <KyusekiImportDialog></KyusekiImportDialog>
+    <KyusekiImportDialog
+        v-model="showKyusekiDialog"
+        :job-id="currentJobId"
+        :start-x-y="startXY"
+        @imported="onImported"
+    />
 
     <LoginManager></LoginManager>
 
@@ -1591,7 +1596,7 @@
                   </template>
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
                     <v-btn icon
-                           @click="openKyuseki"
+                           @click="openKyusekiDialog"
                     >求積表</v-btn>
                     <v-btn icon
                            @click="toggleWatchPosition('k');
@@ -2688,6 +2693,12 @@ export default {
 
     currentHillshadeMaps: { map01: true, map02: true },
 
+    showKyusekiDialog: false,
+    // OH3側のジョブIDなど、親から渡したいものがあればここで管理
+    // currentJobId: this.$store?.state?.jobs?.currentJobId ?? null,
+    // 方位＋距離から座標展開する場合の起点。XY読み取りなら null でもOK
+    startXY: { x: 0, y: 0 },
+
   }),
   computed: {
     ...mapState([
@@ -3504,12 +3515,18 @@ export default {
     },
   },
   methods: {
-    openKyuseki() {
-      alert(888)
+    openKyusekiDialog () {
+      this.showKyusekiDialog = true
     },
-    maybeFocusCenterIncludePoint(aLngLat, bLngLat, opts) {
-      if (Date.now() < this.suppressUntil) return;
-      return this.focusCenterIncludePoint(aLngLat, bLngLat, opts);
+    onImported (payload) {
+      // 子コンポーネントからの完了イベントを受け取る
+      // 例: { count, crs, area } または { error }
+      if (payload?.error) {
+        this.$store.dispatch('ui/notify', { type: 'error', message: `取り込み失敗: ${payload.error}` })
+      } else {
+        const { count, crs, area } = payload
+        this.$store.dispatch('ui/notify', { type: 'success', message: `取り込み完了: ${count}点 / ${crs} / 面積 ${area?.toFixed?.(3) ?? area} m²` })
+      }
     },
 
     installTouchSuppressor() {
