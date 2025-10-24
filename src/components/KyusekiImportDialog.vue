@@ -12,7 +12,6 @@
       <v-divider color="primary" />
 
       <div class="px-4 pt-2">
-        <!-- ステッパー -->
         <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
@@ -60,7 +59,6 @@
                   <span class="text-medium-emphasis">Google Document AI Form Parser を使用します</span>
                 </div>
 
-                <v-alert v-if="ocrInfo" type="info" density="comfortable" class="mb-3">{{ ocrInfo }}</v-alert>
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
 
                 <div v-if="rawTable.headers.length" class="ocr-table">
@@ -124,7 +122,6 @@
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div class="preview-grid" v-if="points.length">
-                  <!-- Map -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -133,7 +130,6 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標プレビュー -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">座標プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -153,7 +149,6 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 検算 -->
                   <v-card class="oh3-accent-border pane calc-pane" variant="outlined">
                     <v-card-title class="py-2">検算</v-card-title>
                     <v-card-text class="compact-text pane-body">
@@ -163,13 +158,11 @@
                         <div>dy: {{ fmt(closure.dy) }}</div>
                         <div>面積: <b>{{ fmt(area.area) }} m²</b></div>
                       </div>
-                      <div v-if="closure.len > closureThreshold" class="warn small">
-                        閉合差が閾値（{{ closureThreshold }}m）を超えています。
-                      </div>
+                      <div v-if="closure.len > closureThreshold" class="warn small">閉合差が閾値（{{ closureThreshold }}m）を超えています。</div>
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標系＋プレビューボタン -->
+                  <!-- 座標系選択 & 地図反映 -->
                   <v-card class="" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー作成</v-card-title>
                     <v-card-text class="pane-body">
@@ -177,6 +170,8 @@
                           class="no-stretch"
                           v-model="s_zahyokei"
                           :items="crsChoices"
+                          item-title="title"
+                          item-value="value"
                           label="公共座標系"
                           variant="outlined"
                           density="compact"
@@ -208,9 +203,7 @@
             <v-stepper-window-item :value="5">
               <div class="pa-4">
                 <div v-if="points.length">
-                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">
-                    {{ points.length }} 点を処理します。
-                  </v-alert>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">{{ points.length }} 点を処理します。</v-alert>
                   <div class="d-flex align-center gap-3">
                     <v-btn variant="outlined" prepend-icon="mdi-download" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
                     <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
@@ -231,42 +224,6 @@
         </v-stepper>
       </div>
     </v-card>
-
-    <!-- ▼ DocAIが複数表を検出したときの候補選択ダイアログ -->
-    <v-dialog v-model="candidateDialog" max-width="1080">
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          表候補を選択
-          <v-btn icon="mdi-close" variant="text" @click="candidateDialog=false" />
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <div class="text-medium-emphasis mb-2">候補 {{ candidates.length }} 件。プレビューで確認して「この表を使う」を押してください。</div>
-
-          <v-tabs v-model="selectedCandidate" grow>
-            <v-tab v-for="(t,ti) in candidates" :key="'tab'+ti">候補 {{ ti+1 }}</v-tab>
-          </v-tabs>
-          <v-window v-model="selectedCandidate" class="mt-2">
-            <v-window-item v-for="(t,ti) in candidates" :key="'win'+ti" :value="ti">
-              <div class="table-scroll">
-                <table class="oh3-simple">
-                  <thead><tr><th v-for="(h,i) in t.headers" :key="'ch'+i">{{ h }}</th></tr></thead>
-                  <tbody>
-                  <tr v-for="(r,ri) in t.rows.slice(0, 30)" :key="'cr'+ri">
-                    <td v-for="(c,ci) in r" :key="'cc'+ci">{{ c }}</td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
-            </v-window-item>
-          </v-window>
-        </v-card-text>
-        <v-card-actions class="justify-end">
-          <v-btn color="primary" @click="applyCandidate">この表を使う</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <!-- ▲ 候補選択ダイアログ -->
   </v-dialog>
 </template>
 
@@ -275,11 +232,11 @@ import { downloadTextFile, zahyokei } from '@/js/downLoad'
 import { mapState } from 'vuex'
 import proj4 from 'proj4'
 
-/* === 軽クリーナー === */
+/* 軽クリーナー */
 function cleanCell (s) {
   if (s == null) return ''
   return String(s).normalize('NFKC')
-      .replace(/[,，]/g,'')
+      .replace(/[，,]/g,'')
       .replace(/[−－—–]/g,'-')
       .replace(/\s+/g,' ')
       .trim()
@@ -287,7 +244,11 @@ function cleanCell (s) {
 
 export default {
   name: 'KyusekiImportDialog',
-  props: { modelValue: { type: Boolean, default: false }, jobId: { type: [String, Number], default: null }, startXY: { type: Object, default: null } },
+  props: {
+    modelValue: { type: Boolean, default: false },
+    jobId: { type: [String, Number], default: null },
+    startXY: { type: Object, default: null }
+  },
   emits: ['update:modelValue', 'imported'],
   data () {
     return {
@@ -296,10 +257,7 @@ export default {
 
       file: null, previewUrl: '', isImage: true,
 
-      ocrInfo: '', ocrError: '', rawTable: { headers: [], rows: [] },
-      candidateDialog: false,
-      candidates: [],
-      selectedCandidate: 0,
+      ocrError: '', rawTable: { headers: [], rows: [] },
 
       columnRoles: [],
       roleOptions: [
@@ -313,13 +271,12 @@ export default {
 
       crsChoices: [
         'WGS84',
-        '公共座標1系', '公共座標2系', '公共座標3系',
-        '公共座標4系', '公共座標5系', '公共座標6系',
-        '公共座標7系', '公共座標8系', '公共座標9系',
-        '公共座標10系', '公共座標11系', '公共座標12系',
-        '公共座標13系', '公共座標14系', '公共座標15系',
-        '公共座標16系', '公共座標17系', '公共座標18系',
-        '公共座標19系',
+        '公共座標1系','公共座標2系','公共座標3系',
+        '公共座標4系','公共座標5系','公共座標6系',
+        '公共座標7系','公共座標8系','公共座標9系',
+        '公共座標10系','公共座標11系','公共座標12系',
+        '公共座標13系','公共座標14系','公共座標15系',
+        '公共座標16系','公共座標17系','公共座標18系','公共座標19系',
       ],
 
       buildError: '', simaInfo: { name:'', size:0 }, lastSimaText: '',
@@ -341,175 +298,73 @@ export default {
   },
   mounted () { if (this.step===4) this.initMapLibre() },
   methods: {
-    /* =========================
-       Cloud API 呼び出し
-    ==========================*/
+    /* ==== Cloud OCR ==== */
     async runCloudOCR (file) {
-      const apiBase = import.meta?.env?.VITE_DOCAI_API_URL || 'https://oh3-docai-api-531336516229.asia-northeast1.run.app'
+      const apiBase = import.meta?.env?.VITE_DOCAI_API_URL
+          || 'https://oh3-docai-api-531336516229.asia-northeast1.run.app'
       const f = Array.isArray(file) ? file[0] : file
       const form = new FormData()
       form.append('file', f, f?.name || 'upload')
       const res = await fetch(`${apiBase}/api/docai_form_parser.php`, { method:'POST', body: form })
       if (!res.ok) throw new Error(`Cloud OCR HTTP ${res.status}`)
-      return await res.json() // {ok, file, raw? headers? rows? candidates?}
-    },
+      const json = await res.json()
 
-    /* ===== DocAI raw → {headers, rows} 復元 ===== */
-    readAnchor(anchor, fullText) {
-      if (!anchor?.textSegments || !fullText) return ''
-      let s = ''
-      for (const seg of anchor.textSegments) {
-        const a = Number(seg.startIndex || 0)
-        const b = Number(seg.endIndex || 0)
-        if (Number.isFinite(a) && Number.isFinite(b) && b > a) {
-          s += fullText.slice(a, b)
+      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
+
+      // サーバが headers/rows を返す場合を優先
+      if (Array.isArray(json.headers) && Array.isArray(json.rows)) {
+        return {
+          headers: json.headers.map(cleanCell),
+          rows: json.rows.map(r => (Array.isArray(r) ? r : []).map(cleanCell))
         }
       }
-      return s.replace(/\s+/g, ' ').trim()
-    },
-    tableToMatrix(tbl, fullText) {
-      const headers = []
-      for (const hr of (tbl.headerRows || [])) {
-        const row = (hr.cells || []).map(c => this.readAnchor(c.layout?.textAnchor, fullText))
-        if (row.some(v => v)) headers.push(row)
-      }
-      const body = []
-      for (const br of (tbl.bodyRows || [])) {
-        const row = (br.cells || []).map(c => this.readAnchor(c.layout?.textAnchor, fullText))
-        if (row.some(v => v)) body.push(row)
-      }
-      const colN = Math.max( ...(headers.concat(body)).map(r => r.length), 0 )
-      const flatHeader = Array(colN).fill('').map((_,i)=>{
-        const parts = headers.map(h=>h[i]||'').filter(Boolean)
-        return parts.join(' ').trim()
-      })
-      const rows = body.map(r=>{
-        const a = r.slice(0, colN); while (a.length < colN) a.push(''); return a
-      })
-      return { headers: flatHeader, rows }
-    },
-    buildTablesFromDocAI(raw) {
-      try {
-        const doc = raw?.document || raw
-        const text = doc?.text || ''
-        const pages = doc?.pages || []
-        const candidates = []
 
-        // 1) tables から
-        for (const p of pages) {
-          for (const t of (p.tables || [])) {
-            const m = this.tableToMatrix(t, text)
-            if ((m.headers||[]).length && (m.rows||[]).length) candidates.push(m)
+      // 念のため raw→最低限の推定（entities の valueText を列化）
+      const rows = []
+      const headers = ['NO','Xn','Yn','Yn+1−Yn−1','Xn·(Yn+1−Yn−1)']
+      if (json?.raw?.document?.entities) {
+        const ents = json.raw.document.entities
+        for (const e of ents) {
+          const a = []
+          if (e.type === 'row' && Array.isArray(e.properties)) {
+            e.properties.forEach(p => a.push(cleanCell(p.mentionText || p.valueText || '')))
+            if (a.length) rows.push(a)
           }
         }
+      }
+      return rows.length ? { headers, rows } : { headers: [], rows: [] }
+    },
 
-        // 2) tables が無い場合：entities から行復元（ざっくり）
-        if (!candidates.length && Array.isArray(doc?.entities)) {
-          const lines = []
-          for (const e of doc.entities) {
-            const s = this.readAnchor(e.textAnchor, text)
-            if (s) lines.push(s)
-          }
-          const split = (line) => line.replace(/\|/g,' | ')
-              .split(/,|\t|\||\s{2,}/).map(v=>v.trim()).filter(Boolean)
-          const rows = lines.map(split).filter(r => r.length >= 3)
-          if (rows.length) {
-            const headers = rows[0]
-            const body = rows.slice(1)
-            candidates.push({ headers, rows: body })
-          }
-        }
-
-        const clean = s => cleanCell(s)
-        const normalized = candidates.map(t => ({
-          headers: (t.headers||[]).map(clean),
-          rows: (t.rows||[]).map(r => r.map(clean))
-        }))
-
-        normalized.sort((a,b) => (b.headers.length*b.rows.length)-(a.headers.length*a.rows.length))
-        const best = normalized[0] || { headers:[], rows:[] }
-        return { best, candidates: normalized }
-      } catch (e) {
-        console.warn('buildTablesFromDocAI error', e)
-        return { best:{ headers:[], rows:[] }, candidates:[] }
+    preCleanTable () {
+      if (!this.rawTable?.rows?.length) return
+      this.rawTable = {
+        headers: this.rawTable.headers.map(h => cleanCell(h)),
+        rows: this.rawTable.rows.map(r => r.map(c => cleanCell(c)))
       }
     },
 
     /* ==== OCR 実行（クラウド） ==== */
     async doOCR () {
       if (!this.file) return
-      this.ocrError=''; this.ocrInfo=''; this.busy=true
-      this.candidates=[]; this.candidateDialog=false
+      this.ocrError=''; this.busy=true
       try {
-        const json = await this.runCloudOCR(this.file)
-        if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
+        const table = await this.runCloudOCR(this.file)
+        if (!table?.headers?.length) throw new Error('表が検出できませんでした')
+        this.rawTable = table
+        this.preCleanTable()
 
-        // サーバが candidates を返す場合
-        if (Array.isArray(json.candidates) && json.candidates.length) {
-          this.candidates = json.candidates.map(t => ({
-            headers: (t.headers||[]).map(h=>cleanCell(h)),
-            rows: (t.rows||[]).map(r => r.map(c=>cleanCell(c)))
-          }))
-          this.selectedCandidate = 0
-          this.candidateDialog = true
-          this.ocrInfo = `候補 ${this.candidates.length} 件を検出。プレビューから選択してください。`
-          this.rawTable = { headers: [], rows: [] }
-          return
-        }
-        // サーバが headers/rows を返す場合
-        if ((json.headers?.length || 0) && (json.rows?.length || 0)) {
-          this.rawTable = {
-            headers: json.headers.map(h=>cleanCell(h)),
-            rows: json.rows.map(r=>r.map(c=>cleanCell(c)))
-          }
-          this.afterTableArrived()
-          return
-        }
-        // サーバが raw のみを返す場合 → クライアントで復元
-        if (json.raw) {
-          const built = this.buildTablesFromDocAI(json.raw)
-          if ((built.best.headers?.length || 0) && (built.best.rows?.length || 0)) {
-            if ((built.candidates?.length || 0) > 1) {
-              this.candidates = built.candidates
-              this.selectedCandidate = 0
-              this.candidateDialog = true
-              this.ocrInfo = `候補 ${this.candidates.length} 件を検出（raw から復元）。プレビューから選択してください。`
-              this.rawTable = { headers: [], rows: [] }
-              return
-            } else {
-              this.rawTable = built.best
-              this.afterTableArrived()
-              return
-            }
-          }
-        }
+        // 初期マッピング推定 + 数式列は未使用へ
+        this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
+        this.rawTable.headers.forEach((h,i)=>{
+          const s=String(h).toLowerCase()
+          if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
+        })
 
-        throw new Error('表が検出できませんでした')
+        if (this.step<3) this.step=3
       } catch (e) {
-        console.error(e); this.ocrError=String(e.message||e)
-      } finally {
-        this.busy=false
-      }
-    },
-
-    /* 候補選択の確定 */
-    applyCandidate () {
-      const t = this.candidates[this.selectedCandidate]
-      if (!t) { this.candidateDialog=false; return }
-      this.rawTable = JSON.parse(JSON.stringify(t))
-      this.candidateDialog=false
-      this.afterTableArrived()
-    },
-
-    /* 取り込み後の初期化共通 */
-    afterTableArrived () {
-      // 初期マッピング推定 + 数式列は未使用へ
-      this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
-      this.rawTable.headers.forEach((h,i)=>{
-        const s=String(h).toLowerCase()
-        if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
-      })
-      if (this.step<3) this.step=3
+        console.error(e)
+        this.ocrError = String(e?.message || e)
+      } finally { this.busy=false }
     },
 
     /* ==== 列マッピング/正規化 ==== */
@@ -517,7 +372,8 @@ export default {
       if (!s) return ''
       return s.normalize('NFKC').replace(/\s+/g,'')
           .replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'')
-          .replace(/\[/g,'').replace(/\]/g,'').toLowerCase()
+          .replace(/\[/g,'').replace(/\]/g,'')
+          .toLowerCase()
     },
     guessRoleFromHeader (h) {
       const H = this.normHeader(h), compact = String(h).replace(/\s+/g,'')
@@ -530,7 +386,9 @@ export default {
         x:['x','xn','x座標','東','e','東距','横座標'],
         y:['y','yn','y座標','北','n','北距','縦座標'],
       }
-      for (const [role,arr] of Object.entries(dict)) { if (arr.some(k=>H.includes(k))) return role }
+      for (const [role,arr] of Object.entries(dict)) {
+        if (arr.some(k=>H.includes(k))) return role
+      }
       if (/\b(xn|x)\b/i.test(h)) return 'x'
       if (/\b(yn|y)\b/i.test(h)) return 'y'
       return null
@@ -538,14 +396,21 @@ export default {
 
     normNumberStr (s) {
       if (s==null) return ''
-      return s.normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'')
-          .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g,'-').trim()
+      return s.normalize('NFKC')
+          .replace(/,/g,'')
+          .replace(/[\]|]/g,'')
+          .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g,'-')
+          .trim()
     },
-    parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
+    parseNumber (s) {
+      const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN
+    },
     parseAzimuth (str) {
       const s=this.normNumberStr(String(str)).toUpperCase()
-      const q=s.match(/([NS])\s*(\d+(?:\.\d+)?)\s*([EW])/); if(q){const d=+q[2],k=q[1]+q[3],m={NE:d,SE:180-d,SW:180+d,NW:360-d};return m[k]??NaN}
-      const dms=s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/); if(dms){const d=+dms[1],m=dms[2]?+dms[2]:0,sec=dms[3]?+dms[3]:0;return Math.sign(d)*(Math.abs(d)+m/60+sec/3600)}
+      const q=s.match(/([NS])\s*(\d+(?:\.\d+)?)\s*([EW])/)
+      if(q){const d=+q[2],k=q[1]+q[3],m={NE:d,SE:180-d,SW:180+d,NW:360-d};return m[k]??NaN}
+      const dms=s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
+      if(dms){const d=+dms[1],m=dms[2]?+dms[2]:0,sec=dms[3]?+dms[3]:0;return Math.sign(d)*(Math.abs(d)+m/60+sec/3600)}
       const n=parseFloat(s.replace(/[°度]/g,'')); return Number.isFinite(n)?n:NaN
     },
 
@@ -570,40 +435,14 @@ export default {
       return out
     },
 
-    /* === 誤読補正（抜粋） === */
+    /* === 誤読補正（簡易） === */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     adjustByMagnitude (v,t){ if(!Number.isFinite(v)||!Number.isFinite(t))return v; const cand=[v,v-9000,v+9000]; cand.sort((a,b)=>Math.abs(a-t)-Math.abs(b-t)); return Math.abs(v-t)>4000?cand[0]:v },
-    generateSimilarDigitCandidates (num) {
-      const s=Number(num).toFixed(3), arr=s.split(''), map={ '0':['5','6','9'], '5':['0','6','9'], '6':['5','9','0'], '9':['0','5','6'], '1':['7'], '7':['1','2'], '2':['7'], '3':['8'], '8':['3'] }
-      const out=[]
-      for (let i=0;i<arr.length;i++){
-        const alts = map[arr[i]]; if(!alts) continue
-        for (const alt of alts){ const a=arr.slice(); a[i]=alt; const v=parseFloat(a.join('')); if(Number.isFinite(v)) out.push(v) }
-      }
-      return out
-    },
-    adjustLocalDigit (v, prev) {
-      if (!Number.isFinite(v) || !Number.isFinite(prev)) return v
-      const cand=[v, ...this.generateSimilarDigitCandidates(v)]
-      cand.sort((a,b)=>Math.abs(a-prev)-Math.abs(b-prev))
-      return (Math.abs(v-prev)-Math.abs(cand[0]-prev) >= 0.05)? cand[0] : v
-    },
-    adjustZeroFive (v,t){ if(!Number.isFinite(v)||!Number.isFinite(t))return v; const s=Number(v).toFixed(3), arr=s.split(''), out=[]
-      for(let i=0;i<arr.length;i++){ if(arr[i]==='0'||arr[i]==='5'){const a=arr.slice(); a[i]=arr[i]==='0'?'5':'0'; const n=parseFloat(a.join('')); out.push(n)} }
-      const cand=[v,...out]; cand.sort((a,b)=>Math.abs(a-t)-Math.abs(b-t)); return (Math.abs(v-t)-Math.abs(cand[0]-t)>=0.04)?cand[0]:v },
     postCorrectRecords (recs){
       if(!recs.length) return recs
       const xs=recs.map(r=>r.x).filter(Number.isFinite), ys=recs.map(r=>r.y).filter(Number.isFinite)
       const mx=this.median(xs), my=this.median(ys)
-      const mag=recs.map(r=>({ ...r, x:this.adjustByMagnitude(r.x,mx), y:this.adjustByMagnitude(r.y,my) }))
-      const xs2=mag.map(r=>r.x).filter(Number.isFinite), ys2=mag.map(r=>r.y).filter(Number.isFinite)
-      const mx2=this.median(xs2), my2=this.median(ys2)
-      const z5=mag.map(r=>({ ...r, x:this.adjustZeroFive(r.x,mx2), y:this.adjustZeroFive(r.y,my2) }))
-      const out=[]
-      for(let i=0;i<z5.length;i++){ const prev=out[i-1]
-        out.push(prev?{ ...z5[i], x:this.adjustLocalDigit(z5[i].x,prev.x), y:this.adjustLocalDigit(z5[i].y,prev.y) }:z5[i])
-      }
-      return out
+      return recs.map(r=>({ ...r, x:this.adjustByMagnitude(r.x,mx), y:this.adjustByMagnitude(r.y,my) }))
     },
 
     /* === 構成/検算 === */
@@ -639,7 +478,12 @@ export default {
     },
 
     extractLotFromFileName (){
-      try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const name=f?.name||''; const m=String(name).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch{return '000-0'}
+      try{
+        const f=Array.isArray(this.file)?this.file[0]:this.file
+        const name=f?.name||''
+        const m=String(name).match(/(\d{1,5}-\d{1,5})/)
+        return m?m[1]:'000-0'
+      }catch{return '000-0'}
     },
     resolveProjectName () { return this.jobId ? `oh3-job-${this.jobId}` : 'open-hinata3' },
 
@@ -662,7 +506,12 @@ export default {
       const text=this.buildSIMAContent(); this.lastSimaText=text
       const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`kyuseki_${ts}.sim`
       downloadTextFile(name, text, 'shift-jis')
-      let size=text.length; try{ if(window.Encoding){ const u=window.Encoding.stringToCode(text); const s=window.Encoding.convert(u,'SJIS'); size=s.length } }catch{}
+      let size=text.length
+      try{
+        if(window.Encoding){
+          const u=window.Encoding.stringToCode(text); const s=window.Encoding.convert(u,'SJIS'); size=s.length
+        }
+      }catch{}
       this.simaInfo={name, size}
     },
 
@@ -670,7 +519,39 @@ export default {
       this.$emit('imported', { count:this.points.length, crs:this.crs, area:this.area.area, sim:!!this.simaInfo.name })
     },
 
-    /* === 地図プレビュー：proj4でWGS84へ変換して描画 === */
+    /* MapLibre 初期化（地理院タイル：淡色） */
+    async initMapLibre () {
+      if (this.map || !this.$refs.maplibreEl) return
+      const id='maplibre-css'
+      if (!document.getElementById(id)) {
+        const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'
+        document.head.appendChild(l)
+      }
+      const { Map } = await import('maplibre-gl')
+
+      const style = {
+        version: 8,
+        sources: {
+          'gsi-pale': {
+            type: 'raster',
+            tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '地理院タイル（淡色地図）© 国土地理院'
+          }
+        },
+        layers: [{ id: 'gsi-pale', type: 'raster', source: 'gsi-pale' }]
+      }
+
+      this.map = new Map({
+        container: this.$refs.maplibreEl,
+        style,
+        center: [137.0, 38.0],
+        zoom: 4.3,
+        preserveDrawingBuffer: true
+      })
+    },
+
+    /* 地図描画 */
     async renderPreviewOnMap () {
       try {
         if (!this.map) await this.initMapLibre()
@@ -753,38 +634,6 @@ export default {
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
     },
-
-    /* ② MapLibre 初期化：地理院タイル（淡色）＋日本全体 */
-    async initMapLibre () {
-      if (this.map || !this.$refs.maplibreEl) return
-      const id='maplibre-css'
-      if (!document.getElementById(id)) {
-        const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'
-        document.head.appendChild(l)
-      }
-      const { Map } = await import('maplibre-gl')
-
-      const style = {
-        version: 8,
-        sources: {
-          'gsi-pale': {
-            type: 'raster',
-            tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '地理院タイル（淡色地図）© 国土地理院'
-          }
-        },
-        layers: [ { id: 'gsi-pale', type: 'raster', source: 'gsi-pale' } ]
-      }
-
-      this.map = new Map({
-        container: this.$refs.maplibreEl,
-        style,
-        center: [137.0, 38.0],
-        zoom: 4.3,
-        preserveDrawingBuffer: true
-      })
-    }
   }
 }
 </script>
@@ -794,11 +643,8 @@ export default {
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
 .ocr-table{border:1px solid var(--v-theme-outline-variant);border-radius:8px;padding:8px}
 
-/* ステッパーの番号アイコン（バッジ）を拡大 */
 .big-steps :deep(.v-stepper-item__avatar){
-  width: 36px;
-  height: 36px;
-  font-size: 16px;
+  width:36px;height:36px;font-size:16px;
 }
 
 :root{ --tall-h: 300px; }
@@ -807,10 +653,9 @@ export default {
 .pane-body{flex:1;display:flex;flex-direction:column;min-height:0}
 
 .preview-grid{
-  display:grid;
-  grid-template-columns:repeat(3, minmax(0,1fr));
+  display:grid;gap:16px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
   grid-template-rows:repeat(2, calc(var(--tall-h)/2));
-  gap:16px;
 }
 .preview-grid > .tall{ grid-row: 1 / span 2; height:auto; }
 .preview-grid > .calc-pane{ grid-column:3; grid-row:1; height:auto; }
@@ -819,11 +664,9 @@ export default {
 :deep(.v-card-title){ padding:8px 12px !important; }
 :deep(.v-card-text){  padding:8px 12px !important; }
 
-/* 表・地図 */
 .table-fill{flex:1;overflow:auto}
 .maplibre-host{width:100%;height:100%;border:1px solid #e2e8f0;border-radius:8px}
 
-/* レスポンシブ */
 @media (max-width:1200px){
   .preview-grid{grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto}
   .preview-grid > .tall{ grid-row:auto; }
@@ -843,11 +686,7 @@ export default {
 .map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
-
-/* v-select が親の高さに引っ張られないよう固定（ユーザー指定：50px） */
 .no-stretch { align-self: flex-start; max-width: 260px; }
 .no-stretch :deep(.v-field) { height: 50px; }
 .no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
-
-.table-scroll{max-height:420px;overflow:auto}
 </style>
