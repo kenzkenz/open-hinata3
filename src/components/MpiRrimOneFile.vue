@@ -1,181 +1,379 @@
 <template>
   <div class="rrim-control">
-    <v-btn size="small" @click="toggle" class="mr-2">赤色立体</v-btn>
-    <v-slider v-model="opacity" min="0" max="1" step="0.05" density="compact" style="width:160px" :disabled="!enabled" label="不透明度" />
-    <!-- 地図コンテナの上に重ねるキャンバス -->
-    <canvas v-show="enabled" ref="canvas" class="rrim-canvas" />
+    <v-btn size="small" @click="toggle" class="mr-2">赤色立体(GPU)</v-btn>
+    <v-slider
+        v-model="opacity"
+        min="0" max="1" step="0.05"
+        density="compact" style="width:160px"
+        :disabled="!enabled" label="不透明度"
+    />
   </div>
 </template>
 
 <script>
+// 最小GPU版：
+// 1) Solidパス（薄赤）で描画パイプ生存確認
+// 2) タイル到着後にDEMパス（勾配→赤着色）へ自動切替
 export default {
-  name: 'MpiRrimOneFile', // Options API（Vue3 + Vuetify3）
+  name: 'MpiRrimOneFile',
   props: {
     map: { type: Object, required: true },
     startEnabled: { type: Boolean, default: true },
     tileUrlTemplate: {
       type: String,
       default: 'https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'
-    }
+    },
+    insertBeforeLayerId: { type: String, default: undefined }
   },
   data(){
     return {
       enabled: this.startEnabled,
-      opacity: 0.9,
-      worker: null,
-      pending: false,
-      queued: false,
-      lastHash: '',
-      debTimer: null,
-      dpr: Math.max(1, Math.min(2.5, window.devicePixelRatio || 1)),
-      params: {
-        slopeMaxDeg: 35,
-        opennessRadii: [25, 100],
-        opennessWeight: [0.6, 0.4],
-        gammaS: 0.9,
-        contrast: 1.15
-      }
+      opacity: 0.95,
+      LAYER_ID: 'oh3-rrim-gpu-stable',
+      tileSize: 256,
+      maxTiles: 128,
+      params: { slopeMaxDeg: 22, gammaS: 0.82, contrast: 1.2, saturationBoost: 1.15 },
+      // 内部
+      customLayer: null,
+      glRes: null,
+      lru: new Map(),        // key: z/x/y => {tex,w,h,at}
+      loading: new Set(),
+      tNow: 0,
+      rafId: 0,
+      anyTextureReady: false,
+      lastGoodMatrix: null
     };
   },
   mounted(){
-    this.setupCanvas();
-    this.worker = this.buildInlineWorker();
-    this.worker.onmessage = (ev) => {
-      const { ok, error, bitmap, width, height } = ev.data || {};
-      this.pending = false;
-      if (!ok) { console.error('[RRIM] worker error', error); return; }
-      const cvs = this.$refs.canvas; if (!cvs) return;
-      // 物理解像度(DPR考慮)で受け取っている
-      cvs.width = width; cvs.height = height;
-      const cssW = cvs.parentElement?.clientWidth || width/this.dpr;
-      const cssH = cvs.parentElement?.clientHeight || height/this.dpr;
-      Object.assign(cvs.style, { width: cssW + 'px', height: cssH + 'px' });
-      const ctx = cvs.getContext('2d');
-      ctx.clearRect(0,0,width,height);
-      ctx.globalAlpha = this.opacity;
-      ctx.drawImage(bitmap, 0, 0);
-      if (this.queued) { this.queued = false; this.requestRender(); }
+    if (this.enabled) this.attach();
+    const loop = () => {
+      this.tNow = performance.now();
+      if (this.enabled && this.map && this.map.triggerRepaint) this.map.triggerRepaint();
+      this.rafId = requestAnimationFrame(loop);
     };
-
-    this.map.on('moveend', this.debouncedRender);
-    this.map.on('zoomend', this.debouncedRender);
-    this.map.on('resize', this.debouncedRender);
-    window.addEventListener('resize', this.debouncedRender);
-    if (this.enabled) this.requestRender();
+    this.rafId = requestAnimationFrame(loop);
   },
   beforeUnmount(){
-    this.map.off('moveend', this.debouncedRender);
-    this.map.off('zoomend', this.debouncedRender);
-    this.map.off('resize', this.debouncedRender);
-    window.removeEventListener('resize', this.debouncedRender);
-    if (this.worker) this.worker.terminate();
+    cancelAnimationFrame(this.rafId);
+    this.detach();
   },
   watch: {
-    enabled(v){ if (v) this.requestRender(); },
-    opacity(){ this.redrawOpacityOnly(); },
-    params: { deep: true, handler(){ this.requestRender(); } }
+    enabled(v){ v ? this.attach() : this.detach(); },
+    opacity(){ if (this.map && this.map.triggerRepaint) this.map.triggerRepaint(); }
   },
   methods: {
     toggle(){ this.enabled = !this.enabled; },
-    setupCanvas(){
-      const mapContainer = this.map.getContainer();
-      const cvs = this.$refs.canvas; if (!cvs) return;
-      Object.assign(cvs.style, {
-        position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none'
-      });
-      mapContainer.appendChild(cvs);
-    },
-    debouncedRender(){
-      clearTimeout(this.debTimer);
-      this.debTimer = setTimeout(() => this.requestRender(), 120);
-    },
-    redrawOpacityOnly(){
-      // 直近のビットマップを保持していないので再レンダ要求
-      if (this.enabled) this.requestRender();
-    },
-    requestRender(){
-      if (!this.enabled || !this.worker) return;
-      const map = this.map;
-      const container = map.getContainer();
-      const cssW = container.clientWidth;
-      const cssH = container.clientHeight;
-      if (!cssW || !cssH) return;
-      const W = Math.round(cssW * this.dpr);
-      const H = Math.round(cssH * this.dpr);
 
-      // 画面の bbox（EPSG:3857）
-      const b = map.getBounds();
-      const proj = (lng, lat) => {
-        const x = lng * 20037508.34 / 180.0;
-        let y = Math.log(Math.tan((90+lat)*Math.PI/360.0)) / (Math.PI/180.0);
-        y = y * 20037508.34 / 180.0; return [x, y];
+    attach(){
+      if (this.customLayer) return;
+      const self = this;
+      const layer = {
+        id: this.LAYER_ID,
+        type: 'custom',
+        renderingMode: '2d',
+        onAdd(map, gl){
+          self.glRes = self.initGL(gl);
+          try{
+            gl.disable(gl.DEPTH_TEST);
+            gl.depthMask(false);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.disable(gl.CULL_FACE);
+          }catch(e){}
+        },
+        render(gl, matrix){ if (self.glRes) self.renderTiles(gl, matrix); },
+        onRemove(map, gl){ self.disposeGL(); }
       };
-      const [minX, minY] = proj(b.getWest(), b.getSouth());
-      const [maxX, maxY] = proj(b.getEast(), b.getNorth());
-      const bbox3857 = [minX, minY, maxX, maxY];
-
-      // ★ VueのProxyを含めないように、必ずプレーンな値に“脱プロキシ”してからpostMessage
-      const plainParams = {
-        slopeMaxDeg: Number(this.params.slopeMaxDeg),
-        opennessRadii: Array.isArray(this.params.opennessRadii) ? [...this.params.opennessRadii] : [],
-        opennessWeight: Array.isArray(this.params.opennessWeight) ? [...this.params.opennessWeight] : [],
-        gammaS: Number(this.params.gammaS),
-        contrast: Number(this.params.contrast)
-      };
-
-      const payload = {
-        type: 'render',
-        width: W, height: H,
-        zoom: Number(map.getZoom()),
-        bbox3857: [...bbox3857],
-        tileUrlTemplate: String(this.tileUrlTemplate),
-        ...plainParams
-      };
-
-      const hash = JSON.stringify([W,H, payload.zoom.toFixed(2), ...bbox3857.map(n=>n.toFixed(2)), this.opacity]);
-      if (this.pending) { this.queued = true; return; }
-      if (this.lastHash === hash) return;
-      this.lastHash = hash;
-      this.pending = true;
-
-      // さらに保険としてstructuredClone/JSONでプレーン化
-      const cleanPayload = (typeof structuredClone === 'function')
-          ? structuredClone(payload)
-          : JSON.parse(JSON.stringify(payload));
-
-      this.worker.postMessage(cleanPayload);
+      this.customLayer = layer;
+      this.map.addLayer(layer, this.insertBeforeLayerId);
     },
 
-    // === ここがキモ：ワーカーをソース文字列から内製 ===
-    buildInlineWorker(){
-      const src = `
-"use strict";
-// ---- dem_png 復元 ----
-function rgbToHeight(r,g,b){ if(r===128&&g===0&&b===0) return NaN; return (r*65536+g*256+b)*0.01 - 10000.0; }
-async function decodeDemPngToHeightsFromBlob(blob){ const bmp = await createImageBitmap(blob); const w=bmp.width,h=bmp.height; const off=new OffscreenCanvas(w,h); const ctx=off.getContext('2d'); ctx.drawImage(bmp,0,0); const img=ctx.getImageData(0,0,w,h); const data=img.data; const heights=new Float32Array(w*h); for(let i=0,p=0;i<data.length;i+=4,p++){ heights[p]=rgbToHeight(data[i],data[i+1],data[i+2]); } return {w,h,heights}; }
+    detach(){
+      if (!this.customLayer) return;
+      try { this.map.removeLayer(this.LAYER_ID); } catch(e){}
+      this.disposeGL();
+      this.customLayer = null;
+    },
 
-// ---- 主要処理 ----
-self.onmessage = async (ev)=>{ const d=ev.data||{}; if(d.type!=="render") return; try{ const r = await renderRRIM(d); self.postMessage({ok:true,...r}, [r.bitmap]); }catch(err){ self.postMessage({ok:false,error:String(err&&err.stack||err)}); } };
-
-async function renderRRIM({width,height,zoom,bbox3857,tileUrlTemplate,slopeMaxDeg,opennessRadii,opennessWeight,gammaS,contrast}){ const z = Math.max(0, Math.floor(zoom)); const range = tilesForBBOX3857(bbox3857,z); const mosaic = await buildMosaic(range,z,tileUrlTemplate); const rgba = await rrimComposite(mosaic,width,height,bbox3857,z,opennessRadii,opennessWeight,slopeMaxDeg,gammaS,contrast); const off=new OffscreenCanvas(width,height); const ctx=off.getContext('2d'); const imgData = new ImageData(rgba,width,height); ctx.putImageData(imgData,0,0); const bitmap = await createImageBitmap(off); return {bitmap,width,height}; }
-
-function tilesForBBOX3857([minX,minY,maxX,maxY],z){ const tileCount=1<<z; const world=20037508.342789244*2; const mpt=world/tileCount; const x0=Math.floor((minX+world/2)/mpt); const y0=Math.floor((world/2-maxY)/mpt); const x1=Math.floor((maxX+world/2)/mpt); const y1=Math.floor((world/2-minY)/mpt); function clamp(min,max,a,b){ const s=Math.min(a,b),e=Math.max(a,b); return {start:Math.max(min,s), end:Math.min(max,e)}; } return { xs:clamp(0,tileCount-1,x0,x1), ys:clamp(0,tileCount-1,y0,y1) }; }
-
-async function buildMosaic(range,z,template){ const tileSize=256; const wTiles=range.xs.end-range.xs.start+1; const hTiles=range.ys.end-range.ys.start+1; const W=wTiles*tileSize, H=hTiles*tileSize; const heights=new Float32Array(W*H); const tasks=[]; for(let ty=range.ys.start; ty<=range.ys.end; ty++){ for(let tx=range.xs.start; tx<=range.xs.end; tx++){ const url=template.replace('{z}',z).replace('{x}',tx).replace('{y}',ty); tasks.push(fetch(url).then(r=>{ if(!r.ok) throw new Error('fetch '+r.status); return r.blob(); }).then(decodeDemPngToHeightsFromBlob).then(({w,h,heights:tileH})=>({w,h,tileH,tx,ty}))); } } const tiles=await Promise.all(tasks); for(const {w,h,tileH,tx,ty} of tiles){ const ox=(tx-range.xs.start)*tileSize; const oy=(ty-range.ys.start)*tileSize; for(let y=0;y<h;y++){ const dst=(oy+y)*W+ox; heights.set(tileH.subarray(y*w,y*w+w), dst); } } return {W,H,heights,originTileX:range.xs.start,originTileY:range.ys.start,z}; }
-
-async function rrimComposite(mosaic,outW,outH,bbox3857,z,radiiM,weights,slopeMaxDeg,gammaS,contrast){ const {W,H,heights}=mosaic; const [minX,minY,maxX,maxY]=bbox3857; const world=20037508.342789244*2; const tileCount=1<<z; const mpt=world/tileCount; const pxM = mpt/256.0; function screenToMosaic(x,y){ const mx=minX+(maxX-minX)*(x/outW); const my=maxY-(maxY-minY)*(y/outH); const tx=(mx+world/2)/mpt; const ty=(world/2-my)/mpt; const px=(tx-Math.floor(tx))*256 + (Math.floor(tx)-mosaic.originTileX)*256; const py=(ty-Math.floor(ty))*256 + (Math.floor(ty)-mosaic.originTileY)*256; return [px,py]; } const rgba=new Uint8ClampedArray(outW*outH*4); function hSample(px,py){ const x=Math.max(0,Math.min(W-1,px)); const y=Math.max(0,Math.min(H-1,py)); const x0=Math.floor(x), y0=Math.floor(y); const x1=Math.min(W-1,x0+1), y1=Math.min(H-1,y0+1); const sx=x-x0, sy=y-y0; const h00=heights[y0*W+x0]; const h10=heights[y0*W+x1]; const h01=heights[y1*W+x0]; const h11=heights[y1*W+x1]; const h0=h00*(1-sx)+h10*sx; const h1=h01*(1-sx)+h11*sx; return h0*(1-sy)+h1*sy; } const dp=1.0; const dirs=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]]; for(let y=0;y<outH;y++){ for(let x=0;x<outW;x++){ const idx=(y*outW+x)*4; const [px,py]=screenToMosaic(x,y); const h0=hSample(px,py); if(!Number.isFinite(h0)){ rgba[idx+3]=0; continue; } const hx1=hSample(px+dp,py), hx0=hSample(px-dp,py); const hy1=hSample(px,py+dp), hy0=hSample(px,py-dp); const dzdx=(hx1-hx0)/(2*pxM); const dzdy=(hy1-hy0)/(2*pxM); const slopeDeg=Math.atan(Math.hypot(dzdx,dzdy))*180/Math.PI; let Sat=Math.min(1, Math.max(0, slopeDeg / slopeMaxDeg)); Sat=Math.pow(Sat, gammaS); let pos=0,neg=0; for(let k=0;k<radiiM.length;k++){ const rM=radiiM[k]; const steps=Math.max(4, Math.round((rM/pxM)/dp)); let pos1=0,neg1=0; for(const v of dirs){ const dx=v[0], dy=v[1]; let maxTan=-Infinity, minTan=Infinity; for(let s=1;s<=steps;s++){ const sx=px+dx*s*dp, sy=py+dy*s*dp; const h=hSample(sx,sy); if(!Number.isFinite(h)) continue; const distM=Math.hypot(dx*s*dp*pxM, dy*s*dp*pxM); const t=(h-h0)/distM; if(t>maxTan) maxTan=t; if(t<minTan) minTan=t; } const posDir=Math.max(0, (Math.PI/2 - Math.atan(Math.max(0,maxTan))) / (Math.PI/2)); const negDir=Math.max(0, (Math.atan(Math.max(0,-minTan))) / (Math.PI/2)); pos1+=posDir; neg1+=negDir; } pos1/=dirs.length; neg1/=dirs.length; pos+=weights[k]*pos1; neg+=weights[k]*neg1; } let RV=pos-neg; RV=Math.max(-1,Math.min(1,RV)); let L=0.5 + (RV*0.5); L=((L-0.5)*contrast)+0.5; L=Math.max(0,Math.min(1,L)); const H=0, S=Sat, V=L; const rgb=hsvToRgb(H,S,V); rgba[idx]=rgb[0]; rgba[idx+1]=rgb[1]; rgba[idx+2]=rgb[2]; rgba[idx+3]=255; } } return rgba; }
-
-function hsvToRgb(h,s,v){ const C=v*s; const X=C*(1-Math.abs(((h/60)%2)-1)); const m=v-C; let r=0,g=0,b=0; const hp=(h/60)%6; if(0<=hp&&hp<1){ r=C; g=X; b=0; } else if(1<=hp&&hp<2){ r=X; g=C; b=0; } else if(2<=hp&&hp<3){ r=0; g=C; b=X; } else if(3<=hp&&hp<4){ r=0; g=X; b=C; } else if(4<=hp&&hp<5){ r=X; g=0; b=C; } else { r=C; g=0; b=X; } return [Math.round((r+m)*255), Math.round((g+m)*255), Math.round((b+m)*255)]; }
+    // ---- GL 初期化 ----
+    initGL(gl){
+      const vsrc = `
+attribute vec2 aPos;
+attribute vec2 aUv;
+varying vec2 vUv;
+uniform mat4 uMatrix;
+void main(){
+  vUv = aUv;
+  gl_Position = uMatrix * vec4(aPos.xy, 0.0, 1.0);
+}
 `;
-      const blob = new Blob([src], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-      return new Worker(url);
+      const fSolid = `
+precision mediump float;
+varying vec2 vUv;
+uniform float uOpacity;
+void main(){
+  gl_FragColor = vec4(1.0, 0.2, 0.2, uOpacity * 0.25);
+}
+`;
+      const fDem = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D uDem;
+uniform vec2 uTexel;
+uniform float uPxM;
+uniform float uOpacity;
+uniform float uSlopeMaxDeg;
+uniform float uGammaS;
+uniform float uContrast;
+uniform float uSatBoost;
+
+float rgb2h(vec3 rgb){
+  // 128,0,0 を NoData とみなす（厳密比較は避けて許容誤差）
+  if (abs(rgb.r - 0.5019608) < 0.0005 && rgb.g < 0.0005 && rgb.b < 0.0005) return -1.0e20;
+  float R = rgb.r*255.0;
+  float G = rgb.g*255.0;
+  float B = rgb.b*255.0;
+  return (R*65536.0 + G*256.0 + B)*0.01 - 10000.0;
+}
+
+void main(){
+  vec3 c = texture2D(uDem, vUv).rgb;
+  float h = rgb2h(c);
+  if (h < -1.0e19) { gl_FragColor = vec4(0.0); return; }
+
+  // 片側差分（隣接がNoDataなら自己値）
+  vec3 cx = texture2D(uDem, vUv + vec2(uTexel.x, 0.0)).rgb;
+  vec3 cy = texture2D(uDem, vUv + vec2(0.0, uTexel.y)).rgb;
+  float hx = rgb2h(cx); if (hx < -1.0e19) hx = h;
+  float hy = rgb2h(cy); if (hy < -1.0e19) hy = h;
+
+  float dzdx = (hx - h) / uPxM;
+  float dzdy = (hy - h) / uPxM;
+  float slopeDeg = atan(length(vec2(dzdx, dzdy))) * 57.2957795;
+
+  float Sat = clamp(slopeDeg / max(0.001, uSlopeMaxDeg), 0.0, 1.0);
+  Sat = pow(Sat, uGammaS) * uSatBoost;
+  Sat = clamp(Sat, 0.0, 1.0);
+
+  float L = 0.5 + 0.5 * clamp(slopeDeg / 45.0, 0.0, 1.0);
+  L = (L - 0.5) * uContrast + 0.5;
+  L = clamp(L, 0.0, 1.0);
+
+  // HSV(h=0) → 赤
+  float cval = L * Sat;
+  float x = cval * (1.0 - abs(mod(0.0/60.0, 2.0) - 1.0));
+  float m = L - cval;
+  vec3 rgb = vec3(cval, x, 0.0) + vec3(m);
+
+  gl_FragColor = vec4(rgb, uOpacity);
+}
+`;
+      const progSolid = this.createProgram(gl, vsrc, fSolid);
+      const progDem   = this.createProgram(gl, vsrc, fDem);
+
+      const makeRes = (prog) => ({
+        prog,
+        aPos: gl.getAttribLocation(prog, 'aPos'),
+        aUv:  gl.getAttribLocation(prog, 'aUv'),
+        uMatrix: gl.getUniformLocation(prog, 'uMatrix'),
+        uOpacity: gl.getUniformLocation(prog, 'uOpacity'),
+        uDem: gl.getUniformLocation(prog, 'uDem'),
+        uTexel: gl.getUniformLocation(prog, 'uTexel'),
+        uPxM: gl.getUniformLocation(prog, 'uPxM'),
+        uSlopeMaxDeg: gl.getUniformLocation(prog, 'uSlopeMaxDeg'),
+        uGammaS: gl.getUniformLocation(prog, 'uGammaS'),
+        uContrast: gl.getUniformLocation(prog, 'uContrast'),
+        uSatBoost: gl.getUniformLocation(prog, 'uSatBoost')
+      });
+
+      const resSolid = makeRes(progSolid);
+      const resDem   = makeRes(progDem);
+
+      const posBuf = gl.createBuffer();
+      const uvBuf  = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,0, 1,0, 0,1, 1,1]), gl.STATIC_DRAW);
+
+      return { gl, resSolid, resDem, posBuf, uvBuf };
+    },
+
+    disposeGL(){
+      if (!this.glRes) return;
+      const gl = this.glRes.gl;
+      for (const e of this.lru.values()) { try{ gl.deleteTexture(e.tex);}catch(e){} }
+      this.lru.clear();
+      try{
+        gl.deleteBuffer(this.glRes.posBuf);
+        gl.deleteBuffer(this.glRes.uvBuf);
+      }catch(e){}
+      this.glRes = null;
+    },
+
+    createProgram(gl, vs, fs){
+      const make = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(s) || 'shader');
+        }
+        return s;
+      };
+      const p = gl.createProgram();
+      const v = make(gl.VERTEX_SHADER, vs);
+      const f = make(gl.FRAGMENT_SHADER, fs);
+      gl.attachShader(p, v);
+      gl.attachShader(p, f);
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(p) || 'link');
+      }
+      return p;
+    },
+
+    // 行列を必ず Float32Array(16) に正規化
+    asF32Matrix(m){
+      if (m instanceof Float32Array && m.length === 16) return m;
+      if (ArrayBuffer.isView(m) && m.length === 16) return new Float32Array(m);
+      if (Array.isArray(m) && m.length === 16) return new Float32Array(m);
+      if (m && m.elements && ArrayBuffer.isView(m.elements) && m.elements.length === 16) return new Float32Array(m.elements);
+      if (m && m.data && ArrayBuffer.isView(m.data) && m.data.length === 16) return new Float32Array(m.data);
+      return this.lastGoodMatrix || new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    },
+
+    // ---- 描画 ----
+    renderTiles(gl, matrix){
+      const g = this.glRes; if (!g) return;
+      const map = this.map; const z = Math.floor(map.getZoom());
+
+      const b = map.getBounds();
+      const Wm = 20037508.342789244*2;
+      const tiles = 1 << z;
+      const mpt = Wm / tiles;
+
+      const lng2x = (lng)=> (lng*20037508.34/180 + Wm/2) / mpt;
+      const lat2y = (lat)=> { let y = Math.log(Math.tan((90+lat)*Math.PI/360)) / (Math.PI/180); y = y*20037508.34/180; return (Wm/2 - y) / mpt; };
+
+      const xsW = Math.floor(lng2x(b.getWest()));
+      const xsE = Math.floor(lng2x(b.getEast()));
+      const ysN = Math.floor(lat2y(b.getNorth()));
+      const ysS = Math.floor(lat2y(b.getSouth()));
+
+      const yStart = Math.max(0, Math.min(ysN, ysS));
+      const yEnd   = Math.min(tiles-1, Math.max(ysN, ysS));
+      const xStart = Math.max(0, Math.min(xsW, xsE));
+      const xEnd   = Math.min(tiles-1, Math.max(xsW, xsE));
+
+      const useRes = this.anyTextureReady ? g.resDem : g.resSolid;
+      gl.useProgram(useRes.prog);
+
+      // 共通 uniform
+      if (useRes.uOpacity) gl.uniform1f(useRes.uOpacity, this.opacity);
+      if (useRes.uMatrix) {
+        const m4 = this.asF32Matrix(matrix);
+        gl.uniformMatrix4fv(useRes.uMatrix, false, m4);
+        this.lastGoodMatrix = m4;
+      }
+      if (useRes.uSlopeMaxDeg) gl.uniform1f(useRes.uSlopeMaxDeg, this.params.slopeMaxDeg);
+      if (useRes.uGammaS) gl.uniform1f(useRes.uGammaS, this.params.gammaS);
+      if (useRes.uContrast) gl.uniform1f(useRes.uContrast, this.params.contrast);
+      if (useRes.uSatBoost) gl.uniform1f(useRes.uSatBoost, this.params.saturationBoost);
+
+      const pxM = mpt / this.tileSize; if (useRes.uPxM) gl.uniform1f(useRes.uPxM, pxM);
+      const texel = 1 / this.tileSize; if (useRes.uTexel) gl.uniform2f(useRes.uTexel, texel, texel);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, g.uvBuf);
+      gl.enableVertexAttribArray(useRes.aUv);
+      gl.vertexAttribPointer(useRes.aUv, 2, gl.FLOAT, false, 0, 0);
+
+      const now = this.tNow;
+      const drawRange = (xa, xb) => {
+        for (let ty = yStart; ty <= yEnd; ty++){
+          for (let tx = xa; tx <= xb; tx++){
+            const key = z+'/'+tx+'/'+ty;
+            const ent = this.lru.get(key);
+
+            const minX = -Wm/2 + tx*mpt, maxX = minX + mpt;
+            const maxY =  Wm/2 - ty*mpt, minY = maxY - mpt;
+            const verts = new Float32Array([ minX,minY,  maxX,minY,  minX,maxY,  maxX,maxY ]);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, g.posBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STREAM_DRAW);
+            gl.enableVertexAttribArray(useRes.aPos);
+            gl.vertexAttribPointer(useRes.aPos, 2, gl.FLOAT, false, 0, 0);
+
+            if (useRes === g.resDem && ent && ent.tex){
+              ent.at = now;
+              gl.activeTexture(gl.TEXTURE0);
+              gl.bindTexture(gl.TEXTURE_2D, ent.tex);
+              gl.uniform1i(useRes.uDem, 0);
+            }
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            if (useRes === g.resDem && !ent) this.enqueueTile(z, tx, ty);
+          }
+        }
+      };
+
+      // 子午線跨ぎ対応
+      if (xsE >= xsW) { drawRange(xStart, xEnd); }
+      else { drawRange(0, xEnd); drawRange(xStart, tiles-1); }
+
+      // LRU
+      if (this.lru.size > this.maxTiles){
+        const arr = Array.from(this.lru.entries()).sort((a,b)=>(a[1].at|0)-(b[1].at|0));
+        const over = arr.length - this.maxTiles;
+        for (let i=0; i<over; i++){
+          const [k, v] = arr[i];
+          try{ this.glRes.gl.deleteTexture(v.tex);}catch(e){}
+          this.lru.delete(k);
+        }
+      }
+    },
+
+    // ---- タイル ----
+    enqueueTile(z,x,y){
+      const key = z+'/'+x+'/'+y;
+      if (this.loading.has(key) || this.lru.has(key)) return;
+      this.loading.add(key);
+      const url = this.tileUrlTemplate.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+      fetch(url, {mode:'cors'})
+          .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.blob(); })
+          .then(b=>createImageBitmap(b))
+          .then(bmp=>{
+            this.uploadTile(z,x,y,bmp);
+            this.loading.delete(key);
+            this.anyTextureReady = true;
+            if (this.map && this.map.triggerRepaint) this.map.triggerRepaint();
+          })
+          .catch(err=>{
+            console.warn('[RRIM GPU] tile load fail', err);
+            this.loading.delete(key);
+          });
+    },
+
+    uploadTile(z,x,y,bmp){
+      const gl = this.glRes && this.glRes.gl; if(!gl) return;
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+      const key = z+'/'+x+'/'+y;
+      this.lru.set(key, { tex, w: bmp.width, h: bmp.height, at: this.tNow });
     }
   }
-};
+}
 </script>
 
 <style scoped>
-.rrim-control { display: flex; align-items: center; gap: 8px; }
-.rrim-canvas { image-rendering: auto; }
+.rrim-control {
+  position: absolute;
+  top: 200px;
+  z-index: 100;
+  display: flex; align-items: center; gap: 8px;
+}
 </style>

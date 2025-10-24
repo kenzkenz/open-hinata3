@@ -3929,19 +3929,22 @@ export default {
     releaseOrientationButtons() {
       this.stopSpin?.(); this.stopSpin = null
       this.stopPitch?.(); this.stopPitch = null
+      // 陰影を復活
+      this.$store.commit('SET_HS_FOR', { mapKey: 'map01', enabled: this.currentHillshadeMaps.map01 })
+      this.$store.commit('SET_HS_FOR', { mapKey: 'map02', enabled: this.currentHillshadeMaps.map02 })
     },
     // --- リセット---
     terrainReset (mapName) {
-      const map    = this.$store.state[mapName]
-      const other  = mapName === 'map01' ? this.$store.state.map02 : this.$store.state.map01
-      resetOrientation({
-        targetMap: map,
-        syncMaps: [other],      // もう片方も同時に
-        // syncPitch は既定で true（両方 pitch=0 & bearing=0）
-        duration: 600,
-        zeroTerrain: true,
-        afterMoveEnd: () => this.updatePermalink()
-      })
+      this.hillshadeStop()
+      this.map01.setTerrain(null)
+      this.map02.setTerrain(null)
+      this.map01.easeTo({ bearing: 0, pitch: 0, duration: 600 })
+      this.map02.easeTo({ bearing: 0, pitch: 0, duration: 600 })
+      setTimeout(() => {
+        // 陰影を復活
+        this.$store.commit('SET_HS_FOR', { mapKey: 'map01', enabled: this.currentHillshadeMaps.map01 })
+        this.$store.commit('SET_HS_FOR', { mapKey: 'map02', enabled: this.currentHillshadeMaps.map02 })
+      },600)
     },
     drawToolSet() {
       const vm = this
