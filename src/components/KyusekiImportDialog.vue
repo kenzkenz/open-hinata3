@@ -12,7 +12,7 @@
       <v-divider color="primary" />
 
       <div class="px-4 pt-2">
-        <!-- ① ステッパーの番号アイコンを大きく（.big-steps） -->
+        <!-- ステッパー -->
         <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
@@ -54,9 +54,13 @@
             <v-stepper-window-item :value="2">
               <div class="pa-4">
                 <div class="d-flex align-center gap-3 mb-3">
-                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行（Cloud）</v-btn>
+                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">
+                    OCR 実行（Cloud）
+                  </v-btn>
                   <span class="text-medium-emphasis">Google Document AI Form Parser を使用します</span>
                 </div>
+
+                <v-alert v-if="ocrInfo" type="info" density="comfortable" class="mb-3">{{ ocrInfo }}</v-alert>
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
 
                 <div v-if="rawTable.headers.length" class="ocr-table">
@@ -86,7 +90,15 @@
                   <div class="d-flex flex-wrap gap-3 mb-4">
                     <div v-for="(h, i) in rawTable.headers" :key="'m'+i" class="map-chip">
                       <div class="text-caption text-medium-emphasis mb-1">{{ h }}</div>
-                      <v-select class="no-stretch" density="comfortable" variant="outlined" :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details />
+                      <v-select
+                          class="no-stretch"
+                          density="comfortable"
+                          variant="outlined"
+                          :items="roleOptions"
+                          v-model="columnRoles[i]"
+                          style="min-width:160px"
+                          hide-details
+                      />
                     </div>
                   </div>
 
@@ -112,7 +124,7 @@
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div class="preview-grid" v-if="points.length">
-                  <!-- Map（② 地理院タイル：淡色地図で日本全体を表示） -->
+                  <!-- Map -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -151,11 +163,13 @@
                         <div>dy: {{ fmt(closure.dy) }}</div>
                         <div>面積: <b>{{ fmt(area.area) }} m²</b></div>
                       </div>
-                      <div v-if="closure.len > closureThreshold" class="warn small">閉合差が閾値（{{ closureThreshold }}m）を超えています。</div>
+                      <div v-if="closure.len > closureThreshold" class="warn small">
+                        閉合差が閾値（{{ closureThreshold }}m）を超えています。
+                      </div>
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標系 -->
+                  <!-- 座標系＋プレビューボタン -->
                   <v-card class="" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー作成</v-card-title>
                     <v-card-text class="pane-body">
@@ -163,8 +177,6 @@
                           class="no-stretch"
                           v-model="s_zahyokei"
                           :items="crsChoices"
-                          item-title="title"
-                          item-value="value"
                           label="公共座標系"
                           variant="outlined"
                           density="compact"
@@ -196,12 +208,16 @@
             <v-stepper-window-item :value="5">
               <div class="pa-4">
                 <div v-if="points.length">
-                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">{{ points.length }} 点を処理します。</v-alert>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">
+                    {{ points.length }} 点を処理します。
+                  </v-alert>
                   <div class="d-flex align-center gap-3">
                     <v-btn variant="outlined" prepend-icon="mdi-download" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
                     <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
-                  <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
+                  <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">
+                    生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）
+                  </div>
                 </div>
                 <div class="text-medium-emphasis" v-else>先に再構成してください。</div>
               </div>
@@ -215,6 +231,42 @@
         </v-stepper>
       </div>
     </v-card>
+
+    <!-- ▼ DocAIが複数表を検出したときの候補選択ダイアログ -->
+    <v-dialog v-model="candidateDialog" max-width="1080">
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          表候補を選択
+          <v-btn icon="mdi-close" variant="text" @click="candidateDialog=false" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text>
+          <div class="text-medium-emphasis mb-2">候補 {{ candidates.length }} 件。プレビューで確認して「この表を使う」を押してください。</div>
+
+          <v-tabs v-model="selectedCandidate" grow>
+            <v-tab v-for="(t,ti) in candidates" :key="'tab'+ti">候補 {{ ti+1 }}</v-tab>
+          </v-tabs>
+          <v-window v-model="selectedCandidate" class="mt-2">
+            <v-window-item v-for="(t,ti) in candidates" :key="'win'+ti" :value="ti">
+              <div class="table-scroll">
+                <table class="oh3-simple">
+                  <thead><tr><th v-for="(h,i) in t.headers" :key="'ch'+i">{{ h }}</th></tr></thead>
+                  <tbody>
+                  <tr v-for="(r,ri) in t.rows.slice(0, 30)" :key="'cr'+ri">
+                    <td v-for="(c,ci) in r" :key="'cc'+ci">{{ c }}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </v-window-item>
+          </v-window>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn color="primary" @click="applyCandidate">この表を使う</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- ▲ 候補選択ダイアログ -->
   </v-dialog>
 </template>
 
@@ -226,7 +278,11 @@ import proj4 from 'proj4'
 /* === 軽クリーナー === */
 function cleanCell (s) {
   if (s == null) return ''
-  return String(s).normalize('NFKC').replace(/[,，]/g,'').replace(/[−－—–]/g,'-').replace(/\s+/g,' ').trim()
+  return String(s).normalize('NFKC')
+      .replace(/[,，]/g,'')
+      .replace(/[−－—–]/g,'-')
+      .replace(/\s+/g,' ')
+      .trim()
 }
 
 export default {
@@ -240,7 +296,10 @@ export default {
 
       file: null, previewUrl: '', isImage: true,
 
-      ocrError: '', rawTable: { headers: [], rows: [] },
+      ocrInfo: '', ocrError: '', rawTable: { headers: [], rows: [] },
+      candidateDialog: false,
+      candidates: [],
+      selectedCandidate: 0,
 
       columnRoles: [],
       roleOptions: [
@@ -282,7 +341,9 @@ export default {
   },
   mounted () { if (this.step===4) this.initMapLibre() },
   methods: {
-    /* ==== Cloud OCR ==== */
+    /* =========================
+       Cloud API 呼び出し
+    ==========================*/
     async runCloudOCR (file) {
       const apiBase = import.meta?.env?.VITE_DOCAI_API_URL || 'https://oh3-docai-api-531336516229.asia-northeast1.run.app'
       const f = Array.isArray(file) ? file[0] : file
@@ -290,38 +351,165 @@ export default {
       form.append('file', f, f?.name || 'upload')
       const res = await fetch(`${apiBase}/api/docai_form_parser.php`, { method:'POST', body: form })
       if (!res.ok) throw new Error(`Cloud OCR HTTP ${res.status}`)
-      const json = await res.json()
-      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
-      return { headers: json.headers || [], rows: json.rows || [] }
+      return await res.json() // {ok, file, raw? headers? rows? candidates?}
     },
 
-    preCleanTable () {
-      if (!this.rawTable?.rows?.length) return
-      this.rawTable = {
-        headers: this.rawTable.headers.map(h => cleanCell(h)),
-        rows: this.rawTable.rows.map(r => r.map(c => cleanCell(c)))
+    /* ===== DocAI raw → {headers, rows} 復元 ===== */
+    readAnchor(anchor, fullText) {
+      if (!anchor?.textSegments || !fullText) return ''
+      let s = ''
+      for (const seg of anchor.textSegments) {
+        const a = Number(seg.startIndex || 0)
+        const b = Number(seg.endIndex || 0)
+        if (Number.isFinite(a) && Number.isFinite(b) && b > a) {
+          s += fullText.slice(a, b)
+        }
+      }
+      return s.replace(/\s+/g, ' ').trim()
+    },
+    tableToMatrix(tbl, fullText) {
+      const headers = []
+      for (const hr of (tbl.headerRows || [])) {
+        const row = (hr.cells || []).map(c => this.readAnchor(c.layout?.textAnchor, fullText))
+        if (row.some(v => v)) headers.push(row)
+      }
+      const body = []
+      for (const br of (tbl.bodyRows || [])) {
+        const row = (br.cells || []).map(c => this.readAnchor(c.layout?.textAnchor, fullText))
+        if (row.some(v => v)) body.push(row)
+      }
+      const colN = Math.max( ...(headers.concat(body)).map(r => r.length), 0 )
+      const flatHeader = Array(colN).fill('').map((_,i)=>{
+        const parts = headers.map(h=>h[i]||'').filter(Boolean)
+        return parts.join(' ').trim()
+      })
+      const rows = body.map(r=>{
+        const a = r.slice(0, colN); while (a.length < colN) a.push(''); return a
+      })
+      return { headers: flatHeader, rows }
+    },
+    buildTablesFromDocAI(raw) {
+      try {
+        const doc = raw?.document || raw
+        const text = doc?.text || ''
+        const pages = doc?.pages || []
+        const candidates = []
+
+        // 1) tables から
+        for (const p of pages) {
+          for (const t of (p.tables || [])) {
+            const m = this.tableToMatrix(t, text)
+            if ((m.headers||[]).length && (m.rows||[]).length) candidates.push(m)
+          }
+        }
+
+        // 2) tables が無い場合：entities から行復元（ざっくり）
+        if (!candidates.length && Array.isArray(doc?.entities)) {
+          const lines = []
+          for (const e of doc.entities) {
+            const s = this.readAnchor(e.textAnchor, text)
+            if (s) lines.push(s)
+          }
+          const split = (line) => line.replace(/\|/g,' | ')
+              .split(/,|\t|\||\s{2,}/).map(v=>v.trim()).filter(Boolean)
+          const rows = lines.map(split).filter(r => r.length >= 3)
+          if (rows.length) {
+            const headers = rows[0]
+            const body = rows.slice(1)
+            candidates.push({ headers, rows: body })
+          }
+        }
+
+        const clean = s => cleanCell(s)
+        const normalized = candidates.map(t => ({
+          headers: (t.headers||[]).map(clean),
+          rows: (t.rows||[]).map(r => r.map(clean))
+        }))
+
+        normalized.sort((a,b) => (b.headers.length*b.rows.length)-(a.headers.length*a.rows.length))
+        const best = normalized[0] || { headers:[], rows:[] }
+        return { best, candidates: normalized }
+      } catch (e) {
+        console.warn('buildTablesFromDocAI error', e)
+        return { best:{ headers:[], rows:[] }, candidates:[] }
       }
     },
 
-    /* ==== OCR 実行（クラウドのみ） ==== */
+    /* ==== OCR 実行（クラウド） ==== */
     async doOCR () {
       if (!this.file) return
-      this.ocrError=''; this.busy=true
+      this.ocrError=''; this.ocrInfo=''; this.busy=true
+      this.candidates=[]; this.candidateDialog=false
       try {
-        const table = await this.runCloudOCR(this.file)
-        if (!table?.headers?.length) throw new Error('表が検出できませんでした')
-        this.rawTable = table
-        this.preCleanTable()
+        const json = await this.runCloudOCR(this.file)
+        if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
 
-        // 初期マッピング推定 + 数式列は未使用へ
-        this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
-        this.rawTable.headers.forEach((h,i)=>{
-          const s=String(h).toLowerCase()
-          if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
-        })
+        // サーバが candidates を返す場合
+        if (Array.isArray(json.candidates) && json.candidates.length) {
+          this.candidates = json.candidates.map(t => ({
+            headers: (t.headers||[]).map(h=>cleanCell(h)),
+            rows: (t.rows||[]).map(r => r.map(c=>cleanCell(c)))
+          }))
+          this.selectedCandidate = 0
+          this.candidateDialog = true
+          this.ocrInfo = `候補 ${this.candidates.length} 件を検出。プレビューから選択してください。`
+          this.rawTable = { headers: [], rows: [] }
+          return
+        }
+        // サーバが headers/rows を返す場合
+        if ((json.headers?.length || 0) && (json.rows?.length || 0)) {
+          this.rawTable = {
+            headers: json.headers.map(h=>cleanCell(h)),
+            rows: json.rows.map(r=>r.map(c=>cleanCell(c)))
+          }
+          this.afterTableArrived()
+          return
+        }
+        // サーバが raw のみを返す場合 → クライアントで復元
+        if (json.raw) {
+          const built = this.buildTablesFromDocAI(json.raw)
+          if ((built.best.headers?.length || 0) && (built.best.rows?.length || 0)) {
+            if ((built.candidates?.length || 0) > 1) {
+              this.candidates = built.candidates
+              this.selectedCandidate = 0
+              this.candidateDialog = true
+              this.ocrInfo = `候補 ${this.candidates.length} 件を検出（raw から復元）。プレビューから選択してください。`
+              this.rawTable = { headers: [], rows: [] }
+              return
+            } else {
+              this.rawTable = built.best
+              this.afterTableArrived()
+              return
+            }
+          }
+        }
 
-        if (this.step<3) this.step=3
-      } catch (e) { console.error(e); this.ocrError=String(e.message||e) } finally { this.busy=false }
+        throw new Error('表が検出できませんでした')
+      } catch (e) {
+        console.error(e); this.ocrError=String(e.message||e)
+      } finally {
+        this.busy=false
+      }
+    },
+
+    /* 候補選択の確定 */
+    applyCandidate () {
+      const t = this.candidates[this.selectedCandidate]
+      if (!t) { this.candidateDialog=false; return }
+      this.rawTable = JSON.parse(JSON.stringify(t))
+      this.candidateDialog=false
+      this.afterTableArrived()
+    },
+
+    /* 取り込み後の初期化共通 */
+    afterTableArrived () {
+      // 初期マッピング推定 + 数式列は未使用へ
+      this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
+      this.rawTable.headers.forEach((h,i)=>{
+        const s=String(h).toLowerCase()
+        if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
+      })
+      if (this.step<3) this.step=3
     },
 
     /* ==== 列マッピング/正規化 ==== */
@@ -382,7 +570,7 @@ export default {
       return out
     },
 
-    /* === 誤読補正（抜粋：前回仕様を維持） === */
+    /* === 誤読補正（抜粋） === */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     adjustByMagnitude (v,t){ if(!Number.isFinite(v)||!Number.isFinite(t))return v; const cand=[v,v-9000,v+9000]; cand.sort((a,b)=>Math.abs(a-t)-Math.abs(b-t)); return Math.abs(v-t)>4000?cand[0]:v },
     generateSimilarDigitCandidates (num) {
@@ -566,7 +754,37 @@ export default {
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
     },
 
+    /* ② MapLibre 初期化：地理院タイル（淡色）＋日本全体 */
+    async initMapLibre () {
+      if (this.map || !this.$refs.maplibreEl) return
+      const id='maplibre-css'
+      if (!document.getElementById(id)) {
+        const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'
+        document.head.appendChild(l)
+      }
+      const { Map } = await import('maplibre-gl')
 
+      const style = {
+        version: 8,
+        sources: {
+          'gsi-pale': {
+            type: 'raster',
+            tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '地理院タイル（淡色地図）© 国土地理院'
+          }
+        },
+        layers: [ { id: 'gsi-pale', type: 'raster', source: 'gsi-pale' } ]
+      }
+
+      this.map = new Map({
+        container: this.$refs.maplibreEl,
+        style,
+        center: [137.0, 38.0],
+        zoom: 4.3,
+        preserveDrawingBuffer: true
+      })
+    }
   }
 }
 </script>
@@ -583,7 +801,6 @@ export default {
   font-size: 16px;
 }
 
-/* 高さの“物差し”（左・中央＝2段ぶん / 右は半分ずつ） */
 :root{ --tall-h: 300px; }
 
 .pane{display:flex;flex-direction:column;box-sizing:border-box;min-height:0}
@@ -631,4 +848,6 @@ export default {
 .no-stretch { align-self: flex-start; max-width: 260px; }
 .no-stretch :deep(.v-field) { height: 50px; }
 .no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
+
+.table-scroll{max-height:420px;overflow:auto}
 </style>
