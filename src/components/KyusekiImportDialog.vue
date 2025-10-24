@@ -127,14 +127,14 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- Step 4 プレビュー・検算 -->
+            <!-- Step 4 プレビュー・検算（横並び／狭い時は縦） -->
             <v-stepper-window-item :value="4">
               <div class="pa-4">
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div v-if="points.length">
-                  <div class="d-flex flex-wrap gap-4">
-                    <v-card class="flex-1 oh3-accent-border" variant="outlined">
+                  <div class="preview-grid">
+                    <v-card class="oh3-accent-border" variant="outlined">
                       <v-card-title class="py-2">座標プレビュー</v-card-title>
                       <v-card-text>
                         <div class="table-scroll">
@@ -158,7 +158,7 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card class="flex-1 oh3-accent-border" variant="outlined">
+                    <v-card class="oh3-accent-border" variant="outlined">
                       <v-card-title class="py-2">検算</v-card-title>
                       <v-card-text>
                         <div class="mb-2">閉合差：<b>{{ fmt(closure.len) }} m</b>（dx={{ fmt(closure.dx) }}, dy={{ fmt(closure.dy) }}）</div>
@@ -172,8 +172,15 @@
                   </div>
 
                   <div class="d-flex align-center gap-3 mt-4">
-                    <v-select v-model="crs" :items="crsChoices" label="座標系（推定）" style="max-width: 260px" />
-                    <v-text-field v-model="featureName" label="取り込み名" density="comfortable" style="max-width: 260px" />
+                    <!-- 公共座標系（系名のみ表示。内部は JGD2000 EPSG を保持） -->
+                    <v-select
+                        v-model="crs"
+                        :items="crsChoices"
+                        item-title="title"
+                        item-value="value"
+                        label="公共座標系（推定）"
+                        style="max-width: 260px"
+                    />
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">列マッピング後に「再構成」してください。</div>
@@ -184,8 +191,16 @@
             <v-stepper-window-item :value="5">
               <div class="pa-4">
                 <div v-if="points.length">
-                  <v-alert type="info" color="primary" variant="tonal" class="mb-4">{{ points.length }} 点を OH3 に取り込みます。</v-alert>
-                  <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-4">{{ points.length }} 点を処理します。</v-alert>
+                  <div class="d-flex align-center gap-3">
+                    <!-- SIM ダウンロード（Shift_JIS, .sim） -->
+                    <v-btn variant="outlined" prepend-icon="mdi-download" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
+                    <!-- 取り込み実行（今は空。将来 OH3 既存機能へ差し替え） -->
+                    <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
+                  </div>
+                  <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">
+                    生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）
+                  </div>
                 </div>
                 <div v-else class="text-medium-emphasis">先に再構成してください。</div>
               </div>
@@ -208,11 +223,12 @@
 </template>
 
 <script>
+import { downloadTextFile } from '@/js/downLoad' // src/js/downLoad.js
+
 // ===== 画像前処理（劣化原稿向け：適応二値化） =====
 async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
   const blob = (file instanceof File) ? file : new File([file], 'img')
 
-  // createImageBitmap 非対応環境にも対応
   const img = await (async () => {
     if (typeof createImageBitmap === 'function') return createImageBitmap(blob)
     return await new Promise((resolve, reject) => {
@@ -224,7 +240,6 @@ async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
     })
   })()
 
-  // 少し拡大して細線を出す
   const scale = Math.max(1, Math.min(1.6, maxSide / Math.max(img.width, img.height)))
   const w = Math.round(img.width * scale)
   const h = Math.round(img.height * scale)
@@ -235,7 +250,6 @@ async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
   ctx.imageSmoothingEnabled = false
   ctx.drawImage(img, 0, 0, w, h)
 
-  // タイル平均ベース適応二値化
   const id = ctx.getImageData(0, 0, w, h)
   const d = id.data
   const tw = Math.max(8, Math.floor(w / tiles))
@@ -282,7 +296,6 @@ function splitRow (line) {
 function extractIdXY (line) {
   if (!line) return null
   const s = line.replace(/[［\]【】]/g,' ').replace(/\s+/g,' ').trim()
-  // 文字クラス内の '/' はエスケープ不要。ハイフンは末尾へ。
   const idMatch = s.match(/[A-Za-z0-9./／-]+/)
   if (!idMatch) return null
   const id = idMatch[0]
@@ -304,6 +317,7 @@ export default {
       internal: this.modelValue,
       step: 1,
       busy: false,
+
       // Step1
       file: null,
       previewUrl: '',
@@ -337,10 +351,34 @@ export default {
       area: { area: 0, signed: 0 },
       closure: { dx:0, dy:0, len:0 },
       closureThreshold: 0.02,
-      featureName: 'kyuseki-import',
-      crs: 'EPSG:6677',
-      crsChoices: ['EPSG:6677','EPSG:6668','EPSG:6669','EPSG:6670','EPSG:6671','EPSG:6672','EPSG:6673','EPSG:6674','EPSG:6675','EPSG:6676','EPSG:6677','EPSG:6678','EPSG:6679','EPSG:6680','EPSG:6681','EPSG:6682','EPSG:6683','EPSG:6684','EPSG:6685','EPSG:6686'],
+
+      // ★ JGD2000（2000系）を内部キーに採用。既定は 公共座標2系（EPSG:2444）。
+      crs: 'EPSG:2444',
+      crsChoices: [
+        { title: '公共座標1系',  value: 'EPSG:2443' },
+        { title: '公共座標2系',  value: 'EPSG:2444' },
+        { title: '公共座標3系',  value: 'EPSG:2445' },
+        { title: '公共座標4系',  value: 'EPSG:2446' },
+        { title: '公共座標5系',  value: 'EPSG:2447' },
+        { title: '公共座標6系',  value: 'EPSG:2448' },
+        { title: '公共座標7系',  value: 'EPSG:2449' },
+        { title: '公共座標8系',  value: 'EPSG:2450' },
+        { title: '公共座標9系',  value: 'EPSG:2451' },
+        { title: '公共座標10系', value: 'EPSG:2452' },
+        { title: '公共座標11系', value: 'EPSG:2453' },
+        { title: '公共座標12系', value: 'EPSG:2454' },
+        { title: '公共座標13系', value: 'EPSG:2455' },
+        { title: '公共座標14系', value: 'EPSG:2456' },
+        { title: '公共座標15系', value: 'EPSG:2457' },
+        { title: '公共座標16系', value: 'EPSG:2458' },
+        { title: '公共座標17系', value: 'EPSG:2459' },
+        { title: '公共座標18系', value: 'EPSG:2460' },
+        { title: '公共座標19系', value: 'EPSG:2461' },
+      ],
+
       buildError: '',
+      simaInfo: { name: '', size: 0 },
+      lastSimaText: '',
     }
   },
   watch: {
@@ -477,13 +515,13 @@ export default {
         if (headerLine) {
           fixedHeader = headerLine
               .normalize('NFKC')
-              .replace(/(N[O0]+)\s*(Xn)/ig, '$1 | $2')  // NO と Xn の間
-              .replace(/(Xn)\s*(Yn)/ig, '$1 | $2')      // Xn と Yn の間
-              .replace(/(Yn)\s*(Y[^\s|]+)/ig, '$1 | $2')// Yn と派生列の間
+              .replace(/(N[O0]+)\s*(Xn)/ig, '$1 | $2')
+              .replace(/(Xn)\s*(Yn)/ig, '$1 | $2')
+              .replace(/(Yn)\s*(Y[^\s|]+)/ig, '$1 | $2')
               .replace(/\s{2,}/g, ' ')
         }
 
-        // まず通常のセル分割
+        // 通常のセル分割
         let rows = lines
             .map(L => (L === headerLine && fixedHeader) ? fixedHeader : L)
             .map(splitRow)
@@ -561,7 +599,7 @@ export default {
       const z2h = s.normalize('NFKC')
       return z2h
           .replace(/\s+/g, '')
-          .replace(/[()【】（）:：ー_-]/g, '')   // 記号除去（-は末尾）
+          .replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g, '')
           .replace(/\[/g, '')
           .replace(/\]/g, '')
           .toLowerCase()
@@ -597,8 +635,7 @@ export default {
       if (s == null) return ''
       const z2h = s.normalize('NFKC').replace(/,/g, '')
       return z2h
-          .replace(/[\]|]/g, '')               // 罫線の残骸 '|' と ']'
-          // マイナス各種 & 紛れ込む空白類（NBSP, EM/EN SPACE, 全角空白）を Unicode エスケープで
+          .replace(/[\]|]/g, '')
           .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g, '-')
           .trim()
     },
@@ -702,6 +739,7 @@ export default {
         this.points = pts
         this.area = this.shoelace(pts)
         this.closure = this.closureError(pts)
+        // 値域で系は確定しないため、推定は現状維持（内部は2000系）
         this.crs = this.guessCRS(pts) || this.crs
       } catch (e) {
         console.error(e)
@@ -716,36 +754,83 @@ export default {
       const minY = Math.min(...ys), maxY = Math.max(...ys)
       const rangeX = maxX - minX, rangeY = maxY - minY
       if (minX > 0 && maxX < 400000 && minY > 3000000 && maxY < 5000000 && (rangeX < 200000) && (rangeY < 200000)) {
-        return 'EPSG:6677'
+        return this.crs
       }
       return null
     },
 
-    // ===== Step5: OH3へ投入 =====
-    toGeoJSONLineString (points, crs) {
-      return {
-        type: 'Feature',
-        properties: { crs, name: this.featureName },
-        geometry: { type: 'LineString', coordinates: points.map(p => [p.x, p.y]) }
+    // ===== SIM（提示フォーマット準拠）生成 =====
+    extractLotFromFileName () {
+      try {
+        const f = Array.isArray(this.file) ? this.file[0] : this.file
+        const name = (f && f.name) ? f.name : ''
+        const m = String(name).match(/(\d{1,5}-\d{1,5})/)
+        return m ? m[1] : '000-0'
+      } catch {
+        return '000-0'
       }
     },
-    async commit () {
+    resolveProjectName () {
+      if (this.jobId) return `oh3-job-${this.jobId}`
+      return 'open-hinata3'
+    },
+    buildSIMAContent () {
+      if (!this.points.length) return ''
+      const prj = this.resolveProjectName()
+      const lot = this.extractLotFromFileName()
+
+      const lines = []
+      // ヘッダ
+      lines.push(`G00,01,${prj},`)
+      // 座標テーブル
+      lines.push('Z00,座標ﾃﾞｰﾀ,,')
+      lines.push('A00,')
+      this.points.forEach((p, i) => {
+        const no = Number.isFinite(p.idx) ? Number(p.idx) : (i + 1)
+        const x = Number(p.x).toFixed(3)
+        const y = Number(p.y).toFixed(3)
+        lines.push(`A01,${i + 1},${no},${x},${y},`)
+      })
+      lines.push('A99,')
+      // 区画データ（単一）
+      lines.push('Z00,区画データ,')
+      lines.push(`D00,1,${lot},1,`)
+      this.points.forEach((p, i) => {
+        const no = Number.isFinite(p.idx) ? Number(p.idx) : (i + 1)
+        lines.push(`B01,${i + 1},${no},`)
+      })
+      lines.push('D99,')
+      // 終端
+      lines.push('A99,END')
+
+      return lines.join('\n')
+    },
+
+    // ===== ダウンロード（Shift_JIS, .sim） =====
+    downloadSIMA () {
       if (!this.points.length) return
-      this.busy = true
+      const text = this.buildSIMAContent()
+      this.lastSimaText = text
+
+      const ts = new Date().toISOString().replace(/[:.]/g, '-')
+      const name = `kyuseki_${ts}.sim`
+      downloadTextFile(name, text, 'shift-jis')
+
+      // サイズ表示（SJIS長が取れればそれを使う）
+      let size = text.length
       try {
-        if (this.jobId) {
-          await this.$store.dispatch('jobs/addPoints', { jobId: this.jobId, points: this.points, crs: this.crs })
+        if (window.Encoding) {
+          const utf8 = window.Encoding.stringToCode(text)
+          const sjis = window.Encoding.convert(utf8, 'SJIS')
+          size = sjis.length
         }
-        const feature = this.toGeoJSONLineString(this.points, this.crs)
-        await this.$store.dispatch('layers/addGeoJSON', { id: 'kyuseki-import', feature })
-        this.$emit('imported', { count: this.points.length, crs: this.crs, area: this.area.area })
-        this.step = 5
-      } catch (e) {
-        console.error(e)
-        this.$emit('imported', { error: String(e.message || e) })
-      } finally {
-        this.busy = false
-      }
+      } catch {}
+      this.simaInfo = { name, size }
+    },
+
+    // ===== 取り込み実行（今は空：将来 OH3 既存機能へ接続） =====
+    async commit () {
+      this.$emit('imported', { count: this.points.length, crs: this.crs, area: this.area.area, sim: !!this.simaInfo.name })
     }
   }
 }
@@ -756,9 +841,21 @@ export default {
 .preview-img { max-width: 100%; max-height: 280px; object-fit: contain; }
 .ocr-table { border: 1px solid var(--v-theme-outline-variant); border-radius: 8px; padding: 8px; }
 .table-scroll { overflow: auto; max-height: 340px; }
+
+/* 横並び／狭いと縦のレスポンシブ */
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 860px) {
+  .preview-grid { grid-template-columns: 1fr; }
+}
+
 .oh3-simple { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .oh3-simple th, .oh3-simple td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; white-space: nowrap; }
 .oh3-simple thead th { background: #f6f6f7; position: sticky; top: 0; z-index: 1; }
+
 .map-chip { border: 1px dashed var(--v-theme-outline); border-radius: 10px; padding: 8px; min-width: 180px; }
 .oh3-title { color: rgb(var(--v-theme-primary)); }
 .oh3-accent-border { border-top: 3px solid rgb(var(--v-theme-primary)); }
