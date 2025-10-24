@@ -7,16 +7,7 @@
 <template>
   <v-app>
 
-<!--    <HillshadeControll-->
-<!--        v-if="mapReady"-->
-<!--        ref="hs"-->
-<!--        :map="map01"-->
-<!--        dem-source-id="terrain"-->
-<!--        :start-enabled="true"-->
-<!--        :auto-anchor="true"-->
-<!--        style="display:none"-->
-<!--    />-->
-
+    <KyusekiImportDialog></KyusekiImportDialog>
 
     <LoginManager></LoginManager>
 
@@ -1582,7 +1573,6 @@
               <!-- <MiniTooltip text="グループ機能">-->
               <!--   <v-btn :size="isSmall ? 'small' : 'default'" v-if="user && mapName === 'map01'" icon style="margin-left:8px;" @click="s_dialogForGroup = !s_dialogForGroup"><v-icon v-if="user">mdi-account-supervisor</v-icon></v-btn>-->
               <!--  </MiniTooltip>-->
-
               <MiniTooltip text="測位" :offset-x="4" :offset-y="-2">
                 <v-speed-dial
                     location="top center"
@@ -1600,6 +1590,9 @@
                     </v-fab>
                   </template>
                   <div key="00" class="d-flex ga-2 mt-2 fab-actions">
+                    <v-btn icon
+                           @click="openKyuseki"
+                    >求積表</v-btn>
                     <v-btn icon
                            @click="toggleWatchPosition('k');
                            onJobEndClick(true)"
@@ -1782,7 +1775,7 @@ import { snapIfNeeded } from '@/js/utils/triangle50'
 import rtkPngUrl from '@/assets/icons/oh-rtk.png'
 import { ensureGeoid } from '@/geoid';
 import VDialogCommon from "@/components/V-dialog/V-dialog-common";
-// import HillshadeControll from '@/components/HillshadeControll'
+import KyusekiImportDialog from "@/components/KyusekiImportDialog.vue";
 
 import {
   addDraw, addressFromMapCenter,
@@ -2470,7 +2463,7 @@ export default {
     JobPicker,
     VDialogCommon,
     LoginManager,
-    // HillshadeControll,
+    KyusekiImportDialog,
   },
   data: () => ({
     wizardOpen: false,
@@ -3511,11 +3504,11 @@ export default {
     },
   },
   methods: {
+    openKyuseki() {
+      alert(888)
+    },
     maybeFocusCenterIncludePoint(aLngLat, bLngLat, opts) {
       if (Date.now() < this.suppressUntil) return;
-      // if (this.suppressUntil > 0) {
-      //   alert(this.suppressUntil)
-      // }
       return this.focusCenterIncludePoint(aLngLat, bLngLat, opts);
     },
 
@@ -5858,7 +5851,6 @@ export default {
       const map = this.$store.state.map01
       map.zoomOut({duration: 500})
     },
-
     /** =========================
      * 測位関連（位置観測の開始・収集・停止・サマリー・保存）
      * ========================= */
