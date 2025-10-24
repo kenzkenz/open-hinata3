@@ -295,9 +295,6 @@ export default {
         { title: '点番（数）', value: 'idx' },
         { title: '点名（文字）', value: 'label' },
         { title: 'X', value: 'x' }, { title: 'Y', value: 'y' },
-        { title: '方位角', value: 'azimuth' }, { title: '距離', value: 'distance' },
-        { title: '半径R', value: 'radius' }, { title: '中心角θ(度)', value: 'theta' },
-        { title: '弦長c', value: 'chord' }, { title: '弧長L', value: 'arcLength' }, { title: '備考', value: 'remark' }
       ],
 
       points: [], area: { area: 0, signed: 0 }, closure: { dx: 0, dy: 0, len: 0 }, closureThreshold: 0.02,
@@ -426,9 +423,6 @@ export default {
         headers = headers.map(h =>
             h.replace(/点名|標識|名称/i,'点名').replace(/点番|番号|No/i,'点番')
                 .replace(/X座標|東距|東/i,'X').replace(/Y座標|北距|北/i,'Y')
-                .replace(/方位角|方位/i,'方位角').replace(/距離|長さ|延長/i,'距離')
-                .replace(/半径|R/i,'半径R').replace(/中心角|角度/i,'中心角θ')
-                .replace(/弦長|弦/i,'弦長c').replace(/弧長/i,'弧長L')
         )
 
         const body = rows.filter((_,i)=>i!==idxMax)
@@ -459,11 +453,6 @@ export default {
         label:['点名','標識','名称'],
         x:['x','xn','x座標','東','e','東距','横座標'],
         y:['y','yn','y座標','北','n','北距','縦座標'],
-        azimuth:['方位','方位角','方角','bearing','方位角度'],
-        distance:['距離','長さ','延長','d','l','辺長'],
-        radius:['r','半径','曲率半径'],
-        theta:['中心角','角度','θ','デルタ','delta','セクタ角'],
-        chord:['弦','弦長'], arcLength:['弧長','アーク長','弧線長'], remark:['備考','注記','メモ']
       }
       for (const [role,arr] of Object.entries(dict)) { if (arr.some(k=>H.includes(k))) return role }
       if (/\b(xn|x)\b/i.test(h)) return 'x'
@@ -623,22 +612,43 @@ export default {
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
 .ocr-table{border:1px solid var(--v-theme-outline-variant);border-radius:8px;padding:8px}
 
-/* パネル高さ：Map＆座標は高め、検算は小さく */
-.pane{display:flex;flex-direction:column;min-height:140px}
+/* 高さの“物差し” */
+:root{ --tall-h: 360px; }  /* 左・中央の合計高さ（=2段ぶん）。数字だけ調整すれば全体が連動 */
+
+.pane{display:flex;flex-direction:column;box-sizing:border-box;min-height:0}
 .pane-body{flex:1;display:flex;flex-direction:column;min-height:0}
-.tall{min-height:340px}
-.calc-pane{min-height:150px}
-.crs-pane{min-height:110px;align-items:center}
+
+/* 3カラム + 明示的に 2 段。左と中央は2行ぶん(=--tall-h)を占有、右は1行ずつ */
+.preview-grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  grid-template-rows:repeat(2, calc(var(--tall-h)/2)); /* 上段=下段=半分 */
+  gap:16px;
+}
+
+/* 左(地図)・中央(座標) は 2 行にまたがる＝合計 --tall-h */
+.preview-grid > .tall{ grid-row: 1 / span 2; height:auto; }
+
+/* 右列の並び（1段目=検算、2段目=公共座標系） */
+.preview-grid > .calc-pane{ grid-column:3; grid-row:1; height:auto; }
+.preview-grid > .crs-pane { grid-column:3; grid-row:2; height:auto; }
+
+/* Vuetifyカードの余白差でズレないよう、タイトル・本文のパディングを控えめに統一 */
+:deep(.v-card-title){ padding:8px 12px !important; }
+:deep(.v-card-text){  padding:8px 12px !important; }
 
 /* 表・地図 */
 .table-fill{flex:1;overflow:auto}
 .maplibre-host{width:100%;height:100%;border:1px solid #e2e8f0;border-radius:8px}
 
-/* グリッド：3列、検算の下に座標系を配置 */
-.preview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:auto;gap:16px}
-.preview-grid>.crs-pane{grid-column:3}
-@media (max-width:1200px){.preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-grid>.crs-pane{grid-column:auto}}
-@media (max-width:980px){.preview-grid{grid-template-columns:1fr}}
+/* レスポンシブ：幅が狭いときは自動的に2列→1列へ */
+@media (max-width:1200px){
+  .preview-grid{grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto}
+  .preview-grid > .tall{ grid-row:auto; }
+}
+@media (max-width:980px){
+  .preview-grid{grid-template-columns:1fr; grid-template-rows:auto}
+}
 
 .oh3-simple{width:100%;border-collapse:collapse;font-size:12.5px}
 .oh3-simple th,.oh3-simple td{border:1px solid #ddd;padding:6px 8px;text-align:left;white-space:nowrap}
@@ -652,3 +662,7 @@ export default {
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 </style>
+
+
+
+
