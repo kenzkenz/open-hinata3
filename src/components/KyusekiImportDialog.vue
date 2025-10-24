@@ -22,7 +22,7 @@
             <v-divider></v-divider>
             <v-stepper-item color="primary" :complete="step>3" :value="3" title="列マッピング" subtitle="X/Y/距離/角 等" />
             <v-divider></v-divider>
-            <v-stepper-item color="primary" :complete="step>4" :value="4" title="プレビュー・検算" subtitle="閉合/面積" />
+            <v-stepper-item color="primary" :complete="step>4" :value="4" title="プレビュー・検算" subtitle="閉合/面積＋地図" />
             <v-divider></v-divider>
             <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
           </v-stepper-header>
@@ -40,7 +40,6 @@
                       show-size
                       @change="onFileSelected"
                   />
-
                   <div class="flex-1 min-h-40">
                     <div v-if="previewUrl" class="preview-box">
                       <img v-if="isImage" :src="previewUrl" class="preview-img" alt="preview" />
@@ -127,28 +126,42 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- Step 4 プレビュー・検算（横並び／狭い時は縦） -->
+            <!-- Step 4 プレビュー・検算（＋ MapLibre） -->
             <v-stepper-window-item :value="4">
               <div class="pa-4">
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div v-if="points.length">
                   <div class="preview-grid">
-                    <v-card class="oh3-accent-border" variant="outlined">
+                    <!-- MapLibre -->
+                    <v-card class="oh3-accent-border pane" variant="outlined">
+                      <v-card-title class="py-2">地図プレビュー（MapLibre）</v-card-title>
+                      <v-card-text class="pane-body">
+                        <div ref="maplibreEl" class="maplibre-host"></div>
+                        <div class="text-caption text-medium-emphasis mt-2">
+                          ※ 現状は背景のみ表示。重ね合わせは後で実装します。
+                        </div>
+                      </v-card-text>
+                    </v-card>
+
+                    <!-- 座標プレビュー：親と同じ高さに揃える -->
+                    <v-card class="oh3-accent-border pane" variant="outlined">
                       <v-card-title class="py-2">座標プレビュー</v-card-title>
-                      <v-card-text>
-                        <div class="table-scroll">
+                      <v-card-text class="pane-body">
+                        <div class="table-fill">
                           <table class="oh3-simple">
                             <thead>
                             <tr>
                               <th>#</th>
+                              <th>点名/点番</th>
                               <th>X</th>
                               <th>Y</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr v-for="(p,i) in points" :key="'p'+i">
-                              <td>{{ p.idx ?? (i+1) }}</td>
+                              <td>{{ i+1 }}</td>
+                              <td>{{ p.label ?? p.idx ?? (i+1) }}</td>
                               <td>{{ fmt(p.x) }}</td>
                               <td>{{ fmt(p.y) }}</td>
                             </tr>
@@ -158,21 +171,25 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card class="oh3-accent-border" variant="outlined">
+                    <!-- 検算 -->
+                    <v-card class="oh3-accent-border pane" variant="outlined">
                       <v-card-title class="py-2">検算</v-card-title>
-                      <v-card-text>
-                        <div class="mb-2">閉合差：<b>{{ fmt(closure.len) }} m</b>（dx={{ fmt(closure.dx) }}, dy={{ fmt(closure.dy) }}）</div>
-                        <div class="mb-2">面積（座標法）：<b>{{ fmt(area.area) }} m²</b></div>
-                        <div class="text-medium-emphasis">符号付面積：{{ fmt(area.signed) }}</div>
-                        <v-alert v-if="closure.len > closureThreshold" type="warning" density="comfortable" class="mt-4">
-                          閉合差が閾値（{{ closureThreshold }}m）を超えています。列マッピングや値を確認してください。
-                        </v-alert>
+                      <v-card-text class="compact-text pane-body">
+                        <div class="inline-metrics">
+                          <div>閉合差: <b>{{ fmt(closure.len) }} m</b></div>
+                          <div>dx: {{ fmt(closure.dx) }}</div>
+                          <div>dy: {{ fmt(closure.dy) }}</div>
+                          <div>面積: <b>{{ fmt(area.area) }} m²</b></div>
+                        </div>
+                        <div v-if="closure.len > closureThreshold" class="warn small">
+                          閉合差が閾値（{{ closureThreshold }}m）を超えています。
+                        </div>
                       </v-card-text>
                     </v-card>
                   </div>
 
-                  <div class="d-flex align-center gap-3 mt-4">
-                    <!-- 公共座標系（系名のみ表示。内部は JGD2000 EPSG を保持） -->
+                  <div class="d-flex align-center gap-3 mt-3">
+                    <!-- 公共座標系（表示名のみ。内部はJGD2000 EPSG） -->
                     <v-select
                         v-model="crs"
                         :items="crsChoices"
@@ -180,10 +197,32 @@
                         item-value="value"
                         label="公共座標系（推定）"
                         style="max-width: 260px"
+                        density="compact"
                     />
                   </div>
                 </div>
-                <div v-else class="text-medium-emphasis">列マッピング後に「再構成」してください。</div>
+
+                <div v-else>
+                  <div class="preview-grid">
+                    <v-card class="oh3-accent-border pane" variant="outlined">
+                      <v-card-title class="py-2">地図プレビュー（MapLibre）</v-card-title>
+                      <v-card-text class="pane-body">
+                        <div ref="maplibreEl" class="maplibre-host"></div>
+                        <div class="text-caption text-medium-emphasis mt-2">
+                          ※ 現状は背景のみ表示。重ね合わせは後で実装します。
+                        </div>
+                      </v-card-text>
+                    </v-card>
+
+                    <v-card class="oh3-accent-border pane" variant="outlined">
+                      <v-card-text class="pane-body text-medium-emphasis">
+                        列マッピング後に「再構成」してください。
+                      </v-card-text>
+                    </v-card>
+
+                    <div class="d-none d-md-block"></div>
+                  </div>
+                </div>
               </div>
             </v-stepper-window-item>
 
@@ -191,18 +230,18 @@
             <v-stepper-window-item :value="5">
               <div class="pa-4">
                 <div v-if="points.length">
-                  <v-alert type="info" color="primary" variant="tonal" class="mb-4">{{ points.length }} 点を処理します。</v-alert>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">
+                    {{ points.length }} 点を処理します。
+                  </v-alert>
                   <div class="d-flex align-center gap-3">
-                    <!-- SIM ダウンロード（Shift_JIS, .sim） -->
                     <v-btn variant="outlined" prepend-icon="mdi-download" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
-                    <!-- 取り込み実行（今は空。将来 OH3 既存機能へ差し替え） -->
                     <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">
                     生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）
                   </div>
                 </div>
-                <div v-else class="text-medium-emphasis">先に再構成してください。</div>
+                <div class="text-medium-emphasis" v-else>先に再構成してください。</div>
               </div>
             </v-stepper-window-item>
           </v-stepper-window>
@@ -223,7 +262,7 @@
 </template>
 
 <script>
-import { downloadTextFile } from '@/js/downLoad' // src/js/downLoad.js
+import { downloadTextFile } from '@/js/downLoad'
 
 // ===== 画像前処理（劣化原稿向け：適応二値化） =====
 async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
@@ -282,7 +321,7 @@ async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
   return canvas
 }
 
-// 行テキスト → セル分割（区切り崩壊ケア）
+// セル分割（堅牢）
 function splitRow (line) {
   return line
       .replace(/]/g, ' ] ')
@@ -292,10 +331,10 @@ function splitRow (line) {
       .filter(s => s.length)
 }
 
-// 行から [ID, X, Y] を強引に抽出（崩壊耐性）
+// 崩壊救済： [ID, X, Y] を粗く抽出
 function extractIdXY (line) {
   if (!line) return null
-  const s = line.replace(/[［\]【】]/g,' ').replace(/\s+/g,' ').trim()
+  const s = line.replace(/[［\]【】]/g, ' ').replace(/\s+/g, ' ').trim()
   const idMatch = s.match(/[A-Za-z0-9./／-]+/)
   if (!idMatch) return null
   const id = idMatch[0]
@@ -309,9 +348,9 @@ export default {
   props: {
     modelValue: { type: Boolean, default: false },
     jobId: { type: [String, Number], default: null },
-    startXY: { type: Object, default: null }, // {x,y}
+    startXY: { type: Object, default: null } // {x,y}
   },
-  emits: ['update:modelValue','imported'],
+  emits: ['update:modelValue', 'imported'],
   data () {
     return {
       internal: this.modelValue,
@@ -324,7 +363,7 @@ export default {
       isImage: true,
       useCloudFallback: true,
       cloudService: 'Textract',
-      cloudServiceItems: ['Textract','DocumentAI','Azure'],
+      cloudServiceItems: ['Textract', 'DocumentAI', 'Azure'],
 
       // Step2 OCR結果（表形式）
       ocrError: '',
@@ -333,37 +372,38 @@ export default {
       // Step3 列ロール
       columnRoles: [],
       roleOptions: [
-        { title:'未使用', value:null },
-        { title:'点番', value:'idx' },
-        { title:'X', value:'x' },
-        { title:'Y', value:'y' },
-        { title:'方位角', value:'azimuth' },
-        { title:'距離', value:'distance' },
-        { title:'半径R', value:'radius' },
-        { title:'中心角θ(度)', value:'theta' },
-        { title:'弦長c', value:'chord' },
-        { title:'弧長L', value:'arcLength' },
-        { title:'備考', value:'remark' }
+        { title: '未使用', value: null },
+        { title: '点番（数）', value: 'idx' },
+        { title: '点名（文字）', value: 'label' },
+        { title: 'X', value: 'x' },
+        { title: 'Y', value: 'y' },
+        { title: '方位角', value: 'azimuth' },
+        { title: '距離', value: 'distance' },
+        { title: '半径R', value: 'radius' },
+        { title: '中心角θ(度)', value: 'theta' },
+        { title: '弦長c', value: 'chord' },
+        { title: '弧長L', value: 'arcLength' },
+        { title: '備考', value: 'remark' }
       ],
 
       // Step4 再構成
       points: [],
       area: { area: 0, signed: 0 },
-      closure: { dx:0, dy:0, len:0 },
+      closure: { dx: 0, dy: 0, len: 0 },
       closureThreshold: 0.02,
 
-      // ★ JGD2000（2000系）を内部キーに採用。既定は 公共座標2系（EPSG:2444）。
+      // 内部CRS（JGD2000 2000系）既定：公共座標2系
       crs: 'EPSG:2444',
       crsChoices: [
-        { title: '公共座標1系',  value: 'EPSG:2443' },
-        { title: '公共座標2系',  value: 'EPSG:2444' },
-        { title: '公共座標3系',  value: 'EPSG:2445' },
-        { title: '公共座標4系',  value: 'EPSG:2446' },
-        { title: '公共座標5系',  value: 'EPSG:2447' },
-        { title: '公共座標6系',  value: 'EPSG:2448' },
-        { title: '公共座標7系',  value: 'EPSG:2449' },
-        { title: '公共座標8系',  value: 'EPSG:2450' },
-        { title: '公共座標9系',  value: 'EPSG:2451' },
+        { title: '公共座標1系', value: 'EPSG:2443' },
+        { title: '公共座標2系', value: 'EPSG:2444' },
+        { title: '公共座標3系', value: 'EPSG:2445' },
+        { title: '公共座標4系', value: 'EPSG:2446' },
+        { title: '公共座標5系', value: 'EPSG:2447' },
+        { title: '公共座標6系', value: 'EPSG:2448' },
+        { title: '公共座標7系', value: 'EPSG:2449' },
+        { title: '公共座標8系', value: 'EPSG:2450' },
+        { title: '公共座標9系', value: 'EPSG:2451' },
         { title: '公共座標10系', value: 'EPSG:2452' },
         { title: '公共座標11系', value: 'EPSG:2453' },
         { title: '公共座標12系', value: 'EPSG:2454' },
@@ -373,26 +413,35 @@ export default {
         { title: '公共座標16系', value: 'EPSG:2458' },
         { title: '公共座標17系', value: 'EPSG:2459' },
         { title: '公共座標18系', value: 'EPSG:2460' },
-        { title: '公共座標19系', value: 'EPSG:2461' },
+        { title: '公共座標19系', value: 'EPSG:2461' }
       ],
 
       buildError: '',
       simaInfo: { name: '', size: 0 },
       lastSimaText: '',
+
+      // MapLibre
+      map: null
     }
   },
   watch: {
     modelValue (v) { this.internal = v },
     internal (v) { this.$emit('update:modelValue', v) },
+    step (v) {
+      if (v === 4) this.$nextTick(() => this.initMapLibre())
+    }
+  },
+  mounted () {
+    if (this.step === 4) this.initMapLibre()
   },
   methods: {
     // ===== ユーティリティ =====
-    fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
+    fmt (v) { return (v == null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
     close () { this.internal = false },
     goNext () {
       if (this.step === 1) { if (this.file) this.step = 2; return }
       if (this.step === 2) { if (this.rawTable.headers.length) this.step = 3; return }
-      if (this.step === 3) { this.rebuild(); if (this.points.length) this.step = 4; return }
+      if (this.step === 3) { this.rebuild(); this.step = 4; return }
       if (this.step === 4) { this.step = 5; return }
       if (this.step === 5) { this.close(); return }
     },
@@ -438,7 +487,7 @@ export default {
         // 初期ロール推定
         this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h)).map(v => v ?? null)
         // 派生列っぽいヘッダは自動で未使用へ
-        this.rawTable.headers.forEach((h,i)=>{
+        this.rawTable.headers.forEach((h, i) => {
           const clean = String(h).toLowerCase()
           if (/[+/*()]/.test(clean) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/i.test(clean)) {
             this.columnRoles[i] = null
@@ -454,7 +503,7 @@ export default {
       }
     },
 
-    // 端末内OCR（PNG/JPG, tesseract.js v2/v5 両対応 / CDN パス明示、ヘッダ強制分割対応）
+    // 端末内OCR（PNG/JPG） tesseract.js v5/v2両対応
     async runLocalOCR (file) {
       const name = (file && file.name) ? file.name : ''
       const isImage = !/\.pdf$/i.test(name)
@@ -468,16 +517,14 @@ export default {
 
       const workerOptions = {
         workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-        corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
-        langPath:   'https://tessdata.projectnaptha.com/5'
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
+        langPath: 'https://tessdata.projectnaptha.com/5'
       }
       let worker
       try {
-        // v5 署名: createWorker(langs[, options])
-        worker = await createWorker(['jpn', 'eng'], workerOptions)
+        worker = await createWorker(['jpn', 'eng'], workerOptions) // v5
       } catch {
-        // v2 署名: createWorker([options])
-        worker = await createWorker(workerOptions)
+        worker = await createWorker(workerOptions) // v2
       }
 
       try {
@@ -490,20 +537,24 @@ export default {
             tessedit_pageseg_mode: 6,
             preserve_interword_spaces: '1',
             tessedit_char_whitelist:
-                '0123456789.-+()[]{}:：XxYyNnEeWwSs度°′\'"弧長弦半径中心角点番Noｎｏ東西南北備考/|,'
+                "0123456789.-+()[]{}:：XxYyNnEeWwSs度°′'\"弧長弦半径中心角点番Noｎｏ東西南北備考/|,",
+            classify_bln_numeric_mode: '1', // 数値優先
+            tessedit_char_blacklist: 'OoSs', // 0↔O / 5↔Sを抑制
+            user_defined_dpi: '300',
+            tessedit_write_images: '0'
           })
         }
 
         const res = await worker.recognize(canvas)
         const data = res?.data || res
 
-        // 行テキスト抽出（lines が空なら text から）
+        // 行テキスト抽出
         let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text || '').trim()) : []
         if (!lines.length && typeof data?.text === 'string') {
           lines = data.text.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
         }
 
-        // ===== ヘッダ候補を強制分割（NO|Xn|Yn... を復元） =====
+        // ヘッダ候補（Xn/Yn があって数値が少ない行）
         const headerLine = lines.find(L => {
           const s = (L || '').normalize('NFKC')
           const hasXY = /Xn/i.test(s) && /Yn/i.test(s)
@@ -521,32 +572,29 @@ export default {
               .replace(/\s{2,}/g, ' ')
         }
 
-        // 通常のセル分割
         let rows = lines
             .map(L => (L === headerLine && fixedHeader) ? fixedHeader : L)
             .map(splitRow)
             .filter(r => r.length > 1)
 
-        // 3列未満なら抽出パーサで [NO, Xn, Yn] を構築（崩壊救済）
+        // 列崩壊救済：最低限 NO(点名代用), Xn, Yn を抽出
         if (!rows.length || Math.max(...rows.map(r => r.length)) < 3) {
           const ext = lines.map(extractIdXY).filter(Boolean)
           if (ext.length) {
-            const headers = ['NO', 'Xn', 'Yn']
+            const headers = ['点名', 'Xn', 'Yn']
             const body = ext.map(([id, x, y]) => [id, x, y])
             return { headers, rows: body }
           }
         }
         if (!rows.length) return { headers: [], rows: [] }
 
-        // ヘッダ候補：非数字の多さでスコア（- は末尾）
+        // ヘッダ行推定：非数字文字の多い行をヘッダとみなす
         const idxMax = rows
             .map((r, i) => ({ i, score: r.filter(c => /[^\d\s.-]/.test(c)).length }))
             .sort((a, b) => b.score - a.score)[0]?.i ?? 0
 
         // ヘッダ整形
         let headers = rows[idxMax].map(h => h.replace(/\s+/g, ''))
-
-        // もし結合して少ない場合は連結した1行から再分割を試みる
         if (headers.length < 3) {
           const joined = rows[idxMax].join(' ')
           const forced = joined
@@ -558,8 +606,10 @@ export default {
           if (forced.length >= 3) headers = forced
         }
 
+        // 表記を正規化（点名/点番を分ける）
         headers = headers.map(h =>
-            h.replace(/点名|点番|番号|No/i, '点番')
+            h.replace(/点名|標識|名称/i, '点名')
+                .replace(/点番|番号|No/i, '点番')
                 .replace(/X座標|東距|東/i, 'X')
                 .replace(/Y座標|北距|北/i, 'Y')
                 .replace(/方位角|方位/i, '方位角')
@@ -570,6 +620,7 @@ export default {
                 .replace(/弧長/i, '弧長L')
         )
 
+        // ボディ整形
         const body = rows.filter((_, i) => i !== idxMax)
         const colN = Math.max(headers.length, ...body.map(r => r.length))
         headers = headers.slice(0, colN)
@@ -589,9 +640,7 @@ export default {
     },
 
     // クラウドOCR（差し替えポイント：現状ダミー）
-    async runCloudOCR () {
-      return { headers: [], rows: [] }
-    },
+    async runCloudOCR () { return { headers: [], rows: [] } },
 
     // ===== Step3: 列マッピング推定 & 正規化 =====
     normHeader (s) {
@@ -612,7 +661,8 @@ export default {
       if (/^(yn|y)$/i.test(h.trim())) return 'y'
 
       const dict = {
-        idx: ['点', '点番', '点名', '番号', 'no', 'ｎｏ', '番', 'n0', '№'],
+        idx: ['点番', '番号', 'no', 'ｎｏ', '番', 'n0', '№'],
+        label: ['点名', '標識', '名称'],
         x: ['x', 'xn', 'x座標', '東', 'e', '東距', '横座標'],
         y: ['y', 'yn', 'y座標', '北', 'n', '北距', '縦座標'],
         azimuth: ['方位', '方位角', '方角', 'bearing', '方位角度'],
@@ -675,7 +725,8 @@ export default {
       const out = []
       for (const r of rows) {
         const rec = {}
-        if (roles.idx != null) rec.idx = r[roles.idx]
+        if (roles.idx != null) rec.idx = this.parseNumber(r[roles.idx])
+        if (roles.label != null) rec.label = String(r[roles.label] ?? '').trim() || undefined
         if (roles.x != null) rec.x = this.parseNumber(r[roles.x])
         if (roles.y != null) rec.y = this.parseNumber(r[roles.y])
         if (roles.azimuth != null) rec.az = this.parseAzimuth(r[roles.azimuth])
@@ -686,6 +737,97 @@ export default {
         if (roles.arcLength != null) rec.arcLen = this.parseNumber(r[roles.arcLength])
         rec.kind = (rec.R && (rec.thetaDeg || rec.chord || rec.arcLen)) ? 'arc' : 'line'
         out.push(rec)
+      }
+      return out
+    },
+
+    // ===== 外れ値補正（±9000 / 0↔5 / 0↔5↔9 の局所補正） =====
+    median (arr) {
+      const a = arr.filter(v => Number.isFinite(v)).slice().sort((x, y) => x - y)
+      if (!a.length) return NaN
+      const m = Math.floor(a.length / 2)
+      return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2
+    },
+    adjustByMagnitude (v, target) {
+      if (!Number.isFinite(v) || !Number.isFinite(target)) return v
+      const cand = [v, v - 9000, v + 9000]
+      cand.sort((a, b) => Math.abs(a - target) - Math.abs(b - target))
+      return Math.abs(v - target) > 4000 ? cand[0] : v
+    },
+    // 一桁だけ 0/5/9 を試し置換し、前点からのジャンプが最小になる候補を選ぶ
+    adjustLocalDigit (v, prev) {
+      if (!Number.isFinite(v) || !Number.isFinite(prev)) return v
+      const s = Number(v).toFixed(3)
+      const tryFlip = (str) => {
+        const arr = str.split('')
+        const cand = []
+        for (let i = 0; i < arr.length; i++) {
+          const ch = arr[i]
+          const opts = ch === '0' ? ['5', '9'] : ch === '5' ? ['0', '9'] : ch === '9' ? ['0', '5'] : []
+          for (const o of opts) {
+            const a = arr.slice(); a[i] = o
+            const num = parseFloat(a.join(''))
+            if (Number.isFinite(num)) cand.push(num)
+          }
+        }
+        return cand
+      }
+      const candidates = [v, ...tryFlip(s)]
+      candidates.sort((a, b) => Math.abs(a - prev) - Math.abs(b - prev))
+      // 前点との差が 0.05 以上改善するなら採用
+      return (Math.abs(v - prev) - Math.abs(candidates[0] - prev) >= 0.05) ? candidates[0] : v
+    },
+    adjustZeroFive (v, target) {
+      if (!Number.isFinite(v) || !Number.isFinite(target)) return v
+      const s = Number(v).toFixed(3)
+      const tryFlip = (str) => {
+        const arr = str.split(''); const out = []
+        for (let i=0;i<arr.length;i++) {
+          if (arr[i] === '0' || arr[i] === '5') {
+            const alt = arr[i] === '0' ? '5' : '0'
+            const a = arr.slice(); a[i] = alt
+            const num = parseFloat(a.join('')); out.push(num)
+          }
+        }
+        return out
+      }
+      const candidates = [v, ...tryFlip(s)]
+      candidates.sort((a,b)=>Math.abs(a-target)-Math.abs(b-target))
+      return (Math.abs(v-target) - Math.abs(candidates[0]-target) >= 0.04) ? candidates[0] : v
+    },
+    postCorrectRecords (recs) {
+      if (!recs.length) return recs
+      // 1) ±9000補正（大桁崩れ）
+      const xs = recs.map(r => r.x).filter(Number.isFinite)
+      const ys = recs.map(r => r.y).filter(Number.isFinite)
+      const mx = this.median(xs), my = this.median(ys)
+      const magFixed = recs.map(r => ({
+        ...r,
+        x: this.adjustByMagnitude(r.x, mx),
+        y: this.adjustByMagnitude(r.y, my)
+      }))
+      // 2) 0↔5 全体補正（中央値）
+      const xs2 = magFixed.map(r => r.x).filter(Number.isFinite)
+      const ys2 = magFixed.map(r => r.y).filter(Number.isFinite)
+      const mx2 = this.median(xs2), my2 = this.median(ys2)
+      const z5Fixed = magFixed.map(r => ({
+        ...r,
+        x: this.adjustZeroFive(r.x, mx2),
+        y: this.adjustZeroFive(r.y, my2)
+      }))
+      // 3) 連続性重視の局所補正（前点からのジャンプ最小）
+      const out = []
+      for (let i = 0; i < z5Fixed.length; i++) {
+        const prev = out[i-1]
+        if (prev) {
+          out.push({
+            ...z5Fixed[i],
+            x: this.adjustLocalDigit(z5Fixed[i].x, prev.x),
+            y: this.adjustLocalDigit(z5Fixed[i].y, prev.y)
+          })
+        } else {
+          out.push(z5Fixed[i])
+        }
       }
       return out
     },
@@ -719,17 +861,22 @@ export default {
       this.points = []
       try {
         const recs = this.parseRowsToRecords()
+        const fixed = this.postCorrectRecords(recs)
         let pts = []
-        const hasXY = recs.every(r => Number.isFinite(r.x) && Number.isFinite(r.y))
-        const hasAD = recs.every(r => Number.isFinite(r.az) && Number.isFinite(r.dist))
+        const hasXY = fixed.every(r => Number.isFinite(r.x) && Number.isFinite(r.y))
+        const hasAD = fixed.every(r => Number.isFinite(r.az) && Number.isFinite(r.dist))
         if (hasXY) {
-          pts = recs.map((r, i) => ({ x: r.x, y: r.y, idx: r.idx ?? (i + 1) }))
+          pts = fixed.map((r, i) => ({
+            x: r.x, y: r.y,
+            idx: Number.isFinite(r.idx) ? r.idx : undefined,
+            label: r.label ? String(r.label) : undefined
+          }))
         } else if (hasAD && this.startXY) {
           let cur = { x: this.startXY.x, y: this.startXY.y }
-          pts.push({ ...cur, idx: recs[0]?.idx ?? 1 })
-          for (const r of recs) {
+          pts.push({ ...cur, idx: fixed[0]?.idx ?? 1, label: fixed[0]?.label })
+          for (const r of fixed) {
             const nxt = this.forwardFromAzDist(cur.x, cur.y, r.az, r.dist, 'north')
-            pts.push({ ...nxt, idx: r.idx })
+            pts.push({ ...nxt, idx: r.idx, label: r.label })
             cur = nxt
           }
         } else {
@@ -739,7 +886,6 @@ export default {
         this.points = pts
         this.area = this.shoelace(pts)
         this.closure = this.closureError(pts)
-        // 値域で系は確定しないため、推定は現状維持（内部は2000系）
         this.crs = this.guessCRS(pts) || this.crs
       } catch (e) {
         console.error(e)
@@ -747,7 +893,7 @@ export default {
       }
     },
 
-    // 超簡易CRS推定（値域ベース）
+    // 簡易CRS推定（値域ベース）
     guessCRS (pts) {
       const xs = pts.map(p => p.x), ys = pts.map(p => p.y)
       const minX = Math.min(...xs), maxX = Math.max(...xs)
@@ -759,7 +905,7 @@ export default {
       return null
     },
 
-    // ===== SIM（提示フォーマット準拠）生成 =====
+    // ===== SIM（ユーザ形式：A01,seq,点名or点番,X,Y,0,） =====
     extractLotFromFileName () {
       try {
         const f = Array.isArray(this.file) ? this.file[0] : this.file
@@ -782,22 +928,24 @@ export default {
       const lines = []
       // ヘッダ
       lines.push(`G00,01,${prj},`)
-      // 座標テーブル
+      // 座標データ
       lines.push('Z00,座標ﾃﾞｰﾀ,,')
       lines.push('A00,')
       this.points.forEach((p, i) => {
-        const no = Number.isFinite(p.idx) ? Number(p.idx) : (i + 1)
+        const display = (p.label && String(p.label).length) ? String(p.label) :
+            (Number.isFinite(p.idx) ? String(p.idx) : String(i + 1))
         const x = Number(p.x).toFixed(3)
         const y = Number(p.y).toFixed(3)
-        lines.push(`A01,${i + 1},${no},${x},${y},`)
+        lines.push(`A01,${i + 1},${display},${x},${y},0,`)
       })
       lines.push('A99,')
       // 区画データ（単一）
       lines.push('Z00,区画データ,')
       lines.push(`D00,1,${lot},1,`)
       this.points.forEach((p, i) => {
-        const no = Number.isFinite(p.idx) ? Number(p.idx) : (i + 1)
-        lines.push(`B01,${i + 1},${no},`)
+        const display = (p.label && String(p.label).length) ? String(p.label) :
+            (Number.isFinite(p.idx) ? String(p.idx) : String(i + 1))
+        lines.push(`B01,${i + 1},${display},`)
       })
       lines.push('D99,')
       // 終端
@@ -811,7 +959,6 @@ export default {
       if (!this.points.length) return
       const text = this.buildSIMAContent()
       this.lastSimaText = text
-
       const ts = new Date().toISOString().replace(/[:.]/g, '-')
       const name = `kyuseki_${ts}.sim`
       downloadTextFile(name, text, 'shift-jis')
@@ -830,31 +977,79 @@ export default {
 
     // ===== 取り込み実行（今は空：将来 OH3 既存機能へ接続） =====
     async commit () {
-      this.$emit('imported', { count: this.points.length, crs: this.crs, area: this.area.area, sim: !!this.simaInfo.name })
+      this.$emit('imported', {
+        count: this.points.length,
+        crs: this.crs,
+        area: this.area.area,
+        sim: !!this.simaInfo.name
+      })
+    },
+
+    // ===== MapLibre 初期化（空マップ） =====
+    async initMapLibre () {
+      if (this.map || !this.$refs.maplibreEl) return
+
+      // CSS を動的ロード
+      const id = 'maplibre-css'
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link')
+        link.id = id
+        link.rel = 'stylesheet'
+        link.href = 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'
+        document.head.appendChild(link)
+      }
+      const { Map } = await import('maplibre-gl')
+
+      // 完全“空”のスタイル（背景のみ）
+      const blankStyle = {
+        version: 8,
+        sources: {},
+        layers: [
+          { id: 'bg', type: 'background', paint: { 'background-color': '#f6f9ff' } }
+        ]
+      }
+
+      this.map = new Map({
+        container: this.$refs.maplibreEl,
+        style: blankStyle,
+        center: [139.767, 35.681], // 仮：東京駅
+        zoom: 12,
+        preserveDrawingBuffer: true
+      })
     }
   }
 }
 </script>
 
 <style scoped>
-.preview-box { width: 100%; border: 1px dashed var(--v-theme-outline); border-radius: 8px; padding: 8px; min-height: 180px; display: grid; place-items:center; }
+/* 全体 */
+.preview-box { width: 100%; border: 1px dashed var(--v-theme-outline); border-radius: 8px; padding: 8px; min-height: 180px; display: grid; place-items: center; }
 .preview-img { max-width: 100%; max-height: 280px; object-fit: contain; }
 .ocr-table { border: 1px solid var(--v-theme-outline-variant); border-radius: 8px; padding: 8px; }
-.table-scroll { overflow: auto; max-height: 340px; }
 
-/* 横並び／狭いと縦のレスポンシブ */
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-@media (max-width: 860px) {
-  .preview-grid { grid-template-columns: 1fr; }
-}
+/* パネルの共通高さを統一（親と揃える） */
+:root { --pane-h: 340px; } /* 必要あればここを調整 */
+.pane { display: flex; flex-direction: column; min-height: var(--pane-h); }
+.pane-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
+/* PCでスクロール最小化（テーブル/地図） */
+.table-fill { flex: 1; overflow: auto; }
+.maplibre-host { width: 100%; height: 100%; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+/* 横並び（狭いと縦） */
+.preview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1200px) { .preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 980px) { .preview-grid { grid-template-columns: 1fr; } }
+
+/* テーブル */
 .oh3-simple { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .oh3-simple th, .oh3-simple td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; white-space: nowrap; }
 .oh3-simple thead th { background: #f6f6f7; position: sticky; top: 0; z-index: 1; }
+
+/* 検算をコンパクトに */
+.compact-text { padding-top: 4px; padding-bottom: 4px; }
+.inline-metrics { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; }
+.warn.small { font-size: 12px; color: #a15d00; margin-top: 6px; }
 
 .map-chip { border: 1px dashed var(--v-theme-outline); border-radius: 10px; padding: 8px; min-width: 180px; }
 .oh3-title { color: rgb(var(--v-theme-primary)); }
