@@ -134,19 +134,67 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標プレビュー -->
+                  <!-- 座標プレビュー（インライン編集可） -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
-                    <v-card-title class="py-2">座標プレビュー</v-card-title>
+                    <v-card-title class="py-2 d-flex align-center justify-space-between">
+                      <span>座標プレビュー（クリックで編集）</span>
+                      <div class="text-caption text-medium-emphasis d-flex align-center" style="gap:8px;">
+                        <span class="legend suspect"></span> 外れ値候補
+                        <span class="legend edited"></span> 編集済み
+                      </div>
+                    </v-card-title>
                     <v-card-text class="pane-body">
                       <div class="table-fill">
-                        <table class="oh3-simple">
-                          <thead><tr><th>#</th><th>点名/点番</th><th>X</th><th>Y</th></tr></thead>
+                        <table class="oh3-simple editable">
+                          <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>点名/点番</th>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th style="width:24px"></th>
+                          </tr>
+                          </thead>
                           <tbody>
                           <tr v-for="(p,i) in points" :key="'p'+i">
                             <td>{{ i+1 }}</td>
-                            <td>{{ p.label ?? p.idx ?? (i+1) }}</td>
-                            <td>{{ fmt(p.x) }}</td>
-                            <td>{{ fmt(p.y) }}</td>
+
+                            <!-- label -->
+                            <td>
+                              <input
+                                  class="cell-input"
+                                  :value="p.label ?? p.idx ?? (i+1)"
+                                  @change="onCellEdit(p.sourceRow, 'label', $event.target.value)"
+                                  @keydown.enter.prevent="$event.target.blur()"
+                              />
+                            </td>
+
+                            <!-- X -->
+                            <td :class="cellClass(i,'x')">
+                              <input
+                                  class="cell-input num"
+                                  :value="fmt(p.x)"
+                                  inputmode="decimal"
+                                  @change="onCellEdit(p.sourceRow, 'x', $event.target.value)"
+                                  @keydown.enter.prevent="$event.target.blur()"
+                              />
+                            </td>
+
+                            <!-- Y -->
+                            <td :class="cellClass(i,'y')">
+                              <input
+                                  class="cell-input num"
+                                  :value="fmt(p.y)"
+                                  inputmode="decimal"
+                                  @change="onCellEdit(p.sourceRow, 'y', $event.target.value)"
+                                  @keydown.enter.prevent="$event.target.blur()"
+                              />
+                            </td>
+
+                            <!-- edited flag -->
+                            <td class="edited-flag">
+                              <v-icon v-if="isEdited(p.sourceRow)" size="16" color="primary">mdi-pencil</v-icon>
+                            </td>
                           </tr>
                           </tbody>
                         </table>
@@ -291,7 +339,11 @@ export default {
 
       buildError: '', simaInfo: { name:'', size:0 }, lastSimaText: '',
 
-      map: null
+      map: null,
+
+      // 追加: 外れ値マーキング & 編集フラグ
+      suspect: { x: new Set(), y: new Set() },  // 行indexの集合
+      edits: new Map(), // key: sourceRow, val: {x?, y?, label?}
     }
   },
   computed: {
@@ -390,8 +442,7 @@ export default {
       } finally { this.busy=false }
     },
 
-
-// 置き換え版：Node / PHP どちらでも動くが、まず Node を優先
+    // 置き換え版：Node / PHP どちらでも動くが、まず Node を優先
     async runCloudOCR (file) {
       const f = Array.isArray(file) ? file[0] : file;
       if (!f) throw new Error('ファイルが選択されていません');
@@ -405,16 +456,14 @@ export default {
       form.append('file', f, f?.name || 'upload');
 
       const url = `${base}/api/docai_form_parser`; // ← .php ではない
-      const r = await fetch(url, { method: 'POST', body: form /* mode:'cors' は既定 */ });
+      const r = await fetch(url, { method: 'POST', body: form });
 
-      // CORS 欠落時は 200 でもブラウザが弾く → ここに到達しない（コンソールに ERR_FAILED 200）
       const text = await r.text();
       let json; try { json = JSON.parse(text); } catch { json = null; }
       if (!r.ok) throw new Error(json?.error || json?.detail || `HTTP ${r.status}`);
       if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed');
       return { headers: json.headers || [], rows: json.rows || [], meta: json.meta || null };
     },
-
 
     /* ==== 列マッピング/正規化 ==== */
     normHeader (s) {
@@ -456,48 +505,65 @@ export default {
     },
 
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
-    parseRowsToRecords () {
-      const rows=this.rawTable.rows, roles=this.mapColumnsObject(), out=[]
-      for (const r of rows) {
-        const rec={}
-        if (roles.idx!=null) rec.idx=this.parseNumber(r[roles.idx])
-        if (roles.label!=null) rec.label=String(r[roles.label]??'').trim()||undefined
-        if (roles.x!=null) rec.x=this.parseNumber(r[roles.x])
-        if (roles.y!=null) rec.y=this.parseNumber(r[roles.y])
-        out.push(rec)
-      }
-      return out
-    },
 
-    /* === 構成/検算 === */
-    median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
-    adjustByMagnitude (v,t){ if(!Number.isFinite(v)||!Number.isFinite(t))return v; const cand=[v,v-9000,v+9000]; cand.sort((a,b)=>Math.abs(a-t)-Math.abs(b-t)); return Math.abs(v-t)>4000?cand[0]:v },
-
+    /* === 表→points 構成（sourceRow を保持） === */
     rebuild () {
       this.buildError=''; this.points=[]
       try {
-        const recs=this.parseRowsToRecords()
-        // X/Y が数値の行だけを採用（空行が混ざっても通す）
-        const usable = recs
-            .map((r,i)=>({i, r, x:r.x, y:r.y}))
-            .filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
+        const rows = this.rawTable.rows
+        const roles = this.mapColumnsObject()
+
+        const usable = rows.map((r,ri)=>{
+          const x = (roles.x!=null) ? this.parseNumber(r[roles.x]) : NaN
+          const y = (roles.y!=null) ? this.parseNumber(r[roles.y]) : NaN
+          const idx = (roles.idx!=null) ? this.parseNumber(r[roles.idx]) : undefined
+          const label = (roles.label!=null) ? String(r[roles.label]||'').trim() : undefined
+          return { ri, x, y, idx, label }
+        }).filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
 
         if (usable.length < 3) throw new Error('数値の X/Y を持つ行が3つ未満です。列マッピングや表の行を確認してください。')
 
-        const pts = usable.map(o => ({
-          x:o.x, y:o.y,
-          idx: Number.isFinite(o.r.idx) ? o.r.idx : undefined,
-          label: (o.r.label && String(o.r.label).length) ? String(o.r.label) : undefined
+        this.points = usable.map(o => ({
+          x:o.x, y:o.y, idx:o.idx, label:o.label, sourceRow:o.ri
         }))
 
         // 面積と閉合
-        this.points = pts
-        this.area = this.shoelace(pts)
-        const a=pts[0], b=pts[pts.length-1]
+        this.area = this.shoelace(this.points)
+        const a=this.points[0], b=this.points[this.points.length-1]
         const dx=b.x-a.x, dy=b.y-a.y
         this.closure = { dx, dy, len: Math.hypot(dx,dy) }
+
+        // 外れ値ハイライト
+        this.markSuspects()
+        // 地図も更新（既に表示済みなら）
+        if (this.map) this.renderPreviewOnMap()
       } catch(e){ console.error(e); this.buildError=String(e.message||e) }
     },
+
+    /* === 外れ値マーキング（桁ズレ検出寄り） === */
+    markSuspects () {
+      this.suspect.x = new Set()
+      this.suspect.y = new Set()
+      if (this.points.length < 5) return
+      const xs = this.points.map(p=>p.x)
+      const ys = this.points.map(p=>p.y)
+      const robustFlags = (arr) => {
+        const med = this.median(arr)
+        const absDev = arr.map(v=>Math.abs(v-med))
+        const mad = this.median(absDev) || 1e-9
+        const set = new Set()
+        arr.forEach((v,i)=>{
+          const z = 0.6745 * Math.abs(v - med) / mad
+          const digitOff = Math.abs(Math.log10(Math.abs(v)+1e-9) - Math.log10(Math.abs(med)+1e-9)) > 1.0
+          if (z > 6 || digitOff) set.add(i)
+        })
+        return set
+      }
+      this.suspect.x = robustFlags(xs)
+      this.suspect.y = robustFlags(ys)
+    },
+
+    median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
 
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
 
@@ -541,6 +607,55 @@ export default {
 
     async commit () {
       this.$emit('imported', { count:this.points.length, crs:this.crs, area:this.area.area, sim:!!this.simaInfo.name })
+    },
+
+    /* === セル編集：rawTable をバックパッチ → rebuild → 地図更新 === */
+    onCellEdit (sourceRow, field, rawVal) {
+      try {
+        const roles = this.mapColumnsObject()
+        const row = this.rawTable.rows[sourceRow]
+        if (!row) return
+
+        if (field === 'label') {
+          if (roles.label == null) return
+          const v = String(rawVal ?? '').trim()
+          row[roles.label] = v
+          // edits フラグ
+          const prev = this.edits.get(sourceRow) || {}
+          prev.label = v
+          this.edits.set(sourceRow, prev)
+        } else if (field === 'x' || field === 'y') {
+          const idx = roles[field]
+          if (idx == null) return
+          const s = fixCell(rawVal)
+          const num = this.parseNumber(s)
+          if (!Number.isFinite(num)) return // 無効値は破棄
+          // 表示上は固定小数3桁に整形して置く（以降の再構成の数値ブレ防止）
+          row[idx] = Number(num).toFixed(3)
+          const prev = this.edits.get(sourceRow) || {}
+          prev[field] = row[idx]
+          this.edits.set(sourceRow, prev)
+        }
+
+        // 再構成 ＆ 地図更新
+        this.rebuild()
+      } catch (e) {
+        console.warn('onCellEdit failed', e)
+      }
+    },
+
+    isEdited (sourceRow) {
+      return this.edits.has(sourceRow)
+    },
+
+    cellClass (ptIndex, axis) {
+      const s = (axis === 'x') ? this.suspect.x : this.suspect.y
+      const c = []
+      if (s.has(ptIndex)) c.push('suspect-cell')
+      // 編集済み（sourceRowをpointsから逆引き）
+      const sr = this.points[ptIndex]?.sourceRow
+      if (this.edits.has(sr)) c.push('edited-cell')
+      return c.join(' ')
     },
 
     /* MapLibre 初期化（地理院タイル：淡色） */
@@ -700,6 +815,29 @@ export default {
 .oh3-simple th,.oh3-simple td{border:1px solid #ddd;padding:6px 8px;text-align:left;white-space:nowrap}
 .oh3-simple thead th{background:#f6f6f7;position:sticky;top:0;z-index:1}
 
+/* ===== インライン編集UI ===== */
+.oh3-simple.editable td { padding: 0; }
+.cell-input{
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: none;
+  outline: none;
+  font: inherit;
+  background: #fff;
+}
+.cell-input.num{ text-align: right; }
+.cell-input:focus{ background: #fffef6; }
+
+/* 外れ値/編集済みの視覚化 */
+.suspect-cell{ background: #fff3cd !important; } /* 薄い黄 */
+.edited-cell{ box-shadow: inset 0 0 0 2px rgba(25,118,210,.35); } /* primary枠 */
+.legend{ display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; vertical-align:middle }
+.legend.suspect{ background:#fff3cd; border:1px solid #e2c46b }
+.legend.edited{ background:rgba(25,118,210,.15); border:1px solid rgba(25,118,210,.45) }
+.edited-flag{ text-align:center; }
+
+/* そのまま維持 */
 .compact-text{padding-top:4px;padding-bottom:4px}
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
@@ -708,6 +846,6 @@ export default {
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch { align-self: flex-start; max-width: 260px; }
-.no-stretch :deep(.v-field) { height: 50px; }
+.no-stretch :deep(.v-field) { height: 50px; }   /* 入力部の高さ固定（ユーザー指定の記憶） */
 .no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
 </style>
