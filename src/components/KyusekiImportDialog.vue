@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="internal" max-width="980" scrollable transition="dialog-bottom-transition">
+  <v-dialog v-model="internal" max-width="1440" scrollable transition="dialog-bottom-transition">
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
         <div class="d-flex align-center gap-2 oh3-title">
@@ -49,7 +49,7 @@
 
                 <div class="mt-4 d-flex align-center gap-3">
                   <v-switch v-model="useCloudFallback" inset :label="`難しい場合はクラウド表OCRへ自動フォールバック`" />
-                  <v-select v-model="cloudService" :items="cloudServiceItems" label="サービス" style="max-width: 240px" :disabled="!useCloudFallback" />
+                  <v-select class="no-stretch" v-model="cloudService" :items="cloudServiceItems" label="サービス" style="max-width: 240px" :disabled="!useCloudFallback" />
                 </div>
               </div>
             </v-stepper-window-item>
@@ -90,7 +90,7 @@
                   <div class="d-flex flex-wrap gap-3 mb-4">
                     <div v-for="(h, i) in rawTable.headers" :key="'m'+i" class="map-chip">
                       <div class="text-caption text-medium-emphasis mb-1">{{ h }}</div>
-                      <v-select density="comfortable" variant="outlined" :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details/>
+                      <v-select class="no-stretch" density="comfortable" variant="outlined" :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details/>
                     </div>
                   </div>
 
@@ -164,6 +164,7 @@
                     <v-card-title class="py-2">公共座標系（表示名）</v-card-title>
                     <v-card-text class="pane-body">
                       <v-select
+                          class="no-stretch"
                           v-model="crs"
                           :items="crsChoices"
                           item-title="title"
@@ -613,7 +614,7 @@ export default {
 .ocr-table{border:1px solid var(--v-theme-outline-variant);border-radius:8px;padding:8px}
 
 /* 高さの“物差し” */
-:root{ --tall-h: 360px; }  /* 左・中央の合計高さ（=2段ぶん）。数字だけ調整すれば全体が連動 */
+:root{ --tall-h: 300px; }  /* 左・中央の合計高さ（=2段ぶん）。数字だけ調整すれば全体が連動 */
 
 .pane{display:flex;flex-direction:column;box-sizing:border-box;min-height:0}
 .pane-body{flex:1;display:flex;flex-direction:column;min-height:0}
@@ -661,6 +662,12 @@ export default {
 .map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
+
+/* v-select が親の高さに引っ張られないよう固定 */
+.no-stretch { align-self: flex-start; max-width: 260px; }
+.no-stretch :deep(.v-field) { height: 50px; }           /* 入力部の高さ */
+.no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
+
 </style>
 
 
