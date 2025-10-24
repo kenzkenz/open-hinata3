@@ -208,8 +208,8 @@
 </template>
 
 <script>
-// ===== 画像前処理ユーティリティ（端末内OCR向け, 互換強化） =====
-async function fileToCanvas (file, maxSide = 2200) {
+// ===== 画像前処理（劣化原稿向け：適応二値化） =====
+async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
   const blob = (file instanceof File) ? file : new File([file], 'img')
 
   // createImageBitmap 非対応環境にも対応
@@ -224,41 +224,71 @@ async function fileToCanvas (file, maxSide = 2200) {
     })
   })()
 
-  const scale = Math.min(1, maxSide / Math.max(img.width, img.height))
-  const w = Math.max(1, Math.round(img.width * scale))
-  const h = Math.max(1, Math.round(img.height * scale))
+  // 少し拡大して細線を出す
+  const scale = Math.max(1, Math.min(1.6, maxSide / Math.max(img.width, img.height)))
+  const w = Math.round(img.width * scale)
+  const h = Math.round(img.height * scale)
+
   const canvas = document.createElement('canvas')
   canvas.width = w; canvas.height = h
   const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = false
   ctx.drawImage(img, 0, 0, w, h)
 
-  // グレースケール + 簡易二値化（平均値しきい）
-  const imgData = ctx.getImageData(0, 0, w, h)
-  const d = imgData.data
-  let sum = 0
-  for (let i = 0; i < d.length; i += 4) {
-    const gray = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0
-    sum += gray
+  // タイル平均ベース適応二値化
+  const id = ctx.getImageData(0, 0, w, h)
+  const d = id.data
+  const tw = Math.max(8, Math.floor(w / tiles))
+  const th = Math.max(8, Math.floor(h / tiles))
+  for (let ty = 0; ty < h; ty += th) {
+    for (let tx = 0; tx < w; tx += tw) {
+      let sum = 0, cnt = 0
+      const bx = Math.min(tx + tw, w), by = Math.min(ty + th, h)
+      for (let y = ty; y < by; y++) {
+        for (let x = tx; x < bx; x++) {
+          const p = (y*w + x) * 4
+          const g = (d[p]*0.299 + d[p+1]*0.587 + d[p+2]*0.114)
+          sum += g; cnt++
+        }
+      }
+      const mean = sum / Math.max(1, cnt)
+      const thres = Math.max(110, Math.min(190, mean - 8))
+      for (let y = ty; y < by; y++) {
+        for (let x = tx; x < bx; x++) {
+          const p = (y*w + x) * 4
+          const g = (d[p]*0.299 + d[p+1]*0.587 + d[p+2]*0.114)
+          const v = g > thres ? 255 : 0
+          d[p] = d[p+1] = d[p+2] = v
+          d[p+3] = 255
+        }
+      }
+    }
   }
-  const mean = sum / (d.length/4)
-  const th = Math.max(120, Math.min(180, mean))
-  for (let i = 0; i < d.length; i += 4) {
-    const gray = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0
-    const v = gray > th ? 255 : 0
-    d[i]=d[i+1]=d[i+2]=v
-  }
-  ctx.putImageData(imgData, 0, 0)
+  ctx.putImageData(id, 0, 0)
   return canvas
 }
 
-// 行テキスト → セル分割（空白/タブ/カンマ/縦棒/連続空白）
+// 行テキスト → セル分割（区切り崩壊ケア）
 function splitRow (line) {
   return line
-      .replace(/\s+\|/g, ' |')
-      .replace(/\|\s+/g, '| ')
-      .split(/[,\t|]| {2,}/)
+      .replace(/]/g, ' ] ')
+      .replace(/\|/g, ' | ')
+      .split(/,|\t|\||]|\s{2,}/)
       .map(s => s.trim())
       .filter(s => s.length)
+}
+
+// 行から [ID, X, Y] を強引に抽出（崩壊耐性）
+function extractIdXY (line) {
+  if (!line) return null
+  const s = line.replace(/[［\]【】]/g,' ').replace(/\s+/g,' ').trim()
+  // ↓ ‘\/’ を撤去（文字クラス内なので不要）
+  const idMatch = s.match(/[A-Za-z0-9.\-／/]+/)
+  if (!idMatch) return null
+  const id = idMatch[0]
+  const nums = [...s.matchAll(/-?\d+(?:\.\d+)?/g)].map(m => m[0])
+  if (nums.length < 2) return null
+  return [id, nums[0], nums[1]]
 }
 
 export default {
@@ -366,7 +396,17 @@ export default {
         }
 
         this.rawTable = table
+
+        // 初期ロール推定
         this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h)).map(v => v ?? null)
+        // 派生列っぽいヘッダは自動で未使用へ
+        this.rawTable.headers.forEach((h,i)=>{
+          const clean = String(h).toLowerCase()
+          if (/[+/*()]/.test(clean) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/i.test(clean)) {
+            this.columnRoles[i] = null
+          }
+        })
+
         if (this.step < 3) this.step = 3
       } catch (e) {
         console.error(e)
@@ -388,24 +428,19 @@ export default {
 
       const canvas = await fileToCanvas(file)
 
-
-
-
-
-                    const workerOptions = {
-                  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-                  corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
-                  langPath:   'https://tessdata.projectnaptha.com/5'
-            }
-            let worker
-            try {
-                // v5 署名: createWorker(langs[, options])
-                    worker = await createWorker(['jpn', 'eng'], workerOptions)
-                  } catch {
-                // v2 署名: createWorker([options])
-                    worker = await createWorker(workerOptions)
-                  }
-
+      const workerOptions = {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+        corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
+        langPath:   'https://tessdata.projectnaptha.com/5'
+      }
+      let worker
+      try {
+        // v5 署名: createWorker(langs[, options])
+        worker = await createWorker(['jpn', 'eng'], workerOptions)
+      } catch {
+        // v2 署名: createWorker([options])
+        worker = await createWorker(workerOptions)
+      }
 
       try {
         if (worker.load) await worker.load()
@@ -424,28 +459,34 @@ export default {
         const res = await worker.recognize(canvas)
         const data = res?.data || res
 
-        // 信頼度の安全取得
+        // 信頼度
         let conf = typeof data?.confidence === 'number' ? data.confidence : 0
         if (!conf && Array.isArray(data?.words) && data.words.length) {
           conf = data.words.reduce((s,w)=>s+(w.confidence||0),0) / data.words.length
         }
 
-        // 行テキスト抽出（lines が空なら text を使う）
+        // 行テキスト抽出（lines が空なら text から）
         let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text||'').trim()) : []
         if (!lines.length && typeof data?.text === 'string') {
           lines = data.text.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
         }
 
-        // セル化
+        // まず通常のセル分割
         let rows = lines.map(splitRow).filter(r => r.length > 1)
-        if (!rows.length) {
-          rows = lines
-              .map(line => line.split(/ {3,}|\t|,/).map(s => s.trim()).filter(Boolean))
-              .filter(r => r.length > 1)
+
+        // 3列未満なら抽出パーサで [NO, Xn, Yn] を構築（崩壊救済）
+        if (!rows.length || Math.max(...rows.map(r => r.length)) < 3) {
+          const ext = lines.map(extractIdXY).filter(Boolean)
+          if (ext.length) {
+            const headers = ['NO','Xn','Yn']
+            const body = ext.map(([id, x, y]) => [id, x, y])
+            return { headers, rows: body }
+          }
         }
+
         if (!rows.length) return { headers: [], rows: [] }
 
-        // ヘッダ候補：非数字の多さでスコア（ハイフンは末尾）
+        // ヘッダ候補：非数字の多さでスコア（- は末尾）
         const idxMax = rows
             .map((r, i) => ({ i, score: r.filter(c => /[^\d\s.-]/.test(c)).length }))
             .sort((a,b)=>b.score-a.score)[0]?.i ?? 0
@@ -493,19 +534,23 @@ export default {
       const z2h = s.normalize('NFKC')
       return z2h
           .replace(/\s+/g,'')
-          /* 記号除去（ハイフンは末尾配置でLint回避） */
-          .replace(/[()【】（）:：ー_-]/g,'')
-          /* 角括弧は個別に除去（Lint回避） */
+          .replace(/[()【】（）:：ー_-]/g,'')   // 記号除去（-は末尾で安全）
           .replace(/\[/g,'')
           .replace(/\]/g,'')
           .toLowerCase()
     },
     guessRoleFromHeader (h) {
       const H = this.normHeader(h)
+      // 強一致（今回の票に最適化）
+      const compact = String(h).replace(/\s+/g,'')
+      if (/^(no|n0|№|番)$/i.test(compact)) return 'idx'
+      if (/^(xn|x)$/i.test(h)) return 'x'
+      if (/^(yn|y)$/i.test(h)) return 'y'
+
       const dict = {
-        idx: ['点','点番','点名','番号','no','ｎｏ'],
-        x: ['x','x座標','東','e','東距','横座標'],
-        y: ['y','y座標','北','n','北距','縦座標'],
+        idx: ['点','点番','点名','番号','no','ｎｏ','番','n0','№'],
+        x: ['x','xn','x座標','東','e','東距','横座標'],
+        y: ['y','yn','y座標','北','n','北距','縦座標'],
         azimuth: ['方位','方位角','方角','bearing','方位角度'],
         distance: ['距離','長さ','延長','d','l','辺長'],
         radius: ['r','半径','曲率半径'],
@@ -517,15 +562,20 @@ export default {
       for (const [role, arr] of Object.entries(dict)) {
         if (arr.some(k => H.includes(k))) return role
       }
-      if (/x|東|e/.test(H)) return 'x'
-      if (/y|北|n/.test(H)) return 'y'
+      // フォールバックは単独語のみ
+      if (/\b(xn|x)\b/i.test(h)) return 'x'
+      if (/\b(yn|y)\b/i.test(h)) return 'y'
       return null
     },
 
     normNumberStr (s) {
       if (s == null) return ''
       const z2h = s.normalize('NFKC').replace(/,/g,'')
-      return z2h.replace(/[−－─━‐–—]/g,'-').trim()
+      return z2h
+          .replace(/[\]|]/g,'')           // 罫線の残骸（ ']' と '|' ）
+          // マイナス各種 & 紛れ込む空白類（NBSP, EM/EN SPACE, 全角空白）を Unicode エスケープで指定
+          .replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g, '-')
+          .trim()
     },
     parseNumber (s) {
       const t = this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/)
@@ -541,7 +591,7 @@ export default {
         const map = { NE:deg, SE:180-deg, SW:180+deg, NW:360-deg }
         return map[NSEW] ?? NaN
       }
-      // d°m′s″ / d-m-s / d 度（ハイフンは文字クラス末尾）
+      // d°m′s″ / d-m-s / d 度（-はクラス末尾）
       const dms = s.match(/(-?\d+)[°º度 -]\s*(\d+)?[′']?\s*(\d+(?:\.\d+)?)?[″"]?/)
       if (dms) {
         const d = parseFloat(dms[1])
