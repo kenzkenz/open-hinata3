@@ -17,7 +17,7 @@
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
             <v-divider />
-            <v-stepper-item color="primary" :complete="step>2" :value="2" title="OCR" subtitle="自動抽出" />
+            <v-stepper-item color="primary" :complete="step>2" :value="2" title="OCR" subtitle="Form Parser（Cloud）" />
             <v-divider />
             <v-stepper-item color="primary" :complete="step>3" :value="3" title="列マッピング" subtitle="X/Y/距離/角 等" />
             <v-divider />
@@ -47,11 +47,6 @@
                     <div v-else class="text-medium-emphasis">ファイル未選択</div>
                   </div>
                 </div>
-
-                <div class="mt-4 d-flex align-center gap-3">
-                  <v-switch v-model="useCloudFallback" inset :label="`難しい場合はクラウド表OCRへ自動フォールバック`" />
-                  <v-select class="no-stretch" v-model="cloudService" :items="cloudServiceItems" label="サービス" style="max-width: 240px" :disabled="!useCloudFallback" />
-                </div>
               </div>
             </v-stepper-window-item>
 
@@ -59,8 +54,8 @@
             <v-stepper-window-item :value="2">
               <div class="pa-4">
                 <div class="d-flex align-center gap-3 mb-3">
-                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行</v-btn>
-                  <span class="text-medium-emphasis">端末内OCR → 失敗/低信頼なら {{ cloudService }} にフォールバック</span>
+                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行（Cloud）</v-btn>
+                  <span class="text-medium-emphasis">Google Document AI Form Parser を使用します</span>
                 </div>
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
 
@@ -174,11 +169,7 @@
                           variant="outlined"
                           density="compact"
                       />
-                      <v-btn
-                          @click="renderPreviewOnMap"
-                      >
-                        地図プレビュー作成
-                      </v-btn>
+                      <v-btn @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
                     </v-card-text>
                   </v-card>
                 </div>
@@ -228,61 +219,14 @@
 </template>
 
 <script>
-import { downloadTextFile, zahyokei} from '@/js/downLoad'
-import {mapState} from "vuex";
+import { downloadTextFile, zahyokei } from '@/js/downLoad'
+import { mapState } from 'vuex'
 import proj4 from 'proj4'
 
-/* === 画像前処理：適応二値化 === */
-async function fileToCanvas (file, maxSide = 2400, tiles = 24) {
-  const blob = (file instanceof File) ? file : new File([file], 'img')
-  const img = await (async () => {
-    if (typeof createImageBitmap === 'function') return createImageBitmap(blob)
-    return await new Promise((res, rej) => {
-      const url = URL.createObjectURL(blob)
-      const im = new Image()
-      im.onload = () => { res(im); URL.revokeObjectURL(url) }
-      im.onerror = rej
-      im.src = url
-    })
-  })()
-  const scale = Math.max(1, Math.min(1.6, maxSide / Math.max(img.width, img.height)))
-  const w = Math.round(img.width * scale), h = Math.round(img.height * scale)
-  const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
-  const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false
-  ctx.drawImage(img, 0, 0, w, h)
-  const id = ctx.getImageData(0, 0, w, h); const d = id.data
-  const tw = Math.max(8, Math.floor(w / tiles)), th = Math.max(8, Math.floor(h / tiles))
-  for (let ty=0; ty<h; ty+=th) for (let tx=0; tx<w; tx+=tw) {
-    let sum=0, cnt=0, bx=Math.min(tx+tw, w), by=Math.min(ty+th, h)
-    for (let y=ty; y<by; y++) for (let x=tx; x<bx; x++) {
-      const p=(y*w+x)*4, g=d[p]*0.299 + d[p+1]*0.587 + d[p+2]*0.114; sum+=g; cnt++
-    }
-    const mean=sum/Math.max(1,cnt), thres=Math.max(110, Math.min(190, mean-8))
-    for (let y=ty; y<by; y++) for (let x=tx; x<bx; x++) {
-      const p=(y*w+x)*4, g=d[p]*0.299 + d[p+1]*0.587 + d[p+2]*0.114, v=g>thres?255:0
-      d[p]=d[p+1]=d[p+2]=v; d[p+3]=255
-    }
-  }
-  ctx.putImageData(id, 0, 0)
-  return canvas
-}
-
-/* === 行テキスト分割 === */
-function splitRow (line) {
-  return line.replace(/]/g, ' ] ').replace(/\|/g, ' | ')
-      .split(/,|\t|\||]|\s{2,}/).map(s => s.trim()).filter(s => s.length)
-}
-
-/* === 最低限の抽出 [ID, X, Y] === */
-function extractIdXY (line) {
-  if (!line) return null
-  const s = line.replace(/[［\]【】]/g, ' ').replace(/\s+/g, ' ').trim()
-  const idMatch = s.match(/[A-Za-z0-9./／-]+/)
-  if (!idMatch) return null
-  const id = idMatch[0]
-  const nums = [...s.matchAll(/-?\d+(?:\.\d+)?/g)].map(m => m[0])
-  if (nums.length < 2) return null
-  return [id, nums[0], nums[1]]
+/* === 軽クリーナー === */
+function cleanCell (s) {
+  if (s == null) return ''
+  return String(s).normalize('NFKC').replace(/[,，]/g,'').replace(/[−－—–]/g,'-').replace(/\s+/g,' ').trim()
 }
 
 export default {
@@ -295,7 +239,6 @@ export default {
       step: 1, busy: false,
 
       file: null, previewUrl: '', isImage: true,
-      useCloudFallback: true, cloudService: 'Textract', cloudServiceItems: ['Textract','DocumentAI','Azure'],
 
       ocrError: '', rawTable: { headers: [], rows: [] },
 
@@ -309,7 +252,6 @@ export default {
 
       points: [], area: { area: 0, signed: 0 }, closure: { dx: 0, dy: 0, len: 0 }, closureThreshold: 0.02,
 
-      // crs: 'EPSG:2444', // 公共座標2系（JGD2000）
       crsChoices: [
         'WGS84',
         '公共座標1系', '公共座標2系', '公共座標3系',
@@ -327,16 +269,10 @@ export default {
     }
   },
   computed: {
-    ...mapState([
-      'mapReady',
-    ]),
+    ...mapState(['mapReady']),
     s_zahyokei: {
-      get() {
-        return this.$store.state.zahyokei
-      },
-      set(value) {
-        this.$store.state.zahyokei = value
-      }
+      get() { return this.$store.state.zahyokei },
+      set(value) { this.$store.state.zahyokei = value }
     },
   },
   watch: {
@@ -346,237 +282,47 @@ export default {
   },
   mounted () { if (this.step===4) this.initMapLibre() },
   methods: {
-    async renderPreviewOnMap () {
-      try {
-        if (!this.map) await this.initMapLibre()
-        if (!this.points?.length) { this.buildError = '点データがありません。'; return }
+    /* ==== Cloud OCR ==== */
+    async runCloudOCR (file) {
+      const apiBase = import.meta?.env?.VITE_DOCAI_API_URL || 'https://oh3-docai-api-531336516229.asia-northeast1.run.app'
+      const f = Array.isArray(file) ? file[0] : file
+      const form = new FormData()
+      form.append('file', f, f?.name || 'upload')
+      const res = await fetch(`${apiBase}/api/docai_form_parser.php`, { method:'POST', body: form })
+      if (!res.ok) throw new Error(`Cloud OCR HTTP ${res.status}`)
+      const json = await res.json()
+      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
+      return { headers: json.headers || [], rows: json.rows || [] }
+    },
 
-        // 1) src座標系コードを downLoad.js から取得
-        const kei = this.s_zahyokei || 'WGS84'
-        const srcCode = (zahyokei.find(it => it.kei === kei)?.code) || 'EPSG:4326'
-        const dstCode = 'EPSG:4326' // MapLibreへは緯度経度
-
-        // 2) XY -> lon/lat 変換（WGS84はそのまま）
-        const coordsLngLat = this.points.map(p => {
-          const east = Number(p.x), north = Number(p.y)
-          if (!Number.isFinite(east) || !Number.isFinite(north)) return null
-          if (srcCode === 'EPSG:4326') return [east, north] // 既にlon/lat
-          try {
-            const [lon, lat] = proj4(srcCode, dstCode, [east, north])
-            return [lon, lat]
-          } catch (e) {
-            console.warn('proj4変換失敗: fallback xy', e)
-            return [east, north]
-          }
-        }).filter(Boolean)
-
-        if (coordsLngLat.length < 3) {
-          this.buildError = 'ポリゴンを作るには3点以上が必要です。'
-          return
-        }
-
-        // 3) GeoJSON（Polygon + 頂点Point）
-        const ring = [...coordsLngLat, coordsLngLat[0]]
-        const featurePolygon = {
-          type: 'Feature',
-          properties: { type: 'polygon', chiban: this.extractLotFromFileName(), srcCrs: kei, srcCode },
-          geometry: { type: 'Polygon', coordinates: [ring] }
-        }
-        const featureVertices = coordsLngLat.map((c,i) => ({
-          type: 'Feature',
-          properties: {
-            type: 'vertex',
-            idx: (this.points[i]?.idx ?? (i+1)),
-            label: (this.points[i]?.label ?? '')
-          },
-          geometry: { type: 'Point', coordinates: c }
-        }))
-        const fc = { type: 'FeatureCollection', features: [featurePolygon, ...featureVertices] }
-
-        // 4) MapLibreへ描画（source/layerを新規 or 更新）
-        const srcId = 'kyuseki-preview'
-        if (this.map.getSource(srcId)) {
-          this.map.getSource(srcId).setData(fc)
-        } else {
-          this.map.addSource(srcId, { type: 'geojson', data: fc })
-          this.map.addLayer({
-            id: 'kyuseki-fill',
-            type: 'fill',
-            source: srcId,
-            filter: ['==', '$type', 'Polygon'],
-            paint: { 'fill-color': '#088', 'fill-opacity': 0.35 }
-          })
-          this.map.addLayer({
-            id: 'kyuseki-line',
-            type: 'line',
-            source: srcId,
-            filter: ['==', '$type', 'Polygon'],
-            paint: { 'line-color': '#004', 'line-width': 2 }
-          })
-          this.map.addLayer({
-            id: 'kyuseki-vertex',
-            type: 'circle',
-            source: srcId,
-            filter: ['==', ['get','type'], 'vertex'],
-            paint: {
-              'circle-radius': ['interpolate',['linear'],['zoom'], 12, 2, 18, 5],
-              'circle-color': '#f00',
-              'circle-stroke-width': 1,
-              'circle-stroke-color': '#fff'
-            }
-          })
-          this.map.addLayer({
-            id: 'kyuseki-vertex-label',
-            type: 'symbol',
-            source: srcId,
-            filter: ['==', ['get','type'], 'vertex'],
-            layout: {
-              'text-field': ['coalesce', ['get','label'], ['to-string', ['get','idx']]],
-              'text-size': 12,
-              'text-offset': [0, 1.2],
-              'text-variable-anchor': ['top']
-            },
-            paint: {
-              'text-color': '#111',
-              'text-halo-color': 'rgba(255,255,255,0.85)',
-              'text-halo-width': 1
-            },
-            minzoom: 14
-          })
-        }
-
-        // 5) 自動ズーム
-        const { LngLatBounds } = await import('maplibre-gl')
-        const bounds = new LngLatBounds()
-        ring.forEach(c => bounds.extend(c))
-        this.map.fitBounds(bounds, { padding: 24, maxZoom: 19 })
-      } catch (e) {
-        console.error(e)
-        this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '')
+    preCleanTable () {
+      if (!this.rawTable?.rows?.length) return
+      this.rawTable = {
+        headers: this.rawTable.headers.map(h => cleanCell(h)),
+        rows: this.rawTable.rows.map(r => r.map(c => cleanCell(c)))
       }
     },
 
-    fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
-    close () { this.internal = false },
-    goNext () {
-      if (this.step===1) { if (this.file) this.step=2; return }
-      if (this.step===2) { if (this.rawTable.headers.length) this.step=3; return }
-      if (this.step===3) { this.rebuild(); this.step=4; return }
-      if (this.step===4) { this.step=5; return }
-      if (this.step===5) { this.close(); return }
-    },
-
-    async onFileSelected () {
-      this.previewUrl=''; this.isImage=true
-      if (!this.file) return
-      const f = Array.isArray(this.file)? this.file[0] : this.file
-      const name = f?.name || ''
-      this.isImage = !/\.pdf$/i.test(name)
-      this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
-    },
-
-    /* ==== OCR ==== */
+    /* ==== OCR 実行（クラウドのみ） ==== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
       try {
-        let table = await this.runLocalOCR(this.file)
-        const bad = !table || !table.headers?.length || !table.rows?.length
-        if (bad && this.useCloudFallback) {
-          const t2 = await this.runCloudOCR(this.file, this.cloudService)
-          if (t2?.headers?.length) table = t2
-        }
-        if (!table?.headers?.length) throw new Error('OCRに失敗しました（表が検出できませんでした）')
+        const table = await this.runCloudOCR(this.file)
+        if (!table?.headers?.length) throw new Error('表が検出できませんでした')
         this.rawTable = table
+        this.preCleanTable()
 
+        // 初期マッピング推定 + 数式列は未使用へ
         this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h) ?? null)
-        this.rawTable.headers.forEach((h,i)=>{ const s=String(h).toLowerCase(); if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null })
+        this.rawTable.headers.forEach((h,i)=>{
+          const s=String(h).toLowerCase()
+          if (/[+/*()]/.test(s) || /y\+?n\+?1.*y\+?n-?1|xn.*yn/.test(s)) this.columnRoles[i]=null
+        })
+
         if (this.step<3) this.step=3
       } catch (e) { console.error(e); this.ocrError=String(e.message||e) } finally { this.busy=false }
     },
-
-    async runLocalOCR (file) {
-      const name = file?.name || ''
-      if (/\.pdf$/i.test(name)) return { headers: [], rows: [] } // 画像のみ
-
-      const T = await import('tesseract.js')
-      const createWorker = T.createWorker || (T.default && T.default.createWorker)
-      if (!createWorker) return { headers: [], rows: [] }
-
-      const canvas = await fileToCanvas(file)
-      const opts = {
-        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/dist/tesseract-core.wasm.js',
-        langPath: 'https://tessdata.projectnaptha.com/5'
-      }
-      let worker
-      try { worker = await createWorker(['jpn','eng'], opts) } catch { worker = await createWorker(opts) }
-
-      try {
-        if (worker.load) await worker.load()
-        if (worker.loadLanguage) await worker.loadLanguage('jpn+eng')
-        if (worker.initialize) await worker.initialize('jpn+eng')
-        if (worker.setParameters) {
-          await worker.setParameters({
-            tessedit_pageseg_mode: 6,
-            preserve_interword_spaces: '1',
-            tessedit_char_whitelist: "0123456789.-+()[]{}:：XxYyNnEeWwSs度°′'\"弧長弦半径中心角点番Noｎｏ東西南北備考/|,",
-            tessedit_char_blacklist: 'OoSs',
-            classify_bln_numeric_mode: '1',
-            user_defined_dpi: '300'
-          })
-        }
-        const res = await worker.recognize(canvas)
-        const data = res?.data || res
-        let lines = Array.isArray(data?.lines) ? data.lines.map(l => (l.text||'').trim()) : []
-        if (!lines.length && typeof data?.text === 'string') lines = data.text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)
-
-        const headerLine = lines.find(L => {
-          const s = (L||'').normalize('NFKC')
-          const nums = (s.match(/-?\d+(?:\.\d+)?/g)||[]).length
-          return /Xn/i.test(s) && /Yn/i.test(s) && nums<=2
-        })
-        let fixedHeader = null
-        if (headerLine) {
-          fixedHeader = headerLine.normalize('NFKC')
-              .replace(/(N[O0]+)\s*(Xn)/ig,'$1 | $2').replace(/(Xn)\s*(Yn)/ig,'$1 | $2')
-              .replace(/(Yn)\s*(Y[^\s|]+)/ig,'$1 | $2').replace(/\s{2,}/g,' ')
-        }
-
-        let rows = lines.map(L => (L===headerLine && fixedHeader)? fixedHeader : L).map(splitRow).filter(r=>r.length>1)
-
-        if (!rows.length || Math.max(...rows.map(r=>r.length))<3) {
-          const ext = lines.map(extractIdXY).filter(Boolean)
-          if (ext.length) return { headers: ['点名','Xn','Yn'], rows: ext.map(([id,x,y])=>[id,x,y]) }
-        }
-        if (!rows.length) return { headers: [], rows: [] }
-
-        const idxMax = rows.map((r,i)=>({i,score:r.filter(c=>/[^\d\s.-]/.test(c)).length}))
-            .sort((a,b)=>b.score-a.score)[0]?.i ?? 0
-
-        let headers = rows[idxMax].map(h=>h.replace(/\s+/g,''))
-        if (headers.length<3) {
-          const forced = rows[idxMax].join(' ').normalize('NFKC')
-              .replace(/(N[O0]+)\s*(Xn)/ig,'$1|$2').replace(/(Xn)\s*(Yn)/ig,'$1|$2')
-              .replace(/(Yn)\s*(Y[^\s|]+)/ig,'$1|$2').split('|').map(s=>s.trim()).filter(Boolean)
-          if (forced.length>=3) headers = forced
-        }
-
-        headers = headers.map(h =>
-            h.replace(/点名|標識|名称/i,'点名').replace(/点番|番号|No/i,'点番')
-                .replace(/X座標|東距|東/i,'X').replace(/Y座標|北距|北/i,'Y')
-        )
-
-        const body = rows.filter((_,i)=>i!==idxMax)
-        const colN = Math.max(headers.length, ...body.map(r=>r.length))
-        headers = headers.slice(0,colN)
-        const normBody = body.map(r => { const a=r.slice(0,colN); while(a.length<colN)a.push(''); return a })
-        return { headers, rows: normBody }
-      } catch (e) { console.error('local OCR error:', e); return { headers: [], rows: [] } }
-      finally { try { await worker.terminate() } catch {} }
-    },
-
-    async runCloudOCR () { return { headers: [], rows: [] } },
 
     /* ==== 列マッピング/正規化 ==== */
     normHeader (s) {
@@ -736,41 +482,91 @@ export default {
       this.$emit('imported', { count:this.points.length, crs:this.crs, area:this.area.area, sim:!!this.simaInfo.name })
     },
 
-    /* ② MapLibre 初期化：地理院タイル（淡色）＋日本全体 */
-    async initMapLibre () {
-      if (this.map || !this.$refs.maplibreEl) return
-      const id='maplibre-css'
-      if (!document.getElementById(id)) {
-        const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css'
-        document.head.appendChild(l)
-      }
-      const { Map } = await import('maplibre-gl')
+    /* === 地図プレビュー：proj4でWGS84へ変換して描画 === */
+    async renderPreviewOnMap () {
+      try {
+        if (!this.map) await this.initMapLibre()
+        if (!this.points?.length) { this.buildError = '点データがありません。'; return }
 
-      const style = {
-        version: 8,
-        sources: {
-          'gsi-pale': {
-            type: 'raster',
-            tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution:
-                '地理院タイル（淡色地図）© 国土地理院'
-          }
-        },
-        layers: [
-          { id: 'gsi-pale', type: 'raster', source: 'gsi-pale' }
-        ]
-      }
+        const kei = this.s_zahyokei || 'WGS84'
+        const srcCode = (zahyokei.find(it => it.kei === kei)?.code) || 'EPSG:4326'
+        const dstCode = 'EPSG:4326'
 
-      // 日本全体が入る感じ（中心=本州中部、zoom=4.3 くらい）
-      this.map = new Map({
-        container: this.$refs.maplibreEl,
-        style,
-        center: [137.0, 38.0],
-        zoom: 4.3,
-        preserveDrawingBuffer: true
-      })
-    }
+        const coordsLngLat = this.points.map(p => {
+          const east = Number(p.x), north = Number(p.y)
+          if (!Number.isFinite(east) || !Number.isFinite(north)) return null
+          if (srcCode === 'EPSG:4326') return [east, north]
+          try {
+            const [lon, lat] = proj4(srcCode, dstCode, [east, north])
+            return [lon, lat]
+          } catch (e) { console.warn('proj4変換失敗', e); return [east, north] }
+        }).filter(Boolean)
+
+        if (coordsLngLat.length < 3) { this.buildError = 'ポリゴンを作るには3点以上が必要です。'; return }
+
+        const ring = [...coordsLngLat, coordsLngLat[0]]
+        const featurePolygon = {
+          type: 'Feature',
+          properties: { type: 'polygon', chiban: this.extractLotFromFileName(), srcCrs: kei, srcCode },
+          geometry: { type: 'Polygon', coordinates: [ring] }
+        }
+        const featureVertices = coordsLngLat.map((c,i) => ({
+          type: 'Feature',
+          properties: { type: 'vertex', idx: (this.points[i]?.idx ?? (i+1)), label: (this.points[i]?.label ?? '') },
+          geometry: { type: 'Point', coordinates: c }
+        }))
+        const fc = { type: 'FeatureCollection', features: [featurePolygon, ...featureVertices] }
+
+        const srcId = 'kyuseki-preview'
+        if (this.map.getSource(srcId)) {
+          this.map.getSource(srcId).setData(fc)
+        } else {
+          this.map.addSource(srcId, { type: 'geojson', data: fc })
+          this.map.addLayer({ id: 'kyuseki-fill', type: 'fill', source: srcId, filter: ['==', '$type', 'Polygon'], paint: { 'fill-color': '#088', 'fill-opacity': 0.35 } })
+          this.map.addLayer({ id: 'kyuseki-line', type: 'line', source: srcId, filter: ['==', '$type', 'Polygon'], paint: { 'line-color': '#004', 'line-width': 2 } })
+          this.map.addLayer({
+            id: 'kyuseki-vertex', type: 'circle', source: srcId,
+            filter: ['==', ['get','type'], 'vertex'],
+            paint: { 'circle-radius': ['interpolate',['linear'],['zoom'], 12, 2, 18, 5], 'circle-color': '#f00', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+          })
+          this.map.addLayer({
+            id: 'kyuseki-vertex-label', type: 'symbol', source: srcId,
+            filter: ['==', ['get','type'], 'vertex'],
+            layout: { 'text-field': ['coalesce', ['get','label'], ['to-string', ['get','idx']]], 'text-size': 12, 'text-offset': [0, 1.2], 'text-variable-anchor': ['top'] },
+            paint: { 'text-color': '#111', 'text-halo-color': 'rgba(255,255,255,0.85)', 'text-halo-width': 1 },
+            minzoom: 14
+          })
+        }
+
+        const { LngLatBounds } = await import('maplibre-gl')
+        const bounds = new LngLatBounds(); ring.forEach(c => bounds.extend(c))
+        this.map.fitBounds(bounds, { padding: 24, maxZoom: 19 })
+      } catch (e) {
+        console.error(e)
+        this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '')
+      }
+    },
+
+    fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
+    close () { this.internal = false },
+    goNext () {
+      if (this.step===1) { if (this.file) this.step=2; return }
+      if (this.step===2) { if (this.rawTable.headers.length) this.step=3; return }
+      if (this.step===3) { this.rebuild(); this.step=4; return }
+      if (this.step===4) { this.step=5; return }
+      if (this.step===5) { this.close(); return }
+    },
+
+    async onFileSelected () {
+      this.previewUrl=''; this.isImage=true
+      if (!this.file) return
+      const f = Array.isArray(this.file)? this.file[0] : this.file
+      const name = f?.name || ''
+      this.isImage = !/\.pdf$/i.test(name)
+      this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
+    },
+
+
   }
 }
 </script>
@@ -833,6 +629,6 @@ export default {
 
 /* v-select が親の高さに引っ張られないよう固定（ユーザー指定：50px） */
 .no-stretch { align-self: flex-start; max-width: 260px; }
-.no-stretch :deep(.v-field) { height: 50px; }   /* 入力部の高さ固定 */
+.no-stretch :deep(.v-field) { height: 50px; }
 .no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
 </style>
