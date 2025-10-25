@@ -423,7 +423,7 @@ export default {
       if (v) {
         this.$nextTick(this.recalcTableMax)
       } else {
-        this.resetAll() // 閉じたら全て忘れる
+        this.resetAll()
       }
     },
     step () {
@@ -434,7 +434,7 @@ export default {
             await this.initMapLibre()
             this.loadColWidths()
             this.installColResizer()
-            // ★手動マッピングの上書きを防止：未設定時のみ自動マップ
+            // 手動マッピングを尊重
             if (!this.columnRoles || this.columnRoles.length === 0) {
               this.autoMapRoles()
             }
@@ -644,7 +644,6 @@ export default {
     normHeader (s) { if (!s) return ''; return s.normalize('NFKC').replace(/\s+/g,'').replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'').replace(/\[|\]/g,'').toLowerCase() },
     guessRoleFromHeader (h) {
       const t = (h||'').trim().toLowerCase()
-      // 「34-1 Xn」「No.34 X」「x n」など前置/区切りありにも強くする
       if (/\b(xn|x)\b/.test(t) || /(x座標|東距|東\b|e\b)/.test(t)) return 'x'
       if (/\b(yn|y)\b/.test(t) || /(y座標|北距|北\b|n\b)/.test(t)) return 'y'
       if (/(^no\b|点番|番号|^番$|^n0$|^№$)/i.test(t)) return 'label'
@@ -696,14 +695,22 @@ export default {
       try {
         const rows = this.rawTable.rows || []
         const roles = this.mapColumnsObject()
+
         const usable = rows.map((r,ri)=>{
           const rawX = (roles.x!=null) ? r[roles.x] : ''
           const rawY = (roles.y!=null) ? r[roles.y] : ''
-          const x = this.parseNumber(rawX)   // Number() 先行
-          const y = this.parseNumber(rawY)
+          // ★ X/Y どちらかが空なら除外（次ステップに出さない）
+          const sx = this.normNumberStr(rawX)
+          const sy = this.normNumberStr(rawY)
+          if (sx.length === 0 || sy.length === 0) return null
+
+          const x = this.parseNumber(sx)
+          const y = this.parseNumber(sy)
           const label = (roles.label!=null) ? String(r[roles.label]||'').trim() : undefined
           return { ri, rawX, rawY, x, y, label }
-        }).filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
+        })
+            .filter(o => o && Number.isFinite(o.x) && Number.isFinite(o.y))
+
         if (usable.length < 3) throw new Error('数値の X/Y を持つ行が3つ未満です。列マッピングや表の行を確認してください。')
 
         this.points = usable.map((o,i) => ({
@@ -1034,7 +1041,7 @@ export default {
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch{align-self:flex-start;max-width:260px}
-.no-stretch :deep(.v-field){height:46px}  /* ご指定の高さ維持 */
+.no-stretch :deep(.v-field){height:46px}
 .no-stretch :deep(.v-input){flex:0 0 auto !important}
 .preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
