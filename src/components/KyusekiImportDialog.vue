@@ -213,14 +213,14 @@
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'x')">
-                              <input class="cell-input num" :value="fmt(p.x)" inputmode="decimal"
+                              <input class="cell-input num" :value="p.rawX" inputmode="decimal"
                                      :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'x', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'y')">
-                              <input class="cell-input num" :value="fmt(p.y)" inputmode="decimal"
+                              <input class="cell-input num" :value="p.rawY" inputmode="decimal"
                                      :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'y', $event.target.value)"
@@ -454,10 +454,10 @@ export default {
         const hostRect = host.getBoundingClientRect()
         const hostH = hostRect.height
         const tall = Math.min(900, Math.max(560, Math.floor(hostH - 8)))
-        rootEl.style.setProperty('--tall-h', `${tall}px`)
+        rootEl.style.setProperty('--tall-h', String(tall) + 'px')
         const tablePx = Math.max(300, tall - 80)
         this.tableMaxPx = tablePx
-        rootEl.style.setProperty('--oh3-table-h', `${tablePx}px`)
+        rootEl.style.setProperty('--oh3-table-h', String(tablePx) + 'px')
         this.roBusy = false
       }
       requestAnimationFrame(updateVar)
@@ -554,11 +554,11 @@ export default {
       if (!f) throw new Error('ファイルが選択されていません')
       const base = import.meta?.env?.VITE_DOCAI_NODE_URL || 'https://oh3-docai-api-node-531336516229.asia-northeast1.run.app'
       const form = new FormData(); form.append('file', f, f?.name || 'upload')
-      const url = `${base}/api/docai_form_parser`
+      const url = base + '/api/docai_form_parser'
       const r = await fetch(url, { method: 'POST', body: form })
       const text = await r.text(); let json; try { json = JSON.parse(text) } catch { json = null }
-      if (!r.ok) throw new Error(json?.error || json?.detail || `HTTP ${r.status}`)
-      if (!json?.ok) throw new Error(json?.error || 'Cloud OCR failed')
+      if (!r.ok) throw new Error((json && json.error) || (json && json.detail) || ('HTTP ' + String(r.status)))
+      if (!json || !json.ok) throw new Error((json && json.error) || 'Cloud OCR failed')
       return { headers: json.headers || [], rows: json.rows || [], meta: json.meta || null }
     },
 
@@ -606,14 +606,19 @@ export default {
         const rows = this.rawTable.rows || []
         const roles = this.mapColumnsObject()
         const usable = rows.map((r,ri)=>{
-          const x = (roles.x!=null) ? this.parseNumber(r[roles.x]) : NaN
-          const y = (roles.y!=null) ? this.parseNumber(r[roles.y]) : NaN
+          const rawX = (roles.x!=null) ? r[roles.x] : ''
+          const rawY = (roles.y!=null) ? r[roles.y] : ''
+          const x = this.parseNumber(rawX)
+          const y = this.parseNumber(rawY)
           const label = (roles.label!=null) ? String(r[roles.label]||'').trim() : undefined
-          return { ri, x, y, label }
+          return { ri, rawX, rawY, x, y, label }
         }).filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
         if (usable.length < 3) throw new Error('数値の X/Y を持つ行が3つ未満です。列マッピングや表の行を確認してください。')
 
-        this.points = usable.map((o,i) => ({ x:o.x, y:o.y, label:o.label || String(i+1), sourceRow:o.ri }))
+        this.points = usable.map((o,i) => ({
+          x:o.x, y:o.y, rawX:o.rawX, rawY:o.rawY,
+          label:o.label || String(i+1), sourceRow:o.ri
+        }))
 
         this.area = this.shoelace(this.points)
         const a=this.points[0], b=this.points[this.points.length-1]
@@ -660,8 +665,12 @@ export default {
           const p = this.edits.get(sourceRow) || {}; p.label = v; this.edits.set(sourceRow, p)
         } else if (field === 'x' || field === 'y') {
           const idx = roles[field]; if (idx == null) return
-          const prev = row[idx]; const s = fixCell(rawVal); const num = this.parseNumber(s); if (!Number.isFinite(num)) return
-          const next = Number(num).toFixed(3); if (prev !== next) { this.pushHistory({ type:'field', ri:sourceRow, field, prev, next }); row[idx] = next }
+          const prev = row[idx]
+          const next = String(rawVal ?? '')
+          if (prev !== next) {
+            this.pushHistory({ type:'field', ri:sourceRow, field, prev, next })
+            row[idx] = next
+          }
           const p = this.edits.get(sourceRow) || {}; p[field] = next; this.edits.set(sourceRow, p)
         }
         this.lastEdited = { row: sourceRow, field, at: Date.now() }
@@ -710,15 +719,15 @@ export default {
           const east = Number(p.x), north = Number(p.y)
           if (!Number.isFinite(east) || !Number.isFinite(north)) return null
           if (srcCode === 'EPSG:4326') return [east, north]
-          try { const [lon, lat] = proj4(srcCode, dstCode, [east, north]); return [lon, lat] }
+          try { const proj = proj4(srcCode, dstCode); const out = proj.forward([east, north]); return [out[0], out[1]] }
           catch { return [east, north] }
         }).filter(Boolean)
 
         if (coordsLngLat.length < 3) { this.buildError = 'ポリゴンを作るには3点以上が必要です。'; return }
 
-        const ring = [...coordsLngLat, coordsLngLat[0]]
+        const ring = coordsLngLat.concat([coordsLngLat[0]])
         const featurePolygon = { type:'Feature', properties:{type:'polygon', chiban:this.extractLotFromFileName(), srcCrs:kei, srcCode}, geometry:{ type:'Polygon', coordinates:[ring] } }
-        const featureVertices = coordsLngLat.map((c,i)=>({ type:'Feature', properties:{type:'vertex', idx:(i+1), label:(this.points[i]?.label ?? '')}, geometry:{ type:'Point', coordinates:c }}))
+        const featureVertices = coordsLngLat.map((c,i)=>({ type:'Feature', properties:{type:'vertex', idx:(i+1), label:(this.points[i] && this.points[i].label) || ''}, geometry:{ type:'Point', coordinates:c }}))
         const fc = { type:'FeatureCollection', features:[featurePolygon, ...featureVertices] }
 
         const srcId = 'kyuseki-preview'
@@ -734,11 +743,11 @@ export default {
         }
 
         const { LngLatBounds } = await import('maplibre-gl')
-        const bounds = new LngLatBounds(); ring.forEach(c=>bounds.extend(c))
+        const bounds = new LngLatBounds(); ring.forEach(function(c){ bounds.extend(c) })
         this.map.fitBounds(bounds, { padding: 24, maxZoom: 19 })
       } catch (e) {
         console.error(e)
-        this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '')
+        this.buildError = '地図プレビューの描画に失敗しました。' + (e && e.message ? (' (' + e.message + ')') : '')
       }
     },
 
@@ -749,7 +758,7 @@ export default {
       this.previewUrl=''; this.isImage=true
       if (!this.file) return
       const f = Array.isArray(this.file)? this.file[0] : this.file
-      const name = f?.name || ''
+      const name = f && f.name || ''
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
       this.importName = this.baseFileName(name)
@@ -761,13 +770,13 @@ export default {
     loadColWidths () {
       try {
         const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
-        const clamp = (v,min,max)=>Math.min(max,Math.max(min, v|0))
+        const clamp = function(v,min,max){ return Math.min(max, Math.max(min, v|0)) }
         if (saved && typeof saved==='object') {
-          this.colw.label = clamp(saved.label ?? this.colw.label, 32, 420)
-          this.colw.x     = clamp(saved.x     ?? this.colw.x,     64,  260)
-          this.colw.y     = clamp(saved.y     ?? this.colw.y,     64,  260)
+          this.colw.label = clamp(saved.label != null ? saved.label : this.colw.label, 32, 420)
+          this.colw.x     = clamp(saved.x     != null ? saved.x     : this.colw.x,     64,  260)
+          this.colw.y     = clamp(saved.y     != null ? saved.y     : this.colw.y,     64,  260)
         }
-      } catch {}
+      } catch (e) {}
     },
     saveColWidths () { localStorage.setItem('oh3_coords_colw_v1', JSON.stringify(this.colw)) },
     installColResizer () {
@@ -790,7 +799,7 @@ export default {
         window.removeEventListener('mouseup', onUp, true)
         this.saveColWidths()
       }
-      table.querySelectorAll('.th-grip').forEach(grip => {
+      table.querySelectorAll('.th-grip').forEach((grip) => {
         grip.onmousedown = (e) => {
           const key = grip.dataset.resize
           if (!key) return
@@ -807,18 +816,18 @@ export default {
 
     /* ==== SIMA ==== */
     baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
-    extractLotFromFileName () { try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const n=f?.name||''; const m=String(n).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch{return '000-0'} },
-    resolveProjectName () { return this.jobId ? `oh3-job-${this.jobId}` : 'open-hinata3' },
+    extractLotFromFileName () { try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const n=f && f.name || ''; const m=String(n).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch(e){return '000-0'} },
+    resolveProjectName () { return this.jobId ? 'oh3-job-' + String(this.jobId) : 'open-hinata3' },
     buildSIMAContent () {
       if (!this.points.length) return ''
       const prj = this.resolveProjectName(), lot = this.extractLotFromFileName(), L = []
-      L.push(`G00,01,${prj},`)
+      L.push('G00,01,' + prj + ',')
       L.push('Z00,座標ﾃﾞｰﾀ,,'); L.push('A00,')
-      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1)
-        L.push(`A01,${i+1},${label},${Number(p.x).toFixed(3)},${Number(p.y).toFixed(3)},0,`) })
+      this.points.forEach((p,i)=>{ const label=(p.label && String(p.label).length)?String(p.label):String(i+1)
+        L.push('A01,' + String(i+1) + ',' + label + ',' + Number(p.x).toFixed(3) + ',' + Number(p.y).toFixed(3) + ',0,') })
       L.push('A99,')
-      L.push('Z00,区画データ,'); L.push(`D00,1,${lot},1,`)
-      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1); L.push(`B01,${i+1},${label},`) })
+      L.push('Z00,区画データ,'); L.push('D00,1,' + lot + ',1,')
+      this.points.forEach((p,i)=>{ const label=(p.label && String(p.label).length)?String(p.label):String(i+1); L.push('B01,' + String(i+1) + ',' + label + ',') })
       L.push('D99,'); L.push('A99,END')
       return L.join('\n')
     },
@@ -826,15 +835,15 @@ export default {
       if (!this.points.length) return
       const text=this.buildSIMAContent(); this.lastSimaText=text
       const base=(this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
-      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`${base}_${ts}.sim`
+      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name= base + '_' + ts + '.sim'
       downloadTextFile(name, text, 'shift-jis')
       let size=text.length
       try{
         if(window.Encoding){
           const u=window.Encoding.stringToCode(text); const s=window.Encoding.convert(u,'SJIS'); size=s.length
         }
-      }catch{}
-      this.simaInfo={name, size}
+      }catch(e){}
+      this.simaInfo={name: name, size: size}
     },
     async commit () {
       try { this.busy = true
@@ -851,7 +860,7 @@ export default {
    KyusekiImportDialog（編集領域最大化＋上限）
    ========================================= */
 .oh3-dialog{
-  height:min(96vh, 980px);   /* ★ 1920×1080でもOKな上限 */
+  height:min(96vh, 980px);
   display:flex;flex-direction:column;overflow:hidden
 }
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
@@ -884,7 +893,7 @@ export default {
 .pane{display:flex;flex-direction:column;min-height:0}
 .pane .pane-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 
-/* ★ スクロールは常にこの要素 */
+/* スクロール要素 */
 .table-host{
   position:relative;
   flex:1 1 auto;
