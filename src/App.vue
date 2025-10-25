@@ -9478,8 +9478,9 @@ export default {
                     this.s_dialogForPng2App = true
                   } else if (files.length === 1){
                     if (this.$store.state.userId) {
-                      this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
-                      this.dialogForImagePng = true
+                      alert('測位アイコンに移動しました。')
+                      // this.$store.state.tiffAndWorldFile = Array.from(e.dataTransfer.files);
+                      // this.dialogForImagePng = true
                     } else {
                       alert('ログイン専用です。')
                     }
