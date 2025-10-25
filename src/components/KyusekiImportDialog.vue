@@ -12,23 +12,41 @@
           求積表インポート（OCR）
         </div>
         <div class="d-flex align-center gap-2">
-          <v-btn icon="mdi-undo" variant="text" :disabled="!canUndo" @click="undo" />
-          <v-btn icon="mdi-close" variant="text" @click="close" />
+          <v-btn icon="mdi-undo" variant="text" :disabled="!canUndo || disableAll" @click="undo" />
+          <v-btn icon="mdi-close" variant="text" :disabled="disableAll" @click="close" />
         </div>
       </v-card-title>
 
       <v-divider color="primary" />
 
+      <!-- Step2/ロード中に上部に進捗バー -->
+      <v-progress-linear
+          v-if="transitioning"
+          :indeterminate="true"
+          color="primary"
+          height="4"
+      />
+
       <div class="px-4 pt-2">
         <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
+            <v-divider v-if="!compactFlow || showStep2Header" />
+            <v-stepper-item
+                v-if="!compactFlow || showStep2Header"
+                color="primary" :complete="step>2" :value="2"
+                title="OCR" subtitle="Form Parser（Cloud）"
+            />
             <v-divider />
-            <v-stepper-item color="primary" :complete="step>2" :value="2" title="OCR" subtitle="Form Parser（Cloud）" />
+            <v-stepper-item
+                color="primary" :complete="step>(compactFlow?2:3)" :value="3"
+                title="列マッピング" subtitle="X/Y/点名"
+            />
             <v-divider />
-            <v-stepper-item color="primary" :complete="step>3" :value="3" title="列マッピング" subtitle="X/Y/点名" />
-            <v-divider />
-            <v-stepper-item color="primary" :complete="step>4" :value="4" title="プレビュー・検算" subtitle="閉合/面積＋地図" />
+            <v-stepper-item
+                color="primary" :complete="step>(compactFlow?3:4)" :value="4"
+                title="プレビュー・検算" subtitle="閉合/面積＋地図"
+            />
             <v-divider />
             <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
           </v-stepper-header>
@@ -44,6 +62,7 @@
                       label="求積表の写真 or PDF を選択"
                       prepend-icon="mdi-camera"
                       show-size
+                      :disabled="disableAll"
                       @change="onFileSelected"
                   />
                   <div class="flex-1 min-h-40">
@@ -57,19 +76,29 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- STEP2（OCR＋編集） -->
-            <v-stepper-window-item :value="2">
+            <!-- STEP2（OCR画面）: コンパクトフロー時は「エラー時 or ローディング時のみ」表示 -->
+            <v-stepper-window-item v-if="!compactFlow || ocrError || transitioning" :value="2">
               <div class="pa-4 step-host">
                 <div class="d-flex align-center gap-3 mb-3">
-                  <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行（Cloud）</v-btn>
+                  <v-btn :loading="busy" :disabled="disableAll" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">
+                    OCR 実行（Cloud）
+                  </v-btn>
+                  <span class="text-medium-emphasis">
+                    Google Document AI Form Parser を使用します
+                    <template v-if="transitioning">（OCR 実行中…）</template>
+                  </span>
                 </div>
 
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
 
-                <div v-if="rawTable.headers.length" class="ocr-table">
+                <div v-if="transitioning" class="loader-placeholder">
+                  <v-skeleton-loader type="table" />
+                </div>
+
+                <div v-else-if="rawTable.headers.length" class="ocr-table flex-col">
                   <div class="text-subtitle-2 mb-2">抽出プレビュー（そのまま編集可）</div>
                   <div class="table-host">
-                    <table class="oh3-simple editable">
+                    <table class="oh3-simple editable auto">
                       <thead>
                       <tr><th v-for="(h,i) in rawTable.headers" :key="`h${i}`">{{ h }}</th></tr>
                       </thead>
@@ -80,6 +109,7 @@
                               class="cell-input"
                               :class="{num: isNumericRole(ci)}"
                               :value="c"
+                              :disabled="disableAll"
                               :inputmode="isNumericRole(ci)?'decimal':undefined"
                               @focus="$event.target.select()"
                               @keydown="onEditKeyDown"
@@ -96,17 +126,17 @@
                   </div>
                 </div>
 
-                <div class="text-medium-emphasis" v-else>まだ結果がありません。OCRを実行してください。</div>
+                <div v-else class="text-medium-emphasis">まだ結果がありません。OCRを実行してください。</div>
               </div>
             </v-stepper-window-item>
 
             <!-- STEP3（列マッピング＋編集） -->
             <v-stepper-window-item :value="3">
-              <div class="pa-4 step-host">
-                <div v-if="rawTable.headers.length">
+              <div class="pa-4 step-host fill-parent">
+                <div v-if="rawTable.headers.length" class="flex-col fill-parent">
                   <div class="d-flex align-center justify-space-between mb-2">
                     <div class="text-subtitle-2">列の役割を確認/修正（点番は使わず点名に寄せる）</div>
-                    <v-btn size="small" variant="text" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
+                    <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
                   </div>
 
                   <div class="d-flex flex-wrap gap-3 mb-3">
@@ -115,13 +145,14 @@
                       <v-select
                           class="no-stretch" density="comfortable" variant="outlined"
                           :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details
+                          :disabled="disableAll"
                       />
                     </div>
                   </div>
 
                   <div class="text-caption text-medium-emphasis mb-1">サンプル（編集可）</div>
                   <div class="table-host">
-                    <table class="oh3-simple editable">
+                    <table class="oh3-simple editable auto">
                       <thead>
                       <tr><th v-for="(h,i) in rawTable.headers" :key="`hm${i}`">{{ h }}</th></tr>
                       </thead>
@@ -132,6 +163,7 @@
                               class="cell-input"
                               :class="{num: isNumericRole(ci)}"
                               :value="c"
+                              :disabled="disableAll"
                               :inputmode="isNumericRole(ci)?'decimal':undefined"
                               @focus="$event.target.select()"
                               @keydown="onEditKeyDown"
@@ -154,7 +186,6 @@
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
 
                 <div class="preview-grid" v-if="points.length">
-                  <!-- Map -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2">地図プレビュー</v-card-title>
                     <v-card-text class="pane-body">
@@ -163,7 +194,6 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標テーブル -->
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2 d-flex align-center justify-space-between">
                       <span>座標プレビュー（編集可）</span>
@@ -180,9 +210,9 @@
                         <table class="oh3-simple editable" style="width:max(100%, 720px);">
                           <colgroup>
                             <col style="width:56px" />
-                            <col style="width:32%" />
-                            <col style="width:34%" />
-                            <col style="width:34%" />
+                            <col />
+                            <col />
+                            <col />
                             <col style="width:28px" />
                           </colgroup>
                           <thead>
@@ -193,18 +223,21 @@
                             <td>{{ i+1 }}</td>
                             <td :class="cellClass(i,'label')">
                               <input class="cell-input" :value="p.label ?? (i+1)"
+                                     :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'label', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'x')">
                               <input class="cell-input num" :value="fmt(p.x)" inputmode="decimal"
+                                     :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'x', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'y')">
                               <input class="cell-input num" :value="fmt(p.y)" inputmode="decimal"
+                                     :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'y', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
@@ -217,7 +250,6 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 検算 -->
                   <v-card class="oh3-accent-border pane calc-pane" variant="outlined">
                     <v-card-title class="py-2">検算</v-card-title>
                     <v-card-text class="compact-text pane-body">
@@ -231,14 +263,13 @@
                     </v-card-text>
                   </v-card>
 
-                  <!-- 座標系 -->
                   <v-card variant="outlined">
                     <v-card-title class="py-2">地図プレビュー作成</v-card-title>
                     <v-card-text class="pane-body">
                       <v-select class="no-stretch" v-model="s_zahyokei"
                                 :items="crsChoices" item-title="title" item-value="value"
-                                label="公共座標系" variant="outlined" density="compact" />
-                      <v-btn @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
+                                label="公共座標系" variant="outlined" density="compact" :disabled="disableAll" />
+                      <v-btn :disabled="disableAll" @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
                     </v-card-text>
                   </v-card>
                 </div>
@@ -265,8 +296,8 @@
                 <div v-if="points.length">
                   <v-alert type="info" color="primary" variant="tonal" class="mb-3">{{ points.length }} 点を処理します。</v-alert>
                   <div class="d-flex align-center gap-3">
-                    <v-btn variant="outlined" prepend-icon="mdi-download" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
-                    <v-btn color="primary" :loading="busy" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
+                    <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
+                    <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
                 </div>
@@ -276,11 +307,38 @@
           </v-stepper-window>
 
           <v-stepper-actions>
-            <template #prev><v-btn variant="text" :disabled="step<=1" @click="step--">戻る</v-btn></template>
-            <template #next><v-btn variant="elevated" color="primary" @click="goNext">次へ</v-btn></template>
+            <template #prev>
+              <v-btn
+                  size="x-large"
+                  class="oh3-action-btn"
+                  variant="elevated"
+                  color="secondary"
+                  :disabled="step<=1 || disableAll"
+                  @click="step--"
+              >
+                戻る
+              </v-btn>
+            </template>
+            <template #next>
+              <v-btn
+                  size="x-large"
+                  class="oh3-action-btn"
+                  variant="elevated"
+                  color="primary"
+                  :disabled="disableAll || (step===1 && !file)"
+                  @click="goNext"
+              >
+                次へ
+              </v-btn>
+            </template>
           </v-stepper-actions>
         </v-stepper>
       </div>
+
+      <!-- 全面ロック（操作禁止） -->
+      <v-overlay :model-value="transitioning" persistent contained class="lock-overlay">
+        <v-progress-circular indeterminate color="primary" size="48" />
+      </v-overlay>
     </v-card>
   </v-dialog>
 </template>
@@ -340,7 +398,6 @@ export default {
       ],
 
       buildError: '', simaInfo: { name:'', size:0 }, lastSimaText: '',
-
       map: null,
 
       suspect: { x: new Set(), y: new Set() },
@@ -349,8 +406,12 @@ export default {
 
       history: [], historyPtr: -1,
 
-      ro: null,              // ResizeObserver
-      tableMaxPx: 420,       // 現行の計算結果（デバッグ用）
+      ro: null,               // ResizeObserver
+      roBusy: false,         // ループ再入防止
+      tableMaxPx: 420,
+      transitioning: false,   // ← ローディング状態
+      compactFlow: true,      // ← Step1→Step2(ローディング)→Step3へ
+      showStep2Header: true,  // コンパクトでも見た目にステップ2を出す
     }
   },
   computed: {
@@ -359,7 +420,8 @@ export default {
       get() { return this.$store.state.zahyokei },
       set(value) { this.$store.state.zahyokei = value }
     },
-    canUndo () { return this.historyPtr >= 0 }
+    canUndo () { return this.historyPtr >= 0 },
+    disableAll () { return this.busy || this.transitioning }
   },
   watch: {
     modelValue (v) { this.internal = v },
@@ -383,7 +445,7 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ===== 動的高さ：見えている step-host から算出 ===== */
+    /* ===== 高さ再計算（ResizeObserver ループ対策） ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -391,22 +453,31 @@ export default {
       return el || root.querySelector('.step-host')
     },
     recalcTableMax () {
+      if (this.roBusy) return
+      this.roBusy = true
       const rootEl = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       const host = this.findVisibleStepHost()
-      if (!rootEl || !host) return
-      const hostRect = host.getBoundingClientRect()
-      const px = Math.max(220, Math.floor(hostRect.height - 24)) // 余白マージン
-      this.tableMaxPx = px
-      rootEl.style.setProperty('--oh3-table-h', `${px}px`)
+      if (!rootEl || !host) { this.roBusy = false; return }
+
+      const updateVar = () => {
+        const hostRect = host.getBoundingClientRect()
+        const px = Math.max(220, Math.floor(hostRect.height - 24))
+        this.tableMaxPx = px
+        rootEl.style.setProperty('--oh3-table-h', `${px}px`)
+        this.roBusy = false
+      }
+      // レイアウト変更は rAF 内で実行 → ループ回避
+      requestAnimationFrame(updateVar)
+
       if (!this.ro) {
-        this.ro = new ResizeObserver(() => this.recalcTableMax())
+        this.ro = new ResizeObserver(() => { this.recalcTableMax() })
         this.ro.observe(host)
         this.ro.observe(rootEl)
         window.addEventListener('resize', this.recalcTableMax, { passive:true })
       }
     },
 
-    /* ===== グローバル Undo（いつでも有効） ===== */
+    /* ===== Undo（常時有効） ===== */
     installGlobalUndo () {
       this._undoHandler = (e) => {
         if (!this.internal) return
@@ -416,14 +487,13 @@ export default {
           this.undo()
         }
       }
-      window.addEventListener('keydown', this._undoHandler, true) // captureで最優先
+      window.addEventListener('keydown', this._undoHandler, true)
     },
     uninstallGlobalUndo () {
       if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true)
       this._undoHandler = null
     },
     onLocalKeyDown (e) {
-      // 予備（フォーカスがカード内にある時）
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault(); this.undo()
       }
@@ -454,7 +524,44 @@ export default {
       this.rawTable = { headers: headers2, rows: rows2 }
     },
 
-    /* ===== OCR実行 ===== */
+    /* ===== 進む（Step1→Step2ローディング→Step3） ===== */
+    async goNext () {
+      if (this.step === 1) {
+        if (!this.file) return
+        if (this.compactFlow) {
+          // Step2を見せながら OCR 実行（ローディング表示＋ボタン無効）
+          this.transitioning = true
+          this.ocrError = ''
+          this.showStep2Header = true
+          this.step = 2
+          await this.$nextTick()
+
+          try {
+            const table = await this.runCloudOCR(this.file)
+            if (!table?.rows?.length) throw new Error('表が検出できませんでした')
+            this.rawTable = table
+            this.postCleanTable()
+            this.autoMapRoles()
+            this.step = 3
+          } catch (e) {
+            console.error(e); this.ocrError = String(e?.message || e)
+            // エラー時は Step2 に留めて再試行可能
+          } finally {
+            this.transitioning = false
+            this.$nextTick(this.recalcTableMax)
+          }
+          return
+        } else {
+          this.step = 2; return
+        }
+      }
+      if (this.step === 2) { if (this.rawTable.headers.length) { this.step = 3; return } return }
+      if (this.step === 3) { this.rebuild(); this.step = 4; return }
+      if (this.step === 4) { this.step = 5; return }
+      if (this.step === 5) { this.close(); return }
+    },
+
+    /* ===== OCR 実行（手動） ===== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
@@ -532,7 +639,7 @@ export default {
       }
     },
 
-    /* ===== Step2/3：rawTable 直接編集 ===== */
+    /* ===== rawTable 直接編集 ===== */
     onRawCellEditAbs (ri, ci, val) {
       if (!this.rawTable?.rows?.[ri]) return
       const prev = this.rawTable.rows[ri][ci]
@@ -625,7 +732,7 @@ export default {
       return { 'suspect-cell': suspectSet.has(ptIndex), 'edited-cell': edited, 'just-edited': !!pulse, 'editable-cell': true }
     },
 
-    /* ==== SIMA/名称ユーティリティ ==== */
+    /* ==== SIMA ==== */
     extractLotFromFileName () {
       try {
         const f = Array.isArray(this.file) ? this.file[0] : this.file
@@ -722,13 +829,6 @@ export default {
 
     fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
     close () { this.internal = false },
-    goNext () {
-      if (this.step===1) { if (this.file) this.step=2; return }
-      if (this.step===2) { if (this.rawTable.headers.length) this.step=3; return }
-      if (this.step===3) { this.rebuild(); this.step=4; return }
-      if (this.step===4) { this.step=5; return }
-      if (this.step===5) { this.close(); return }
-    },
 
     async onFileSelected () {
       this.previewUrl=''; this.isImage=true
@@ -746,72 +846,59 @@ export default {
 
 <style scoped>
 /* =========================================
-   KyusekiImportDialog: フルスタイル（動的高さ対応版）
-   - 全体スクロール禁止／表ラッパのみ縦スクロール（JSでmax-height算出）
-   - thead sticky、列幅固定、横スクロール対応
-   - 入力＝青／外れ値＝赤／編集済み＝淡緑
+   KyusekiImportDialog: Step2ローディング＋ROループ対策版
    ========================================= */
 
-/* 親レイアウト：全体はスクロールさせない */
-.oh3-dialog{height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.oh3-dialog{height:98vh;display:flex;flex-direction:column;overflow:hidden}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-4.pt-2{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
 .oh3-dialog .v-stepper-header{flex:0 0 auto}
 .oh3-dialog .v-stepper-window{flex:1 1 auto;min-height:0;overflow:hidden}
-.oh3-dialog .v-stepper-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;z-index:10}
-.step-host,.oh3-dialog .v-stepper-window-item > .pa-4{display:flex;flex-direction:column;min-height:0}
 
-/* Vuetify 親の overflow を無効化（子に委譲） */
+.oh3-dialog .v-stepper-actions{
+  position:sticky;bottom:0;z-index:10;background:#fff;border-top:1px solid #e5e7eb;
+  padding:12px 16px;display:flex;justify-content:space-between;gap:12px;
+}
+.oh3-action-btn{font-weight:700;min-width:140px;letter-spacing:.02em}
+
+.step-host,.oh3-dialog .v-stepper-window-item > .pa-4{display:flex;flex-direction:column;min-height:0}
+.fill-parent{flex:1 1 auto}
+.flex-col{display:flex;flex-direction:column}
+
 :deep(.v-overlay__content){ overflow:hidden !important; }
 :deep(.v-card-text){ overflow:visible !important; }
 
-/* JS が上書きする既定値（フォールバック） */
-:root{ --oh3-table-h: 420px; --tall-h: 300px; }
+:root{ --oh3-table-h: 460px; --tall-h: 320px; }
 
-/* 表だけスクロール（強制） */
 .table-host,.table-scroll,.table-fill{
-  display:block;
-  flex:1 1 auto;
-  min-height:200px;
-  max-height:var(--oh3-table-h);
-  overflow:auto !important;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable both-edges;
-  border:1px solid #e5e7eb; border-radius:8px; background:#fff;
+  display:block;flex:1 1 auto;min-height:200px;max-height:var(--oh3-table-h);
+  overflow:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
 
-/* テーブル体裁 */
 .oh3-simple{
   width:max(100%, 720px);
   border-collapse:collapse;
   table-layout:fixed;
   font-size:12.5px;
 }
+.oh3-simple.auto{ table-layout:auto; }
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
-.oh3-simple thead th{
-  position:sticky; top:0; z-index:2;
-  background:#f6f6f7;
-}
+.oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
 
-/* 入力（青） */
 .oh3-simple .cell-input{
-  width:100%; box-sizing:border-box;
-  padding:6px 8px;
-  border:none; outline:none; font:inherit;
+  width:100%; box-sizing:border-box; padding:6px 8px; border:none; outline:none; font:inherit;
   background:#dbeafe; color:#0f172a;
 }
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
-/* 外れ値（赤） */
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 
-/* 編集済みとパルス */
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
 @keyframes oh3PulseEdited{
@@ -820,14 +907,12 @@ export default {
   100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}
 }
 
-/* プレビュー／パネル */
 .pane{display:flex;flex-direction:column;min-height:0}
 .pane .pane-body{flex:1 1 auto;min-height:0;overflow:hidden}
 .preview-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
 .preview-grid>.tall{grid-row:1/span 2}
-.maplibre-host{width:100%;height:100%;min-height:220px;border:1px solid #e2e8f0;border-radius:8px}
+.maplibre-host{width:100%;height:100%;min-height:240px;border:1px solid #e2e8f0;border-radius:8px}
 
-/* 細部 */
 :deep(.v-card-title){padding:8px 12px}
 :deep(.v-card-text){padding:8px 12px}
 .big-steps :deep(.v-stepper-item__avatar){width:36px;height:36px;font-size:16px}
@@ -842,4 +927,7 @@ export default {
 .compact-text{padding-top:4px;padding-bottom:4px}
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
+
+.loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
+.lock-overlay :deep(.v-overlay__content){backdrop-filter: blur(1px)}
 </style>
