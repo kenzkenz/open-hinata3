@@ -403,7 +403,9 @@ export default {
       transitioning: false, compactFlow: true, showStep2Header: true,
 
       colw: { label: 44, x: 80, y: 80 },
-      colResize: { active:false, key:null, startX:0, startW:0 }
+      colResize: { active:false, key:null, startX:0, startW:0 },
+
+      ddSimaText: '',
     }
   },
   computed: {
@@ -955,12 +957,34 @@ export default {
       }catch(e){}
       this.simaInfo={name: name, size: size}
     },
+    // methods: { ... } の中に置く
+    async stageSimForOH3(name = 'kyuseki') {
+      // 1) SIMテキストを用意（既存の buildSIMAContent を利用）
+      const simText = this.buildSIMAContent();
+      if (!simText) throw new Error('SIMテキストが空です');
+
+      // 2) Shift-JIS へエンコード（Encoding.js があればSJIS、無ければUTF-8）
+      let bytes;        // Uint8Array
+      let decodeLabel;  // TextDecoder 用ラベル
+      if (window.Encoding) {
+        const u = window.Encoding.stringToCode(simText);
+        bytes = new Uint8Array(window.Encoding.convert(u, 'SJIS'));
+        decodeLabel = 'shift_jis';
+      } else {
+        // フォールバック（UTF-8）。SJISが必須なら Encoding.js を読み込んでください。
+        bytes = new TextEncoder().encode(simText);
+        decodeLabel = 'utf-8';
+      }
+      const fileName = `${name}.sim`;
+      const simFile = new File([bytes], fileName, { type: 'text/plain' });
+      this.$store.state.tiffAndWorldFile = [simFile];
+      const arrayBuffer = bytes.buffer.slice(0); // 転用
+      this.ddSimaText = new TextDecoder(decodeLabel).decode(arrayBuffer);
+    },
     async commit () {
       try { this.busy = true
-        // const name = (this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
-        // this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
-
-        await simaLoadForUser(this.$store.state.map01, true, this.buildSIMAContent(), this.s_zahyokei)
+        await this.stageSimForOH3()
+        await simaLoadForUser(this.$store.state.map01, true, this.ddSimaText, this.s_zahyokei)
       } finally { this.busy = false }
     },
   }
