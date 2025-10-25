@@ -197,22 +197,24 @@
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
                     <v-card-title class="py-2 d-flex align-center justify-space-between">
                       <span>座標プレビュー（編集可）</span>
-                      <div class="text-caption text-medium-emphasis d-flex align-center" style="gap:12px;">
-                        <v-chip size="small" color="warning" variant="tonal" v-if="(suspect.x.size + suspect.y.size) > 0">
-                          外れ値候補 {{ suspect.x.size + suspect.y.size }} 箇所
-                        </v-chip>
+                      <v-chip size="small" color="warning" variant="tonal" v-if="(suspect.x.size + suspect.y.size) > 0">
+                        外れ値候補 {{ suspect.x.size + suspect.y.size }} 箇所
+                      </v-chip>
+                    </v-card-title>
+                    <v-card-text class="pane-body">
+                      <!-- カード本文に凡例を移動（切れない・常に見える） -->
+                      <div class="legend-row text-caption text-medium-emphasis">
                         <span class="legend suspect"></span> 外れ値（セル）
                         <span class="legend edited"></span> 編集済み
                       </div>
-                    </v-card-title>
-                    <v-card-text class="pane-body">
-                      <div class="table-host">
-                        <table class="oh3-simple editable" style="width:max(100%, 720px);">
+
+                      <div class="table-host fill-100">
+                        <table class="oh3-simple editable coords-table" style="width:max(100%, 720px);">
                           <colgroup>
                             <col style="width:56px" />
-                            <col />
-                            <col />
-                            <col />
+                            <col class="col-label" />
+                            <col class="col-num" />
+                            <col class="col-num" />
                             <col style="width:28px" />
                           </colgroup>
                           <thead>
@@ -466,7 +468,6 @@ export default {
         rootEl.style.setProperty('--oh3-table-h', `${px}px`)
         this.roBusy = false
       }
-      // レイアウト変更は rAF 内で実行 → ループ回避
       requestAnimationFrame(updateVar)
 
       if (!this.ro) {
@@ -529,7 +530,6 @@ export default {
       if (this.step === 1) {
         if (!this.file) return
         if (this.compactFlow) {
-          // Step2を見せながら OCR 実行（ローディング表示＋ボタン無効）
           this.transitioning = true
           this.ocrError = ''
           this.showStep2Header = true
@@ -545,7 +545,6 @@ export default {
             this.step = 3
           } catch (e) {
             console.error(e); this.ocrError = String(e?.message || e)
-            // エラー時は Step2 に留めて再試行可能
           } finally {
             this.transitioning = false
             this.$nextTick(this.recalcTableMax)
@@ -846,10 +845,13 @@ export default {
 
 <style scoped>
 /* =========================================
-   KyusekiImportDialog: Step2ローディング＋ROループ対策版
+   KyusekiImportDialog（テーブル満杯化＋高さ拡張＋凡例位置調整）
    ========================================= */
 
-.oh3-dialog{height:98vh;display:flex;flex-direction:column;overflow:hidden}
+.oh3-dialog{
+  height:calc(100vh - 12px);
+  display:flex;flex-direction:column;overflow:hidden
+}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-4.pt-2{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
@@ -869,7 +871,8 @@ export default {
 :deep(.v-overlay__content){ overflow:hidden !important; }
 :deep(.v-card-text){ overflow:visible !important; }
 
-:root{ --oh3-table-h: 460px; --tall-h: 320px; }
+/* 初期の上限を少し高めに（実際は JS で上書きされる） */
+:root{ --oh3-table-h: 560px; --tall-h: 420px; }
 
 .table-host,.table-scroll,.table-fill{
   display:block;flex:1 1 auto;min-height:200px;max-height:var(--oh3-table-h);
@@ -877,6 +880,13 @@ export default {
   scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
 
+/* ★ 座標テーブル用：親の高さいっぱいに */
+.pane .pane-body > .table-host.fill-100{
+  height:100%;
+  max-height:none;
+}
+
+/* テーブル基本 */
 .oh3-simple{
   width:max(100%, 720px);
   border-collapse:collapse;
@@ -888,6 +898,7 @@ export default {
 .oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
 
+/* 入力 */
 .oh3-simple .cell-input{
   width:100%; box-sizing:border-box; padding:6px 8px; border:none; outline:none; font:inherit;
   background:#dbeafe; color:#0f172a;
@@ -896,9 +907,9 @@ export default {
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
+/* 外れ値/編集済み表示 */
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
-
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
 @keyframes oh3PulseEdited{
@@ -907,20 +918,22 @@ export default {
   100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}
 }
 
+/* レイアウト */
 .pane{display:flex;flex-direction:column;min-height:0}
 .pane .pane-body{flex:1 1 auto;min-height:0;overflow:hidden}
 .preview-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
 .preview-grid>.tall{grid-row:1/span 2}
 .maplibre-host{width:100%;height:100%;min-height:240px;border:1px solid #e2e8f0;border-radius:8px}
 
-:deep(.v-card-title){padding:8px 12px}
+/* タイトル/装飾 */
+:deep(.v-card-title){padding:8px 12px; flex-wrap:wrap;}
 :deep(.v-card-text){padding:8px 12px}
 .big-steps :deep(.v-stepper-item__avatar){width:36px;height:36px;font-size:16px}
 .map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch{align-self:flex-start;max-width:260px}
-.no-stretch :deep(.v-field){height:50px}
+.no-stretch :deep(.v-field){height:50px} /* ← 既定どおり */
 .no-stretch :deep(.v-input){flex:0 0 auto !important}
 .preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
@@ -928,6 +941,22 @@ export default {
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
 
+/* 凡例（本文内） */
+.legend-row{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.legend{ display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle }
+.legend.suspect{ background:#ffd6d6; border:1px solid #ff4d4f }
+.legend.edited{ background:#e7f6e7; border:1px solid #7fbf7f }
+
+/* 座標テーブルの“自然な”幅配分 */
+.coords-table{ table-layout:auto; }
+.coords-table .col-label{ min-width:180px; }
+.coords-table .col-num{ width:140px; }
+@media (max-width: 960px){
+  .coords-table .col-label{ min-width:160px; }
+  .coords-table .col-num{ width:120px; }
+}
+
+/* ローダ/ロック */
 .loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
 .lock-overlay :deep(.v-overlay__content){backdrop-filter: blur(1px)}
 </style>
