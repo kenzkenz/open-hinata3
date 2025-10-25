@@ -4,6 +4,7 @@
       max-width="1440"
       scrollable
       transition="dialog-bottom-transition"
+      persistent
   >
     <v-card class="oh3-dialog" ref="dialogRoot" @keydown="onLocalKeyDown">
       <v-card-title class="d-flex align-center justify-space-between">
@@ -305,7 +306,7 @@
                     />
                   </div>
                   <div class="d-flex align-center gap-3">
-                    <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
+<!--                    <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>-->
                     <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
@@ -937,7 +938,7 @@ export default {
       this.points.forEach((p,i)=>{ const label=(p.label && String(p.label).length)?String(p.label):String(i+1)
         L.push('A01,' + String(i+1) + ',' + label + ',' + Number(p.x).toFixed(3) + ',' + Number(p.y).toFixed(3) + ',0,') })
       L.push('A99,')
-      L.push('Z00,区画データ,'); L.push('D00,1,' + lot + ',1,')
+      L.push('Z00,区画データ,'); L.push('D00,1,' + '' + ',1,')
       this.points.forEach((p,i)=>{ const label=(p.label && String(p.label).length)?String(p.label):String(i+1); L.push('B01,' + String(i+1) + ',' + label + ',') })
       L.push('D99,'); L.push('A99,END')
       return L.join('\n')
@@ -958,11 +959,10 @@ export default {
       this.simaInfo={name: name, size: size}
     },
     // methods: { ... } の中に置く
-    async stageSimForOH3(name = 'kyuseki') {
+    async stageSimForOH3() {
       // 1) SIMテキストを用意（既存の buildSIMAContent を利用）
       const simText = this.buildSIMAContent();
       if (!simText) throw new Error('SIMテキストが空です');
-
       // 2) Shift-JIS へエンコード（Encoding.js があればSJIS、無ければUTF-8）
       let bytes;        // Uint8Array
       let decodeLabel;  // TextDecoder 用ラベル
@@ -975,7 +975,7 @@ export default {
         bytes = new TextEncoder().encode(simText);
         decodeLabel = 'utf-8';
       }
-      const fileName = `${name}.sim`;
+      const fileName = `${this.s_gazoName}.sim`;
       const simFile = new File([bytes], fileName, { type: 'text/plain' });
       this.$store.state.tiffAndWorldFile = [simFile];
       const arrayBuffer = bytes.buffer.slice(0); // 転用
@@ -985,7 +985,10 @@ export default {
       try { this.busy = true
         await this.stageSimForOH3()
         await simaLoadForUser(this.$store.state.map01, true, this.ddSimaText, this.s_zahyokei)
-      } finally { this.busy = false }
+      } finally {
+        this.close()
+        this.busy = false
+      }
     },
   }
 }
