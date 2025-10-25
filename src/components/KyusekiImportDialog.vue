@@ -313,6 +313,9 @@
                                 :items="crsChoices" item-title="title" item-value="value"
                                 label="公共座標系" variant="outlined" density="compact" :disabled="disableAll" />
                       <v-btn :disabled="disableAll" @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
+                      <v-card-text class="compact-text pane-body" style="color: red">
+                        注！座標が不正のまま「次へ」に進まないでください。異常値があるときは左の「座標プレビュー」で修正してください。
+                      </v-card-text>
                     </v-card-text>
                   </v-card>
                 </div>
@@ -350,7 +353,7 @@
                     />
                   </div>
                   <div class="d-flex align-center gap-3">
-                    <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
+                    <v-btn size="large" color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">OH3に取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
                 </div>
