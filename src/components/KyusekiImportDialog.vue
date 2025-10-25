@@ -93,10 +93,7 @@
 
                 <!-- ★ 複数表切替（Step2） -->
                 <div v-if="rawTables.length > 1" class="mb-2">
-                  <v-chip-group
-                      v-model="selectedTable"
-                      mandatory
-                  >
+                  <v-chip-group v-model="selectedTable" mandatory>
                     <v-chip
                         v-for="(t, idx) in rawTables"
                         :key="'tbl2-' + idx"
@@ -165,10 +162,7 @@
 
                   <!-- ★ 複数表切替（Step3） -->
                   <div v-if="rawTables.length > 1" class="mb-2">
-                    <v-chip-group
-                        v-model="selectedTable"
-                        mandatory
-                    >
+                    <v-chip-group v-model="selectedTable" mandatory>
                       <v-chip
                           v-for="(t, idx) in rawTables"
                           :key="'tbl3-' + idx"
@@ -247,39 +241,39 @@
                         <table class="oh3-simple editable coords-table">
                           <colgroup>
                             <col class="col-index" />
-                            <col class="col-label" :style="{width: colw.label + 'px'}" />
-                            <col class="col-num"   :style="{width: colw.x + 'px'}" />
-                            <col class="col-num"   :style="{width: colw.y + 'px'}" />
+                            <col class="col-label" />
+                            <col class="col-num" />
+                            <col class="col-num" />
                             <col style="width:20px" />
                           </colgroup>
                           <thead>
                           <tr>
                             <th>#</th>
-                            <th>点名 <span class="th-grip" data-resize="label"></span></th>
-                            <th>X   <span class="th-grip" data-resize="x"></span></th>
-                            <th>Y   <span class="th-grip" data-resize="y"></span></th>
+                            <th>点名</th>
+                            <th>X</th>
+                            <th>Y</th>
                             <th></th>
                           </tr>
                           </thead>
                           <tbody>
                           <tr v-for="(p,i) in points" :key="`p${i}`">
-                            <td>{{ i+1 }}</td>
+                            <td class="index-cell">{{ i+1 }}</td>
                             <td :class="cellClass(i,'label')">
-                              <input class="cell-input" :value="p.label ?? (i+1)"
+                              <input class="cell-input tight" :value="p.label ?? (i+1)"
                                      :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'label', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'x')">
-                              <input class="cell-input num" :value="p.rawX" inputmode="decimal"
+                              <input class="cell-input num tight" :value="p.rawX" inputmode="decimal"
                                      :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'x', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'y')">
-                              <input class="cell-input num" :value="p.rawY" inputmode="decimal"
+                              <input class="cell-input num tight" :value="p.rawY" inputmode="decimal"
                                      :disabled="disableAll"
                                      @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'y', $event.target.value)"
@@ -313,7 +307,7 @@
                                 :items="crsChoices" item-title="title" item-value="value"
                                 label="公共座標系" variant="outlined" density="compact" :disabled="disableAll" />
                       <v-btn :disabled="disableAll" @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
-                      <!-- 置き換え（Step4 内の警告行） -->
+                      <!-- 外れ値警告：外れ値が1つでもあれば表示、無くなれば非表示 -->
                       <v-card-text v-if="hasOutliers" class="compact-text pane-body" style="color: red">
                         注！座標が不正のまま「次へ」に進まないでください。異常値があるときは左の「座標プレビュー」で修正してください。
                       </v-card-text>
@@ -367,7 +361,6 @@
                     </div>
                   </div>
 
-
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
                 </div>
                 <div class="text-medium-emphasis" v-else>先に再構成してください。</div>
@@ -380,7 +373,7 @@
               <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="secondary" :disabled="step<=1 || disableAll" @click="step--">戻る</v-btn>
             </template>
             <template #next>
-              <!-- 置き換え（v-stepper-actions の #next 内） -->
+              <!-- 最終ステップでは完全に無効 -->
               <v-btn
                   size="x-large"
                   class="oh3-action-btn"
@@ -475,9 +468,6 @@ export default {
       tableMaxPx: 640,
       transitioning: false, compactFlow: true, showStep2Header: true,
 
-      colw: { label: 44, x: 80, y: 80 },
-      colResize: { active:false, key:null, startX:0, startW:0 },
-
       ddSimaText: '',
     }
   },
@@ -513,8 +503,7 @@ export default {
         this.$nextTick(async () => {
           try {
             await this.initMapLibre()
-            this.loadColWidths()
-            this.installColResizer()
+            // （列幅リサイズ系は撤去）
             if (!this.columnRoles || this.columnRoles.length === 0) {
               this.autoMapRoles()
             }
@@ -525,16 +514,11 @@ export default {
         })
       }
     },
-    // ★ ここで一元管理：クリックで v-model が変われば自動で切替
     selectedTable (v) {
       const idx = Number.isFinite(v) ? v : Number(v)
       if (!Number.isFinite(idx)) return
-      if (idx === this.selectedTable) {
-        // 文字列→数値の揺れだけ補正
-        this.selectedTable = idx
-      }
+      if (idx === this.selectedTable) this.selectedTable = idx
       if (idx < 0 || idx >= this.rawTables.length) return
-      // 実テーブル差し替え
       this.attachActiveTable()
       if (!this.columnRoles || this.columnRoles.length === 0) this.autoMapRoles()
       this.rebuild()
@@ -602,7 +586,6 @@ export default {
         this.historyPtr = -1
 
         this.tableMaxPx = 640
-        this.colResize = { active:false, key:null, startX:0, startW:0 }
       } catch (e) {
         console.warn('resetAll failed', e)
       }
@@ -753,7 +736,6 @@ export default {
       const text = await r.text(); let json; try { json = JSON.parse(text) } catch { json = null }
       if (!r.ok) throw new Error((json && json.error) || (json && json.detail) || ('HTTP ' + String(r.status)))
       if (!json || !json.ok) throw new Error((json && json.error) || 'Cloud OCR failed')
-      // ★ 複数表・単一表どちらにも対応
       if (Array.isArray(json?.tables) && json.tables.length) {
         const tables = json.tables.map(t => ({ headers: t.headers || [], rows: t.rows || [] }))
         return { tables, meta: json.meta || null }
@@ -994,61 +976,13 @@ export default {
 
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
 
-    /* ===== 列幅保存/復元＋ドラッグ ===== */
-    loadColWidths () {
-      try {
-        const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
-        const clamp = function(v,min,max){ return Math.min(max, Math.max(min, v|0)) }
-        if (saved && typeof saved==='object') {
-          this.colw.label = clamp(saved.label != null ? saved.label : this.colw.label, 32, 420)
-          this.colw.x     = clamp(saved.x     != null ? saved.x     : this.colw.x,     64,  260)
-          this.colw.y     = clamp(saved.y     != null ? saved.y     : this.colw.y,     64,  260)
-        }
-      } catch (e) {}
-    },
-    saveColWidths () { localStorage.setItem('oh3_coords_colw_v1', JSON.stringify(this.colw)) },
-    installColResizer () {
-      const host = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
-      if (!host) return
-      const table = host.querySelector('table.coords-table')
-      if (!table) return
-      const onMove = (e) => {
-        if (!this.colResize.active) return
-        const dx = e.clientX - this.colResize.startX
-        const key = this.colResize.key
-        const min = key==='label' ? 32 : 64
-        const max = key==='label' ? 420 : 260
-        this.colw[key] = Math.min(max, Math.max(min, this.colResize.startW + dx))
-      }
-      const onUp = () => {
-        if (!this.colResize.active) return
-        this.colResize.active = false
-        window.removeEventListener('mousemove', onMove, true)
-        window.removeEventListener('mouseup', onUp, true)
-        this.saveColWidths()
-      }
-      table.querySelectorAll('.th-grip').forEach((grip) => {
-        grip.onmousedown = (e) => {
-          const key = grip.dataset.resize
-          if (!key) return
-          e.preventDefault()
-          this.colResize.active = true
-          this.colResize.key = key
-          this.colResize.startX = e.clientX
-          this.colResize.startW = this.colw[key]
-          window.addEventListener('mousemove', onMove, true)
-          window.addEventListener('mouseup', onUp, true)
-        }
-      })
-    },
-
     /* ==== SIMA ==== */
     baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
     extractLotFromFileName () { try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const n=f && f.name || ''; const m=String(n).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch(e){return '000-0'} },
     resolveProjectName () { return this.jobId ? 'oh3-job-' + String(this.jobId) : 'open-hinata3' },
     buildSIMAContent () {
       if (!this.points.length) return ''
-      const prj = this.resolveProjectName(), lot = this.extractLotFromFileName(), L = []
+      const prj = this.resolveProjectName(), L = []
       L.push('G00,01,' + prj + ',')
       L.push('Z00,座標ﾃﾞｰﾀ,,'); L.push('A00,')
       this.points.forEach((p,i)=>{ const label=(p.label && String(p.label).length)?String(p.label):String(i+1)
@@ -1162,8 +1096,15 @@ export default {
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
 .oh3-simple thead th{ position:sticky; top:0; z-index:3; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
-.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:2px 4px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
+.oh3-simple .cell-input{
+  width:100%;box-sizing:border-box;
+  padding:0 2px; /* ← 余白を極小化 */
+  border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;
+  line-height:1.2; height:18px; /* 高さもぎゅっと */
+  font-size:11px; /* 文字も少しだけ小さく */
+}
 .oh3-simple .cell-input.num{ text-align:right }
+.oh3-simple .cell-input.tight{ padding:0 1px; }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
@@ -1194,17 +1135,12 @@ export default {
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
 
-/* ★ 座標テーブルの極狭列 */
-.coords-table{ table-layout:auto; }
-.coords-table .col-index{ width:22px; min-width:20px; }
-.coords-table .col-label{ width:44px; min-width:32px; }
-.coords-table .col-num{   width:80px; min-width:64px; }
-
-/* ドラッグ用グリップ */
-.coords-table thead th{ position:relative; }
-.coords-table thead th .th-grip{ position:absolute; right:-4px; top:0; bottom:0; width:8px; cursor:col-resize; background: transparent; }
-.coords-table thead th .th-grip::after{ content:''; position:absolute; left:3px; top:25%; bottom:25%; width:2px; border-radius:1px; background:rgba(0,0,0,.08); }
-.coords-table thead th:hover .th-grip::after{ background:rgba(0,0,0,.18); }
+/* ★ 座標テーブルの極狭列（番号は“とても狭く固定”／点名・X・Yは“常時同幅で極狭”） */
+.coords-table{ table-layout:fixed; }          /* ← 幅指定を厳守させる */
+.coords-table .col-index{ width:16px; min-width:16px; max-width:16px; } /* とても狭く不変 */
+.coords-table .col-label{ width:28px; min-width:28px; max-width:28px; } /* 同幅・極狭 */
+.coords-table .col-num{   width:28px; min-width:28px; max-width:28px; } /* 同幅・極狭 */
+.index-cell{ text-align:center; padding:0 2px; }
 
 /* ローダ/ロック */
 .loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
@@ -1235,4 +1171,34 @@ export default {
   padding: 10px 14px; border-radius: 10px;
   background: #fdecec; color: #7a1d1d; border: 1px solid #f8c8c8;
 }
+
+/* ★ 座標テーブル（Step4のみ存在）を現在の幅の二分の一に */
+.coords-table{ table-layout:fixed; }
+
+/* 番号（#）：22px -> 11px（min 20 -> 10） */
+.coords-table .col-index{
+  width:11px;
+  min-width:10px;
+}
+
+/* 点名：44px -> 22px（min 32 -> 16） */
+.coords-table .col-label{
+  width:22px;
+  min-width:16px;
+}
+
+/* X / Y：80px -> 40px（min 64 -> 32） */
+.coords-table .col-num{
+  width:40px;
+  min-width:32px;
+}
+
+/* 入力の行高/余白も半分寄せ（座標テーブルだけ） */
+.coords-table .cell-input{
+  height:18px;
+  line-height:1.15;
+  padding:0 2px;
+  font-size:11px;
+}
+
 </style>
