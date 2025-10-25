@@ -342,20 +342,32 @@
               <div class="pa-3 step-host">
                 <div v-if="points.length">
                   <v-alert type="info" color="primary" variant="tonal" class="mb-2">{{ points.length }} 点を処理します。</v-alert>
-                  <div class="d-flex align-center gap-3 mb-2">
-                    <v-text-field
-                        v-model="s_gazoName"
-                        label="OH3へ取り込む名前"
-                        :disabled="disableAll"
-                        variant="outlined"
-                        density="comfortable"
-                        hide-details
-                        style="max-width:420px"
-                    />
+
+                  <div class="d-flex justify-center" style="margin-top: 60px; margin-bottom: 30px;">
+                    <div class="d-inline-flex align-center" style="gap:8px;">
+                      <v-text-field
+                          v-model="s_gazoName"
+                          label="OH3へ取り込む名前"
+                          :disabled="disableAll"
+                          variant="outlined"
+                          density="comfortable"
+                          hide-details
+                          style="flex:0 0 auto; width: 240px;"
+                      />
+                      <v-btn
+                          size="large"
+                          color="primary"
+                          :loading="busy"
+                          :disabled="disableAll"
+                          prepend-icon="mdi-database-import"
+                          @click="commit"
+                      >
+                        OH3に取り込み実行
+                      </v-btn>
+                    </div>
                   </div>
-                  <div class="d-flex align-center gap-3">
-                    <v-btn size="large" color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">OH3に取り込み実行</v-btn>
-                  </div>
+
+
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
                 </div>
                 <div class="text-medium-emphasis" v-else>先に再構成してください。</div>
