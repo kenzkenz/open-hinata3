@@ -282,7 +282,7 @@
                   <div class="d-flex align-center gap-3 mb-2">
                     <v-text-field
                         v-model="importName"
-                        label="OH5へ放り込む名前（拡張子不要）"
+                        label="OH3へ取り込む名前"
                         :disabled="disableAll"
                         variant="outlined"
                         density="comfortable"
