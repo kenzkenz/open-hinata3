@@ -22,7 +22,6 @@
       <v-progress-linear v-if="transitioning" :indeterminate="true" color="primary" height="4" />
 
       <div class="px-3 pt-2 pb-0">
-        <!-- ステッパー極小化 -->
         <v-stepper v-model="step" flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" />
@@ -186,13 +185,13 @@
                     <v-card-title class="py-2">座標プレビュー（編集可）</v-card-title>
                     <v-card-text class="pane-body">
                       <div class="table-host">
-                        <table class="oh3-simple editable coords-table" style="width:max(100%, 720px);">
+                        <table class="oh3-simple editable coords-table">
                           <colgroup>
                             <col class="col-index" />
                             <col class="col-label" :style="{width: colw.label + 'px'}" />
                             <col class="col-num"   :style="{width: colw.x + 'px'}" />
                             <col class="col-num"   :style="{width: colw.y + 'px'}" />
-                            <col style="width:24px" />
+                            <col style="width:20px" />
                           </colgroup>
                           <thead>
                           <tr>
@@ -390,7 +389,7 @@ export default {
       tableMaxPx: 640,
       transitioning: false, compactFlow: true, showStep2Header: true,
 
-      colw: { label: 56, x: 90, y: 90 },
+      colw: { label: 44, x: 80, y: 80 },
       colResize: { active:false, key:null, startX:0, startW:0 }
     }
   },
@@ -418,7 +417,7 @@ export default {
             this.loadColWidths()
             this.installColResizer()
             this.autoMapRoles()
-            this.rebuild()                 // ← ここで存在
+            this.rebuild()
             await this.ensureMapLoaded()
             await this.renderPreviewOnMap()
           } catch (e) { console.error(e) }
@@ -437,7 +436,7 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ===== 高さ再計算（親いっぱい） ===== */
+    /* ===== 高さ再計算（親いっぱい・上限付き） ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -453,9 +452,10 @@ export default {
 
       const updateVar = () => {
         const hostRect = host.getBoundingClientRect()
-        const tall = Math.max(620, Math.floor(hostRect.height - 8))
+        const hostH = hostRect.height
+        const tall = Math.min(900, Math.max(560, Math.floor(hostH - 8)))
         rootEl.style.setProperty('--tall-h', `${tall}px`)
-        const tablePx = Math.max(360, tall - 60)
+        const tablePx = Math.max(300, tall - 80)
         this.tableMaxPx = tablePx
         rootEl.style.setProperty('--oh3-table-h', `${tablePx}px`)
         this.roBusy = false
@@ -470,7 +470,7 @@ export default {
       }
     },
 
-    /* ===== Undo（常時有効） ===== */
+    /* ===== Undo ===== */
     installGlobalUndo () {
       this._undoHandler = (e) => {
         if (!this.internal) return
@@ -535,7 +535,7 @@ export default {
       if (this.step === 5) { this.close(); return }
     },
 
-    /* ===== OCR 実行（手動） ===== */
+    /* ===== OCR 実行 ===== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
@@ -563,12 +563,7 @@ export default {
     },
 
     /* ===== 列マッピング ===== */
-    normHeader (s) {
-      if (!s) return ''
-      return s.normalize('NFKC').replace(/\s+/g,'')
-          .replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'')
-          .replace(/\[/g,'').replace(/\]/g,'').toLowerCase()
-    },
+    normHeader (s) { if (!s) return ''; return s.normalize('NFKC').replace(/\s+/g,'').replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'').replace(/\[|\]/g,'').toLowerCase() },
     guessRoleFromHeader (h) {
       const t = (h||'').trim().toLowerCase()
       if (/^(x|xn)\b/.test(t) || /(x座標|東距|東\b|e\b)/.test(t)) return 'x'
@@ -604,7 +599,7 @@ export default {
       }
     },
 
-    /* ===== points 再構成／検算（★追加） ===== */
+    /* ===== points 再構成／検算 ===== */
     rebuild () {
       this.buildError=''; this.points=[]
       try {
@@ -768,9 +763,9 @@ export default {
         const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
         const clamp = (v,min,max)=>Math.min(max,Math.max(min, v|0))
         if (saved && typeof saved==='object') {
-          this.colw.label = clamp(saved.label ?? this.colw.label, 36, 420)
-          this.colw.x     = clamp(saved.x     ?? this.colw.x,     72,  260)
-          this.colw.y     = clamp(saved.y     ?? this.colw.y,     72,  260)
+          this.colw.label = clamp(saved.label ?? this.colw.label, 32, 420)
+          this.colw.x     = clamp(saved.x     ?? this.colw.x,     64,  260)
+          this.colw.y     = clamp(saved.y     ?? this.colw.y,     64,  260)
         }
       } catch {}
     },
@@ -784,7 +779,7 @@ export default {
         if (!this.colResize.active) return
         const dx = e.clientX - this.colResize.startX
         const key = this.colResize.key
-        const min = key==='label' ? 36 : 72
+        const min = key==='label' ? 32 : 64
         const max = key==='label' ? 420 : 260
         this.colw[key] = Math.min(max, Math.max(min, this.colResize.startW + dx))
       }
@@ -842,8 +837,7 @@ export default {
       this.simaInfo={name, size}
     },
     async commit () {
-      try {
-        this.busy = true
+      try { this.busy = true
         const name = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
         this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
       } finally { this.busy = false }
@@ -854,9 +848,12 @@ export default {
 
 <style scoped>
 /* =========================================
-   KyusekiImportDialog（編集領域最大化版）
+   KyusekiImportDialog（編集領域最大化＋上限）
    ========================================= */
-.oh3-dialog{height:calc(100vh - 2px);display:flex;flex-direction:column;overflow:hidden}
+.oh3-dialog{
+  height:min(96vh, 980px);   /* ★ 1920×1080でもOKな上限 */
+  display:flex;flex-direction:column;overflow:hidden
+}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-3.pt-2.pb-0{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
@@ -886,21 +883,26 @@ export default {
 
 .pane{display:flex;flex-direction:column;min-height:0}
 .pane .pane-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+
+/* ★ スクロールは常にこの要素 */
 .table-host{
+  position:relative;
   flex:1 1 auto;
-  min-height:240px;
-  height:auto;
-  overflow:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  min-height:180px;
+  height:var(--oh3-table-h);
+  max-height:var(--oh3-table-h);
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
 
-/* Table */
-.oh3-simple{width:max(100%, 720px);border-collapse:collapse;table-layout:fixed;font-size:12.5px;}
+/* 共通テーブル */
+.oh3-simple{width:max(100%, 640px);border-collapse:collapse;table-layout:fixed;font-size:12.5px;}
 .oh3-simple.auto{ table-layout:auto; }
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
-.oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
+.oh3-simple thead th{ position:sticky; top:0; z-index:3; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
-.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:4px 6px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
+.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:2px 4px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
@@ -937,11 +939,11 @@ export default {
 .file-compact :deep(.v-field){height:44px}
 .file-compact :deep(.v-field__input){padding-top:6px;padding-bottom:6px}
 
-/* 列幅（極小化） */
+/* ★ 座標テーブルの極狭列 */
 .coords-table{ table-layout:auto; }
-.coords-table .col-index{ width:28px; min-width:24px; }
-.coords-table .col-label{ width:56px; min-width:36px; }
-.coords-table .col-num{   width:90px; min-width:72px; }
+.coords-table .col-index{ width:22px; min-width:20px; }
+.coords-table .col-label{ width:44px; min-width:32px; }
+.coords-table .col-num{   width:80px; min-width:64px; }
 
 /* ドラッグ用グリップ */
 .coords-table thead th{ position:relative; }
