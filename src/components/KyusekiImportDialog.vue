@@ -22,17 +22,18 @@
       <v-progress-linear v-if="transitioning" :indeterminate="true" color="primary" height="4" />
 
       <div class="px-3 pt-2 pb-0">
-        <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
+        <!-- ステッパー極小化 -->
+        <v-stepper v-model="step" flat color="primary" class="big-steps">
           <v-stepper-header>
-            <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
+            <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" />
             <v-divider v-if="!compactFlow || showStep2Header" />
-            <v-stepper-item v-if="!compactFlow || showStep2Header" color="primary" :complete="step>2" :value="2" title="OCR" subtitle="Form Parser（Cloud）" />
+            <v-stepper-item v-if="!compactFlow || showStep2Header" color="primary" :complete="step>2" :value="2" title="OCR" />
             <v-divider />
-            <v-stepper-item color="primary" :complete="step>(compactFlow?2:3)" :value="3" title="列マッピング" subtitle="X/Y/点名" />
+            <v-stepper-item color="primary" :complete="step>(compactFlow?2:3)" :value="3" title="列マッピング" />
             <v-divider />
-            <v-stepper-item color="primary" :complete="step>(compactFlow?3:4)" :value="4" title="プレビュー・検算" subtitle="閉合/面積＋地図" />
+            <v-stepper-item color="primary" :complete="step>(compactFlow?3:4)" :value="4" title="プレビュー・検算" />
             <v-divider />
-            <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH5へ反映" />
+            <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" />
           </v-stepper-header>
 
           <v-stepper-window>
@@ -187,7 +188,7 @@
                       <div class="table-host">
                         <table class="oh3-simple editable coords-table" style="width:max(100%, 720px);">
                           <colgroup>
-                            <col style="width:44px" />
+                            <col class="col-index" />
                             <col class="col-label" :style="{width: colw.label + 'px'}" />
                             <col class="col-num"   :style="{width: colw.x + 'px'}" />
                             <col class="col-num"   :style="{width: colw.y + 'px'}" />
@@ -279,8 +280,6 @@
               <div class="pa-3 step-host">
                 <div v-if="points.length">
                   <v-alert type="info" color="primary" variant="tonal" class="mb-2">{{ points.length }} 点を処理します。</v-alert>
-
-                  <!-- ★ 取り込み名（OH5へ放り込む名前） -->
                   <div class="d-flex align-center gap-3 mb-2">
                     <v-text-field
                         v-model="importName"
@@ -292,7 +291,6 @@
                         style="max-width:420px"
                     />
                   </div>
-
                   <div class="d-flex align-center gap-3">
                     <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
                     <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
@@ -392,8 +390,7 @@ export default {
       tableMaxPx: 640,
       transitioning: false, compactFlow: true, showStep2Header: true,
 
-      /* 列幅（さらにコンパクトに） */
-      colw: { label: 72, x: 96, y: 96 },
+      colw: { label: 56, x: 90, y: 90 },
       colResize: { active:false, key:null, startX:0, startW:0 }
     }
   },
@@ -415,22 +412,22 @@ export default {
     step () {
       this.$nextTick(this.recalcTableMax)
       if (this.step===4) {
-        this.$nextTick(()=> {
-          this.initMapLibre()
-          this.loadColWidths()
-          this.installColResizer()
-          // ★ STEP4 へ来たら自動でマッピング→再構成
-          try { this.autoMapRoles(); this.rebuild() } catch {}
+        this.$nextTick(async () => {
+          try {
+            await this.initMapLibre()
+            this.loadColWidths()
+            this.installColResizer()
+            this.autoMapRoles()
+            this.rebuild()                 // ← ここで存在
+            await this.ensureMapLoaded()
+            await this.renderPreviewOnMap()
+          } catch (e) { console.error(e) }
         })
       }
     }
   },
   mounted () {
-    if (this.step===4) {
-      this.initMapLibre()
-      this.loadColWidths()
-      this.installColResizer()
-    }
+    if (this.step===4) { this.initMapLibre() }
     this.installGlobalUndo()
     this.$nextTick(this.recalcTableMax)
   },
@@ -440,7 +437,7 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ===== 高さ再計算（親に目一杯） ===== */
+    /* ===== 高さ再計算（親いっぱい） ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -456,13 +453,11 @@ export default {
 
       const updateVar = () => {
         const hostRect = host.getBoundingClientRect()
-        // 余白を極小化してテーブル/パネル高さを最大化
-        const px = Math.max(240, Math.floor(hostRect.height - 8))
-        this.tableMaxPx = px
-        rootEl.style.setProperty('--oh3-table-h', `${px}px`)
-        // ★ プレビュー格子の縦基準も親高さから算出して拡大
-        const tall = Math.max(520, Math.floor(hostRect.height - 32))
+        const tall = Math.max(620, Math.floor(hostRect.height - 8))
         rootEl.style.setProperty('--tall-h', `${tall}px`)
+        const tablePx = Math.max(360, tall - 60)
+        this.tableMaxPx = tablePx
+        rootEl.style.setProperty('--oh3-table-h', `${tablePx}px`)
         this.roBusy = false
       }
       requestAnimationFrame(updateVar)
@@ -481,37 +476,23 @@ export default {
         if (!this.internal) return
         if (e.isComposing) return
         if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-          e.preventDefault()
-          this.undo()
+          e.preventDefault(); this.undo()
         }
       }
       window.addEventListener('keydown', this._undoHandler, true)
     },
-    uninstallGlobalUndo () {
-      if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true)
-      this._undoHandler = null
-    },
-    onLocalKeyDown (e) {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault(); this.undo()
-      }
-    },
+    uninstallGlobalUndo () { if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true); this._undoHandler = null },
+    onLocalKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
 
     /* ===== OCR後のクリーンアップ ===== */
     postCleanTable () {
       if (!this.rawTable?.rows) return
       const headers = (this.rawTable.headers || []).map(fixCell)
       const rowsRaw = (this.rawTable.rows || []).map(r => (r || []).map(fixCell))
-
       const nonEmptyRows = rowsRaw.filter(r => r.some(c => c && c.length))
       const colCount = Math.max(headers.length, ...nonEmptyRows.map(r => r.length))
-      const rows = nonEmptyRows.map(r => {
-        const a = r.slice(0, colCount)
-        while (a.length < colCount) a.push('')
-        return a
-      })
+      const rows = nonEmptyRows.map(r => { const a = r.slice(0, colCount); while (a.length < colCount) a.push(''); return a })
       while (headers.length < colCount) headers.push('')
-
       const keepCols = []
       for (let i=0;i<colCount;i++){
         const filled = rows.filter(r => (r[i]||'').length>0).length
@@ -546,9 +527,7 @@ export default {
             this.$nextTick(this.recalcTableMax)
           }
           return
-        } else {
-          this.step = 2; return
-        }
+        } else { this.step = 2; return }
       }
       if (this.step === 2) { if (this.rawTable.headers.length) { this.step = 3; return } return }
       if (this.step === 3) { this.rebuild(); this.step = 4; return }
@@ -567,15 +546,13 @@ export default {
         this.postCleanTable()
         this.autoMapRoles()
         if (this.step<3) this.step=3
-      } catch (e) {
-        console.error(e); this.ocrError=String(e.message||e)
-      } finally { this.busy=false }
+      } catch (e) { console.error(e); this.ocrError=String(e.message||e) }
+      finally { this.busy=false }
     },
     async runCloudOCR (file) {
       const f = Array.isArray(file) ? file[0] : file
       if (!f) throw new Error('ファイルが選択されていません')
-      const base = import.meta?.env?.VITE_DOCAI_NODE_URL
-          || 'https://oh3-docai-api-node-531336516229.asia-northeast1.run.app'
+      const base = import.meta?.env?.VITE_DOCAI_NODE_URL || 'https://oh3-docai-api-node-531336516229.asia-northeast1.run.app'
       const form = new FormData(); form.append('file', f, f?.name || 'upload')
       const url = `${base}/api/docai_form_parser`
       const r = await fetch(url, { method: 'POST', body: form })
@@ -609,15 +586,8 @@ export default {
     },
 
     /* ===== Undo ===== */
-    onEditKeyDown (e) {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault(); this.undo()
-      }
-    },
-    pushHistory (rec) {
-      if (this.historyPtr < this.history.length - 1) this.history = this.history.slice(0, this.historyPtr + 1)
-      this.history.push(rec); this.historyPtr = this.history.length - 1
-    },
+    onEditKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
+    pushHistory (rec) { if (this.historyPtr < this.history.length - 1) this.history = this.history.slice(0, this.historyPtr + 1); this.history.push(rec); this.historyPtr = this.history.length - 1 },
     undo () {
       if (this.historyPtr < 0) return
       const rec = this.history[this.historyPtr]; this.historyPtr--
@@ -634,32 +604,18 @@ export default {
       }
     },
 
-    /* ===== rawTable 直接編集 ===== */
-    onRawCellEditAbs (ri, ci, val) {
-      if (!this.rawTable?.rows?.[ri]) return
-      const prev = this.rawTable.rows[ri][ci]
-      const cleaned = fixCell(val)
-      if (prev === cleaned) return
-      this.pushHistory({ type:'raw', ri, ci, prev, next: cleaned })
-      this.rawTable.rows[ri][ci] = cleaned
-      const roles = this.mapColumnsObject()
-      if (ci === roles.x || ci === roles.y || ci === roles.label) this.rebuild()
-    },
-
-    /* ===== points 再構成／検算／外れ値 ===== */
+    /* ===== points 再構成／検算（★追加） ===== */
     rebuild () {
       this.buildError=''; this.points=[]
       try {
-        const rows = this.rawTable.rows
+        const rows = this.rawTable.rows || []
         const roles = this.mapColumnsObject()
-
         const usable = rows.map((r,ri)=>{
           const x = (roles.x!=null) ? this.parseNumber(r[roles.x]) : NaN
           const y = (roles.y!=null) ? this.parseNumber(r[roles.y]) : NaN
           const label = (roles.label!=null) ? String(r[roles.label]||'').trim() : undefined
           return { ri, x, y, label }
         }).filter(o => Number.isFinite(o.x) && Number.isFinite(o.y))
-
         if (usable.length < 3) throw new Error('数値の X/Y を持つ行が3つ未満です。列マッピングや表の行を確認してください。')
 
         this.points = usable.map((o,i) => ({ x:o.x, y:o.y, label:o.label || String(i+1), sourceRow:o.ri }))
@@ -670,7 +626,7 @@ export default {
         this.closure = { dx, dy, len: Math.hypot(dx,dy) }
 
         this.markSuspects()
-        if (this.map) this.renderPreviewOnMap()
+        if (this.map?.isStyleLoaded?.()) this.renderPreviewOnMap()
       } catch(e){ console.error(e); this.buildError=String(e.message||e) }
     },
     markSuspects () {
@@ -693,18 +649,11 @@ export default {
     /* ===== util ===== */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
-    normNumberStr (s) {
-      if (s==null) return ''
-      return String(s).normalize('NFKC')
-          .replace(/,/g,'')
-          .replace(/[\]|]/g,'')
-          .replace(minusAndDashes,'-')
-          .trim()
-    },
+    normNumberStr (s) { if (s==null) return ''; return String(s).normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'').replace(minusAndDashes,'-').trim() },
     parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
-    /* ===== Step4：points編集→rawTableに反映 ===== */
+    /* ===== Step4：points編集→rawTable反映 ===== */
     onCellEdit (sourceRow, field, rawVal) {
       try {
         const roles = this.mapColumnsObject()
@@ -734,61 +683,7 @@ export default {
       return { 'suspect-cell': suspectSet.has(ptIndex), 'edited-cell': edited, 'just-edited': !!pulse, 'editable-cell': true }
     },
 
-    /* ==== SIMA ==== */
-    baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
-    extractLotFromFileName () {
-      try {
-        const f = Array.isArray(this.file) ? this.file[0] : this.file
-        const name = f?.name || ''
-        const m = String(name).match(/(\d{1,5}-\d{1,5})/)
-        return m ? m[1] : '000-0'
-      } catch { return '000-0' }
-    },
-    resolveProjectName () { return this.jobId ? `oh3-job-${this.jobId}` : 'open-hinata3' },
-    buildSIMAContent () {
-      if (!this.points.length) return ''
-      const prj = this.resolveProjectName(), lot = this.extractLotFromFileName(), L = []
-      L.push(`G00,01,${prj},`)
-      L.push('Z00,座標ﾃﾞｰﾀ,,'); L.push('A00,')
-      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1)
-        L.push(`A01,${i+1},${label},${Number(p.x).toFixed(3)},${Number(p.y).toFixed(3)},0,`) })
-      L.push('A99,')
-      L.push('Z00,区画データ,'); L.push(`D00,1,${lot},1,`)
-      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1); L.push(`B01,${i+1},${label},`) })
-      L.push('D99,'); L.push('A99,END')
-      return L.join('\n')
-    },
-    downloadSIMA () {
-      if (!this.points.length) return
-      const text=this.buildSIMAContent(); this.lastSimaText=text
-      const base = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
-      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`${base}_${ts}.sim`
-      downloadTextFile(name, text, 'shift-jis')
-      let size=text.length
-      try{
-        if(window.Encoding){
-          const u=window.Encoding.stringToCode(text); const s=window.Encoding.convert(u,'SJIS'); size=s.length
-        }
-      }catch{}
-      this.simaInfo={name, size}
-    },
-
-    /* 取り込み実行（OH5へ） */
-    async commit () {
-      // ここでは importName を必ず利用して上位へ通知
-      // 既存の取り込み処理に合わせて必要なら API 呼び出しを追加してください
-      try {
-        this.busy = true
-        const name = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
-        // 例：親へイベントで通知（既存の実装に合わせて置換可）
-        this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
-        // 実際の保存は既存のロジックに委譲
-      } finally {
-        this.busy = false
-      }
-    },
-
-    /* MapLibre */
+    /* ===== MapLibre ===== */
     async initMapLibre () {
       if (this.map || !this.$refs.maplibreEl) return
       const id='maplibre-css'
@@ -803,10 +698,13 @@ export default {
         layers: [{ id: 'gsi-pale', type: 'raster', source: 'gsi-pale' }]
       }
       this.map = new Map({ container: this.$refs.maplibreEl, style, center: [137.0, 38.0], zoom: 4.3, preserveDrawingBuffer: true })
+      await this.ensureMapLoaded()
     },
+    ensureMapLoaded () { if (!this.map) return Promise.resolve(); if (this.map.isStyleLoaded?.()) return Promise.resolve(); return new Promise(resolve => { this.map.once('load', () => resolve()) }) },
     async renderPreviewOnMap () {
       try {
         if (!this.map) await this.initMapLibre()
+        await this.ensureMapLoaded()
         if (!this.points?.length) { this.buildError = '点データがありません。'; return }
 
         const kei = this.s_zahyokei || 'WGS84'
@@ -843,7 +741,10 @@ export default {
         const { LngLatBounds } = await import('maplibre-gl')
         const bounds = new LngLatBounds(); ring.forEach(c=>bounds.extend(c))
         this.map.fitBounds(bounds, { padding: 24, maxZoom: 19 })
-      } catch (e) { console.error(e); this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '') }
+      } catch (e) {
+        console.error(e)
+        this.buildError = '地図プレビューの描画に失敗しました。' + (e?.message ? ` (${e.message})` : '')
+      }
     },
 
     fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
@@ -856,7 +757,6 @@ export default {
       const name = f?.name || ''
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
-      // ★ OH5放り込み名 初期値＝ファイル名（拡張子除去）
       this.importName = this.baseFileName(name)
     },
 
@@ -868,15 +768,13 @@ export default {
         const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
         const clamp = (v,min,max)=>Math.min(max,Math.max(min, v|0))
         if (saved && typeof saved==='object') {
-          this.colw.label = clamp(saved.label ?? this.colw.label, 40, 420)
-          this.colw.x     = clamp(saved.x     ?? this.colw.x,     80,  260)
-          this.colw.y     = clamp(saved.y     ?? this.colw.y,     80,  260)
+          this.colw.label = clamp(saved.label ?? this.colw.label, 36, 420)
+          this.colw.x     = clamp(saved.x     ?? this.colw.x,     72,  260)
+          this.colw.y     = clamp(saved.y     ?? this.colw.y,     72,  260)
         }
       } catch {}
     },
-    saveColWidths () {
-      localStorage.setItem('oh3_coords_colw_v1', JSON.stringify(this.colw))
-    },
+    saveColWidths () { localStorage.setItem('oh3_coords_colw_v1', JSON.stringify(this.colw)) },
     installColResizer () {
       const host = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!host) return
@@ -886,7 +784,7 @@ export default {
         if (!this.colResize.active) return
         const dx = e.clientX - this.colResize.startX
         const key = this.colResize.key
-        const min = key==='label' ? 40 : 80
+        const min = key==='label' ? 36 : 72
         const max = key==='label' ? 420 : 260
         this.colw[key] = Math.min(max, Math.max(min, this.colResize.startW + dx))
       }
@@ -911,6 +809,45 @@ export default {
         }
       })
     },
+
+    /* ==== SIMA ==== */
+    baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
+    extractLotFromFileName () { try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const n=f?.name||''; const m=String(n).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch{return '000-0'} },
+    resolveProjectName () { return this.jobId ? `oh3-job-${this.jobId}` : 'open-hinata3' },
+    buildSIMAContent () {
+      if (!this.points.length) return ''
+      const prj = this.resolveProjectName(), lot = this.extractLotFromFileName(), L = []
+      L.push(`G00,01,${prj},`)
+      L.push('Z00,座標ﾃﾞｰﾀ,,'); L.push('A00,')
+      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1)
+        L.push(`A01,${i+1},${label},${Number(p.x).toFixed(3)},${Number(p.y).toFixed(3)},0,`) })
+      L.push('A99,')
+      L.push('Z00,区画データ,'); L.push(`D00,1,${lot},1,`)
+      this.points.forEach((p,i)=>{ const label=(p.label&&String(p.label).length)?String(p.label):String(i+1); L.push(`B01,${i+1},${label},`) })
+      L.push('D99,'); L.push('A99,END')
+      return L.join('\n')
+    },
+    downloadSIMA () {
+      if (!this.points.length) return
+      const text=this.buildSIMAContent(); this.lastSimaText=text
+      const base=(this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`${base}_${ts}.sim`
+      downloadTextFile(name, text, 'shift-jis')
+      let size=text.length
+      try{
+        if(window.Encoding){
+          const u=window.Encoding.stringToCode(text); const s=window.Encoding.convert(u,'SJIS'); size=s.length
+        }
+      }catch{}
+      this.simaInfo={name, size}
+    },
+    async commit () {
+      try {
+        this.busy = true
+        const name = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+        this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
+      } finally { this.busy = false }
+    },
   }
 }
 </script>
@@ -919,12 +856,17 @@ export default {
 /* =========================================
    KyusekiImportDialog（編集領域最大化版）
    ========================================= */
-
 .oh3-dialog{height:calc(100vh - 2px);display:flex;flex-direction:column;overflow:hidden}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-3.pt-2.pb-0{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
-.oh3-dialog .v-stepper-header{flex:0 0 auto}
+
+/* ステッパー超コンパクト */
+.big-steps :deep(.v-stepper-header){padding:4px 6px; gap:6px}
+.big-steps :deep(.v-stepper-item__avatar){width:26px;height:26px;font-size:13px}
+.big-steps :deep(.v-stepper-item__title){font-size:12.5px}
+.big-steps :deep(.v-stepper-item__subtitle){display:none}
+
 .oh3-dialog .v-stepper-window{flex:1 1 auto;min-height:0;overflow:hidden}
 
 .oh3-dialog .v-stepper-actions{
@@ -940,12 +882,14 @@ export default {
 :deep(.v-overlay__content){ overflow:hidden !important; }
 :deep(.v-card-text){ overflow:visible !important; }
 
-:root{ --oh3-table-h: 640px; --tall-h: 520px; }
+:root{ --oh3-table-h: 640px; --tall-h: 640px; }
 
 .pane{display:flex;flex-direction:column;min-height:0}
-.pane .pane-body{flex:1 1 auto;min-height:0;overflow:visible}
+.pane .pane-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 .table-host{
-  display:block;flex:1 1 auto;min-height:240px;max-height:var(--oh3-table-h);
+  flex:1 1 auto;
+  min-height:240px;
+  height:auto;
   overflow:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
@@ -956,13 +900,12 @@ export default {
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
 .oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
-
-.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:6px 8px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
+.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:4px 6px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
-/* Flags (見た目は残すが凡例は削除) */
+/* Flags */
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
@@ -977,7 +920,6 @@ export default {
 /* Minor UI */
 :deep(.v-card-title){padding:6px 10px; flex-wrap:wrap;}
 :deep(.v-card-text){padding:6px 10px}
-.big-steps :deep(.v-stepper-item__avatar){width:34px;height:34px;font-size:15px}
 .map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
@@ -995,10 +937,11 @@ export default {
 .file-compact :deep(.v-field){height:44px}
 .file-compact :deep(.v-field__input){padding-top:6px;padding-bottom:6px}
 
-/* 列幅（さらにコンパクト） */
+/* 列幅（極小化） */
 .coords-table{ table-layout:auto; }
-.coords-table .col-label{ width:72px; min-width:40px; }
-.coords-table .col-num{   width:96px; min-width:80px; }
+.coords-table .col-index{ width:28px; min-width:24px; }
+.coords-table .col-label{ width:56px; min-width:36px; }
+.coords-table .col-num{   width:90px; min-width:72px; }
 
 /* ドラッグ用グリップ */
 .coords-table thead th{ position:relative; }
