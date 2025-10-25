@@ -295,7 +295,7 @@
                   <v-alert type="info" color="primary" variant="tonal" class="mb-2">{{ points.length }} 点を処理します。</v-alert>
                   <div class="d-flex align-center gap-3 mb-2">
                     <v-text-field
-                        v-model="importName"
+                        v-model="s_gazoName"
                         label="OH3へ取り込む名前"
                         :disabled="disableAll"
                         variant="outlined"
@@ -367,7 +367,6 @@ export default {
       step: 1, busy: false,
 
       file: null, previewUrl: '', isImage: true,
-      importName: '',
 
       ocrError: '', rawTable: { headers: [], rows: [] },
 
@@ -412,6 +411,10 @@ export default {
     s_zahyokei: {
       get() { return this.$store.state.zahyokei },
       set(value) { this.$store.state.zahyokei = value }
+    },
+    s_gazoName: {
+      get() { return this.$store.state.gazoName },
+      set(value) { return this.$store.state.gazoName = value }
     },
     canUndo () { return this.historyPtr >= 0 },
     disableAll () { return this.busy || this.transitioning }
@@ -485,7 +488,7 @@ export default {
         this.file = null
         this.previewUrl = ''
         this.isImage = true
-        this.importName = ''
+        this.s_gazoName = ''
 
         this.ocrError = ''
         this.rawTable = { headers: [], rows: [] }
@@ -867,7 +870,7 @@ export default {
       const name = f && f.name || ''
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
-      this.importName = this.baseFileName(name)
+      this.s_gazoName = this.baseFileName(name)
     },
 
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
@@ -940,7 +943,7 @@ export default {
     downloadSIMA () {
       if (!this.points.length) return
       const text=this.buildSIMAContent(); this.lastSimaText=text
-      const base=(this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+      const base=(this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
       const ts=new Date().toISOString().replace(/[:.]/g,'-'), name= base + '_' + ts + '.sim'
       downloadTextFile(name, text, 'shift-jis')
       let size=text.length
@@ -953,7 +956,7 @@ export default {
     },
     async commit () {
       try { this.busy = true
-        const name = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+        const name = (this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
         this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
       } finally { this.busy = false }
     },
