@@ -159,7 +159,7 @@
               <div class="pa-3 step-host fill-parent">
                 <div v-if="rawTable.headers.length" class="flex-col fill-parent" :key="'tblmap-'+selectedTable">
                   <div class="d-flex align-center justify-space-between mb-2">
-                    <div class="text-subtitle-2">列の役割を確認/修正（点番は使わず点名に寄せる）</div>
+                    <div class="text-subtitle-2">列の役割を確認/修正</div>
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
                   </div>
 
@@ -313,7 +313,8 @@
                                 :items="crsChoices" item-title="title" item-value="value"
                                 label="公共座標系" variant="outlined" density="compact" :disabled="disableAll" />
                       <v-btn :disabled="disableAll" @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
-                      <v-card-text class="compact-text pane-body" style="color: red">
+                      <!-- 置き換え（Step4 内の警告行） -->
+                      <v-card-text v-if="hasOutliers" class="compact-text pane-body" style="color: red">
                         注！座標が不正のまま「次へ」に進まないでください。異常値があるときは左の「座標プレビュー」で修正してください。
                       </v-card-text>
                     </v-card-text>
@@ -367,7 +368,17 @@
               <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="secondary" :disabled="step<=1 || disableAll" @click="step--">戻る</v-btn>
             </template>
             <template #next>
-              <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="primary" :disabled="disableAll || (step===1 && !file)" @click="goNext">次へ</v-btn>
+              <!-- 置き換え（v-stepper-actions の #next 内） -->
+              <v-btn
+                  size="x-large"
+                  class="oh3-action-btn"
+                  variant="elevated"
+                  color="primary"
+                  :disabled="disableAll || (step===1 && !file) || step===5"
+                  @click="goNext"
+              >
+                次へ
+              </v-btn>
             </template>
           </v-stepper-actions>
         </v-stepper>
@@ -460,6 +471,9 @@ export default {
   },
   computed: {
     ...mapState(['mapReady']),
+    hasOutliers () {
+      return (this.suspect?.x?.size || 0) > 0 || (this.suspect?.y?.size || 0) > 0
+    },
     s_zahyokei: {
       get() { return this.$store.state.zahyokei },
       set(value) { this.$store.state.zahyokei = value }
