@@ -1,6 +1,11 @@
 <template>
-  <v-dialog v-model="internal" max-width="1440" scrollable transition="dialog-bottom-transition">
-    <v-card class="oh3-dialog" @keydown="onGlobalKeyDown">
+  <v-dialog
+      v-model="internal"
+      max-width="1440"
+      scrollable
+      transition="dialog-bottom-transition"
+  >
+    <v-card class="oh3-dialog" ref="dialogRoot" @keydown="onLocalKeyDown">
       <v-card-title class="d-flex align-center justify-space-between">
         <div class="d-flex align-center gap-2 oh3-title">
           <v-icon class="mr-2" color="primary">mdi-table-search</v-icon>
@@ -57,7 +62,6 @@
               <div class="pa-4 step-host">
                 <div class="d-flex align-center gap-3 mb-3">
                   <v-btn :loading="busy" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">OCR 実行（Cloud）</v-btn>
-                  <span class="text-medium-emphasis">Google Document AI Form Parser を使用します</span>
                 </div>
 
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
@@ -78,7 +82,7 @@
                               :value="c"
                               :inputmode="isNumericRole(ci)?'decimal':undefined"
                               @focus="$event.target.select()"
-                              @keydown="onEditKeyDown($event)"
+                              @keydown="onEditKeyDown"
                               @change="onRawCellEditAbs(ri, ci, $event.target.value)"
                               @keydown.enter.prevent="$event.target.blur()"
                           />
@@ -87,10 +91,12 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="text-caption text-medium-emphasis mt-2">※ ここで修正すると後工程に反映（⌘/Ctrl+Z で直前の修正を取り消し）。</div>
+                  <div class="text-caption text-medium-emphasis mt-2">
+                    ※ ここで修正すると後工程に反映（⌘/Ctrl+Z で直前の修正を取り消し）。
+                  </div>
                 </div>
 
-                <div v-else class="text-medium-emphasis">まだ結果がありません。OCRを実行してください。</div>
+                <div class="text-medium-emphasis" v-else>まだ結果がありません。OCRを実行してください。</div>
               </div>
             </v-stepper-window-item>
 
@@ -106,8 +112,10 @@
                   <div class="d-flex flex-wrap gap-3 mb-3">
                     <div v-for="(h, i) in rawTable.headers" :key="`m${i}`" class="map-chip">
                       <div class="text-caption text-medium-emphasis mb-1">{{ h || '(空)' }}</div>
-                      <v-select class="no-stretch" density="comfortable" variant="outlined"
-                                :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details />
+                      <v-select
+                          class="no-stretch" density="comfortable" variant="outlined"
+                          :items="roleOptions" v-model="columnRoles[i]" style="min-width:160px" hide-details
+                      />
                     </div>
                   </div>
 
@@ -126,7 +134,7 @@
                               :value="c"
                               :inputmode="isNumericRole(ci)?'decimal':undefined"
                               @focus="$event.target.select()"
-                              @keydown="onEditKeyDown($event)"
+                              @keydown="onEditKeyDown"
                               @change="onRawCellEditAbs(ri, ci, $event.target.value)"
                               @keydown.enter.prevent="$event.target.blur()"
                           />
@@ -185,19 +193,19 @@
                             <td>{{ i+1 }}</td>
                             <td :class="cellClass(i,'label')">
                               <input class="cell-input" :value="p.label ?? (i+1)"
-                                     @focus="$event.target.select()" @keydown="onEditKeyDown($event)"
+                                     @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'label', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'x')">
                               <input class="cell-input num" :value="fmt(p.x)" inputmode="decimal"
-                                     @focus="$event.target.select()" @keydown="onEditKeyDown($event)"
+                                     @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'x', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
                             <td :class="cellClass(i,'y')">
                               <input class="cell-input num" :value="fmt(p.y)" inputmode="decimal"
-                                     @focus="$event.target.select()" @keydown="onEditKeyDown($event)"
+                                     @focus="$event.target.select()" @keydown="onEditKeyDown"
                                      @change="onCellEdit(p.sourceRow, 'y', $event.target.value)"
                                      @keydown.enter.prevent="$event.target.blur()" />
                             </td>
@@ -307,9 +315,11 @@ export default {
     return {
       internal: this.modelValue,
       step: 1, busy: false,
+
       file: null, previewUrl: '', isImage: true,
 
       ocrError: '', rawTable: { headers: [], rows: [] },
+
       columnRoles: [],
       roleOptions: [
         { title: '未使用', value: null },
@@ -337,8 +347,10 @@ export default {
       edits: new Map(),
       lastEdited: { row:null, field:null, at:0 },
 
-      /* Undo */
       history: [], historyPtr: -1,
+
+      ro: null,              // ResizeObserver
+      tableMaxPx: 420,       // 現行の計算結果（デバッグ用）
     }
   },
   computed: {
@@ -351,12 +363,73 @@ export default {
   },
   watch: {
     modelValue (v) { this.internal = v },
-    internal (v) { this.$emit('update:modelValue', v) },
-    step (v) { if (v===4) this.$nextTick(()=>this.initMapLibre()) }
+    internal (v) {
+      this.$emit('update:modelValue', v)
+      if (v) this.$nextTick(this.recalcTableMax)
+    },
+    step () {
+      this.$nextTick(this.recalcTableMax)
+      if (this.step===4) this.$nextTick(()=>this.initMapLibre())
+    }
   },
-  mounted () { if (this.step===4) this.initMapLibre() },
+  mounted () {
+    if (this.step===4) this.initMapLibre()
+    this.installGlobalUndo()
+    this.$nextTick(this.recalcTableMax)
+  },
+  unmounted () {
+    this.uninstallGlobalUndo()
+    if (this.ro) { this.ro.disconnect(); this.ro=null }
+    window.removeEventListener('resize', this.recalcTableMax)
+  },
   methods: {
-    /* ===== OCR後クリーン ===== */
+    /* ===== 動的高さ：見えている step-host から算出 ===== */
+    findVisibleStepHost () {
+      const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
+      if (!root) return null
+      const el = root.querySelector('.v-stepper-window-item[aria-hidden="false"] .step-host')
+      return el || root.querySelector('.step-host')
+    },
+    recalcTableMax () {
+      const rootEl = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
+      const host = this.findVisibleStepHost()
+      if (!rootEl || !host) return
+      const hostRect = host.getBoundingClientRect()
+      const px = Math.max(220, Math.floor(hostRect.height - 24)) // 余白マージン
+      this.tableMaxPx = px
+      rootEl.style.setProperty('--oh3-table-h', `${px}px`)
+      if (!this.ro) {
+        this.ro = new ResizeObserver(() => this.recalcTableMax())
+        this.ro.observe(host)
+        this.ro.observe(rootEl)
+        window.addEventListener('resize', this.recalcTableMax, { passive:true })
+      }
+    },
+
+    /* ===== グローバル Undo（いつでも有効） ===== */
+    installGlobalUndo () {
+      this._undoHandler = (e) => {
+        if (!this.internal) return
+        if (e.isComposing) return
+        if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+          e.preventDefault()
+          this.undo()
+        }
+      }
+      window.addEventListener('keydown', this._undoHandler, true) // captureで最優先
+    },
+    uninstallGlobalUndo () {
+      if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true)
+      this._undoHandler = null
+    },
+    onLocalKeyDown (e) {
+      // 予備（フォーカスがカード内にある時）
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); this.undo()
+      }
+    },
+
+    /* ===== OCR後のクリーンアップ ===== */
     postCleanTable () {
       if (!this.rawTable?.rows) return
       const headers = (this.rawTable.headers || []).map(fixCell)
@@ -381,7 +454,7 @@ export default {
       this.rawTable = { headers: headers2, rows: rows2 }
     },
 
-    /* ===== OCR ===== */
+    /* ===== OCR実行 ===== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
@@ -439,11 +512,6 @@ export default {
         e.preventDefault(); this.undo()
       }
     },
-    onGlobalKeyDown (e) {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-        e.preventDefault(); this.undo()
-      }
-    },
     pushHistory (rec) {
       if (this.historyPtr < this.history.length - 1) this.history = this.history.slice(0, this.historyPtr + 1)
       this.history.push(rec); this.historyPtr = this.history.length - 1
@@ -464,7 +532,7 @@ export default {
       }
     },
 
-    /* ===== Step2/3 編集 ===== */
+    /* ===== Step2/3：rawTable 直接編集 ===== */
     onRawCellEditAbs (ri, ci, val) {
       if (!this.rawTable?.rows?.[ri]) return
       const prev = this.rawTable.rows[ri][ci]
@@ -476,7 +544,7 @@ export default {
       if (ci === roles.x || ci === roles.y || ci === roles.label) this.rebuild()
     },
 
-    /* ===== points 再構成／検算 ===== */
+    /* ===== points 再構成／検算／外れ値 ===== */
     rebuild () {
       this.buildError=''; this.points=[]
       try {
@@ -527,6 +595,7 @@ export default {
     parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
+    /* ===== Step4：points編集→rawTableに反映 ===== */
     onCellEdit (sourceRow, field, rawVal) {
       try {
         const roles = this.mapColumnsObject()
@@ -591,9 +660,6 @@ export default {
         }
       }catch{}
       this.simaInfo={name, size}
-    },
-    async commit () {
-      this.$emit('imported', { count:this.points.length, crs:this.crs, area:this.area.area, sim:!!this.simaInfo.name })
     },
 
     /* MapLibre */
@@ -663,6 +729,7 @@ export default {
       if (this.step===4) { this.step=5; return }
       if (this.step===5) { this.close(); return }
     },
+
     async onFileSelected () {
       this.previewUrl=''; this.isImage=true
       if (!this.file) return
@@ -671,13 +738,21 @@ export default {
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
     },
+
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
   }
 }
 </script>
 
 <style scoped>
-/* ==== レイアウト土台（全体はスクロールさせない） ==== */
+/* =========================================
+   KyusekiImportDialog: フルスタイル（動的高さ対応版）
+   - 全体スクロール禁止／表ラッパのみ縦スクロール（JSでmax-height算出）
+   - thead sticky、列幅固定、横スクロール対応
+   - 入力＝青／外れ値＝赤／編集済み＝淡緑
+   ========================================= */
+
+/* 親レイアウト：全体はスクロールさせない */
 .oh3-dialog{height:92vh;display:flex;flex-direction:column;overflow:hidden}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-4.pt-2{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
@@ -687,29 +762,47 @@ export default {
 .oh3-dialog .v-stepper-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;z-index:10}
 .step-host,.oh3-dialog .v-stepper-window-item > .pa-4{display:flex;flex-direction:column;min-height:0}
 
-/* Vuetify の親 overflow を殺す（子にスクロールを委譲） */
-:deep(.v-overlay__content){ overflow: hidden !important; }
-:deep(.v-card-text){ overflow: visible !important; }
+/* Vuetify 親の overflow を無効化（子に委譲） */
+:deep(.v-overlay__content){ overflow:hidden !important; }
+:deep(.v-card-text){ overflow:visible !important; }
 
-/* ==== テーブルはラッパのみ縦スクロール（強制） ==== */
-:root{ --oh3-table-h: min(56vh, 520px); --tall-h: 300px; }
+/* JS が上書きする既定値（フォールバック） */
+:root{ --oh3-table-h: 420px; --tall-h: 300px; }
+
+/* 表だけスクロール（強制） */
 .table-host,.table-scroll,.table-fill{
   display:block;
-  flex:1 1 auto; min-height:200px; max-height:var(--oh3-table-h);
+  flex:1 1 auto;
+  min-height:200px;
+  max-height:var(--oh3-table-h);
   overflow:auto !important;
-  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
   border:1px solid #e5e7eb; border-radius:8px; background:#fff;
 }
 
-/* ==== テーブル体裁（通常フロー／thead sticky） ==== */
-.oh3-simple{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:12.5px; }
+/* テーブル体裁 */
+.oh3-simple{
+  width:max(100%, 720px);
+  border-collapse:collapse;
+  table-layout:fixed;
+  font-size:12.5px;
+}
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
-.oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
+.oh3-simple thead th{
+  position:sticky; top:0; z-index:2;
+  background:#f6f6f7;
+}
 .oh3-simple td{ padding:0 }
 
 /* 入力（青） */
-.oh3-simple .cell-input{ width:100%; box-sizing:border-box; padding:6px 8px; border:none; outline:none; font:inherit; background:#dbeafe; color:#0f172a; }
+.oh3-simple .cell-input{
+  width:100%; box-sizing:border-box;
+  padding:6px 8px;
+  border:none; outline:none; font:inherit;
+  background:#dbeafe; color:#0f172a;
+}
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
@@ -718,10 +811,14 @@ export default {
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 
-/* 編集済み/パルス */
+/* 編集済みとパルス */
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
-@keyframes oh3PulseEdited{ 0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)} 50%{box-shadow:0 0 0 8px rgba(99,102,241,0)} 100%{box-shadow:0 0 0 0 rgba(99,102,241,0)} }
+@keyframes oh3PulseEdited{
+  0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}
+  50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}
+  100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}
+}
 
 /* プレビュー／パネル */
 .pane{display:flex;flex-direction:column;min-height:0}
