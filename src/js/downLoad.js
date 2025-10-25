@@ -5004,29 +5004,35 @@ export async function simaLoadForUser (map,isUpload,simaText,zahyokei) {
                             }
                         );
                         console.log(store.state.selectedLayers.map01)
-                        const bounds = new maplibregl.LngLatBounds();
-                        sourceAndLayers.geojson.features.forEach(feature => {
-                            const geometry = feature.geometry;
-                            if (!geometry) return;
-                            switch (geometry.type) {
-                                case 'Point':
-                                    bounds.extend(geometry.coordinates);
-                                    break;
-                                case 'LineString':
-                                    geometry.coordinates.forEach(coord => bounds.extend(coord));
-                                    break;
-                                case 'Polygon':
-                                    geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
-                                    break;
-                                case 'MultiPolygon':
-                                    geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
-                                    break;
-                            }
-                        });
-                        map.fitBounds(bounds, {
-                            padding: 50,
-                            animate: true
-                        });
+
+                        try {
+                            const bounds = new maplibregl.LngLatBounds();
+                            sourceAndLayers.geojson.features.forEach(feature => {
+                                const geometry = feature.geometry;
+                                if (!geometry) return;
+                                switch (geometry.type) {
+                                    case 'Point':
+                                        bounds.extend(geometry.coordinates);
+                                        break;
+                                    case 'LineString':
+                                        geometry.coordinates.forEach(coord => bounds.extend(coord));
+                                        break;
+                                    case 'Polygon':
+                                        geometry.coordinates.flat().forEach(coord => bounds.extend(coord));
+                                        break;
+                                    case 'MultiPolygon':
+                                        geometry.coordinates.flat(2).forEach(coord => bounds.extend(coord));
+                                        break;
+                                }
+                            });
+                            map.fitBounds(bounds, {
+                                padding: 50,
+                                animate: true
+                            });
+                        }catch (e) {
+                            alert('座標が不正です。')
+                            console.log(e)
+                        }
                         store.state.snackbar = true
                         store.state.loading2 = false
                         store.state.fetchImagesFire = !store.state.fetchImagesFire
@@ -6402,6 +6408,7 @@ export async function userSimaSet(name, url, id, zahyokei, simaText, isFirst) {
             store.state.simaOpacity = opacity
         }
         const geojson = simaToGeoJSON(simaText, map, zahyokei, false, true);
+
         return createSourceAndLayers(geojson);
 
     function createSourceAndLayers(geojson) {

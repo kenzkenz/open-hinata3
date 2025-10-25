@@ -95,9 +95,6 @@
                 <div v-if="rawTables.length > 1" class="mb-2">
                   <v-chip-group
                       v-model="selectedTable"
-                      selected-class="text-white bg-primary"
-                      @update:modelValue="selectTable"
-                      filter
                       mandatory
                   >
                     <v-chip
@@ -107,6 +104,9 @@
                         variant="outlined"
                         size="small"
                         class="mr-1"
+                        filter
+                        clickable
+                        :selected-class="'text-white bg-primary'"
                     >
                       表{{ idx + 1 }}（{{ (t.rows && t.rows.length) || 0 }}行）
                     </v-chip>
@@ -119,7 +119,7 @@
                   <v-skeleton-loader type="table" />
                 </div>
 
-                <div v-else-if="rawTable.headers.length" class="ocr-table flex-col">
+                <div v-else-if="rawTable.headers.length" class="ocr-table flex-col" :key="'tblview-'+selectedTable">
                   <div class="text-subtitle-2 mb-1">抽出プレビュー（そのまま編集可）</div>
                   <div class="table-host">
                     <table class="oh3-simple editable auto">
@@ -157,7 +157,7 @@
             <!-- STEP3 -->
             <v-stepper-window-item :value="3">
               <div class="pa-3 step-host fill-parent">
-                <div v-if="rawTable.headers.length" class="flex-col fill-parent">
+                <div v-if="rawTable.headers.length" class="flex-col fill-parent" :key="'tblmap-'+selectedTable">
                   <div class="d-flex align-center justify-space-between mb-2">
                     <div class="text-subtitle-2">列の役割を確認/修正（点番は使わず点名に寄せる）</div>
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
@@ -167,9 +167,6 @@
                   <div v-if="rawTables.length > 1" class="mb-2">
                     <v-chip-group
                         v-model="selectedTable"
-                        selected-class="text-white bg-primary"
-                        @update:modelValue="selectTable"
-                        filter
                         mandatory
                     >
                       <v-chip
@@ -179,6 +176,9 @@
                           variant="outlined"
                           size="small"
                           class="mr-1"
+                          filter
+                          clickable
+                          :selected-class="'text-white bg-primary'"
                       >
                         表{{ idx + 1 }}（{{ (t.rows && t.rows.length) || 0 }}行）
                       </v-chip>
@@ -350,7 +350,6 @@
                     />
                   </div>
                   <div class="d-flex align-center gap-3">
-                    <!-- <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn> -->
                     <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
@@ -415,7 +414,7 @@ export default {
 
       ocrError: '', rawTable: { headers: [], rows: [] },
       rawTables: [],            // ★ 複数表全体
-      selectedTable: 0,         // ★ 現在の表インデックス
+      selectedTable: 0,         // ★ 現在の表インデックス（数値）
       columnRolesByTable: [],   // ★ 各表ごとの列マッピング
 
       columnRoles: [],
@@ -487,7 +486,6 @@ export default {
             await this.initMapLibre()
             this.loadColWidths()
             this.installColResizer()
-            // 手動マッピングを尊重
             if (!this.columnRoles || this.columnRoles.length === 0) {
               this.autoMapRoles()
             }
@@ -497,6 +495,21 @@ export default {
           } catch (e) { console.error(e) }
         })
       }
+    },
+    // ★ ここで一元管理：クリックで v-model が変われば自動で切替
+    selectedTable (v) {
+      const idx = Number.isFinite(v) ? v : Number(v)
+      if (!Number.isFinite(idx)) return
+      if (idx === this.selectedTable) {
+        // 文字列→数値の揺れだけ補正
+        this.selectedTable = idx
+      }
+      if (idx < 0 || idx >= this.rawTables.length) return
+      // 実テーブル差し替え
+      this.attachActiveTable()
+      if (!this.columnRoles || this.columnRoles.length === 0) this.autoMapRoles()
+      this.rebuild()
+      this.$nextTick(this.recalcTableMax)
     }
   },
   mounted () {
@@ -517,7 +530,6 @@ export default {
       this.onFileSelected()
     },
 
-    // 追加：ダイアログ内の一切の作業状態を破棄
     resetAll () {
       try {
         this.uninstallGlobalUndo?.()
@@ -567,7 +579,6 @@ export default {
       }
     },
 
-    // ×ボタン＝閉じる＋全消去
     close () { this.internal = false; this.resetAll() },
 
     /* ===== 高さ再計算 ===== */
@@ -624,15 +635,6 @@ export default {
       this.rawTable = t
       if (!this.columnRolesByTable[this.selectedTable]) this.columnRolesByTable[this.selectedTable] = []
       this.columnRoles = this.columnRolesByTable[this.selectedTable]
-    },
-    selectTable (idx) {
-      if (idx === this.selectedTable) return
-      if (idx < 0 || idx >= this.rawTables.length) return
-      this.selectedTable = idx
-      this.attachActiveTable()
-      if (!this.columnRoles || this.columnRoles.length === 0) this.autoMapRoles()
-      this.rebuild()
-      this.$nextTick(this.recalcTableMax)
     },
 
     /* ===== OCR後のクリーンアップ ===== */
@@ -742,14 +744,11 @@ export default {
       return null
     },
     autoMapRoles () {
-      // 現在の表に対して推測
       const roles = (this.rawTable.headers || []).map(h => this.guessRoleFromHeader(h))
-      // 計算列などを外す
       this.rawTable.headers.forEach((h, i) => {
         const s = String(h || '').toLowerCase()
         if (/[+/*()]/.test(s) || /yn\+?1.*yn-?1/.test(s) || /合計|地積/.test(s)) roles[i] = null
       })
-      // 参照を更新（テーブルごとの配列に保存）
       this.columnRolesByTable[this.selectedTable] = roles
       this.columnRoles = this.columnRolesByTable[this.selectedTable]
     },
@@ -795,7 +794,6 @@ export default {
         const usable = rows.map((r,ri)=>{
           const rawX = (roles.x!=null) ? r[roles.x] : ''
           const rawY = (roles.y!=null) ? r[roles.y] : ''
-          // ★ X/Y どちらかが空なら除外（次ステップに出さない）
           const sx = this.normNumberStr(rawX)
           const sy = this.normNumberStr(rawY)
           if (sx.length === 0 || sy.length === 0) return null
@@ -845,7 +843,6 @@ export default {
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
     normNumberStr (s) { if (s==null) return ''; return String(s).normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'').replace(minusAndDashes,'-').trim() },
 
-    // Number() で素直にパース → 失敗時だけ拾い直し
     parseNumber (s) {
       const t = this.normNumberStr(String(s))
       const n = Number(t)
