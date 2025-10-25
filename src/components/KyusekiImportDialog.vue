@@ -40,7 +40,6 @@
             <!-- STEP1（大アイコンのファイルピッカー） -->
             <v-stepper-window-item :value="1">
               <div class="pa-3 step-host">
-                <!-- 隠し input -->
                 <input
                     ref="fileInput"
                     type="file"
@@ -91,7 +90,6 @@
                   </span>
                 </div>
 
-                <!-- ★ 複数表切替（Step2） -->
                 <div v-if="rawTables.length > 1" class="mb-2">
                   <v-chip-group v-model="selectedTable" mandatory>
                     <v-chip
@@ -160,7 +158,6 @@
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
                   </div>
 
-                  <!-- ★ 複数表切替（Step3） -->
                   <div v-if="rawTables.length > 1" class="mb-2">
                     <v-chip-group v-model="selectedTable" mandatory>
                       <v-chip
@@ -307,7 +304,6 @@
                                 :items="crsChoices" item-title="title" item-value="value"
                                 label="公共座標系" variant="outlined" density="compact" :disabled="disableAll" />
                       <v-btn :disabled="disableAll" @click="renderPreviewOnMap">地図プレビュー作成</v-btn>
-                      <!-- 外れ値警告：外れ値が1つでもあれば表示、無くなれば非表示 -->
                       <v-card-text v-if="hasOutliers" class="compact-text pane-body" style="color: red">
                         注！座標が不正のまま「次へ」に進まないでください。異常値があるときは左の「座標プレビュー」で修正してください。
                       </v-card-text>
@@ -373,7 +369,6 @@
               <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="secondary" :disabled="step<=1 || disableAll" @click="step--">戻る</v-btn>
             </template>
             <template #next>
-              <!-- 最終ステップでは完全に無効 -->
               <v-btn
                   size="x-large"
                   class="oh3-action-btn"
@@ -432,9 +427,9 @@ export default {
       file: null, previewUrl: '', isImage: true,
 
       ocrError: '', rawTable: { headers: [], rows: [] },
-      rawTables: [],            // ★ 複数表全体
-      selectedTable: 0,         // ★ 現在の表インデックス（数値）
-      columnRolesByTable: [],   // ★ 各表ごとの列マッピング
+      rawTables: [],
+      selectedTable: 0,
+      columnRolesByTable: [],
 
       columnRoles: [],
       roleOptions: [
@@ -503,7 +498,6 @@ export default {
         this.$nextTick(async () => {
           try {
             await this.initMapLibre()
-            // （列幅リサイズ系は撤去）
             if (!this.columnRoles || this.columnRoles.length === 0) {
               this.autoMapRoles()
             }
@@ -536,7 +530,6 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ====== ファイル選択（大アイコンUI） ====== */
     onNativeFileChange (e) {
       const f = e?.target?.files?.[0]
       this.file = f || null
@@ -593,7 +586,6 @@ export default {
 
     close () { this.internal = false; this.resetAll() },
 
-    /* ===== 高さ再計算 ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -627,7 +619,6 @@ export default {
       }
     },
 
-    /* ===== Undo ===== */
     installGlobalUndo () {
       this._undoHandler = (e) => {
         if (!this.internal) return
@@ -641,7 +632,6 @@ export default {
     uninstallGlobalUndo () { if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true); this._undoHandler = null },
     onLocalKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
 
-    /* ===== 複数表：現在表参照・切替 ===== */
     attachActiveTable () {
       const t = this.rawTables[this.selectedTable] || { headers: [], rows: [] }
       this.rawTable = t
@@ -649,7 +639,6 @@ export default {
       this.columnRoles = this.columnRolesByTable[this.selectedTable]
     },
 
-    /* ===== OCR後のクリーンアップ ===== */
     postCleanTableOne (tableObj) {
       if (!tableObj?.rows) return
       const headers = (tableObj.headers || []).map(fixCell)
@@ -674,7 +663,6 @@ export default {
       this.attachActiveTable()
     },
 
-    /* ===== 進む ===== */
     async goNext () {
       if (this.step === 1) {
         if (!this.file) return
@@ -709,7 +697,6 @@ export default {
       if (this.step === 5) { this.close(); return }
     },
 
-    /* ===== OCR 実行 ===== */
     async doOCR () {
       if (!this.file) return
       this.ocrError=''; this.busy=true
@@ -744,7 +731,6 @@ export default {
       }
     },
 
-    /* ===== 列マッピング ===== */
     normHeader (s) { if (!s) return ''; return s.normalize('NFKC').replace(/\s+/g,'').replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'').replace(/\[|\]/g,'').toLowerCase() },
     guessRoleFromHeader (h) {
       const t = (h||'').trim().toLowerCase()
@@ -764,7 +750,6 @@ export default {
       this.columnRoles = this.columnRolesByTable[this.selectedTable]
     },
 
-    /* ===== 編集＆Undo ===== */
     onEditKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
     pushHistory (rec) { if (this.historyPtr < this.history.length - 1) this.history = this.history.slice(0, this.historyPtr + 1); this.history.push(rec); this.historyPtr = this.history.length - 1 },
     undo () {
@@ -795,7 +780,6 @@ export default {
       } catch (e) { console.warn('onRawCellEditAbs failed', e) }
     },
 
-    /* ===== points 再構成／検算 ===== */
     rebuild () {
       this.buildError=''; this.points=[]
       try {
@@ -849,7 +833,6 @@ export default {
       this.suspect.x = flag(xs); this.suspect.y = flag(ys)
     },
 
-    /* ===== util ===== */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
     normNumberStr (s) { if (s==null) return ''; return String(s).normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'').replace(minusAndDashes,'-').trim() },
@@ -864,7 +847,6 @@ export default {
 
     mapColumnsObject () { const o={}; (this.columnRoles||[]).forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
-    /* ===== Step4：points編集→rawTable反映 ===== */
     onCellEdit (sourceRow, field, rawVal) {
       try {
         const roles = this.mapColumnsObject()
@@ -898,7 +880,6 @@ export default {
       return { 'suspect-cell': suspectSet.has(ptIndex), 'edited-cell': edited, 'just-edited': !!pulse, 'editable-cell': true }
     },
 
-    /* ===== MapLibre ===== */
     async initMapLibre () {
       if (this.map || !this.$refs.maplibreEl) return
       const id='maplibre-css'
@@ -976,7 +957,6 @@ export default {
 
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
 
-    /* ==== SIMA ==== */
     baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
     extractLotFromFileName () { try{ const f=Array.isArray(this.file)?this.file[0]:this.file; const n=f && f.name || ''; const m=String(n).match(/(\d{1,5}-\d{1,5})/); return m?m[1]:'000-0' }catch(e){return '000-0'} },
     resolveProjectName () { return this.jobId ? 'oh3-job-' + String(this.jobId) : 'open-hinata3' },
@@ -1098,10 +1078,10 @@ export default {
 .oh3-simple td{ padding:0 }
 .oh3-simple .cell-input{
   width:100%;box-sizing:border-box;
-  padding:0 2px; /* ← 余白を極小化 */
+  padding:0 2px;
   border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;
-  line-height:1.2; height:18px; /* 高さもぎゅっと */
-  font-size:11px; /* 文字も少しだけ小さく */
+  line-height:1.2; height:18px;
+  font-size:11px;
 }
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple .cell-input.tight{ padding:0 1px; }
@@ -1135,11 +1115,11 @@ export default {
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
 
-/* ★ 座標テーブルの極狭列（番号は“とても狭く固定”／点名・X・Yは“常時同幅で極狭”） */
-.coords-table{ table-layout:fixed; }          /* ← 幅指定を厳守させる */
-.coords-table .col-index{ width:16px; min-width:16px; max-width:16px; } /* とても狭く不変 */
-.coords-table .col-label{ width:28px; min-width:28px; max-width:28px; } /* 同幅・極狭 */
-.coords-table .col-num{   width:28px; min-width:28px; max-width:28px; } /* 同幅・極狭 */
+/* ===== Step4 専用・座標テーブルを超狭幅に固定 ===== */
+.coords-table{ table-layout:fixed; }
+.coords-table .col-index{ width:12px; min-width:12px; max-width:12px; }  /* 番号：極細・不変 */
+.coords-table .col-label{ width:24px; min-width:24px; max-width:24px; }  /* 点名：狭 */
+.coords-table .col-num{   width:24px; min-width:24px; max-width:24px; }  /* X/Y：狭・同幅 */
 .index-cell{ text-align:center; padding:0 2px; }
 
 /* ローダ/ロック */
@@ -1172,33 +1152,22 @@ export default {
   background: #fdecec; color: #7a1d1d; border: 1px solid #f8c8c8;
 }
 
-/* ★ 座標テーブル（Step4のみ存在）を現在の幅の二分の一に */
-.coords-table{ table-layout:fixed; }
-
-/* 番号（#）：22px -> 11px（min 20 -> 10） */
-.coords-table .col-index{
-  width:11px;
-  min-width:10px;
+/* === Step4 の座標テーブルだけ、横幅を今の 1/2 にする（縦は変更しない） === */
+.preview-grid .coords-table.oh3-simple{
+  /* グローバルの width:max(100%,640px) を打ち消す */
+  width: 110% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  table-layout: fixed !important; /* 中身で横に広がらない */
 }
 
-/* 点名：44px -> 22px（min 32 -> 16） */
-.coords-table .col-label{
-  width:22px;
-  min-width:16px;
+/* 中身で押し広げない（縦寸は既存のまま） */
+.preview-grid .coords-table th,
+.preview-grid .coords-table td{
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-/* X / Y：80px -> 40px（min 64 -> 32） */
-.coords-table .col-num{
-  width:40px;
-  min-width:32px;
-}
-
-/* 入力の行高/余白も半分寄せ（座標テーブルだけ） */
-.coords-table .cell-input{
-  height:18px;
-  line-height:1.15;
-  padding:0 2px;
-  font-size:11px;
-}
 
 </style>
