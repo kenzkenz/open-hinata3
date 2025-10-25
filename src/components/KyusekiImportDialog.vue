@@ -19,34 +19,18 @@
 
       <v-divider color="primary" />
 
-      <!-- Step2/ロード中に上部に進捗バー -->
-      <v-progress-linear
-          v-if="transitioning"
-          :indeterminate="true"
-          color="primary"
-          height="4"
-      />
+      <v-progress-linear v-if="transitioning" :indeterminate="true" color="primary" height="4" />
 
       <div class="px-4 pt-2">
         <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
             <v-divider v-if="!compactFlow || showStep2Header" />
-            <v-stepper-item
-                v-if="!compactFlow || showStep2Header"
-                color="primary" :complete="step>2" :value="2"
-                title="OCR" subtitle="Form Parser（Cloud）"
-            />
+            <v-stepper-item v-if="!compactFlow || showStep2Header" color="primary" :complete="step>2" :value="2" title="OCR" subtitle="Form Parser（Cloud）" />
             <v-divider />
-            <v-stepper-item
-                color="primary" :complete="step>(compactFlow?2:3)" :value="3"
-                title="列マッピング" subtitle="X/Y/点名"
-            />
+            <v-stepper-item color="primary" :complete="step>(compactFlow?2:3)" :value="3" title="列マッピング" subtitle="X/Y/点名" />
             <v-divider />
-            <v-stepper-item
-                color="primary" :complete="step>(compactFlow?3:4)" :value="4"
-                title="プレビュー・検算" subtitle="閉合/面積＋地図"
-            />
+            <v-stepper-item color="primary" :complete="step>(compactFlow?3:4)" :value="4" title="プレビュー・検算" subtitle="閉合/面積＋地図" />
             <v-divider />
             <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
           </v-stepper-header>
@@ -76,7 +60,7 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- STEP2（OCR画面）: コンパクトフロー時は「エラー時 or ローディング時のみ」表示 -->
+            <!-- STEP2 -->
             <v-stepper-window-item v-if="!compactFlow || ocrError || transitioning" :value="2">
               <div class="pa-4 step-host">
                 <div class="d-flex align-center gap-3 mb-3">
@@ -130,7 +114,7 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- STEP3（列マッピング＋編集） -->
+            <!-- STEP3 -->
             <v-stepper-window-item :value="3">
               <div class="pa-4 step-host fill-parent">
                 <div v-if="rawTable.headers.length" class="flex-col fill-parent">
@@ -180,7 +164,7 @@
               </div>
             </v-stepper-window-item>
 
-            <!-- STEP4（編集＋検算＋地図） -->
+            <!-- STEP4 -->
             <v-stepper-window-item :value="4">
               <div class="pa-4 step-host">
                 <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
@@ -202,23 +186,28 @@
                       </v-chip>
                     </v-card-title>
                     <v-card-text class="pane-body">
-                      <!-- カード本文に凡例を移動（切れない・常に見える） -->
                       <div class="legend-row text-caption text-medium-emphasis">
                         <span class="legend suspect"></span> 外れ値（セル）
                         <span class="legend edited"></span> 編集済み
                       </div>
 
-                      <div class="table-host fill-100">
+                      <div class="table-host">
                         <table class="oh3-simple editable coords-table" style="width:max(100%, 720px);">
                           <colgroup>
                             <col style="width:56px" />
-                            <col class="col-label" />
-                            <col class="col-num" />
-                            <col class="col-num" />
+                            <col class="col-label" :style="{width: colw.label + 'px'}" />
+                            <col class="col-num"   :style="{width: colw.x + 'px'}" />
+                            <col class="col-num"   :style="{width: colw.y + 'px'}" />
                             <col style="width:28px" />
                           </colgroup>
                           <thead>
-                          <tr><th>#</th><th>点名</th><th>X</th><th>Y</th><th></th></tr>
+                          <tr>
+                            <th>#</th>
+                            <th>点名 <span class="th-grip" data-resize="label"></span></th>
+                            <th>X   <span class="th-grip" data-resize="x"></span></th>
+                            <th>Y   <span class="th-grip" data-resize="y"></span></th>
+                            <th></th>
+                          </tr>
                           </thead>
                           <tbody>
                           <tr v-for="(p,i) in points" :key="`p${i}`">
@@ -337,7 +326,6 @@
         </v-stepper>
       </div>
 
-      <!-- 全面ロック（操作禁止） -->
       <v-overlay :model-value="transitioning" persistent contained class="lock-overlay">
         <v-progress-circular indeterminate color="primary" size="48" />
       </v-overlay>
@@ -408,12 +396,15 @@ export default {
 
       history: [], historyPtr: -1,
 
-      ro: null,               // ResizeObserver
-      roBusy: false,         // ループ再入防止
+      ro: null,
+      roBusy: false,
       tableMaxPx: 420,
-      transitioning: false,   // ← ローディング状態
-      compactFlow: true,      // ← Step1→Step2(ローディング)→Step3へ
-      showStep2Header: true,  // コンパクトでも見た目にステップ2を出す
+      transitioning: false,
+      compactFlow: true,
+      showStep2Header: true,
+
+      colw: { label: 160, x: 140, y: 140 },
+      colResize: { active:false, key:null, startX:0, startW:0 }
     }
   },
   computed: {
@@ -433,11 +424,21 @@ export default {
     },
     step () {
       this.$nextTick(this.recalcTableMax)
-      if (this.step===4) this.$nextTick(()=>this.initMapLibre())
+      if (this.step===4) {
+        this.$nextTick(()=> {
+          this.initMapLibre()
+          this.loadColWidths()
+          this.installColResizer()
+        })
+      }
     }
   },
   mounted () {
-    if (this.step===4) this.initMapLibre()
+    if (this.step===4) {
+      this.initMapLibre()
+      this.loadColWidths()
+      this.installColResizer()
+    }
     this.installGlobalUndo()
     this.$nextTick(this.recalcTableMax)
   },
@@ -447,7 +448,7 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ===== 高さ再計算（ResizeObserver ループ対策） ===== */
+    /* ===== 高さ再計算 ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -478,7 +479,7 @@ export default {
       }
     },
 
-    /* ===== Undo（常時有効） ===== */
+    /* ===== Undo ===== */
     installGlobalUndo () {
       this._undoHandler = (e) => {
         if (!this.internal) return
@@ -525,7 +526,7 @@ export default {
       this.rawTable = { headers: headers2, rows: rows2 }
     },
 
-    /* ===== 進む（Step1→Step2ローディング→Step3） ===== */
+    /* ===== 進む ===== */
     async goNext () {
       if (this.step === 1) {
         if (!this.file) return
@@ -697,7 +698,15 @@ export default {
     /* ===== util ===== */
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
-    normNumberStr (s) { if (s==null) return ''; return String(s).normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'').replace(/[−－\u00A0\u2003\u2002\u3000─━‐–—]/g,'-').trim() },
+    normNumberStr (s) {
+      if (s==null) return ''
+      return String(s)
+          .normalize('NFKC')
+          .replace(/,/g,'')
+          .replace(/[\]|]/g,'')                                   /* ] と | を除去 */
+          .replace(/[\u2212\uFF0D\u00A0\u2003\u2002\u3000\u2500\u2501\u2010\u2013\u2014]/g,'-')  /* 各種マイナス/ダッシュ/空白 */
+          .trim()
+    },
     parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
@@ -839,19 +848,66 @@ export default {
     },
 
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
+
+    /* ===== 列幅保存/復元＋ドラッグ ===== */
+    loadColWidths () {
+      try {
+        const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
+        const clamp = (v,min,max)=>Math.min(max,Math.max(min, v|0))
+        if (saved && typeof saved==='object') {
+          this.colw.label = clamp(saved.label ?? this.colw.label, 100, 420)
+          this.colw.x     = clamp(saved.x     ?? this.colw.x,     100, 260)
+          this.colw.y     = clamp(saved.y     ?? this.colw.y,     100, 260)
+        }
+      } catch {}
+    },
+    saveColWidths () {
+      localStorage.setItem('oh3_coords_colw_v1', JSON.stringify(this.colw))
+    },
+    installColResizer () {
+      const host = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
+      if (!host) return
+      const table = host.querySelector('table.coords-table')
+      if (!table) return
+      const onMove = (e) => {
+        if (!this.colResize.active) return
+        const dx = e.clientX - this.colResize.startX
+        const key = this.colResize.key
+        const min = 100
+        const max = key==='label' ? 420 : 260
+        this.colw[key] = Math.min(max, Math.max(min, this.colResize.startW + dx))
+      }
+      const onUp = () => {
+        if (!this.colResize.active) return
+        this.colResize.active = false
+        window.removeEventListener('mousemove', onMove, true)
+        window.removeEventListener('mouseup', onUp, true)
+        this.saveColWidths()
+      }
+      table.querySelectorAll('.th-grip').forEach(grip => {
+        grip.onmousedown = (e) => {
+          const key = grip.dataset.resize
+          if (!key) return
+          e.preventDefault()
+          this.colResize.active = true
+          this.colResize.key = key
+          this.colResize.startX = e.clientX
+          this.colResize.startW = this.colw[key]
+          window.addEventListener('mousemove', onMove, true)
+          window.addEventListener('mouseup', onUp, true)
+        }
+      })
+    },
   }
 }
 </script>
 
 <style scoped>
 /* =========================================
-   KyusekiImportDialog（テーブル満杯化＋高さ拡張＋凡例位置調整）
+   KyusekiImportDialog（スクロール確実化＋列幅ドラッグ）
    ========================================= */
 
-.oh3-dialog{
-  height:calc(100vh - 12px);
-  display:flex;flex-direction:column;overflow:hidden
-}
+.oh3-dialog{height:calc(100vh - 12px);display:flex;flex-direction:column;overflow:hidden}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
 .oh3-dialog .px-4.pt-2{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
@@ -871,61 +927,37 @@ export default {
 :deep(.v-overlay__content){ overflow:hidden !important; }
 :deep(.v-card-text){ overflow:visible !important; }
 
-/* 初期の上限を少し高めに（実際は JS で上書きされる） */
 :root{ --oh3-table-h: 560px; --tall-h: 420px; }
 
-.table-host,.table-scroll,.table-fill{
+.pane{display:flex;flex-direction:column;min-height:0}
+.pane .pane-body{flex:1 1 auto;min-height:0;overflow:visible}
+.table-host{
   display:block;flex:1 1 auto;min-height:200px;max-height:var(--oh3-table-h);
   overflow:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
 
-/* ★ 座標テーブル用：親の高さいっぱいに */
-.pane .pane-body > .table-host.fill-100{
-  height:100%;
-  max-height:none;
-}
-
-/* テーブル基本 */
-.oh3-simple{
-  width:max(100%, 720px);
-  border-collapse:collapse;
-  table-layout:fixed;
-  font-size:12.5px;
-}
+.oh3-simple{width:max(100%, 720px);border-collapse:collapse;table-layout:fixed;font-size:12.5px;}
 .oh3-simple.auto{ table-layout:auto; }
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
 .oh3-simple thead th{ position:sticky; top:0; z-index:2; background:#f6f6f7; }
 .oh3-simple td{ padding:0 }
 
-/* 入力 */
-.oh3-simple .cell-input{
-  width:100%; box-sizing:border-box; padding:6px 8px; border:none; outline:none; font:inherit;
-  background:#dbeafe; color:#0f172a;
-}
+.oh3-simple .cell-input{width:100%;box-sizing:border-box;padding:6px 8px;border:none;outline:none;font:inherit;background:#dbeafe;color:#0f172a;}
 .oh3-simple .cell-input.num{ text-align:right }
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
-/* 外れ値/編集済み表示 */
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
-@keyframes oh3PulseEdited{
-  0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}
-  50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}
-  100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}
-}
+@keyframes oh3PulseEdited{0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
 
-/* レイアウト */
-.pane{display:flex;flex-direction:column;min-height:0}
-.pane .pane-body{flex:1 1 auto;min-height:0;overflow:hidden}
 .preview-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
 .preview-grid>.tall{grid-row:1/span 2}
 .maplibre-host{width:100%;height:100%;min-height:240px;border:1px solid #e2e8f0;border-radius:8px}
 
-/* タイトル/装飾 */
 :deep(.v-card-title){padding:8px 12px; flex-wrap:wrap;}
 :deep(.v-card-text){padding:8px 12px}
 .big-steps :deep(.v-stepper-item__avatar){width:36px;height:36px;font-size:16px}
@@ -933,7 +965,7 @@ export default {
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch{align-self:flex-start;max-width:260px}
-.no-stretch :deep(.v-field){height:50px} /* ← 既定どおり */
+.no-stretch :deep(.v-field){height:50px}
 .no-stretch :deep(.v-input){flex:0 0 auto !important}
 .preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
@@ -941,22 +973,20 @@ export default {
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
 
-/* 凡例（本文内） */
 .legend-row{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
 .legend{ display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle }
 .legend.suspect{ background:#ffd6d6; border:1px solid #ff4d4f }
 .legend.edited{ background:#e7f6e7; border:1px solid #7fbf7f }
 
-/* 座標テーブルの“自然な”幅配分 */
 .coords-table{ table-layout:auto; }
-.coords-table .col-label{ min-width:180px; }
-.coords-table .col-num{ width:140px; }
-@media (max-width: 960px){
-  .coords-table .col-label{ min-width:160px; }
-  .coords-table .col-num{ width:120px; }
-}
+.coords-table .col-label{ width:160px; min-width:100px; }
+.coords-table .col-num{ width:140px; min-width:100px; }
 
-/* ローダ/ロック */
+.coords-table thead th{ position:relative; }
+.coords-table thead th .th-grip{ position:absolute; right:-4px; top:0; bottom:0; width:8px; cursor:col-resize; background: transparent; }
+.coords-table thead th .th-grip::after{ content:''; position:absolute; left:3px; top:25%; bottom:25%; width:2px; border-radius:1px; background:rgba(0,0,0,.08); }
+.coords-table thead th:hover .th-grip::after{ background:rgba(0,0,0,.18); }
+
 .loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
 .lock-overlay :deep(.v-overlay__content){backdrop-filter: blur(1px)}
 </style>
