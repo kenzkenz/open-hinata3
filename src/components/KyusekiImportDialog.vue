@@ -36,30 +36,44 @@
           </v-stepper-header>
 
           <v-stepper-window>
-            <!-- STEP1 -->
+            <!-- STEP1（大アイコンのファイルピッカー） -->
             <v-stepper-window-item :value="1">
               <div class="pa-3 step-host">
+                <!-- 隠し input -->
+                <input
+                    ref="fileInput"
+                    type="file"
+                    accept="image/*,.pdf"
+                    style="display:none"
+                    @change="onNativeFileChange"
+                />
                 <div class="d-flex flex-wrap gap-3">
-                  <v-file-input
-                      v-model="file"
-                      accept="image/*,.pdf"
-                      label="求積表の写真 or PDF を選択"
-                      prepend-icon="mdi-camera"
+                  <v-card
+                      class="pick-tile"
                       variant="outlined"
-                      density="comfortable"
-                      clearable
-                      class="file-compact"
-                      show-size
-                      :disabled="disableAll"
-                      @change="onFileSelected"
-                  />
-                  <div class="flex-1 min-h-40">
-                    <div v-if="previewUrl" class="preview-box">
-                      <img v-if="isImage" :src="previewUrl" class="preview-img" alt="preview" />
-                      <div v-else class="text-medium-emphasis">PDFを読み込みました（1ページ目を表示）</div>
+                      role="button"
+                      tabindex="0"
+                      :ripple="true"
+                      :elevation="previewUrl ? 2 : 0"
+                      @click="$refs.fileInput?.click()"
+                      @keydown.enter.prevent="$refs.fileInput?.click()"
+                      @keydown.space.prevent="$refs.fileInput?.click()"
+                  >
+                    <div v-if="!previewUrl" class="pick-empty">
+                      <v-icon size="56" class="pick-icon">mdi-file-image-plus-outline</v-icon>
+                      <div class="pick-title">画像 / PDF を選択</div>
+                      <div class="pick-sub text-medium-emphasis">クリックしてファイルを選ぶ</div>
                     </div>
-                    <div v-else class="text-medium-emphasis">ファイル未選択</div>
-                  </div>
+                    <div v-else class="pick-preview">
+                      <img v-if="isImage" :src="previewUrl" class="preview-img" alt="preview" />
+                      <div v-else class="pdf-badge">
+                        <v-icon size="28" class="mr-2">mdi-file-pdf-box</v-icon>
+                        PDF を読み込みました（1ページ目を表示）
+                      </div>
+                    </div>
+                  </v-card>
+
+                  <div class="flex-1 min-h-40"></div>
                 </div>
               </div>
             </v-stepper-window-item>
@@ -113,7 +127,7 @@
                   </div>
                 </div>
 
-                <div v-else class="text-medium-emphasis">まだ結果がありません。OCRを実行してください。</div>
+                <div class="text-medium-emphasis" v-else>まだ結果がありません。OCRを実行してください。</div>
               </div>
             </v-stepper-window-item>
 
@@ -409,8 +423,7 @@ export default {
       if (v) {
         this.$nextTick(this.recalcTableMax)
       } else {
-        // ← ここを追加：ダイアログが閉じられた瞬間に全データを捨てる
-        this.resetAll()
+        this.resetAll() // 閉じたら全て忘れる
       }
     },
     step () {
@@ -421,7 +434,10 @@ export default {
             await this.initMapLibre()
             this.loadColWidths()
             this.installColResizer()
-            this.autoMapRoles()
+            // ★手動マッピングの上書きを防止：未設定時のみ自動マップ
+            if (!this.columnRoles || this.columnRoles.length === 0) {
+              this.autoMapRoles()
+            }
             this.rebuild()
             await this.ensureMapLoaded()
             await this.renderPreviewOnMap()
@@ -441,44 +457,40 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
+    /* ====== ファイル選択（大アイコンUI） ====== */
+    onNativeFileChange (e) {
+      const f = e?.target?.files?.[0]
+      this.file = f || null
+      this.onFileSelected()
+    },
+
     // 追加：ダイアログ内の一切の作業状態を破棄
     resetAll () {
       try {
-        // Undo/キー監視解除
         this.uninstallGlobalUndo?.()
-
-        // MapLibre破棄
         if (this.map && this.map.remove) { try { this.map.remove() } catch(e){} }
         this.map = null
-
-        // blob URL解放
         if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
           try { URL.revokeObjectURL(this.previewUrl) } catch(e){}
         }
-
-        // ResizeObserver解除
         if (this.ro) { try { this.ro.disconnect() } catch(e){} this.ro = null }
         window.removeEventListener?.('resize', this.recalcTableMax)
 
-        // 進行状態・フラグ
         this.step = 1
         this.busy = false
         this.transitioning = false
         this.compactFlow = true
         this.showStep2Header = true
 
-        // 入力ファイル等
         this.file = null
         this.previewUrl = ''
         this.isImage = true
         this.importName = ''
 
-        // OCRテーブル
         this.ocrError = ''
         this.rawTable = { headers: [], rows: [] }
         this.columnRoles = []
 
-        // 再構成データ
         this.points = []
         this.area = { area: 0, signed: 0 }
         this.closure = { dx: 0, dy: 0, len: 0 }
@@ -486,31 +498,23 @@ export default {
         this.simaInfo = { name: '', size: 0 }
         this.lastSimaText = ''
 
-        // 編集フラグ／履歴
         this.suspect = { x: new Set(), y: new Set() }
         this.edits = new Map()
         this.lastEdited = { row: null, field: null, at: 0 }
         this.history = []
         this.historyPtr = -1
 
-        // テーブル高さ（再計算は再オープン時に）
         this.tableMaxPx = 640
-
-        // 列幅はユーザー設定なので保持（消したいならここで localStorage.removeItem('oh3_coords_colw_v1')）
         this.colResize = { active:false, key:null, startX:0, startW:0 }
       } catch (e) {
         console.warn('resetAll failed', e)
       }
     },
 
-    // 置き換え：×ボタン等で呼ばれたら「閉じる＋全消去」
-    close () {
-      // 先に非表示にしてから全消去（描画コスト低）
-      this.internal = false
-      // watcher でも resetAll を呼ぶが、明示で二重呼びでも安全
-      this.resetAll()
-    },
-    /* ===== 高さ再計算（親いっぱい・上限付き） ===== */
+    // ×ボタン＝閉じる＋全消去
+    close () { this.internal = false; this.resetAll() },
+
+    /* ===== 高さ再計算 ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -640,8 +644,9 @@ export default {
     normHeader (s) { if (!s) return ''; return s.normalize('NFKC').replace(/\s+/g,'').replace(/[()【】（）:：ー_−－\u00A0\u2003\u2002\u3000─━‐–—-]/g,'').replace(/\[|\]/g,'').toLowerCase() },
     guessRoleFromHeader (h) {
       const t = (h||'').trim().toLowerCase()
-      if (/^(x|xn)\b/.test(t) || /(x座標|東距|東\b|e\b)/.test(t)) return 'x'
-      if (/^(y|yn)\b/.test(t) || /(y座標|北距|北\b|n\b)/.test(t)) return 'y'
+      // 「34-1 Xn」「No.34 X」「x n」など前置/区切りありにも強くする
+      if (/\b(xn|x)\b/.test(t) || /(x座標|東距|東\b|e\b)/.test(t)) return 'x'
+      if (/\b(yn|y)\b/.test(t) || /(y座標|北距|北\b|n\b)/.test(t)) return 'y'
       if (/(^no\b|点番|番号|^番$|^n0$|^№$)/i.test(t)) return 'label'
       if (/点名|標識|名称/.test(t)) return 'label'
       return null
@@ -654,7 +659,7 @@ export default {
       })
     },
 
-    /* ===== Undo ===== */
+    /* ===== 編集＆Undo ===== */
     onEditKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
     pushHistory (rec) { if (this.historyPtr < this.history.length - 1) this.history = this.history.slice(0, this.historyPtr + 1); this.history.push(rec); this.historyPtr = this.history.length - 1 },
     undo () {
@@ -672,6 +677,18 @@ export default {
         this.rebuild()
       }
     },
+    onRawCellEditAbs (ri, ci, v) {
+      try {
+        const row = this.rawTable.rows?.[ri]; if (!row) return
+        const prev = row[ci]
+        if (prev !== v) {
+          this.pushHistory({ type:'raw', ri, ci, prev, next:v })
+          row[ci] = v
+        }
+        const roles = this.mapColumnsObject()
+        if (ci === roles.x || ci === roles.y || ci === roles.label) this.rebuild()
+      } catch (e) { console.warn('onRawCellEditAbs failed', e) }
+    },
 
     /* ===== points 再構成／検算 ===== */
     rebuild () {
@@ -682,7 +699,7 @@ export default {
         const usable = rows.map((r,ri)=>{
           const rawX = (roles.x!=null) ? r[roles.x] : ''
           const rawY = (roles.y!=null) ? r[roles.y] : ''
-          const x = this.parseNumber(rawX)
+          const x = this.parseNumber(rawX)   // Number() 先行
           const y = this.parseNumber(rawY)
           const label = (roles.label!=null) ? String(r[roles.label]||'').trim() : undefined
           return { ri, rawX, rawY, x, y, label }
@@ -724,7 +741,16 @@ export default {
     median (a){const b=a.filter(Number.isFinite).slice().sort((x,y)=>x-y); if(!b.length)return NaN; const m=Math.floor(b.length/2); return b.length%2?b[m]:(b[m-1]+b[m])/2},
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
     normNumberStr (s) { if (s==null) return ''; return String(s).normalize('NFKC').replace(/,/g,'').replace(/[\]|]/g,'').replace(minusAndDashes,'-').trim() },
-    parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
+
+    // Number() で素直にパース → 失敗時だけ拾い直し
+    parseNumber (s) {
+      const t = this.normNumberStr(String(s))
+      const n = Number(t)
+      if (Number.isFinite(n)) return n
+      const m = t.match(/-?\d+(?:\.\d+)?/)
+      return m ? parseFloat(m[0]) : NaN
+    },
+
     mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
     /* ===== Step4：points編集→rawTable反映 ===== */
@@ -994,7 +1020,7 @@ export default {
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
-@keyframes oh3PulseEdited{0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
+@keyframes oh3PulseEdited{0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0) }}
 
 /* Grid */
 .preview-grid{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
@@ -1008,18 +1034,13 @@ export default {
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch{align-self:flex-start;max-width:260px}
-.no-stretch :deep(.v-field){height:46px}
+.no-stretch :deep(.v-field){height:46px}  /* ご指定の高さ維持 */
 .no-stretch :deep(.v-input){flex:0 0 auto !important}
 .preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
 .compact-text{padding-top:4px;padding-bottom:4px}
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
-
-/* ファイル入力（STEP1） */
-.file-compact{max-width:420px}
-.file-compact :deep(.v-field){height:44px}
-.file-compact :deep(.v-field__input){padding-top:6px;padding-bottom:6px}
 
 /* ★ 座標テーブルの極狭列 */
 .coords-table{ table-layout:auto; }
@@ -1036,4 +1057,30 @@ export default {
 /* ローダ/ロック */
 .loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
 .lock-overlay :deep(.v-overlay__content){backdrop-filter: blur(1px)}
+
+/* ====== 大アイコンのファイルピッカー ====== */
+.pick-tile{
+  width: clamp(260px, 48vw, 520px);
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: box-shadow .15s ease, transform .05s ease;
+}
+.pick-tile:focus-visible{ outline: 2px solid rgba(59,130,246,.65); outline-offset: 2px; }
+.pick-tile:hover{ box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+.pick-tile:active{ transform: translateY(1px); }
+
+.pick-empty{ text-align:center; padding: 18px 12px; }
+.pick-icon{ color: rgb(var(--v-theme-primary)); opacity: .9; }
+.pick-title{ font-weight: 700; margin-top: 8px; }
+.pick-sub{ font-size: 12.5px; margin-top: 2px; }
+
+.pick-preview{ width: 100%; padding: 8px; display: grid; place-items: center; }
+.pdf-badge{
+  display: inline-flex; align-items: center;
+  padding: 10px 14px; border-radius: 10px;
+  background: #fdecec; color: #7a1d1d; border: 1px solid #f8c8c8;
+}
 </style>
