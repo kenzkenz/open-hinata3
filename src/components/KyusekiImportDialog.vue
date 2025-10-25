@@ -334,7 +334,7 @@
 </template>
 
 <script>
-import { downloadTextFile, zahyokei } from '@/js/downLoad'
+import {downloadTextFile, simaLoadForUser, zahyokei} from '@/js/downLoad'
 import { mapState } from 'vuex'
 import proj4 from 'proj4'
 
@@ -942,7 +942,8 @@ export default {
     },
     downloadSIMA () {
       if (!this.points.length) return
-      const text=this.buildSIMAContent(); this.lastSimaText=text
+      const text = this.buildSIMAContent();
+      this.lastSimaText=text
       const base=(this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
       const ts=new Date().toISOString().replace(/[:.]/g,'-'), name= base + '_' + ts + '.sim'
       downloadTextFile(name, text, 'shift-jis')
@@ -956,8 +957,10 @@ export default {
     },
     async commit () {
       try { this.busy = true
-        const name = (this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
-        this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
+        // const name = (this.s_gazoName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+        // this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
+
+        await simaLoadForUser(this.$store.state.map01, true, this.buildSIMAContent(), this.s_zahyokei)
       } finally { this.busy = false }
     },
   }
