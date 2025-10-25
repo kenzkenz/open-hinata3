@@ -406,7 +406,12 @@ export default {
     modelValue (v) { this.internal = v },
     internal (v) {
       this.$emit('update:modelValue', v)
-      if (v) this.$nextTick(this.recalcTableMax)
+      if (v) {
+        this.$nextTick(this.recalcTableMax)
+      } else {
+        // ← ここを追加：ダイアログが閉じられた瞬間に全データを捨てる
+        this.resetAll()
+      }
     },
     step () {
       this.$nextTick(this.recalcTableMax)
@@ -436,6 +441,75 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
+    // 追加：ダイアログ内の一切の作業状態を破棄
+    resetAll () {
+      try {
+        // Undo/キー監視解除
+        this.uninstallGlobalUndo?.()
+
+        // MapLibre破棄
+        if (this.map && this.map.remove) { try { this.map.remove() } catch(e){} }
+        this.map = null
+
+        // blob URL解放
+        if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
+          try { URL.revokeObjectURL(this.previewUrl) } catch(e){}
+        }
+
+        // ResizeObserver解除
+        if (this.ro) { try { this.ro.disconnect() } catch(e){} this.ro = null }
+        window.removeEventListener?.('resize', this.recalcTableMax)
+
+        // 進行状態・フラグ
+        this.step = 1
+        this.busy = false
+        this.transitioning = false
+        this.compactFlow = true
+        this.showStep2Header = true
+
+        // 入力ファイル等
+        this.file = null
+        this.previewUrl = ''
+        this.isImage = true
+        this.importName = ''
+
+        // OCRテーブル
+        this.ocrError = ''
+        this.rawTable = { headers: [], rows: [] }
+        this.columnRoles = []
+
+        // 再構成データ
+        this.points = []
+        this.area = { area: 0, signed: 0 }
+        this.closure = { dx: 0, dy: 0, len: 0 }
+        this.buildError = ''
+        this.simaInfo = { name: '', size: 0 }
+        this.lastSimaText = ''
+
+        // 編集フラグ／履歴
+        this.suspect = { x: new Set(), y: new Set() }
+        this.edits = new Map()
+        this.lastEdited = { row: null, field: null, at: 0 }
+        this.history = []
+        this.historyPtr = -1
+
+        // テーブル高さ（再計算は再オープン時に）
+        this.tableMaxPx = 640
+
+        // 列幅はユーザー設定なので保持（消したいならここで localStorage.removeItem('oh3_coords_colw_v1')）
+        this.colResize = { active:false, key:null, startX:0, startW:0 }
+      } catch (e) {
+        console.warn('resetAll failed', e)
+      }
+    },
+
+    // 置き換え：×ボタン等で呼ばれたら「閉じる＋全消去」
+    close () {
+      // 先に非表示にしてから全消去（描画コスト低）
+      this.internal = false
+      // watcher でも resetAll を呼ぶが、明示で二重呼びでも安全
+      this.resetAll()
+    },
     /* ===== 高さ再計算（親いっぱい・上限付き） ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
@@ -752,7 +826,6 @@ export default {
     },
 
     fmt (v) { return (v==null || Number.isNaN(v)) ? '' : Number(v).toFixed(3) },
-    close () { this.internal = false },
 
     async onFileSelected () {
       this.previewUrl=''; this.isImage=true
