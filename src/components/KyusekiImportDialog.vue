@@ -796,89 +796,188 @@ export default {
 </script>
 
 <style scoped>
-/* ===== ダイアログとレイアウト ===== */
-.oh3-dialog{ max-height: 90vh; display:flex; flex-direction:column; }
-.step-host{ display:flex; flex-direction:column; min-height:0; }
-.preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
-.preview-img{max-width:100%;max-height:280px;object-fit:contain}
-.ocr-table{border:1px solid var(--v-theme-outline-variant);border-radius:8px;padding:8px}
+/* ================================
+   KyusekiImportDialog 全スタイル一式
+   ・全体スクロール禁止／テーブルのみスクロール
+   ・「次へ」ボタンを下部固定
+   ・入力セル=青 / 外れ値=赤（はっきり）
+   ================================ */
 
-/* ステッパー番号を少し大きく */
-.big-steps :deep(.v-stepper-item__avatar){ width:36px;height:36px;font-size:16px; }
+/* ===== ダイアログ骨格 ===== */
+.oh3-dialog{
+  height:92vh !important;                 /* 画面内に収める */
+  display:flex; flex-direction:column;
+  overflow:hidden !important;             /* 全体の縦スクロールを抑止 */
+}
 
-/* パネルとプレビューグリッド */
-:root{ --tall-h: 300px; --table-h: min(56vh, 520px); }
-.pane{display:flex;flex-direction:column;box-sizing:border-box;min-height:0}
-.pane-body{flex:1;display:flex;flex-direction:column;min-height:0}
+/* タイトル・区切りは固定領域 */
+.oh3-dialog > .v-card-title,
+.oh3-dialog > .v-divider{
+  flex:0 0 auto;
+}
+
+/* タイトル直下の本体領域をflex化して“中央だけ”可動域を作る */
+.oh3-dialog .px-4.pt-2{
+  flex:1 1 auto; display:flex; flex-direction:column;
+  min-height:0 !important;                /* 子のoverflowを効かせるため必須 */
+}
+
+/* ステッパー全体を縦flexに */
+.oh3-dialog .v-stepper{
+  display:flex; flex-direction:column;
+  height:100%; min-height:0;
+}
+.oh3-dialog .v-stepper-header{ flex:0 0 auto; }
+.oh3-dialog .v-stepper-window{
+  flex:1 1 auto; min-height:0;
+  overflow:hidden;                        /* ここでのスクロールは殺して表側に任せる */
+}
+
+/* アクション（次へ/戻る）を常に下に表示 */
+.oh3-dialog .v-stepper-actions{
+  position: sticky;
+  bottom: 0;
+  background:#fff;
+  border-top:1px solid #e5e7eb;
+  z-index:10;
+}
+
+/* ===== 各ステップの中身をflex化（テーブルスクロール用） ===== */
+.step-host,
+.oh3-dialog .v-stepper-window-item > .pa-4{
+  display:flex; flex-direction:column;
+  min-height:0 !important;
+}
+
+/* ===== 表だけスクロール（どのラッパでも効く） ===== */
+:root{ --oh3-table-h: min(56vh, 520px); } /* 高さは適宜調整 */
+
+.table-host,
+.table-scroll,
+.table-fill{
+  flex:1 1 auto;
+  min-height:200px;                       /* 下限（任意） */
+  max-height:var(--oh3-table-h);
+  overflow:auto !important;               /* ここだけスクロール */
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  background:#fff;
+}
+
+/* テーブル見出しを固定（表スクロール時の必須UX） */
+.oh3-dialog .oh3-simple thead th{
+  position: sticky !important;
+  top: 0; z-index: 2;
+  background:#f6f6f7 !important;
+}
+
+/* ===== プレビュー／パネル系 ===== */
+:root{ --tall-h: 300px; }
+.pane{ display:flex; flex-direction:column; min-height:0; }
+.pane .pane-body{ flex:1 1 auto; min-height:0; overflow:hidden; }
 
 .preview-grid{
-  display:grid;gap:16px;
+  display:grid; gap:16px;
   grid-template-columns:repeat(3,minmax(0,1fr));
   grid-template-rows:repeat(2, calc(var(--tall-h)/2));
 }
-.preview-grid > .tall{ grid-row: 1 / span 2; height:auto; }
+.preview-grid > .tall{ grid-row:1 / span 2; height:auto; }
 .preview-grid > .calc-pane{ grid-column:3; grid-row:1; height:auto; }
 .preview-grid > .crs-pane { grid-column:3; grid-row:2; height:auto; }
 
 @media (max-width:1200px){
-  .preview-grid{grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto}
+  .preview-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto; }
   .preview-grid > .tall{ grid-row:auto; }
 }
 @media (max-width:980px){
-  .preview-grid{grid-template-columns:1fr; grid-template-rows:auto}
+  .preview-grid{ grid-template-columns:1fr; grid-template-rows:auto; }
 }
 
-/* ===== 表だけスクロール（全体は固定） ===== */
-.table-host{
-  height: var(--table-h);
-  overflow: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
+.preview-box{
+  width:100%; border:1px dashed var(--v-theme-outline);
+  border-radius:8px; padding:8px; min-height:180px;
+  display:grid; place-items:center;
+}
+.preview-img{ max-width:100%; max-height:280px; object-fit:contain; }
+.maplibre-host{
+  width:100%; height:100%;
+  min-height:220px;
+  border:1px solid #e2e8f0; border-radius:8px;
 }
 
-/* ===== テーブル ===== */
-.oh3-simple{width:100%;border-collapse:collapse;font-size:12.5px}
-.oh3-simple th,.oh3-simple td{border:1px solid #ddd;padding:6px 8px;text-align:left;white-space:nowrap}
-.oh3-simple thead th{background:#f6f6f7;position:sticky;top:0;z-index:1}
+/* ===== テーブル基本体裁 ===== */
+.oh3-simple{
+  width:100%; border-collapse:collapse; font-size:12.5px;
+}
+.oh3-simple th,.oh3-simple td{
+  border:1px solid #ddd; white-space:nowrap;
+}
+.oh3-simple thead th{ padding:6px 8px !important; }
 
 /* ===== 編集UI（全ステップで入力可） ===== */
-.oh3-simple.editable td { padding:0; position:relative; }
-.cell-input{
+.oh3-simple.editable td,
+.oh3-simple td{ padding:0 !important; position:relative; }
+
+.oh3-simple :is(input.cell-input, .cell-input){
   width:100%; box-sizing:border-box;
-  padding:6px 8px; border:none; outline:none;
-  background:#fbfdff;   /* 入力可能の常時うっすら色 */
-  font:inherit; position:relative; z-index:1;
+  padding:6px 8px; border:none; outline:none; font:inherit;
+  background:#dbeafe !important;         /* 常時“はっきり青” */
+  color:#0f172a;
 }
-.cell-input.num{ text-align:right; }
-.oh3-simple.editable td:focus-within { background:#e8f0fe !important; } /* フォーカス時は濃く */
-.cell-input:focus{ background:#fffef6; }                                 /* 入力域のフォーカス */
+.oh3-simple .cell-input.num{ text-align:right !important; }
 
-/* ===== 外れ値/編集済み/直後パルス（Step4 テーブル） ===== */
-.suspect-cell{ background:#fff1b8 !important; box-shadow: inset 0 0 0 1px #e0b84a; } /* 黄色：外れ値セルだけ */
-.edited-cell{ background:#e7f6e7; box-shadow: inset 0 0 0 1px #7fbf7f; }             /* 淡緑：編集済み行 */
-.just-edited{ animation: pulseEdited 1s ease-out 1; }
-@keyframes pulseEdited{
-  0% { box-shadow: 0 0 0 0 rgba(25,118,210,.45); }
-  50%{ box-shadow: 0 0 0 6px rgba(25,118,210,0); }
-  100%{ box-shadow: 0 0 0 0 rgba(25,118,210,0); }
+/* フォーカス中はさらに濃い青＋枠 */
+.oh3-simple td:focus-within{
+  background:#bfdbfe !important;         /* セル背景も濃く */
+  box-shadow: inset 0 0 0 2px #60a5fa !important; /* 青の枠 */
 }
-.legend{ display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; vertical-align:middle }
-.legend.suspect{ background:#fff3cd; border:1px solid #e2c46b }
-.legend.edited{ background:rgba(25,118,210,.15); border:1px solid rgba(25,118,210,.45) }
-.edited-flag{ text-align:center; }
+.oh3-simple :is(input.cell-input, .cell-input):focus{
+  background:#bfdbfe !important;
+}
 
-/* 既存指定の維持 */
+/* ===== 外れ値（セル単位で赤・くっきり） ===== */
+/* JS側で外れ値セルに .suspect-cell を当てている前提 */
+.suspect-cell,
+.suspect-cell :is(input.cell-input, .cell-input){
+  background:#ffd6d6 !important;         /* はっきり赤系の薄紅 */
+  color:#7f1d1d !important;
+}
+.suspect-cell{
+  box-shadow: inset 0 0 0 2px #ff4d4f !important; /* 目立つ赤枠 */
+}
+
+/* 編集済みの可視化（任意：.edited-cell を付与していれば） */
+.edited-cell{
+  background:#e7f6e7 !important;
+  box-shadow: inset 0 0 0 1px #7fbf7f !important;
+}
+
+/* 直後の軽いパルス（任意：.just-edited を付与） */
+.just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
+@keyframes oh3PulseEdited{
+  0% { box-shadow: 0 0 0 0 rgba(99,102,241,.40); }
+  50%{ box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+
+/* ===== Vuetify 細部調整（余白で高さ計算が壊れないように） ===== */
 :deep(.v-card-title){ padding:8px 12px !important; }
 :deep(.v-card-text){  padding:8px 12px !important; }
-.maplibre-host{width:100%;height:100%;border:1px solid #e2e8f0;border-radius:8px}
-.compact-text{padding-top:4px;padding-bottom:4px}
-.inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
-.warn.small{font-size:12px;color:#a15d00;margin-top:6px}
-.map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
-.oh3-title{color:rgb(var(--v-theme-primary))}
-.oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
+
+/* ステッパーの番号を少し大きく（任意） */
+.big-steps :deep(.v-stepper-item__avatar){
+  width:36px; height:36px; font-size:16px;
+}
+
+/* 細かな装飾 */
+.compact-text{ padding-top:4px; padding-bottom:4px; }
+.inline-metrics{ display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; }
+.warn.small{ font-size:12px; color:#a15d00; margin-top:6px; }
+.map-chip{ border:1px dashed var(--v-theme-outline); border-radius:10px; padding:8px; min-width:180px; }
+.oh3-title{ color:rgb(var(--v-theme-primary)); }
+.oh3-accent-border{ border-top:3px solid rgb(var(--v-theme-primary)); }
 .no-stretch { align-self: flex-start; max-width: 260px; }
 .no-stretch :deep(.v-field) { height: 50px; }
 .no-stretch :deep(.v-input) { flex: 0 0 auto !important; }
 </style>
+
