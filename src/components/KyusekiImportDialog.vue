@@ -154,7 +154,7 @@
               <div class="pa-3 step-host fill-parent">
                 <div v-if="rawTable.headers.length" class="flex-col fill-parent" :key="'tblmap-'+selectedTable">
                   <div class="d-flex align-center justify-space-between mb-2">
-                    <div class="text-subtitle-2">列の役割を確認/修正</div>
+                    <div class="text-subtitle-1">点名 X Y を特定してください。それ以外は未使用にします。</div>
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
                   </div>
 
@@ -232,7 +232,7 @@
                   </v-card>
 
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
-                    <v-card-title class="py-2">座標プレビュー（編集可）</v-card-title>
+                    <v-card-title class="py-2">座標プレビュー（編集可）<span style="font-size: 12px; color: red">赤セルは異常値</span></v-card-title>
                     <v-card-text class="pane-body">
                       <div class="table-host">
                         <table class="oh3-simple editable coords-table">
@@ -384,9 +384,9 @@
         </v-stepper>
       </div>
 
-      <v-overlay :model-value="transitioning" persistent contained class="lock-overlay">
-        <v-progress-circular indeterminate color="primary" size="48" />
-      </v-overlay>
+<!--      <v-overlay :model-value="transitioning" persistent contained class="lock-overlay">-->
+<!--        <v-progress-circular indeterminate color="primary" size="48" />-->
+<!--      </v-overlay>-->
     </v-card>
   </v-dialog>
 </template>
@@ -434,7 +434,7 @@ export default {
       columnRoles: [],
       roleOptions: [
         { title: '未使用', value: null },
-        { title: '点名（文字）', value: 'label' },
+        { title: '点名', value: 'label' },
         { title: 'X', value: 'x' }, { title: 'Y', value: 'y' },
       ],
 
@@ -1037,6 +1037,24 @@ export default {
 .big-steps :deep(.v-stepper-item__avatar){width:26px;height:26px;font-size:13px}
 .big-steps :deep(.v-stepper-item__title){font-size:12.5px}
 .big-steps :deep(.v-stepper-item__subtitle){display:none}
+
+/* ステッパーのアイコン（丸バッジ）を大きくする */
+.big-steps :deep(.v-stepper-item__avatar){
+  width: 40px!important;      /* ← ここを好みの大きさに */
+  height: 40px!important;     /* ← 同上 */
+  font-size: 20px;  /* 数字/アイコンのベースサイズ */
+}
+
+/* 中のVuetifyアイコン（必要なら） */
+.big-steps :deep(.v-stepper-item__avatar .v-icon){
+  font-size: 22px;  /* アイコンを更に大きくしたい場合 */
+}
+
+/* 行間が詰まる場合はヘッダー余白も少し広げる */
+.big-steps :deep(.v-stepper-header){
+  padding: 6px 8px;
+  gap: 10px;
+}
 
 .oh3-dialog .v-stepper-window{flex:1 1 auto;min-height:0;overflow:hidden}
 

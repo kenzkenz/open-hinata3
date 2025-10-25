@@ -123,7 +123,7 @@ const defaults = () => ({
 export default createStore({
   state: {
     drawFeatureId: '',
-    clientVersion: 1.735,
+    clientVersion: 1.736,
     hillshade: defaults(),
     mapReady: false,
     pendingFile: null,
