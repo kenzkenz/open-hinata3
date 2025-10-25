@@ -91,6 +91,28 @@
                   </span>
                 </div>
 
+                <!-- ★ 複数表切替（Step2） -->
+                <div v-if="rawTables.length > 1" class="mb-2">
+                  <v-chip-group
+                      v-model="selectedTable"
+                      selected-class="text-white bg-primary"
+                      @update:modelValue="selectTable"
+                      filter
+                      mandatory
+                  >
+                    <v-chip
+                        v-for="(t, idx) in rawTables"
+                        :key="'tbl2-' + idx"
+                        :value="idx"
+                        variant="outlined"
+                        size="small"
+                        class="mr-1"
+                    >
+                      表{{ idx + 1 }}（{{ (t.rows && t.rows.length) || 0 }}行）
+                    </v-chip>
+                  </v-chip-group>
+                </div>
+
                 <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-3">{{ ocrError }}</v-alert>
 
                 <div v-if="transitioning" class="loader-placeholder">
@@ -139,6 +161,28 @@
                   <div class="d-flex align-center justify-space-between mb-2">
                     <div class="text-subtitle-2">列の役割を確認/修正（点番は使わず点名に寄せる）</div>
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
+                  </div>
+
+                  <!-- ★ 複数表切替（Step3） -->
+                  <div v-if="rawTables.length > 1" class="mb-2">
+                    <v-chip-group
+                        v-model="selectedTable"
+                        selected-class="text-white bg-primary"
+                        @update:modelValue="selectTable"
+                        filter
+                        mandatory
+                    >
+                      <v-chip
+                          v-for="(t, idx) in rawTables"
+                          :key="'tbl3-' + idx"
+                          :value="idx"
+                          variant="outlined"
+                          size="small"
+                          class="mr-1"
+                      >
+                        表{{ idx + 1 }}（{{ (t.rows && t.rows.length) || 0 }}行）
+                      </v-chip>
+                    </v-chip-group>
                   </div>
 
                   <div class="d-flex flex-wrap gap-2 mb-2">
@@ -306,7 +350,7 @@
                     />
                   </div>
                   <div class="d-flex align-center gap-3">
-<!--                    <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>-->
+                    <!-- <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn> -->
                     <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
                   </div>
                   <div v-if="simaInfo.name" class="text-caption text-medium-emphasis mt-2">生成: {{ simaInfo.name }}（{{ simaInfo.size }} bytes）</div>
@@ -370,6 +414,9 @@ export default {
       file: null, previewUrl: '', isImage: true,
 
       ocrError: '', rawTable: { headers: [], rows: [] },
+      rawTables: [],            // ★ 複数表全体
+      selectedTable: 0,         // ★ 現在の表インデックス
+      columnRolesByTable: [],   // ★ 各表ごとの列マッピング
 
       columnRoles: [],
       roleOptions: [
@@ -495,6 +542,9 @@ export default {
 
         this.ocrError = ''
         this.rawTable = { headers: [], rows: [] }
+        this.rawTables = []
+        this.selectedTable = 0
+        this.columnRolesByTable = []
         this.columnRoles = []
 
         this.points = []
@@ -537,9 +587,9 @@ export default {
       const updateVar = () => {
         const hostRect = host.getBoundingClientRect()
         const hostH = hostRect.height
-        const tall = Math.min(900, Math.max(560, Math.floor(hostH - 8)))
-        rootEl.style.setProperty('--tall-h', String(tall) + 'px')
-        const tablePx = Math.max(300, tall - 80)
+        const hostTall = Math.min(900, Math.max(560, Math.floor(hostH - 8)))
+        rootEl.style.setProperty('--tall-h', String(hostTall) + 'px')
+        const tablePx = Math.max(300, hostTall - 80)
         this.tableMaxPx = tablePx
         rootEl.style.setProperty('--oh3-table-h', String(tablePx) + 'px')
         this.roBusy = false
@@ -568,11 +618,28 @@ export default {
     uninstallGlobalUndo () { if (this._undoHandler) window.removeEventListener('keydown', this._undoHandler, true); this._undoHandler = null },
     onLocalKeyDown (e) { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); this.undo() } },
 
+    /* ===== 複数表：現在表参照・切替 ===== */
+    attachActiveTable () {
+      const t = this.rawTables[this.selectedTable] || { headers: [], rows: [] }
+      this.rawTable = t
+      if (!this.columnRolesByTable[this.selectedTable]) this.columnRolesByTable[this.selectedTable] = []
+      this.columnRoles = this.columnRolesByTable[this.selectedTable]
+    },
+    selectTable (idx) {
+      if (idx === this.selectedTable) return
+      if (idx < 0 || idx >= this.rawTables.length) return
+      this.selectedTable = idx
+      this.attachActiveTable()
+      if (!this.columnRoles || this.columnRoles.length === 0) this.autoMapRoles()
+      this.rebuild()
+      this.$nextTick(this.recalcTableMax)
+    },
+
     /* ===== OCR後のクリーンアップ ===== */
-    postCleanTable () {
-      if (!this.rawTable?.rows) return
-      const headers = (this.rawTable.headers || []).map(fixCell)
-      const rowsRaw = (this.rawTable.rows || []).map(r => (r || []).map(fixCell))
+    postCleanTableOne (tableObj) {
+      if (!tableObj?.rows) return
+      const headers = (tableObj.headers || []).map(fixCell)
+      const rowsRaw = (tableObj.rows || []).map(r => (r || []).map(fixCell))
       const nonEmptyRows = rowsRaw.filter(r => r.some(c => c && c.length))
       const colCount = Math.max(headers.length, ...nonEmptyRows.map(r => r.length))
       const rows = nonEmptyRows.map(r => { const a = r.slice(0, colCount); while (a.length < colCount) a.push(''); return a })
@@ -584,7 +651,13 @@ export default {
       }
       const headers2 = headers.filter((_,i)=>keepCols[i])
       const rows2 = rows.map(r => r.filter((_,i)=>keepCols[i]))
-      this.rawTable = { headers: headers2, rows: rows2 }
+      tableObj.headers = headers2
+      tableObj.rows = rows2
+    },
+    postCleanAllTables () {
+      if (!Array.isArray(this.rawTables) || !this.rawTables.length) return
+      this.rawTables.forEach(t => this.postCleanTableOne(t))
+      this.attachActiveTable()
     },
 
     /* ===== 進む ===== */
@@ -598,10 +671,13 @@ export default {
           this.step = 2
           await this.$nextTick()
           try {
-            const table = await this.runCloudOCR(this.file)
-            if (!table?.rows?.length) throw new Error('表が検出できませんでした')
-            this.rawTable = table
-            this.postCleanTable()
+            const out = await this.runCloudOCR(this.file)
+            if (!out?.tables?.length) throw new Error('表が検出できませんでした')
+            this.rawTables = out.tables.slice()
+            this.selectedTable = 0
+            this.columnRolesByTable = this.rawTables.map(() => [])
+            this.attachActiveTable()
+            this.postCleanAllTables()
             this.autoMapRoles()
             this.step = 3
           } catch (e) {
@@ -624,10 +700,13 @@ export default {
       if (!this.file) return
       this.ocrError=''; this.busy=true
       try {
-        const table = await this.runCloudOCR(this.file)
-        if (!table?.rows?.length) throw new Error('表が検出できませんでした')
-        this.rawTable = table
-        this.postCleanTable()
+        const out = await this.runCloudOCR(this.file)
+        if (!out?.tables?.length) throw new Error('表が検出できませんでした')
+        this.rawTables = out.tables.slice()
+        this.selectedTable = 0
+        this.columnRolesByTable = this.rawTables.map(() => [])
+        this.attachActiveTable()
+        this.postCleanAllTables()
         this.autoMapRoles()
         if (this.step<3) this.step=3
       } catch (e) { console.error(e); this.ocrError=String(e.message||e) }
@@ -643,7 +722,13 @@ export default {
       const text = await r.text(); let json; try { json = JSON.parse(text) } catch { json = null }
       if (!r.ok) throw new Error((json && json.error) || (json && json.detail) || ('HTTP ' + String(r.status)))
       if (!json || !json.ok) throw new Error((json && json.error) || 'Cloud OCR failed')
-      return { headers: json.headers || [], rows: json.rows || [], meta: json.meta || null }
+      // ★ 複数表・単一表どちらにも対応
+      if (Array.isArray(json?.tables) && json.tables.length) {
+        const tables = json.tables.map(t => ({ headers: t.headers || [], rows: t.rows || [] }))
+        return { tables, meta: json.meta || null }
+      } else {
+        return { tables: [{ headers: json.headers || [], rows: json.rows || [] }], meta: json.meta || null }
+      }
     },
 
     /* ===== 列マッピング ===== */
@@ -657,11 +742,16 @@ export default {
       return null
     },
     autoMapRoles () {
-      this.columnRoles = this.rawTable.headers.map(h => this.guessRoleFromHeader(h))
+      // 現在の表に対して推測
+      const roles = (this.rawTable.headers || []).map(h => this.guessRoleFromHeader(h))
+      // 計算列などを外す
       this.rawTable.headers.forEach((h, i) => {
         const s = String(h || '').toLowerCase()
-        if (/[+/*()]/.test(s) || /yn\+?1.*yn-?1/.test(s) || /合計|地積/.test(s)) this.columnRoles[i] = null
+        if (/[+/*()]/.test(s) || /yn\+?1.*yn-?1/.test(s) || /合計|地積/.test(s)) roles[i] = null
       })
+      // 参照を更新（テーブルごとの配列に保存）
+      this.columnRolesByTable[this.selectedTable] = roles
+      this.columnRoles = this.columnRolesByTable[this.selectedTable]
     },
 
     /* ===== 編集＆Undo ===== */
@@ -764,7 +854,7 @@ export default {
       return m ? parseFloat(m[0]) : NaN
     },
 
-    mapColumnsObject () { const o={}; this.columnRoles.forEach((r,i)=>{ if(r) o[r]=i }); return o },
+    mapColumnsObject () { const o={}; (this.columnRoles||[]).forEach((r,i)=>{ if(r) o[r]=i }); return o },
 
     /* ===== Step4：points編集→rawTable反映 ===== */
     onCellEdit (sourceRow, field, rawVal) {
@@ -958,27 +1048,23 @@ export default {
       }catch(e){}
       this.simaInfo={name: name, size: size}
     },
-    // methods: { ... } の中に置く
     async stageSimForOH3() {
-      // 1) SIMテキストを用意（既存の buildSIMAContent を利用）
       const simText = this.buildSIMAContent();
       if (!simText) throw new Error('SIMテキストが空です');
-      // 2) Shift-JIS へエンコード（Encoding.js があればSJIS、無ければUTF-8）
-      let bytes;        // Uint8Array
-      let decodeLabel;  // TextDecoder 用ラベル
+      let bytes;
+      let decodeLabel;
       if (window.Encoding) {
         const u = window.Encoding.stringToCode(simText);
         bytes = new Uint8Array(window.Encoding.convert(u, 'SJIS'));
         decodeLabel = 'shift_jis';
       } else {
-        // フォールバック（UTF-8）。SJISが必須なら Encoding.js を読み込んでください。
         bytes = new TextEncoder().encode(simText);
         decodeLabel = 'utf-8';
       }
       const fileName = `${this.s_gazoName}.sim`;
       const simFile = new File([bytes], fileName, { type: 'text/plain' });
       this.$store.state.tiffAndWorldFile = [simFile];
-      const arrayBuffer = bytes.buffer.slice(0); // 転用
+      const arrayBuffer = bytes.buffer.slice(0);
       this.ddSimaText = new TextDecoder(decodeLabel).decode(arrayBuffer);
     },
     async commit () {
