@@ -21,7 +21,7 @@
 
       <v-progress-linear v-if="transitioning" :indeterminate="true" color="primary" height="4" />
 
-      <div class="px-4 pt-2">
+      <div class="px-3 pt-2 pb-0">
         <v-stepper v-model="step" alt-labels flat color="primary" class="big-steps">
           <v-stepper-header>
             <v-stepper-item color="primary" :complete="step>1" :value="1" title="取り込み" subtitle="写真/PDF" />
@@ -32,19 +32,23 @@
             <v-divider />
             <v-stepper-item color="primary" :complete="step>(compactFlow?3:4)" :value="4" title="プレビュー・検算" subtitle="閉合/面積＋地図" />
             <v-divider />
-            <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH3へ反映" />
+            <v-stepper-item color="primary" :complete="false" :value="5" title="取り込み" subtitle="OH5へ反映" />
           </v-stepper-header>
 
           <v-stepper-window>
             <!-- STEP1 -->
             <v-stepper-window-item :value="1">
-              <div class="pa-4 step-host">
-                <div class="d-flex flex-wrap gap-4">
+              <div class="pa-3 step-host">
+                <div class="d-flex flex-wrap gap-3">
                   <v-file-input
                       v-model="file"
                       accept="image/*,.pdf"
                       label="求積表の写真 or PDF を選択"
                       prepend-icon="mdi-camera"
+                      variant="outlined"
+                      density="comfortable"
+                      clearable
+                      class="file-compact"
                       show-size
                       :disabled="disableAll"
                       @change="onFileSelected"
@@ -62,25 +66,24 @@
 
             <!-- STEP2 -->
             <v-stepper-window-item v-if="!compactFlow || ocrError || transitioning" :value="2">
-              <div class="pa-4 step-host">
-                <div class="d-flex align-center gap-3 mb-3">
+              <div class="pa-3 step-host">
+                <div class="d-flex align-center gap-3 mb-2">
                   <v-btn :loading="busy" :disabled="disableAll" @click="doOCR" prepend-icon="mdi-text-recognition" color="primary">
-                    OCR 実行（Cloud）
+                    OCR 実行
                   </v-btn>
                   <span class="text-medium-emphasis">
-                    Google Document AI Form Parser を使用します
                     <template v-if="transitioning">（OCR 実行中…）</template>
                   </span>
                 </div>
 
-                <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-4">{{ ocrError }}</v-alert>
+                <v-alert v-if="ocrError" type="error" density="comfortable" class="mb-3">{{ ocrError }}</v-alert>
 
                 <div v-if="transitioning" class="loader-placeholder">
                   <v-skeleton-loader type="table" />
                 </div>
 
                 <div v-else-if="rawTable.headers.length" class="ocr-table flex-col">
-                  <div class="text-subtitle-2 mb-2">抽出プレビュー（そのまま編集可）</div>
+                  <div class="text-subtitle-2 mb-1">抽出プレビュー（そのまま編集可）</div>
                   <div class="table-host">
                     <table class="oh3-simple editable auto">
                       <thead>
@@ -105,7 +108,7 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="text-caption text-medium-emphasis mt-2">
+                  <div class="text-caption text-medium-emphasis mt-1">
                     ※ ここで修正すると後工程に反映（⌘/Ctrl+Z で直前の修正を取り消し）。
                   </div>
                 </div>
@@ -116,14 +119,14 @@
 
             <!-- STEP3 -->
             <v-stepper-window-item :value="3">
-              <div class="pa-4 step-host fill-parent">
+              <div class="pa-3 step-host fill-parent">
                 <div v-if="rawTable.headers.length" class="flex-col fill-parent">
                   <div class="d-flex align-center justify-space-between mb-2">
                     <div class="text-subtitle-2">列の役割を確認/修正（点番は使わず点名に寄せる）</div>
                     <v-btn size="small" variant="text" :disabled="disableAll" @click="autoMapRoles" prepend-icon="mdi-magic-staff">自動マッピング</v-btn>
                   </div>
 
-                  <div class="d-flex flex-wrap gap-3 mb-3">
+                  <div class="d-flex flex-wrap gap-2 mb-2">
                     <div v-for="(h, i) in rawTable.headers" :key="`m${i}`" class="map-chip">
                       <div class="text-caption text-medium-emphasis mb-1">{{ h || '(空)' }}</div>
                       <v-select
@@ -166,8 +169,8 @@
 
             <!-- STEP4 -->
             <v-stepper-window-item :value="4">
-              <div class="pa-4 step-host">
-                <v-alert v-if="buildError" type="error" class="mb-4">{{ buildError }}</v-alert>
+              <div class="pa-3 step-host">
+                <v-alert v-if="buildError" type="error" class="mb-3">{{ buildError }}</v-alert>
 
                 <div class="preview-grid" v-if="points.length">
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
@@ -179,26 +182,16 @@
                   </v-card>
 
                   <v-card class="oh3-accent-border pane tall" variant="outlined">
-                    <v-card-title class="py-2 d-flex align-center justify-space-between">
-                      <span>座標プレビュー（編集可）</span>
-                      <v-chip size="small" color="warning" variant="tonal" v-if="(suspect.x.size + suspect.y.size) > 0">
-                        外れ値候補 {{ suspect.x.size + suspect.y.size }} 箇所
-                      </v-chip>
-                    </v-card-title>
+                    <v-card-title class="py-2">座標プレビュー（編集可）</v-card-title>
                     <v-card-text class="pane-body">
-                      <div class="legend-row text-caption text-medium-emphasis">
-                        <span class="legend suspect"></span> 外れ値（セル）
-                        <span class="legend edited"></span> 編集済み
-                      </div>
-
                       <div class="table-host">
                         <table class="oh3-simple editable coords-table" style="width:max(100%, 720px);">
                           <colgroup>
-                            <col style="width:56px" />
+                            <col style="width:44px" />
                             <col class="col-label" :style="{width: colw.label + 'px'}" />
                             <col class="col-num"   :style="{width: colw.x + 'px'}" />
                             <col class="col-num"   :style="{width: colw.y + 'px'}" />
-                            <col style="width:28px" />
+                            <col style="width:24px" />
                           </colgroup>
                           <thead>
                           <tr>
@@ -283,9 +276,23 @@
 
             <!-- STEP5 -->
             <v-stepper-window-item :value="5">
-              <div class="pa-4 step-host">
+              <div class="pa-3 step-host">
                 <div v-if="points.length">
-                  <v-alert type="info" color="primary" variant="tonal" class="mb-3">{{ points.length }} 点を処理します。</v-alert>
+                  <v-alert type="info" color="primary" variant="tonal" class="mb-2">{{ points.length }} 点を処理します。</v-alert>
+
+                  <!-- ★ 取り込み名（OH5へ放り込む名前） -->
+                  <div class="d-flex align-center gap-3 mb-2">
+                    <v-text-field
+                        v-model="importName"
+                        label="OH5へ放り込む名前（拡張子不要）"
+                        :disabled="disableAll"
+                        variant="outlined"
+                        density="comfortable"
+                        hide-details
+                        style="max-width:420px"
+                    />
+                  </div>
+
                   <div class="d-flex align-center gap-3">
                     <v-btn variant="outlined" prepend-icon="mdi-download" :disabled="disableAll" @click="downloadSIMA">SIMAファイルダウンロード</v-btn>
                     <v-btn color="primary" :loading="busy" :disabled="disableAll" prepend-icon="mdi-database-import" @click="commit">取り込み実行</v-btn>
@@ -299,28 +306,10 @@
 
           <v-stepper-actions>
             <template #prev>
-              <v-btn
-                  size="x-large"
-                  class="oh3-action-btn"
-                  variant="elevated"
-                  color="secondary"
-                  :disabled="step<=1 || disableAll"
-                  @click="step--"
-              >
-                戻る
-              </v-btn>
+              <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="secondary" :disabled="step<=1 || disableAll" @click="step--">戻る</v-btn>
             </template>
             <template #next>
-              <v-btn
-                  size="x-large"
-                  class="oh3-action-btn"
-                  variant="elevated"
-                  color="primary"
-                  :disabled="disableAll || (step===1 && !file)"
-                  @click="goNext"
-              >
-                次へ
-              </v-btn>
+              <v-btn size="x-large" class="oh3-action-btn" variant="elevated" color="primary" :disabled="disableAll || (step===1 && !file)" @click="goNext">次へ</v-btn>
             </template>
           </v-stepper-actions>
         </v-stepper>
@@ -351,6 +340,8 @@ function fixCell (val) {
   return s
 }
 
+const minusAndDashes = /[\u2212\uFF0D\u00A0\u2003\u2002\u3000\u2500\u2501\u2010\u2013\u2014]/g
+
 export default {
   name: 'KyusekiImportDialog',
   props: {
@@ -365,6 +356,7 @@ export default {
       step: 1, busy: false,
 
       file: null, previewUrl: '', isImage: true,
+      importName: '',
 
       ocrError: '', rawTable: { headers: [], rows: [] },
 
@@ -396,14 +388,12 @@ export default {
 
       history: [], historyPtr: -1,
 
-      ro: null,
-      roBusy: false,
-      tableMaxPx: 420,
-      transitioning: false,
-      compactFlow: true,
-      showStep2Header: true,
+      ro: null, roBusy: false,
+      tableMaxPx: 640,
+      transitioning: false, compactFlow: true, showStep2Header: true,
 
-      colw: { label: 160, x: 140, y: 140 },
+      /* 列幅（さらにコンパクトに） */
+      colw: { label: 72, x: 96, y: 96 },
       colResize: { active:false, key:null, startX:0, startW:0 }
     }
   },
@@ -429,6 +419,8 @@ export default {
           this.initMapLibre()
           this.loadColWidths()
           this.installColResizer()
+          // ★ STEP4 へ来たら自動でマッピング→再構成
+          try { this.autoMapRoles(); this.rebuild() } catch {}
         })
       }
     }
@@ -448,7 +440,7 @@ export default {
     window.removeEventListener('resize', this.recalcTableMax)
   },
   methods: {
-    /* ===== 高さ再計算 ===== */
+    /* ===== 高さ再計算（親に目一杯） ===== */
     findVisibleStepHost () {
       const root = this.$refs.dialogRoot?.$el || this.$refs.dialogRoot
       if (!root) return null
@@ -464,9 +456,13 @@ export default {
 
       const updateVar = () => {
         const hostRect = host.getBoundingClientRect()
-        const px = Math.max(220, Math.floor(hostRect.height - 24))
+        // 余白を極小化してテーブル/パネル高さを最大化
+        const px = Math.max(240, Math.floor(hostRect.height - 8))
         this.tableMaxPx = px
         rootEl.style.setProperty('--oh3-table-h', `${px}px`)
+        // ★ プレビュー格子の縦基準も親高さから算出して拡大
+        const tall = Math.max(520, Math.floor(hostRect.height - 32))
+        rootEl.style.setProperty('--tall-h', `${tall}px`)
         this.roBusy = false
       }
       requestAnimationFrame(updateVar)
@@ -479,7 +475,7 @@ export default {
       }
     },
 
-    /* ===== Undo ===== */
+    /* ===== Undo（常時有効） ===== */
     installGlobalUndo () {
       this._undoHandler = (e) => {
         if (!this.internal) return
@@ -536,7 +532,6 @@ export default {
           this.showStep2Header = true
           this.step = 2
           await this.$nextTick()
-
           try {
             const table = await this.runCloudOCR(this.file)
             if (!table?.rows?.length) throw new Error('表が検出できませんでした')
@@ -700,11 +695,10 @@ export default {
     shoelace (pts){ let s1=0,s2=0; for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length]; s1+=a.x*b.y; s2+=a.y*b.x} const signed=0.5*(s1-s2); return { area:Math.abs(signed), signed } },
     normNumberStr (s) {
       if (s==null) return ''
-      return String(s)
-          .normalize('NFKC')
+      return String(s).normalize('NFKC')
           .replace(/,/g,'')
-          .replace(/[\]|]/g,'')                                   /* ] と | を除去 */
-          .replace(/[\u2212\uFF0D\u00A0\u2003\u2002\u3000\u2500\u2501\u2010\u2013\u2014]/g,'-')  /* 各種マイナス/ダッシュ/空白 */
+          .replace(/[\]|]/g,'')
+          .replace(minusAndDashes,'-')
           .trim()
     },
     parseNumber (s) { const m=this.normNumberStr(String(s)).match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN },
@@ -741,6 +735,7 @@ export default {
     },
 
     /* ==== SIMA ==== */
+    baseFileName (name) { return (name || '').replace(/\.[^.]+$/, '') },
     extractLotFromFileName () {
       try {
         const f = Array.isArray(this.file) ? this.file[0] : this.file
@@ -766,7 +761,8 @@ export default {
     downloadSIMA () {
       if (!this.points.length) return
       const text=this.buildSIMAContent(); this.lastSimaText=text
-      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`kyuseki_${ts}.sim`
+      const base = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+      const ts=new Date().toISOString().replace(/[:.]/g,'-'), name=`${base}_${ts}.sim`
       downloadTextFile(name, text, 'shift-jis')
       let size=text.length
       try{
@@ -775,6 +771,21 @@ export default {
         }
       }catch{}
       this.simaInfo={name, size}
+    },
+
+    /* 取り込み実行（OH5へ） */
+    async commit () {
+      // ここでは importName を必ず利用して上位へ通知
+      // 既存の取り込み処理に合わせて必要なら API 呼び出しを追加してください
+      try {
+        this.busy = true
+        const name = (this.importName || this.baseFileName((Array.isArray(this.file)?this.file[0]:this.file)?.name || 'kyuseki')).trim() || 'kyuseki'
+        // 例：親へイベントで通知（既存の実装に合わせて置換可）
+        this.$emit('imported', { name, points: this.points.slice(), area: this.area, closure: this.closure })
+        // 実際の保存は既存のロジックに委譲
+      } finally {
+        this.busy = false
+      }
     },
 
     /* MapLibre */
@@ -845,6 +856,8 @@ export default {
       const name = f?.name || ''
       this.isImage = !/\.pdf$/i.test(name)
       this.previewUrl = this.isImage ? URL.createObjectURL(f) : ''
+      // ★ OH5放り込み名 初期値＝ファイル名（拡張子除去）
+      this.importName = this.baseFileName(name)
     },
 
     isNumericRole (ci) { const roles = this.mapColumnsObject(); return ci === roles.x || ci === roles.y },
@@ -855,9 +868,9 @@ export default {
         const saved = JSON.parse(localStorage.getItem('oh3_coords_colw_v1') || '{}')
         const clamp = (v,min,max)=>Math.min(max,Math.max(min, v|0))
         if (saved && typeof saved==='object') {
-          this.colw.label = clamp(saved.label ?? this.colw.label, 100, 420)
-          this.colw.x     = clamp(saved.x     ?? this.colw.x,     100, 260)
-          this.colw.y     = clamp(saved.y     ?? this.colw.y,     100, 260)
+          this.colw.label = clamp(saved.label ?? this.colw.label, 40, 420)
+          this.colw.x     = clamp(saved.x     ?? this.colw.x,     80,  260)
+          this.colw.y     = clamp(saved.y     ?? this.colw.y,     80,  260)
         }
       } catch {}
     },
@@ -873,7 +886,7 @@ export default {
         if (!this.colResize.active) return
         const dx = e.clientX - this.colResize.startX
         const key = this.colResize.key
-        const min = 100
+        const min = key==='label' ? 40 : 80
         const max = key==='label' ? 420 : 260
         this.colw[key] = Math.min(max, Math.max(min, this.colResize.startW + dx))
       }
@@ -904,39 +917,40 @@ export default {
 
 <style scoped>
 /* =========================================
-   KyusekiImportDialog（スクロール確実化＋列幅ドラッグ）
+   KyusekiImportDialog（編集領域最大化版）
    ========================================= */
 
-.oh3-dialog{height:calc(100vh - 12px);display:flex;flex-direction:column;overflow:hidden}
+.oh3-dialog{height:calc(100vh - 2px);display:flex;flex-direction:column;overflow:hidden}
 .oh3-dialog > .v-card-title,.oh3-dialog > .v-divider{flex:0 0 auto}
-.oh3-dialog .px-4.pt-2{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.oh3-dialog .px-3.pt-2.pb-0{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .oh3-dialog .v-stepper{display:flex;flex-direction:column;height:100%;min-height:0}
 .oh3-dialog .v-stepper-header{flex:0 0 auto}
 .oh3-dialog .v-stepper-window{flex:1 1 auto;min-height:0;overflow:hidden}
 
 .oh3-dialog .v-stepper-actions{
   position:sticky;bottom:0;z-index:10;background:#fff;border-top:1px solid #e5e7eb;
-  padding:12px 16px;display:flex;justify-content:space-between;gap:12px;
+  padding:8px 12px;display:flex;justify-content:space-between;gap:12px;
 }
 .oh3-action-btn{font-weight:700;min-width:140px;letter-spacing:.02em}
 
-.step-host,.oh3-dialog .v-stepper-window-item > .pa-4{display:flex;flex-direction:column;min-height:0}
+.step-host,.oh3-dialog .v-stepper-window-item > .pa-3{display:flex;flex-direction:column;min-height:0}
 .fill-parent{flex:1 1 auto}
 .flex-col{display:flex;flex-direction:column}
 
 :deep(.v-overlay__content){ overflow:hidden !important; }
 :deep(.v-card-text){ overflow:visible !important; }
 
-:root{ --oh3-table-h: 560px; --tall-h: 420px; }
+:root{ --oh3-table-h: 640px; --tall-h: 520px; }
 
 .pane{display:flex;flex-direction:column;min-height:0}
 .pane .pane-body{flex:1 1 auto;min-height:0;overflow:visible}
 .table-host{
-  display:block;flex:1 1 auto;min-height:200px;max-height:var(--oh3-table-h);
+  display:block;flex:1 1 auto;min-height:240px;max-height:var(--oh3-table-h);
   overflow:auto !important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   scrollbar-gutter:stable both-edges;border:1px solid #e5e7eb;border-radius:8px;background:#fff;
 }
 
+/* Table */
 .oh3-simple{width:max(100%, 720px);border-collapse:collapse;table-layout:fixed;font-size:12.5px;}
 .oh3-simple.auto{ table-layout:auto; }
 .oh3-simple th,.oh3-simple td{ border:1px solid #ddd; white-space:nowrap; }
@@ -948,24 +962,27 @@ export default {
 .oh3-simple td:focus-within{ background:#bfdbfe; box-shadow:inset 0 0 0 2px #60a5fa }
 .oh3-simple .cell-input:focus{ background:#bfdbfe }
 
+/* Flags (見た目は残すが凡例は削除) */
 .suspect-cell,.suspect-cell .cell-input{ background:#ffd6d6 !important; color:#7f1d1d !important; }
 .suspect-cell{ box-shadow:inset 0 0 0 2px #ff4d4f !important; }
 .edited-cell{ background:#e7f6e7 !important; box-shadow:inset 0 0 0 1px #7fbf7f !important; }
 .just-edited{ animation: oh3PulseEdited .9s ease-out 1; }
 @keyframes oh3PulseEdited{0%{box-shadow:0 0 0 0 rgba(99,102,241,.4)}50%{box-shadow:0 0 0 8px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
 
-.preview-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
+/* Grid */
+.preview-grid{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2, calc(var(--tall-h)/2))}
 .preview-grid>.tall{grid-row:1/span 2}
 .maplibre-host{width:100%;height:100%;min-height:240px;border:1px solid #e2e8f0;border-radius:8px}
 
-:deep(.v-card-title){padding:8px 12px; flex-wrap:wrap;}
-:deep(.v-card-text){padding:8px 12px}
-.big-steps :deep(.v-stepper-item__avatar){width:36px;height:36px;font-size:16px}
+/* Minor UI */
+:deep(.v-card-title){padding:6px 10px; flex-wrap:wrap;}
+:deep(.v-card-text){padding:6px 10px}
+.big-steps :deep(.v-stepper-item__avatar){width:34px;height:34px;font-size:15px}
 .map-chip{border:1px dashed var(--v-theme-outline);border-radius:10px;padding:8px;min-width:180px}
 .oh3-title{color:rgb(var(--v-theme-primary))}
 .oh3-accent-border{border-top:3px solid rgb(var(--v-theme-primary))}
 .no-stretch{align-self:flex-start;max-width:260px}
-.no-stretch :deep(.v-field){height:50px}
+.no-stretch :deep(.v-field){height:46px}
 .no-stretch :deep(.v-input){flex:0 0 auto !important}
 .preview-box{width:100%;border:1px dashed var(--v-theme-outline);border-radius:8px;padding:8px;min-height:180px;display:grid;place-items:center}
 .preview-img{max-width:100%;max-height:280px;object-fit:contain}
@@ -973,20 +990,23 @@ export default {
 .inline-metrics{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
 .warn.small{font-size:12px;color:#a15d00;margin-top:6px}
 
-.legend-row{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-.legend{ display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle }
-.legend.suspect{ background:#ffd6d6; border:1px solid #ff4d4f }
-.legend.edited{ background:#e7f6e7; border:1px solid #7fbf7f }
+/* ファイル入力（STEP1） */
+.file-compact{max-width:420px}
+.file-compact :deep(.v-field){height:44px}
+.file-compact :deep(.v-field__input){padding-top:6px;padding-bottom:6px}
 
+/* 列幅（さらにコンパクト） */
 .coords-table{ table-layout:auto; }
-.coords-table .col-label{ width:160px; min-width:100px; }
-.coords-table .col-num{ width:140px; min-width:100px; }
+.coords-table .col-label{ width:72px; min-width:40px; }
+.coords-table .col-num{   width:96px; min-width:80px; }
 
+/* ドラッグ用グリップ */
 .coords-table thead th{ position:relative; }
 .coords-table thead th .th-grip{ position:absolute; right:-4px; top:0; bottom:0; width:8px; cursor:col-resize; background: transparent; }
 .coords-table thead th .th-grip::after{ content:''; position:absolute; left:3px; top:25%; bottom:25%; width:2px; border-radius:1px; background:rgba(0,0,0,.08); }
 .coords-table thead th:hover .th-grip::after{ background:rgba(0,0,0,.18); }
 
+/* ローダ/ロック */
 .loader-placeholder{border:1px dashed #e5e7eb;border-radius:8px;padding:8px}
 .lock-overlay :deep(.v-overlay__content){backdrop-filter: blur(1px)}
 </style>
